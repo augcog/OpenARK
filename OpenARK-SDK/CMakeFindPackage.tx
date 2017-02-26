@@ -1,0 +1,6 @@
+FIND_PACKAGE([%package%] REQUIRED)
+IF ([%package%]_FOUND)
+    INCLUDE_DIRECTORIES(${[%package%]_INCLUDE_DIR})
+    ADD_DEFINITIONS( "-DHAS_[%package_upcase%]" )
+ENDIF()
+    

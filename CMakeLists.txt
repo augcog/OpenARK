@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 2.8)
+project( OpenARK )
+find_package( OpenCV REQUIRED )
+set(SOURCES Clustering.cpp PMDSensor.cpp Sensor.cpp Webcam.cpp DepthSensor.cpp RGBSensor.cpp	Visualizer.cpp	main.cpp)
+add_executable( OpenARK ${SOURCES} )
+target_link_libraries( OpenARK ${OpenCV_LIBS} )
