@@ -96,9 +96,13 @@ public:
 	*/
 	static double TriangleAngleCalculation(double x1, double y1, double x2, double y2, double x3, double y3);
 
+	static void floodFill(int x, int y, cv::Mat& depthMap, cv::Mat& mask, double max_distance);
+
 
 private:
 	static double DistanceTwoPoints(double x1, double y1, double x2, double y2);
 	static double otherAngleFind(double biggerAngle, double largestDistance, double smallDistance);
 	static double BiggerAngleFind(double largestDistance, double smallDistanceOne, double smallDistanceTwo);
+	static bool Util::closeEnough(int x, int y, cv::Mat& depthMap, int num_neighbors, double max_distance);
+
 };

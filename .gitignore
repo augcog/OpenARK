@@ -277,6 +277,7 @@ __pycache__/
 *.pap
 *.ppp
 *.dylib
+opencv_*
 pmdaccess2.dll
 OpenNI2.dll
 

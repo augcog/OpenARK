@@ -222,3 +222,52 @@ double Util::TriangleAngleCalculation(double x1, double y1, double x2, double y2
 	//cout << "Angle Between Second Point and Third Point = " << angle1 << endl;
 	return angle2;
 }
+
+/***
+Recursively performs floodfill on depthMap
+***/
+void Util::floodFill(int x, int y, cv::Mat& depthMap, cv::Mat& mask, double max_distance)
+{
+	if (x < 0 || x >= depthMap.cols || y < 0 || y >= depthMap.rows || depthMap.at<cv::Vec3f>(y, x)[2] == 0.0)
+		return;
+	if (closeEnough(x, y, depthMap, 4, max_distance)) {
+		mask.at<cv::Vec3f>(y, x) = depthMap.at<cv::Vec3f>(y, x);
+		depthMap.at<cv::Vec3f>(y, x)[0] = 0;
+		depthMap.at<cv::Vec3f>(y, x)[1] = 0;
+		depthMap.at<cv::Vec3f>(y, x)[2] = 0;
+	}
+	else {
+		return;
+	}
+
+	floodFill(x + 1, y, depthMap, mask, max_distance);
+	floodFill(x - 1, y, depthMap, mask, max_distance);
+	floodFill(x, y + 1, depthMap, mask, max_distance);
+	floodFill(x, y - 1, depthMap, mask, max_distance);
+}
+
+/***
+Check whether candidate point is close enough to neighboring points
+***/
+bool Util::closeEnough(int x, int y, cv::Mat& depthMap, int num_neighbors, double max_distance)
+{
+	int num_close = 0;
+	if (x - 1 < 0 || depthMap.at<cv::Vec3f>(y, x - 1)[2] == 0 || Util::euclidianDistance3D(depthMap.at<cv::Vec3f>(y, x), depthMap.at<cv::Vec3f>(y, x - 1)) < max_distance) {
+		num_close++;
+	}
+	if (x + 1 >= depthMap.cols || depthMap.at<cv::Vec3f>(y, x + 1)[2] == 0 || Util::euclidianDistance3D(depthMap.at<cv::Vec3f>(y, x), depthMap.at<cv::Vec3f>(y, x + 1)) < max_distance) {
+		num_close++;
+	}
+	if (y - 1 < 0 || depthMap.at<cv::Vec3f>(y - 1, x)[2] == 0 || Util::euclidianDistance3D(depthMap.at<cv::Vec3f>(y, x), depthMap.at<cv::Vec3f>(y - 1, x)) < max_distance) {
+		num_close++;
+	}
+	if (y + 1 >= depthMap.rows || depthMap.at<cv::Vec3f>(y + 1, x)[2] == 0 || Util::euclidianDistance3D(depthMap.at<cv::Vec3f>(y, x), depthMap.at<cv::Vec3f>(y + 1, x)) < max_distance) {
+		num_close++;
+	}
+
+	if (num_close >= num_neighbors) {
+		return true;
+	}
+
+	return false;
+}
