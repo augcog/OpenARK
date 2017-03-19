@@ -57,6 +57,4 @@ The Center for Augmented Cognition welcome interested industry partners to join 
 
 ## Credits and references
 
-**Key Contributors**: Bill Zhou, Allen Yang, Will Huang, Larry Yang, Eric Nyugen
-**Project Members**: Peter Li, Michelle Ni, Luke Zhang, Elizabeth Li, Hitesh Yalamanchili, Michael Luo
- 
+Bill Zhou, Allen Yang, S.Shankar, Will Huang, Larry Yang, Eric Nyugen, Michelli Ni, Peter Li, Jessica Jiang
