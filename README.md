@@ -33,9 +33,7 @@ Configure project properties (see /documentation/OpenARK_Setup.pdf)
 
 ## Usage
 
-Show users how to use the software.
-Be specific.
-Use appropriate formatting when showing code snippets.
+OpenARK is made for easy customization. Please feel free to build on top of this platform to fit your needs.
 
 ## How to test the software
 
