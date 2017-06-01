@@ -164,10 +164,13 @@ protected:
 	/**
 	 * The image width resolution (pixels) that the depth sensor produces.
 	 */
-	int X_DIMENSION = 176;
+	//mona int X_DIMENSION = 176;
+	int X_DIMENSION = 640;
+
 
 	/**
 	 * The image height resolution (pixels) that the depth sensor produces.
 	 */
-	int Y_DIMENSION = 120;
+    //mona int Y_DIMENSION = 120;
+	int Y_DIMENSION = 480;
 };

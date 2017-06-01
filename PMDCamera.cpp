@@ -9,6 +9,8 @@ PMDCamera::PMDCamera(bool use_live_sensor)
 	INVALID_FLAG_VALUE = PMD_FLAG_INVALID;
 	X_DIMENSION = 176;
 	Y_DIMENSION = 120;
+	//X_DIMENSION = 640;
+	//Y_DIMENSION = 480;
 
 	if (!use_live_sensor) {
 		return;
@@ -60,7 +62,7 @@ PMDCamera::PMDCamera(bool use_live_sensor)
 	dists = new float[3 * numPixels]; // Dists contains XYZ values. needs to be 3x the size of numPixels
 	amps = new float[numPixels];
 	frame = cvCreateImage(cvSize(dd.img.numColumns, dd.img.numRows), 8, 3); // Create the frame
-
+	//mona frame.create(dd.img.numRows, dd.img.numColumns, CV_8UC3);
 	KF.init(6, 3, 0);
 	KF.transitionMatrix = (cv::Mat_<float>(6, 6) << 1, 0, 0, 1, 0, 0,
 													0, 1, 0, 0, 1, 0,
@@ -103,9 +105,21 @@ void PMDCamera::update()
 	
 	unsigned *flags = new unsigned[ampMap.cols*ampMap.rows];
 	int res = pmdGetFlags(hnd, flags, numPixels * sizeof(unsigned));
+	if (res != PMD_OK) {
+		pmdGetLastError(hnd, err, 128);
+		fprintf(stderr, "Couldn't get the flags: %s\n", err);
+		pmdClose(hnd);
+		return;
+	}
 	flagMap.data = (uchar *)flags;
 
-	pmdUpdate(hnd);
+    res = pmdUpdate(hnd);
+	if (res != PMD_OK) {
+		pmdGetLastError(hnd, err, 128);
+		fprintf(stderr, "Couldn't update the PMD camera: %s\n", err);
+		pmdClose(hnd);
+		return;
+	}
 	delete(flags);
 	
 }
@@ -118,7 +132,15 @@ void PMDCamera::fillInZCoords()
 {
 	int res = pmdGet3DCoordinates(hnd, dists, 3 * numPixels * sizeof(float)); //store x,y,z coordinates dists (type: float*)
 	//float * zCoords = new float[1]; //store z-Coordinates of dists in zCoords
+	if (res != PMD_OK) {
+		pmdGetLastError(hnd, err, 128);
+		fprintf(stderr, "Couldn't get 3D coordinates: %s\n", err);
+		pmdClose(hnd);
+		return;
+	}
 	xyzMap = cv::Mat(xyzMap.size(), xyzMap.type(), dists);
+	//std::cout << "nrows: " << xyzMap.rows << std::endl;
+	//std::cout << "ncols: " << xyzMap.cols << std::endl;
 }
 
 /***
@@ -128,6 +150,12 @@ void PMDCamera::fillInAmps()
 {
 	int res = pmdGetAmplitudes(hnd, amps, numPixels * sizeof(float));
 	//float * dataPtr = amps;
+	if (res != PMD_OK) {
+		pmdGetLastError(hnd, err, 128);
+		fprintf(stderr, "Couldn't get amplitudes: %s\n", err);
+		pmdClose(hnd);
+		return;
+	}
 	ampMap.data = (uchar *)amps;
 }
 

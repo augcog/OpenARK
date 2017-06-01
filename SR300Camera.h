@@ -1,10 +1,15 @@
+#define NOMINMAX
+#define _WINSOCKAPI_  
+
 #pragma once
 // C++ Libraries
 #include<string.h>
 
-// PMD Libraries
-#include <pmdsdk2.h>
-
+//realsense library 
+#include "RealSense/SenseManager.h"
+#include "RealSense/SampleReader.h"
+#include "RealSense/Session.h"
+#include <opencv2/opencv.hpp>
 // OpenCV Libraries
 #include <opencv/cxcore.h>
 #include <opencv/highgui.h>
@@ -14,27 +19,35 @@
 #include <opencv2/objdetect/objdetect.hpp>
 #include <opencv2/features2d/features2d.hpp>
 
+
 // OpenARK Libraries
 #include "DepthCamera.h"
 
 /**
-* Class defining the behavior of a PMD Camera.
+* Class defining the behavior of an SR300 Camera.
 * Example on how to read from sensor and visualize its output
 * @include SensorIO.cpp
 */
-class PMDCamera : public DepthCamera
+class SR300Camera : public DepthCamera
 {
 public:
-	/**
-	* Public constructor initializing the PMD Camera.
-	* @param use_live_sensor uses input from real sensor if TRUE. Otherwise reads from input file. Default is set to TRUE.
-	*/
-	PMDCamera(bool use_live_sensor = true);
+
+	
 
 	/**
-	* Deconstructor for the PMD Camera.
+	* Public constructor initializing the SR300 Camera.
+	* @param use_live_sensor uses input from real sensor if TRUE. Otherwise reads from input file. Default is set to TRUE.
 	*/
-	~PMDCamera();
+
+
+	SR300Camera(bool use_live_sensor = true);
+
+	/**
+	* Deconstructor for the SR300 Camera.
+	*/
+	~SR300Camera();
+
+
 
 	/**
 	* Gets new frame from sensor.
@@ -43,7 +56,7 @@ public:
 	void update();
 
 	/**
-	* Gracefully closes the PMD camera.
+	* Gracefully closes the SR300 camera.
 	*/
 	void destroyInstance();
 
@@ -54,7 +67,10 @@ private:
 	* @param j jth column
 	* @return x-coodinate at (i,j)
 	*/
+	//void getXYZbuffer();
+
 	float getX(int i, int j) const;
+
 
 	/**
 	* Getter method for the x-coordinate at (i,j).
@@ -75,12 +91,22 @@ private:
 	/**
 	* Update the z-coordinates of the xyzMap.
 	*/
-	void fillInZCoords();
+//	void fillInZCoords();
 
 	/**
 	* Update the values in the ampMap.
 	*/
 	void fillInAmps();
+
+	void fillInZCoords();
+
+
+	/**
+	* Convert the depth coordinates to world coordinates
+	*/
+	//void DepthToWorld(Image *depth, vector<PointF32> dcords, vector<PointF32> &wcords) const;
+
+
 
 	//Private Variable
 	const char* SOURCE_PLUGIN = "camboardpico";
@@ -88,19 +114,25 @@ private:
 	const char* PROC_PLUGIN = "camboardpicoproc";
 	const char* PROC_PARAM = "";
 
-	PMDHandle hnd;
-	PMDDataDescription dd;
+	//SR300handle hnd;
+	//SR300DataDescription dd;
 	char err[128]; // Char array for storing PMD's error log
 
 	int numPixels;
 	float* dists;
 	float* amps;
 
-	IplImage * frame;
-	//mona cv::Mat frame;
+	//IplImage * frame;
+	cv::Mat frame; 
 	cv::KalmanFilter KF;
 	cv::Mat_<float> measurement;
+
+
+
 };
+
+
+
 
 /*
 * \include SensorIO.cpp

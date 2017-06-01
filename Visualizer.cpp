@@ -15,7 +15,7 @@ cv::Mat Visualizer::visualizeMatrix(cv::Mat &input)
 /***
 RGB depth map visualization
 ***/
-cv::Mat Visualizer::visualizeDepthMap(cv::Mat &depthMap) 
+cv::Mat Visualizer::visualizeDepthMap(cv::Mat &depthMap)
 {
 	cv::Mat img;
 	cv::normalize(depthMap, img, 0, 255, cv::NORM_MINMAX, CV_8UC1);
@@ -58,7 +58,8 @@ cv::Mat Visualizer::visualizePlaneRegression(cv::Mat &input_mat, std::vector<dou
 	cv::Mat output_mat;
 	if (input_mat.type() == CV_32FC3) {
 		output_mat = Visualizer::visualizeXYZMap(input_mat);
-	} else {
+	}
+	else {
 		output_mat = input_mat;
 	}
 
@@ -89,7 +90,7 @@ cv::Mat Visualizer::visualizePlaneRegression(cv::Mat &input_mat, std::vector<dou
 
 			double z_hat = equation[0] * x + equation[1] * y + equation[2];
 			double r_squared = (z - z_hat) * (z - z_hat);
-			
+
 			if (r_squared < threshold) {
 				cv::circle(output_mat, cv::Point(c, r), 1, color, -1);
 				pointsDetected++;
@@ -102,7 +103,7 @@ cv::Mat Visualizer::visualizePlaneRegression(cv::Mat &input_mat, std::vector<dou
 void Visualizer::visualizePlanePoints(cv::Mat &input_mat, std::vector<cv::Point2i> indicies)
 {
 	for (int i = 0; i < indicies.size(); i++) {
-		input_mat.at<uchar>(indicies[i].y, indicies[i].x) = (uchar) 255;
+		input_mat.at<uchar>(indicies[i].y, indicies[i].x) = (uchar)255;
 	}
 }
 

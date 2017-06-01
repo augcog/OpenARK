@@ -78,7 +78,8 @@ void DepthCamera::removeNoise() {
 
 	for (int y = 0; y < xyzMap.rows; y++) {
 		for (int x = 0; x < xyzMap.cols; x++) {
-			if (xyzMap.at<cv::Vec3f>(y, x)[2] > 0.9f || ampMap.at<float>(y, x) < CONFIDENCE_THRESHHOLD)
+		    //if (xyzMap.at<cv::Vec3f>(y, x)[2] > 0.9f || ampMap.at<float>(y, x) < CONFIDENCE_THRESHHOLD)
+			if (xyzMap.at<cv::Vec3f>(y,x)[2] > 0.9f)
 			{
 				xyzMap.at<cv::Vec3f>(y, x)[0] = 0;
 				xyzMap.at<cv::Vec3f>(y, x)[1] = 0;
@@ -91,7 +92,8 @@ void DepthCamera::removeNoise() {
 	cv::split(xyzMap, channels);
 	if ((float)cv::countNonZero(channels[2]) / (xyzMap.rows*xyzMap.cols) > 0.5) {
 		badInput = true;
-	} else {
+	}
+	else {
 		badInput = false;
 	}
 
@@ -100,7 +102,7 @@ void DepthCamera::removeNoise() {
 
 void DepthCamera::removePoints(std::vector<cv::Point2i> points)
 {
-	for (int i = 0; i < points.size();i++) {
+	for (int i = 0; i < points.size(); i++) {
 		int x = points[i].x;
 		int y = points[i].y;
 		xyzMap.at<cv::Vec3f>(y, x)[0] = 0;

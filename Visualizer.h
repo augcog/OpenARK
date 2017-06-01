@@ -66,6 +66,7 @@ public:
 	* @indicies (i,j) coordinates of the points belonging to the plane
 	*/
 	static void visualizePlanePoints(cv::Mat &input_mat, std::vector<cv::Point2i> indicies);
+	static cv::Mat visualizeDepthMap(cv::Mat &depthMap);
 
 private:
 
@@ -81,7 +82,7 @@ private:
 	* @param [in] depthMap matrix to be visualized
 	* @return a CV_8UC3 representation of the input matrix
 	*/
-	static cv::Mat visualizeDepthMap(cv::Mat &depthMap);
+	
 
 	/**
 	* PCL point cloud viewer

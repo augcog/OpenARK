@@ -205,7 +205,10 @@ void Hand::analyzeHand(cv::Mat xyzMap)
 			cv::line(img, defects_ij[i], centroid_ij, cv::Scalar(255, 0, 255), 2);
 		}
 	}
-	cv::imshow("Contours", img);
+	
+	
+	
+	("Contours", img);
 	
 	
 }
