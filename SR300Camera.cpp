@@ -107,16 +107,11 @@ void SR300Camera::fillInZCoords(){
 	cv::Mat img;
 	Converter::ConvertPXCImageToOpenCVMat(depthMap, depthImage, &img);
 	cv::imshow("Depth Image by OpenARK", Visualizer::visualizeDepthMap(img));
-   // depthMap->AcquireAccess(PXCImage::ACCESS_WRITE, &depthImage);
 	PXCImage::ImageInfo imgInfo = depthMap->QueryInfo();
 	depth_width = imgInfo.width;
 	depth_height = imgInfo.height;
 	num_pixels = depth_width * depth_height;
-	cout << "height is: " << depth_height << endl;
-	cout << "width is: " << depth_width << endl;
 	PXCProjection * projection = device->CreateProjection();
-	pxcU16 *dpixels = (pxcU16*)depthImage.planes[0];
-	unsigned int dpitch = depthImage.pitches[0] / sizeof(pxcU16);
 	PXCPoint3DF32 *pos3D = new PXCPoint3DF32[num_pixels];
 	//sts = projection->QueryVertices(depthMap, pos3D);
 	sts = projection->QueryVertices(depthMap, &pos3D[0]);
@@ -126,8 +121,8 @@ void SR300Camera::fillInZCoords(){
 	}
 	xyzBuffer.clear();
 	for (int k = 0; k < num_pixels; k++) {
-			xyzBuffer.push_back(cv::Point3f(pos3D[k].x/1000.0f, pos3D[k].y/1000.0f, pos3D[k].z/1000.0f));
-			//xyzBuffer.emplace_back(cv::Point3f(pos3D[k].x / 1000.0f, pos3D[k].y / 1000.0f, pos3D[k].z / 1000.0f));
+			//xyzBuffer.push_back(cv::Point3f(pos3D[k].x/1000.0f, pos3D[k].y/1000.0f, pos3D[k].z/1000.0f));
+			xyzBuffer.emplace_back(cv::Point3f(pos3D[k].x / 1000.0f, pos3D[k].y / 1000.0f, pos3D[k].z / 1000.0f));
 	}
 
 	xyzMap = cv::Mat(xyzBuffer, true).reshape(3, 480);
