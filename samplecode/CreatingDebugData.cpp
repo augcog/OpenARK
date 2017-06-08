@@ -16,7 +16,7 @@ int main() {
 	clock_t starttime = clock();
 	DepthCamera* pmd = new PMDCamera();
 	int frame = 0;
-	
+
 	while (true)
 	{
 		pmd->update();
@@ -37,7 +37,7 @@ int main() {
 		}
 		/**** End: Loop Break Condition ****/
 		frame++;
-		
+
 	}
 
 	pmd->destroyInstance();

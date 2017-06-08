@@ -2,9 +2,6 @@
 // C++ Libraries
 #include <deque>
 
-// OpenCV Libraries
-#include <opencv/cxcore.h>
-
 // OpenARK Libraries
 #include "Util.h"
 
@@ -34,7 +31,7 @@ public:
 	cv::Vec3f addDataPoint(cv::Vec3f pt);
 
 	/*
-	* Adds a empty data point to the stream of points. 
+	* Adds a empty data point to the stream of points.
 	* If there are no points to add at the current frame, an empty point should be added to push out the old points
 	*/
 	void addEmptyPoint();

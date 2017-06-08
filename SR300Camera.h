@@ -1,18 +1,10 @@
-#define NOMINMAX
-#define _WINSOCKAPI_  
-
 #pragma once
 // C++ Libraries
 #include<string.h>
 
-//realsense library 
-#include "RealSense/SenseManager.h"
-#include "RealSense/SampleReader.h"
-#include "RealSense/Session.h"
-#include <opencv2/opencv.hpp>
+
 // OpenCV Libraries
-#include <opencv/cxcore.h>
-#include <opencv/highgui.h>
+#include <opencv2/opencv.hpp>
 #include "opencv2/highgui/highgui.hpp"
 #include <opencv2/video/tracking.hpp>
 #include "opencv2/imgproc/imgproc.hpp"
@@ -22,6 +14,9 @@
 
 // OpenARK Libraries
 #include "DepthCamera.h"
+#include "Converter.h"
+
+//using namespace Intel::RealSense;
 
 /**
 * Class defining the behavior of an SR300 Camera.
@@ -32,22 +27,17 @@ class SR300Camera : public DepthCamera
 {
 public:
 
-	
 
 	/**
 	* Public constructor initializing the SR300 Camera.
 	* @param use_live_sensor uses input from real sensor if TRUE. Otherwise reads from input file. Default is set to TRUE.
 	*/
-
-
 	SR300Camera(bool use_live_sensor = true);
 
 	/**
 	* Deconstructor for the SR300 Camera.
 	*/
 	~SR300Camera();
-
-
 
 	/**
 	* Gets new frame from sensor.
@@ -67,8 +57,6 @@ private:
 	* @param j jth column
 	* @return x-coodinate at (i,j)
 	*/
-	//void getXYZbuffer();
-
 	float getX(int i, int j) const;
 
 
@@ -91,50 +79,26 @@ private:
 	/**
 	* Update the z-coordinates of the xyzMap.
 	*/
-//	void fillInZCoords();
+	void fillInZCoords();
 
 	/**
 	* Update the values in the ampMap.
 	*/
 	void fillInAmps();
 
-	void fillInZCoords();
 
-
-	/**
-	* Convert the depth coordinates to world coordinates
-	*/
-	//void DepthToWorld(Image *depth, vector<PointF32> dcords, vector<PointF32> &wcords) const;
-
-
-
-	//Private Variable
-	const char* SOURCE_PLUGIN = "camboardpico";
-	const char* SOURCE_PARAM = "";
-	const char* PROC_PLUGIN = "camboardpicoproc";
-	const char* PROC_PARAM = "";
-
-	//SR300handle hnd;
-	//SR300DataDescription dd;
-	char err[128]; // Char array for storing PMD's error log
-
-	int numPixels;
+	//Private Variables
 	float* dists;
 	float* amps;
-
-	//IplImage * frame;
-	cv::Mat frame; 
-	cv::KalmanFilter KF;
-	cv::Mat_<float> measurement;
-
-
+	cv::Mat frame;
+	const int depth_fps = 30;
+	int depth_width;
+	int depth_height;
+	cv::Size bufferSize;
+	const Intel::RealSense::Sample *sample;
+	Intel::RealSense::SenseManager *sm = Intel::RealSense::SenseManager::CreateInstance();
+	Intel::RealSense::Session *session = sm->QuerySession();
+	Intel::RealSense::Device *device;
+	Intel::RealSense::CaptureManager *cm;
 
 };
-
-
-
-
-/*
-* \include SensorIO.cpp
-* Example of how to read from sensor
-*/

@@ -17,24 +17,24 @@
 int main() {
 	DepthCamera* pmd = new PMDCamera(false);
 	int frame = 0;
-	
+
 	while (true)
 	{
 		// Load in the debug data
 		std::string filename = "..//OpenARK_Datasets//HandDataSet1//img" + std::to_string(frame) + ".yml";
 		if (!pmd->readImage(filename))
 			break;
-		
+
 		// Remove noise on the frame
 		pmd->removeNoise();
 		cv::imshow("XYZ Map", Visualizer::visualizeXYZMap(pmd->getXYZMap()));
-		
+
 		// Find the right hand
 		Hand right_hand = Hand(pmd->getClusters());
-		
+
 		// Show the hand
 		cv::imshow("Hand", Visualizer::visualizeHand(pmd->getXYZMap(), right_hand.pointer_finger_ij, right_hand.shape_centroid_ij));
-		
+
 
 		/**** Start: Loop Break Condition ****/
 		int c = cvWaitKey(1);

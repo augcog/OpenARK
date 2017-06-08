@@ -9,8 +9,6 @@ PMDCamera::PMDCamera(bool use_live_sensor)
 	INVALID_FLAG_VALUE = PMD_FLAG_INVALID;
 	X_DIMENSION = 176;
 	Y_DIMENSION = 120;
-	//X_DIMENSION = 640;
-	//Y_DIMENSION = 480;
 
 	if (!use_live_sensor) {
 		return;
@@ -40,7 +38,7 @@ PMDCamera::PMDCamera(bool use_live_sensor)
 
 	// res: Structure which contains various meta-information about the data delivered by your Nano.
 	// It is advisabe to always use the data delivered by this struct (for example the width and height of the imager
-	// and the image format). Please refer to the PMSDSK documentation for more information	
+	// and the image format). Please refer to the PMSDSK documentation for more information
 	res = pmdGetSourceDataDescription(hnd, &dd);
 	if (res != PMD_OK)
 	{
@@ -61,8 +59,8 @@ PMDCamera::PMDCamera(bool use_live_sensor)
 	numPixels = dd.img.numRows * dd.img.numColumns; // Number of pixels in camera
 	dists = new float[3 * numPixels]; // Dists contains XYZ values. needs to be 3x the size of numPixels
 	amps = new float[numPixels];
-	frame = cvCreateImage(cvSize(dd.img.numColumns, dd.img.numRows), 8, 3); // Create the frame
-	//mona frame.create(dd.img.numRows, dd.img.numColumns, CV_8UC3);
+    frame.create(dd.img.numRows, dd.img.numColumns, CV_8UC3);
+
 	KF.init(6, 3, 0);
 	KF.transitionMatrix = (cv::Mat_<float>(6, 6) << 1, 0, 0, 1, 0, 0,
 													0, 1, 0, 0, 1, 0,
@@ -78,6 +76,7 @@ PMDCamera::PMDCamera(bool use_live_sensor)
 	setIdentity(KF.processNoiseCov, cv::Scalar::all(.001)); // Adjust this for faster convergence - but higher noise
 	setIdentity(KF.measurementNoiseCov, cv::Scalar::all(1e-1));
 	setIdentity(KF.errorCovPost, cv::Scalar::all(.1));
+
 }
 
 /***
@@ -98,11 +97,11 @@ Create xyzMap, zMap, ampMap, and flagMap from sensor input
 void PMDCamera::update()
 {
 	initilizeImages();
-	
+
 	fillInAmps();
 	fillInZCoords();
 	// Flags. Helps with denoising.
-	
+
 	unsigned *flags = new unsigned[ampMap.cols*ampMap.rows];
 	int res = pmdGetFlags(hnd, flags, numPixels * sizeof(unsigned));
 	if (res != PMD_OK) {
@@ -121,7 +120,7 @@ void PMDCamera::update()
 		return;
 	}
 	delete(flags);
-	
+
 }
 
 

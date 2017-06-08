@@ -1,11 +1,8 @@
 #pragma once
-
 // C++ Libraries
 #include <iostream>
 
 // OpenCV Libraries
-#include <opencv/cxcore.h>
-#include <opencv/highgui.h>
 #include "opencv2/highgui/highgui.hpp"
 #include <opencv2/video/tracking.hpp>
 #include "opencv2/imgproc/imgproc.hpp"
@@ -33,7 +30,7 @@ public:
 	 * This function should be overriden with a concrete implementation depending on the specific depth camera
 	 */
 	virtual void destroyInstance() = 0;
-	
+
 	/**
 	 * Performs euclidean clustering to separate discrete objects in the input point cloud.
 	 * @param max_distance the maximum allowed distance to be clustered
@@ -97,8 +94,8 @@ public:
 	std::vector<cv::Mat> getClusters();
 
 	bool badInput;
-	
-	
+
+
 protected:
 	/**
 	 * Initializes all variables used by the generic depth camera.
@@ -143,7 +140,7 @@ protected:
 	 * Matrix type CV_8UC1
 	 */
 	cv::Mat flagMap;
-	
+
 	/**
 	 * Stores the each individual cluster in its individual XYZMap.
 	 */

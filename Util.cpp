@@ -14,7 +14,7 @@ bool Util::isMember(cv::Mat image, int x, int y)
 {
 	if (x < 0 || y < 0 || x >= image.cols || y >= image.rows) {
 		return false;
-	} 
+	}
 
 	if (image.at<uchar>(y, x) != 0) {
 		return true;
@@ -22,7 +22,7 @@ bool Util::isMember(cv::Mat image, int x, int y)
 
 	return false;
 }
-int Util::getDistanceT(int x1, int y1, int x2, int y2) 
+int Util::getDistanceT(int x1, int y1, int x2, int y2)
 {
 	return abs(y1 - y2) + abs(x2 - x1);
 }
@@ -43,7 +43,7 @@ double Util::euclideanDistance2D(cv::Point pt1, cv::Point pt2)
 	return sqrtf(dx*dx + dy*dy);
 }
 
-double Util::euclideanDistancePerPixel(cv::Mat xyzMap, cv::Point pt, int radius) 
+double Util::euclideanDistancePerPixel(cv::Mat xyzMap, cv::Point pt, int radius)
 {
 	int x = pt.x;
 	int y = pt.y;
@@ -52,7 +52,7 @@ double Util::euclideanDistancePerPixel(cv::Mat xyzMap, cv::Point pt, int radius)
 	int c_lower = (x - radius < 0) ? 0 : x - radius;
 	int r_upper = (y + radius > xyzMap.rows) ? xyzMap.rows : y + radius;
 	int c_upper = (x + radius > xyzMap.cols) ? xyzMap.cols : x + radius;
-	
+
 	int count = 0;
 	double average = 0;
 	for (int r = r_lower; r < r_upper; r++) {
@@ -108,7 +108,7 @@ cv::Vec3f Util::averageAroundPoint(cv::Mat xyzMap, cv::Point2i pt, int radius)
 			}
 		}
 	}
-	
+
 	if (count == 0) {
 		return 0;
 	}

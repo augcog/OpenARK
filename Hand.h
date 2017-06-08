@@ -14,6 +14,8 @@
 
 class Hand {
 public:
+
+
 	// Public constructors
 	/**
 	* Default constructor for a hand object
@@ -59,7 +61,7 @@ public:
 	* (i,j) coordinates of hand centroid
 	*/
 	cv::Point2i centroid_ij;
-	
+
 	/**
 	* (x,y,z) position of detected defects
 	*/

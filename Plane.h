@@ -45,7 +45,7 @@ public:
 	* Deconstructs the plane object.
 	*/
 	~Plane();
-	
+
 	/**
 	* Initializes all the required point clouds.
 	* @param [in] src the raw xyzMap

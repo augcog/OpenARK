@@ -1,5 +1,5 @@
 #pragma once
-#include <opencv/cxcore.h>
+//OpenCV libraries
 #include "opencv2/highgui/highgui.hpp"
 
 /**
@@ -13,7 +13,7 @@ public:
 	* Should be overriden by a concerte implementation specific to the RGB camera
 	*/
 	virtual void update() = 0;
-	
+
 	/**
 	* Returns the current frame.
 	* @return the current frame

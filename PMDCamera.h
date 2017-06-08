@@ -96,8 +96,7 @@ private:
 	float* dists;
 	float* amps;
 
-	IplImage * frame;
-	//mona cv::Mat frame;
+	cv::Mat frame;
 	cv::KalmanFilter KF;
 	cv::Mat_<float> measurement;
 };

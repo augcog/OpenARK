@@ -1,5 +1,4 @@
 #pragma once
-
 // OpenARK Libraries
 #include "Hand.h"
 #include "Plane.h"
@@ -90,7 +89,7 @@ private:
 	* @param cluster point cloud of the object
 	*/
 	void checkEdgeConnected(cv::Mat cluster);
-	
+
 	/**
 	* Check whether the object is a hand
 	* @param cluster the input point cloud

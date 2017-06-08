@@ -40,19 +40,19 @@ int main() {
 
 	StreamingAverager handAverager = StreamingAverager(4, 0.1);
 	StreamingAverager paleeteAverager = StreamingAverager(6, 0.05);
-	
+
 	while (true)
 	{
 		pmd->update();
-		
+
 		/**
 		std::string filename = "..//OpenARK_Datasets//TwoHandDataSet1//img" + std::to_string(frame) + ".yml";
 		if (!pmd->readImage(filename))
 			break;
 		**/
-		
+
 		// Loading image from sensor
-		
+
 		pmd->removeNoise();
 		cv::imshow("XYZ Map", Visualizer::visualizeXYZMap(pmd->getXYZMap()));
 		if (pmd->badInput) {
@@ -60,11 +60,11 @@ int main() {
 		}
 
 		// Classifying objects in the scene
-		
+
 		pmd->computeClusters(0.02, 500);
 		std::vector<cv::Mat> clusters = pmd->getClusters();
 		std::vector<Object3D> objects;
-		
+
 		int handObjectIndex = -1, planeObjectIndex = -1;
 		for (int i = 0; i < clusters.size(); i++) {
 			Object3D obj = Object3D(clusters[i].clone());
@@ -80,7 +80,7 @@ int main() {
 		}
 
 		// Interprate the relationship between the objects
-		
+
 		bool clicked = false, paletteFound = false;
 		Object3D handObject, planeObject;
 		cv::Point paletteCenter(-1. -1);
@@ -88,7 +88,7 @@ int main() {
 		if (planeObjectIndex != -1 && handObjectIndex != -1) {
 			planeObject = objects[planeObjectIndex];
 			handObject = objects[handObjectIndex];
-			
+
 			clicked = handObject.getHand().touchObject(planeObject.getPlane().getPlaneEquation(), planeObject.getPlane().R_SQUARED_DISTANCE_THRESHOLD * 5);
 			cv::Mat scene = Visualizer::visualizePlaneRegression(pmd->getXYZMap(), planeObject.getPlane().getPlaneEquation(), planeObject.getPlane().R_SQUARED_DISTANCE_THRESHOLD, clicked);
 			//scene = Visualizer::visualizeHand(scene, handObject.getHand().pointer_finger_ij, handObject.getHand().shape_centroid_ij);
@@ -117,7 +117,7 @@ int main() {
 		}
 
 		// Organize the data and send to game engine
-		
+
 		std::string handX = "-", handY = "-", handZ = "-";
 		std::string paletteX = "-", paletteY = "-", paletteZ = "-";
 		std::string clickStatus = "2";
@@ -154,8 +154,8 @@ int main() {
 		std::string tempS = "";
 		tempS = handX + "%" + handY + "%" + handZ + "%" + paletteX + "%" + paletteY + "%" + paletteZ + "%" + clickStatus + "%" + num_fingers;
 		u.send(tempS);
-		
-		
+
+
 
 		/**** Start: Write Frames to File ****/
 		//std::string filename = "img" + std::to_string(frame) + ".yml";
@@ -163,7 +163,7 @@ int main() {
 		//std::cout << filename << std::endl;
 		/**** End: Write Frames to File ****/
 
-		
+
 
 		/**** Start: Loop Break Condition ****/
 		int c = cvWaitKey(1);

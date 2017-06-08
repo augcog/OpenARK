@@ -17,7 +17,7 @@ void Calibration::XYZToUnity(DepthCamera& depth_cam, int num_boards, int board_w
 	upper_left.push_back(cv::Point3f(0.0, 0.08, 0.35));
 	upper_left.push_back(cv::Point3f(0.0, -0.02, 0.35));
 	Unity_points = prepareUnityData(upper_left, 0.03, board_h, board_w);
-	
+
 	int success = 0;
 
 	// Collect data for calibration
@@ -44,7 +44,7 @@ void Calibration::XYZToUnity(DepthCamera& depth_cam, int num_boards, int board_w
 		// Find chessboards on amplitude
 		found1 = findChessboardCorners(ampGray, board_sz, cornersAmp, CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_FILTER_QUADS);
 
-		
+
 		if (found1) {
 			cornerSubPix(ampGray, cornersAmp, cv::Size(11, 11), cv::Size(-1, -1), cv::TermCriteria(CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 30, 0.1));
 			cv::Mat ampRGB = ampGray.clone();
@@ -74,7 +74,7 @@ void Calibration::XYZToUnity(DepthCamera& depth_cam, int num_boards, int board_w
 				printf("%d points recorded!\n", cornersXYZ.size());
 			}
 		}
-		
+
 
 		int c = cvWaitKey(1);
 		if (c == 'q' || c == 'Q' || c == 27) {
@@ -175,7 +175,7 @@ double Calibration::reprojectXYZtoRGB()
 std::vector<std::vector<cv::Point3f>> Calibration::prepareUnityData(std::vector<cv::Point3f> upper_left, float distance, int num_rows, int num_cols)
 {
 	std::vector<std::vector<cv::Point3f>> Unity_points;
-	
+
 	for (int i = 0; i < upper_left.size(); i++) {
 		std::vector<cv::Point3f> points;
 		for (int y = 0; y < num_rows; y++) {

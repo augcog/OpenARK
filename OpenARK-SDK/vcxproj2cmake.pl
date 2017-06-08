@@ -37,34 +37,34 @@ make($filenode_ref, $item_def_ref, %filters);
 sub get_filters {
     my ($vcxproj_filters_xml) = @_;
     my %filters = ();
-  
+
     my @itemgroups = @{$vcxproj_filters_xml->{Project}->{ItemGroup}};
-    
+
     # first itemgroup is list of filters
     for my $filter (@{$itemgroups[0]->{Filter}}) {
         my $filtername = $filter->{-Include};
         my @files = ();
         @{$filters{$filtername}} = @files;
     }
-    
+
     # second itemgroup contains sorce files filter information
     for my $clcompile (@{$itemgroups[1]->{ClCompile}}) {
         my $filename = $clcompile->{-Include};
         my $filter = $clcompile->{Filter};
         push @{$filters{$filter}}, $filename;
     }
-    
+
     # third itemgroup contains header files filter information
     for my $clinclude (@{$itemgroups[2]->{ClInclude}}) {
         my $filename = $clinclude->{-Include};
         my $filter = $clinclude->{Filter};
         push @{$filters{$filter}}, $filename;
     }
-    
+
     # fourth itemgroup contains filter information for files that should not compiled (like readme)
-    
+
     # fifth itemgroup contains recources filter
-    
+
     # remove empty arrays
     my @toDelete;
     for my $filter (keys %filters) {
@@ -74,7 +74,7 @@ sub get_filters {
         }
     }
     #delete @filters{@toDelete};
-    
+
     return %filters;
 }
 
@@ -155,7 +155,7 @@ sub render_find_packages {
     my ($tx, @srcs) = @_;
     my %find_packages_supported_by_cmake = (
         # include_pattern => package_name
-        
+
         #'' => 'ALSA',
         #'' => 'Armadillo',
         #'' => 'ASPELL',
@@ -290,35 +290,35 @@ sub render_find_packages {
         #'' => 'X11',
 		'xercesc' => 'XercesC',
         #'' => 'XMLRPC',
-        'zlib.h' => 'ZLIB',        
+        'zlib.h' => 'ZLIB',
     );
     my $rendered_find_packages = '';
-    
-    # find all libs that used 
+
+    # find all libs that used
     my @libs_to_find_patterns = keys(%find_packages_supported_by_cmake);
     my @libs;
-    for my $file (@srcs) {        
+    for my $file (@srcs) {
         # find libs that the file uses
         open my $info, $file or die "Could not open $file: $!";
-        while( my $line = <$info>)  {  
+        while( my $line = <$info>)  {
             if ($line =~ /#\s*include/) {
                 my @lib_pattern_indexes_to_delete;
-                
+
                 for my $lib_match (@libs_to_find_patterns) {
                     if ($line =~ m/^\s*#\s*include\s*<$lib_match/) {
                         my $lib = $find_packages_supported_by_cmake{$lib_match};
                         push @libs, $lib;
-                        
+
                         my $lib_index = 0;
                         $lib_index++ until $libs_to_find_patterns[$lib_index] eq $lib_match;
                         push @lib_pattern_indexes_to_delete, $lib_index;
                     }
                 }
-                
+
                 for my $index (@lib_pattern_indexes_to_delete) {
-                    splice(@libs_to_find_patterns, $index, 1);    
+                    splice(@libs_to_find_patterns, $index, 1);
                 }
-            } 
+            }
         }
         close $info;
     }
@@ -329,7 +329,7 @@ sub render_find_packages {
             package_upcase => uc $lib,
             );
         warn Dumper(%vars);
-        
+
         try {
             my $render = $tx->render( 'CMakeFindPackage.tx', \%vars );
             $rendered_find_packages = $rendered_find_packages . $render;
@@ -343,9 +343,9 @@ sub render_find_packages {
 
 sub render_source_groups {
     my ($tx, %filters) = @_;
-    
+
     my $rendered_source_groups = '';
-    for my $filter (keys %filters) {        
+    for my $filter (keys %filters) {
         my @files = @{$filters{$filter}};
         $filter =~ s/\\/\\\\/g;
         my %vars = (
@@ -353,15 +353,15 @@ sub render_source_groups {
             files => +(join "\n\t", @files),
         );
         warn Dumper(%vars);
-        
+
         try {
             my $render = $tx->render( 'CMakeSourceGroup.tx', \%vars );
             $rendered_source_groups = $rendered_source_groups . $render;
         } catch {
             print "caught error: $_\n";
-        };        
+        };
     }
-    
+
     return Text::Xslate::Util::mark_raw($rendered_source_groups);
 }
 

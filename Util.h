@@ -1,6 +1,5 @@
 #pragma once
 // OpenCV Libraries
-#include <opencv/cxcore.h>
 #include "opencv2/imgproc/imgproc.hpp"
 
 // Constants Redefined
@@ -15,6 +14,7 @@
 class Util
 {
 public:
+
 	/**
 	* Generates a random RGB color.
 	* @return random RGB color in Vec3b format

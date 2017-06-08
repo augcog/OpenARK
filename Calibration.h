@@ -3,8 +3,6 @@
 #include <fstream>
 
 // OpenCV Libraries
-#include <opencv/cxcore.h>
-#include <opencv/highgui.h>
 #include "opencv2/calib3d/calib3d.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include <opencv2/video/tracking.hpp>
@@ -55,7 +53,7 @@ public:
 	* @return cummulative reprojection error
 	*/
 	static double reprojectXYZToUnity(std::vector<std::vector<cv::Point3f>> XYZ_points, std::vector<std::vector<cv::Point3f>> Unity_points, Eigen::MatrixXf R, Eigen::MatrixXf T);
-	
+
 	/**
 	* Reproject the (x,y,z) points to (i,j) RGB image points with the RT matrix to test for error.
 	*/
@@ -69,7 +67,7 @@ public:
 	* @param num_cols number of columns (inner intersections)
 	*/
 	static std::vector<std::vector<cv::Point3f>> prepareUnityData(std::vector<cv::Point3f> upper_left, float distance, int num_rows, int num_cols);
-	
+
 	/**
 	* Write calibration data points to file
 	* @param points data points to be written to file

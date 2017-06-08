@@ -12,7 +12,7 @@ MACRO(ADD_MSVC_PRECOMPILED_HEADER PrecompiledHeader PrecompiledSource SourcesVar
                                            OBJECT_OUTPUTS "${PrecompiledBinary}")
     SET_SOURCE_FILES_PROPERTIES(${Sources}
                                 PROPERTIES COMPILE_FLAGS "/Yu\"${PrecompiledBinary}\" /FI\"${PrecompiledBinary}\" /Fp\"${PrecompiledBinary}\""
-                                           OBJECT_DEPENDS "${PrecompiledBinary}")  
+                                           OBJECT_DEPENDS "${PrecompiledBinary}")
     # Add precompiled header to SourcesVar
     LIST(APPEND ${SourcesVar} ${PrecompiledSource})
   ENDIF(MSVC)
@@ -45,7 +45,7 @@ SET(${this_target}_HEADER_FILES
 
 [% source_groups %]
 
-## section: precompiled header	
+## section: precompiled header
 #ADD_MSVC_PRECOMPILED_HEADER("precompiled.h" "precompiled.cpp" MySources)
 #ADD_LIBRARY(MyLibrary ${MySources})
 
@@ -76,7 +76,7 @@ ADD_LIBRARY(${this_target} MODULE ${${this_target}_SOURCE_FILES} )
 [%- IF lib -%]
 ## section: add dependency
 # dependency determines overall build order.
-ADD_DEPENDENCIES(${this_target} 
+ADD_DEPENDENCIES(${this_target}
     [% $lib %]
 	)
 
@@ -85,4 +85,3 @@ TARGET_LINK_LIBRARIES( ${this_target}
         [% $lib %]
         )
 [%- END -%]
-

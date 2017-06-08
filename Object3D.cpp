@@ -16,16 +16,16 @@ Object3D::Object3D(cv::Mat cluster) {
 	hasShape = false;
 
 	// Step 1: determine whether cluster is hand
-	
+
 	if (checkForHand(cluster, 0.005, 0.25)) {
 		hand = Hand(cluster, 50);
 		hasHand = true;
 		return;
 	}
-	
-	
+
+
 	// Step 2: determine whether there is a plane
-	
+
 	plane = new Plane(cluster);
 	// Step 2.1 If there is plane, remove plane and look for hand
 	std::vector<cv::Point2i> points = plane->getPlaneIndicies();
@@ -38,7 +38,7 @@ Object3D::Object3D(cv::Mat cluster) {
 			cluster.at<cv::Vec3f>(y, x)[1] = 0;
 			cluster.at<cv::Vec3f>(y, x)[2] = 0;
 		}
-		
+
 		cv::Point center = Util::findCentroid(cluster);
 
 		cv::Mat hand_cluster = cv::Mat::zeros(cluster.rows, cluster.cols, cluster.type());
@@ -53,8 +53,8 @@ Object3D::Object3D(cv::Mat cluster) {
 			}
 		}
 	}
-	
-	
+
+
 	// Step 2.1.1 If there is plane, no hand, then the rest of points are shape
 	shape = cluster;
 	hasShape = true;
@@ -72,7 +72,7 @@ cv::Mat Object3D::getShape() {
 	return shape;
 }
 
-double Object3D::centroidCircleSweep(cv::Mat cluster, double distance) 
+double Object3D::centroidCircleSweep(cv::Mat cluster, double distance)
 {
 	cv::Mat channels[3];
 	cv::split(cluster, channels);
@@ -82,13 +82,13 @@ double Object3D::centroidCircleSweep(cv::Mat cluster, double distance)
 	cv::Moments m = cv::moments(channels[2], false);
 	cv::Point center(m.m10 / m.m00, m.m01 / m.m00);
 	cv::circle(show_img, center, 2, cv::Scalar(255, 0, 0),2);
-	
+
 	// Step 2: Find the radius (pixels) that correspond to distance (meters)
 	double distancePerPixel = Util::euclideanDistancePerPixel(cluster, center, 5);
 	int radius = distance / distancePerPixel;
 	if (radius <= 0 || radius > cluster.cols / 4) {
 		return -1;
-	}	
+	}
 
 	// Step 3: Extract all pixels within distance
 	cv::Mat binary_img;

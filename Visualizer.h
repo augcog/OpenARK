@@ -82,7 +82,7 @@ private:
 	* @param [in] depthMap matrix to be visualized
 	* @return a CV_8UC3 representation of the input matrix
 	*/
-	
+
 
 	/**
 	* PCL point cloud viewer

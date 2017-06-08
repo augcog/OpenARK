@@ -12,7 +12,7 @@ MACRO(ADD_MSVC_PRECOMPILED_HEADER PrecompiledHeader PrecompiledSource SourcesVar
                                            OBJECT_OUTPUTS "${PrecompiledBinary}")
     SET_SOURCE_FILES_PROPERTIES(${Sources}
                                 PROPERTIES COMPILE_FLAGS "/Yu\"${PrecompiledBinary}\" /FI\"${PrecompiledBinary}\" /Fp\"${PrecompiledBinary}\""
-                                           OBJECT_DEPENDS "${PrecompiledBinary}")  
+                                           OBJECT_DEPENDS "${PrecompiledBinary}")
     # Add precompiled header to SourcesVar
     LIST(APPEND ${SourcesVar} ${PrecompiledSource})
   ENDIF(MSVC)
@@ -26,7 +26,7 @@ PROJECT(${this_target})
 
 ## section: include directory
 INCLUDE_DIRECTORIES(
-  
+
   )
 
 ## section: source files
@@ -55,7 +55,7 @@ SET(${this_target}_HEADER_FILES
 	..\Webcam.h
     )
 
-SOURCE_GROUP("Source Files" FILES 
+SOURCE_GROUP("Source Files" FILES
 	..\main.cpp
 	..\Sensor.cpp
 	..\DepthSensor.cpp
@@ -65,7 +65,7 @@ SOURCE_GROUP("Source Files" FILES
 	..\Webcam.cpp
 	..\Clustering.cpp
 	)
-SOURCE_GROUP("Header Files" FILES 
+SOURCE_GROUP("Header Files" FILES
 	..\Sensor.h
 	..\DepthSensor.h
 	..\PMDSensor.h
@@ -75,12 +75,12 @@ SOURCE_GROUP("Header Files" FILES
 	..\Clustering.h
 	..\Hand.h
 	)
-SOURCE_GROUP("Resource Files" FILES 
-	
+SOURCE_GROUP("Resource Files" FILES
+
 	)
 
 
-## section: precompiled header	
+## section: precompiled header
 #ADD_MSVC_PRECOMPILED_HEADER("precompiled.h" "precompiled.cpp" MySources)
 #ADD_LIBRARY(MyLibrary ${MySources})
 
@@ -93,9 +93,7 @@ LIST(APPEND ${this_target}_SOURCE_FILES ${${this_target}_HEADER_FILES})
 #  - DO NOT add  the following definitions(already defined in ${OSP_DEFINITIONS}:
 #   -DSHP, -DWIN32, -D_WINDOWS, -D_DEBUG, -D_USRDLL, -D_CRT_SECURE_NO_DEPRECATE
 ADD_DEFINITIONS(
-    
+
     )
 
 ## section: add target
-
-

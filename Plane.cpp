@@ -15,11 +15,11 @@ Plane::Plane(cv::Mat &src)
 	upsampled_colored_cloud = new pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
 
 	initializeCloud(src);
-	
+
 	if (cloud->get()->width < CLOUD_SIZE_THRESHOLD) {
 		return;
 	}
-	
+
 	compute();
 }
 
@@ -50,7 +50,7 @@ int Plane::compute()
 	if (index_max == -1) {
 		return -1;
 	}
-	
+
 	computePlaneLSE(clusters[index_max]);
 	computeSphereLSE(clusters[index_max]);
 
@@ -242,7 +242,7 @@ void Plane::initializeCloud(cv::Mat &src)
 			}
 		}
 	}
-	
+
 }
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr Plane::getCloud()

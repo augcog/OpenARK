@@ -78,15 +78,23 @@ void DepthCamera::removeNoise() {
 
 	for (int y = 0; y < xyzMap.rows; y++) {
 		for (int x = 0; x < xyzMap.cols; x++) {
-		    //if (xyzMap.at<cv::Vec3f>(y, x)[2] > 0.9f || ampMap.at<float>(y, x) < CONFIDENCE_THRESHHOLD)
-			if (xyzMap.at<cv::Vec3f>(y,x)[2] > 0.9f)
-			{
-				xyzMap.at<cv::Vec3f>(y, x)[0] = 0;
-				xyzMap.at<cv::Vec3f>(y, x)[1] = 0;
-				xyzMap.at<cv::Vec3f>(y, x)[2] = 0;
+			if (ampMap.data != NULL) {
+				if (xyzMap.at<cv::Vec3f>(y, x)[2] > 0.9f || ampMap.at<float>(y, x) < CONFIDENCE_THRESHHOLD) {
+					xyzMap.at<cv::Vec3f>(y, x)[0] = 0;
+					xyzMap.at<cv::Vec3f>(y, x)[1] = 0;
+					xyzMap.at<cv::Vec3f>(y, x)[2] = 0;
+				}
+			}
+			else {
+				if (xyzMap.at<cv::Vec3f>(y, x)[2] > 0.9f){
+					xyzMap.at<cv::Vec3f>(y, x)[0] = 0;
+					xyzMap.at<cv::Vec3f>(y, x)[1] = 0;
+					xyzMap.at<cv::Vec3f>(y, x)[2] = 0;
+				}
 			}
 		}
 	}
+
 
 	cv::Mat channels[3];
 	cv::split(xyzMap, channels);

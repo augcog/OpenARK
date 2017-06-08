@@ -1,6 +1,7 @@
 #include "Hand.h"
 #include "Util.h"
 #include "Visualizer.h"
+#include "global.h"
 
 Hand::Hand()
 {
@@ -30,8 +31,8 @@ void Hand::analyzeHand(cv::Mat xyzMap)
 	// Resize input
 	cv::Mat input;
 	cv::pyrUp(normalizedDepthMap, input, cv::Size(normalizedDepthMap.cols * 2, normalizedDepthMap.rows * 2));
-	cv::pyrUp(input, input, cv::Size(input.cols * 2, input.rows * 2));
 
+	cv::pyrUp(input, input, cv::Size(input.cols * 2, input.rows * 2));
 	cv::Mat threshold_output;
 	std::vector< std::vector<cv::Point> > contours;
 	std::vector<cv::Vec4i> hierarchy;
@@ -205,8 +206,17 @@ void Hand::analyzeHand(cv::Mat xyzMap)
 			cv::line(img, defects_ij[i], centroid_ij, cv::Scalar(255, 0, 255), 2);
 		}
 	}
-	cv::imshow("Contours", img);
 
+	if (camera_name == "sr300") {
+		cv::Mat img_dst;
+		cv::resize(img, img_dst, cv::Size(640, 489), 0, 0, cv::INTER_AREA);
+		cv::namedWindow("Contours", CV_WINDOW_AUTOSIZE);
+		cv::imshow("Contours", img_dst);
+	}
+	else {
+		cv::namedWindow("Contours", CV_WINDOW_AUTOSIZE);
+		cv::imshow("Contours", img);
+	}
 
 }
 

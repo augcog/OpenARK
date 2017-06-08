@@ -15,7 +15,7 @@
 int main() {
 	DepthCamera* pmd = new PMDCamera();
 	int frame = 0;
-	
+
 	while (true)
 	{
 		// Update the current frame
@@ -26,7 +26,7 @@ int main() {
 
 		// Visualize the XYZ Map
 		cv::imshow("XYZ Map", Visualizer::visualizeXYZMap(pmd->getXYZMap()));
-		
+
 		/**** Start: Loop Break Condition ****/
 		int c = cvWaitKey(1);
 		if (c == 'q' || c == 'Q' || c == 27) {
