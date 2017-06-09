@@ -1,0 +1,28 @@
+﻿  Webcam.cpp
+c:\openark\rgbcamera.h(2): fatal error C1083: Cannot open include file: 'opencv/cxcore.h': No such file or directory
+  Visualizer.cpp
+c:\openark\visualizer.h(3): fatal error C1083: Cannot open include file: 'opencv2/core/core.hpp': No such file or directory
+  Util.cpp
+c:\openark\util.h(3): fatal error C1083: Cannot open include file: 'opencv/cxcore.h': No such file or directory
+  UDPSender.cpp
+c:\openark\udpsender.cpp(16): warning C4244: '=': conversion from 'SOCKET' to 'int', possible loss of data
+c:\openark\udpsender.cpp(32): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+  StreamingAverager.cpp
+c:\openark\streamingaverager.h(6): fatal error C1083: Cannot open include file: 'opencv/cxcore.h': No such file or directory
+  RGBCamera.cpp
+c:\openark\rgbcamera.h(2): fatal error C1083: Cannot open include file: 'opencv/cxcore.h': No such file or directory
+  PMDCamera.cpp
+c:\openark\pmdcamera.h(6): fatal error C1083: Cannot open include file: 'pmdsdk2.h': No such file or directory
+  Plane.cpp
+c:\openark\plane.h(8): fatal error C1083: Cannot open include file: 'opencv2/highgui/highgui.hpp': No such file or directory
+  Object3D.cpp
+c:\openark\hand.h(8): fatal error C1083: Cannot open include file: 'opencv2/core/core.hpp': No such file or directory
+  main.cpp
+c:\openark\main.cpp(8): fatal error C1083: Cannot open include file: 'opencv/cxcore.h': No such file or directory
+  Hand.cpp
+c:\openark\hand.h(8): fatal error C1083: Cannot open include file: 'opencv2/core/core.hpp': No such file or directory
+  DepthCamera.cpp
+c:\openark\depthcamera.h(7): fatal error C1083: Cannot open include file: 'opencv/cxcore.h': No such file or directory
+  Calibration.cpp
+c:\openark\calibration.h(6): fatal error C1083: Cannot open include file: 'opencv/cxcore.h': No such file or directory
+  Generating Code...
