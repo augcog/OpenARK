@@ -113,8 +113,6 @@ void SR300Camera::fillInZCoords()
 			xyzBuffer.emplace_back(cv::Point3f(pos3D[k].x / 1000.0f, pos3D[k].y / 1000.0f, pos3D[k].z / 1000.0f));
 	}
 	xyzMap = cv::Mat(xyzBuffer, true).reshape(3, 480);
-	cv::namedWindow("XYZ Image by OpenARK", CV_WINDOW_AUTOSIZE);
-	cv::imshow("XYZ Image by OpenARK", Visualizer::visualizeXYZMap(xyzMap));
 }
 
 

@@ -59,7 +59,8 @@ PMDCamera::PMDCamera(bool use_live_sensor)
 	numPixels = dd.img.numRows * dd.img.numColumns; // Number of pixels in camera
 	dists = new float[3 * numPixels]; // Dists contains XYZ values. needs to be 3x the size of numPixels
 	amps = new float[numPixels];
-    frame.create(dd.img.numRows, dd.img.numColumns, CV_8UC3);
+    /*
+	frame.create(dd.img.numRows, dd.img.numColumns, CV_8UC3);
 
 	KF.init(6, 3, 0);
 	KF.transitionMatrix = (cv::Mat_<float>(6, 6) << 1, 0, 0, 1, 0, 0,
@@ -76,7 +77,7 @@ PMDCamera::PMDCamera(bool use_live_sensor)
 	setIdentity(KF.processNoiseCov, cv::Scalar::all(.001)); // Adjust this for faster convergence - but higher noise
 	setIdentity(KF.measurementNoiseCov, cv::Scalar::all(1e-1));
 	setIdentity(KF.errorCovPost, cv::Scalar::all(.1));
-
+	*/
 }
 
 /***

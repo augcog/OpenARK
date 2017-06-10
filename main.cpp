@@ -30,7 +30,7 @@ int main() {
 	else if (camera_name == "sr300") {
 		camera = new SR300Camera();
 	}
-	OutputDebugStringW(L"Write this to Output window in VS14.");
+
 	//RGBCamera *cam = new Webcam(1);
 	int frame = 0;
 	//Calibration::XYZToUnity(*pmd, 4, 4, 3);
