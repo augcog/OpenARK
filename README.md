@@ -16,7 +16,7 @@ Hardware
 - Transparent AR Glasses (optional)
 
 Software
-- OpenCV 3.2
+- OpenCV 3.2.0
 - PCL 1.8
 - OpenNI 1.5.8
 - Boost 1.6.4
@@ -42,7 +42,10 @@ Code used to run the demo video is included in main.cpp. Additional sample code 
 ## Known issues
 
 OpenCV prior to 3.2.0 does not offer prebuilt VC14+ binaries. Running VC12 OpenCV binaries with VC14 will result in memories errors in findCountours(). If you are using VC12+ to compile OpenARK, you will need to use CMake to rebuilt OpenCV from source.
-We have used OpenCV 3.2.0 which comes with OpenCV binaries for VC14 to avoid this problem.
+We have used OpenCV 3.2.0 which comes with OpenCV binaries for VC14 to avoid this problem when using Visual Studio 2015.
+
+If you use `using namespace Intel::RealSense;` you will receive the error `Hand::Ambiguous symbol` hence when accessing methods and class members of RealSense use `Intel::RealSense`
+
 
 ## Getting help
 
@@ -56,4 +59,4 @@ The Center for Augmented Cognition welcome interested industry partners to join 
 
 ## Credits and references
 
-Bill Zhou, Allen Yang, S.Shankar, Will Huang, Larry Yang, Eric Nyugen, Michelli Ni, Peter Li, Jessica Jiang, Mona Jalal.
+Bill Zhou, Allen Yang, S. Shankar Sastry, Will Huang, Larry Yang, Eric Nyugen, Michelli Ni, Peter Li, Jessica Jiang, Mona Jalal.

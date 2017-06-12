@@ -170,8 +170,6 @@ int main() {
 		//std::cout << filename << std::endl;
 		/**** End: Write Frames to File ****/
 
-
-
 		/**** Start: Loop Break Condition ****/
 		int c = cv::waitKey(1);
 		if (c == 'q' || c == 'Q' || c == 27) {

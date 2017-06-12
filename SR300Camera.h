@@ -27,7 +27,6 @@ class SR300Camera : public DepthCamera
 {
 public:
 
-
 	/**
 	* Public constructor initializing the SR300 Camera.
 	* @param use_live_sensor uses input from real sensor if TRUE. Otherwise reads from input file. Default is set to TRUE.
@@ -59,7 +58,6 @@ private:
 	*/
 	float getX(int i, int j) const;
 
-
 	/**
 	* Getter method for the x-coordinate at (i,j).
 	* @param i ith row
@@ -85,7 +83,6 @@ private:
 	* Update the values in the ampMap.
 	*/
 	void fillInAmps();
-
 
 	//Private Variables
 	float* dists;

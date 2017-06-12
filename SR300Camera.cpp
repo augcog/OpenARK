@@ -3,12 +3,10 @@
 #include <iostream>
 
 
-
 /***
 Private constructor for the SR300 Camera depth sensor
 ***/
 using namespace std;
-
 
 
 /***
@@ -43,7 +41,6 @@ SR300Camera::SR300Camera(bool use_live_sensor)
 	device = cm->QueryDevice();
 }
 
-
 /***
 Public deconstructor for the SR300 Camera depth sensor
 ***/
@@ -57,7 +54,6 @@ void SR300Camera::destroyInstance()
 	printf("sensor closed\n");
 }
 
-
 /***
 Create xyzMap, zMap, ampMap, and flagMap from sensor input
 ***/
@@ -68,7 +64,6 @@ void SR300Camera::update()
 	fillInZCoords();
 	sm->ReleaseFrame();
 }
-
 
 /***
 Reads the depth data from the sensor and fills in the matrix
@@ -115,7 +110,6 @@ void SR300Camera::fillInZCoords()
 	xyzMap = cv::Mat(xyzBuffer, true).reshape(3, 480);
 }
 
-
 /***
 Reads the amplitude data from the sensor and fills in the matrix
 ***/
@@ -123,7 +117,6 @@ void SR300Camera::fillInAmps()
 {
 	ampMap.data = NULL;
 }
-
 
 /***
 Returns the X value at (i, j)
@@ -134,7 +127,6 @@ float SR300Camera::getX(int i, int j) const
 	return dists[flat];
 }
 
-
 /***
 Returns the Y value at (i, j)
 ***/
@@ -143,7 +135,6 @@ float SR300Camera::getY(int i, int j) const
 	int flat = j * depth_width * 3 + i * 3;
 	return dists[flat + 1];
 }
-
 
 /***
 Returns the Z value at (i, j)
