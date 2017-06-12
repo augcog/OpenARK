@@ -59,26 +59,9 @@ PMDCamera::PMDCamera(bool use_live_sensor)
 	numPixels = dd.img.numRows * dd.img.numColumns; // Number of pixels in camera
 	dists = new float[3 * numPixels]; // Dists contains XYZ values. needs to be 3x the size of numPixels
 	amps = new float[numPixels];
-    /*
 	frame.create(dd.img.numRows, dd.img.numColumns, CV_8UC3);
-
-	KF.init(6, 3, 0);
-	KF.transitionMatrix = (cv::Mat_<float>(6, 6) << 1, 0, 0, 1, 0, 0,
-													0, 1, 0, 0, 1, 0,
-													0, 0, 1, 0, 0, 1,
-													0, 0, 0, 1, 0, 0,
-													0, 0, 0, 0, 1, 0,
-													0, 0, 0, 0, 0, 1);
-	measurement = cv::Mat_<float>::zeros(3, 1);
-
-	//Initaite Kalman
-	KF.statePre.setTo(0);
-	setIdentity(KF.measurementMatrix);
-	setIdentity(KF.processNoiseCov, cv::Scalar::all(.001)); // Adjust this for faster convergence - but higher noise
-	setIdentity(KF.measurementNoiseCov, cv::Scalar::all(1e-1));
-	setIdentity(KF.errorCovPost, cv::Scalar::all(.1));
-	*/
 }
+
 
 /***
 Public deconstructor for he PMD depth sensor
@@ -91,6 +74,7 @@ void PMDCamera::destroyInstance()
 	pmdClose(hnd);
 	printf("sensor closed\n");
 }
+
 
 /***
 Create xyzMap, zMap, ampMap, and flagMap from sensor input
@@ -143,6 +127,7 @@ void PMDCamera::fillInZCoords()
 	//std::cout << "ncols: " << xyzMap.cols << std::endl;
 }
 
+
 /***
 Reads the amplitude data from the sensor and fills in the matrix
 ***/
@@ -158,6 +143,7 @@ void PMDCamera::fillInAmps()
 	}
 	ampMap.data = (uchar *)amps;
 }
+
 
 /***
 Returns the X value at (i, j)
@@ -176,6 +162,7 @@ float PMDCamera::getY(int i, int j) const
 	int flat = j * dd.img.numColumns * 3 + i * 3;
 	return dists[flat + 1];
 }
+
 
 /***
 Returns the Z value at (i, j)
