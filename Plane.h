@@ -1,12 +1,6 @@
 #pragma once
-// C++ Libraries
-#include <iostream>
-#include <cstdio>
-#include <ctime>
 
 // OpenCV Libaries
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
 // PCL Libaries
@@ -39,7 +33,7 @@ public:
 	* Constructs a plane object from a unsegemented xyzMap.
 	* @param [in] src the raw xyzMap.
 	*/
-	Plane(cv::Mat &src);
+	explicit Plane(cv::Mat &src);
 
 	/**
 	* Deconstructs the plane object.
@@ -56,37 +50,37 @@ public:
 	* Returns the PCL representation of the xyzMap.
 	* @return PCL point cloud
 	*/
-	pcl::PointCloud<pcl::PointXYZ>::Ptr getCloud();
+	pcl::PointCloud<pcl::PointXYZ>::Ptr getCloud() const;
 
 	/**
 	* Returns the PCL representatino of a down sampled xyzMap.
 	* @return down sampled PCL point cloud
 	*/
-	pcl::PointCloud<pcl::PointXYZ>::Ptr getDownCloud();
+	pcl::PointCloud<pcl::PointXYZ>::Ptr getDownCloud() const;
 
 	/**
 	* Returns the planar regression equation of the identified plane.
 	* @return coefficients for the planar regression equation
 	*/
-	std::vector<double> getPlaneEquation();
+	std::vector<double> getPlaneEquation() const;
 
 	/**
 	* Returns the sphereical regression equation of the identified plane.
 	* @return coefficients for the sphereical regression equation
 	*/
-	std::vector<double> getSphereEquation();
+	std::vector<double> getSphereEquation() const;
 
 	/**
 	* Returns the (i,j) indices for which the plane appears on the xyzMap.
 	* @return vector of (i,j) coordinates defining the points that make up the plane on the xyzMap
 	*/
-	std::vector<cv::Point2i> getPlaneIndicies();
+	std::vector<cv::Point2i> getPlaneIndicies() const;
 
 	/**
 	* Returns the (i,j) indices for which the plane appears on the xyzMap.
 	* @return vector of (i,j) coordinates defining the points that make up the plane on the xyzMap
 	*/
-	std::vector<cv::Point2i> getSphereIndices();
+	std::vector<cv::Point2i> getSphereIndices() const;
 
 	/**
 	* Maximum cloud size (pixel) allowed.
@@ -109,12 +103,12 @@ private:
 	* @param [in] normal_estimator a OMP instance of the normal estimator
 	* @param [in] tree a KD-tree used by the normal estimator to preform neareest neighbor searches
 	*/
-	void calculateNormals(pcl::NormalEstimationOMP<pcl::PointXYZ, pcl::Normal> normal_estimator, pcl::search::Search<pcl::PointXYZ>::Ptr tree);
+	void calculateNormals(pcl::NormalEstimationOMP<pcl::PointXYZ, pcl::Normal> normal_estimator, pcl::search::Search<pcl::PointXYZ>::Ptr tree) const;
 
 	/**
 	* Down samples the cloud via a median filter.
 	*/
-	void voxelDownsample();
+	void voxelDownsample() const;
 
 	/**
 	* Aggregates points with like normals.
@@ -145,7 +139,7 @@ private:
 	*/
 	int computeSphereIndices();
 
-	int drawSphereRegressionPoints(cv::Mat &output_mat, cv::Mat &input_mat, std::vector<double> &equation,
+	static int drawSphereRegressionPoints(cv::Mat &output_mat, cv::Mat &input_mat, std::vector<double> &equation,
 		const int rowSize, const int colSize, const double threshold, bool clicked);
 
 	// Private Variables

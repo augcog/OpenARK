@@ -3,32 +3,28 @@
 
 void Calibration::XYZToUnity(DepthCamera& depth_cam, int num_boards, int board_w, int board_h)
 {
-	cv::Size board_sz = cv::Size(board_w, board_h);
-	int board_n = board_w * board_h;
+	auto board_sz = cv::Size(board_w, board_h);
+	auto board_n = board_w * board_h;
 	std::vector<cv::Point2f> cornersAmp; // Corners of amplitude image
 	std::vector<cv::Point3f> cornersXYZ; // Corners of the depth image
 	std::vector<std::vector<cv::Point3f>> XYZ_points;
-
-	// Prepare the Unity side data
-	std::vector<std::vector<cv::Point3f>> Unity_points;
 	std::vector<cv::Point3f> upper_left;
 	upper_left.push_back(cv::Point3f(-0.05, 0.03, 0.40));
 	upper_left.push_back(cv::Point3f(0.05, 0.03, 0.40));
 	upper_left.push_back(cv::Point3f(0.0, 0.08, 0.35));
 	upper_left.push_back(cv::Point3f(0.0, -0.02, 0.35));
-	Unity_points = prepareUnityData(upper_left, 0.03, board_h, board_w);
-
-	int success = 0;
+	auto Unity_points = prepareUnityData(upper_left, 0.03, board_h, board_w);
+	auto success = 0;
 
 	// Collect data for calibration
 	while (success < num_boards)
 	{
 		cornersAmp.clear();
 		cornersXYZ.clear();
-		bool found1 = false;
+		auto found1 = false;
 		depth_cam.update();
 		depth_cam.removeNoise();
-		cv::Mat xyzMap = depth_cam.getXYZMap();
+		auto xyzMap = depth_cam.getXYZMap();
 
 		cv::Mat ampGray;
 		cv::normalize(depth_cam.getAmpMap(), ampGray, 0, 255, cv::NORM_MINMAX, CV_8UC1);
@@ -43,22 +39,22 @@ void Calibration::XYZToUnity(DepthCamera& depth_cam, int num_boards, int board_w
 
 		// Find chessboards on amplitude
 		found1 = findChessboardCorners(ampGray, board_sz, cornersAmp, CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_FILTER_QUADS);
-
-
 		if (found1) {
-			cornerSubPix(ampGray, cornersAmp, cv::Size(11, 11), cv::Size(-1, -1), cv::TermCriteria(CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 30, 0.1));
-			cv::Mat ampRGB = ampGray.clone();
+			cv::cornerSubPix(ampGray, cornersAmp, cv::Size(11, 11), cv::Size(-1, -1), cv::TermCriteria(CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 30, 0.1));
+			auto ampRGB = ampGray.clone();
 			cv::cvtColor(ampRGB, ampRGB, CV_GRAY2BGR);
-			drawChessboardCorners(ampRGB, board_sz, cornersAmp, found1);
+			cv::drawChessboardCorners(ampRGB, board_sz, cornersAmp, found1);
 			cv::imshow("Gray Corners", ampRGB);
 
-			for (int i = 0; i < cornersAmp.size(); i++) {
+			for (auto i = 0; i < cornersAmp.size(); i++)
+			{
 				cornersAmp[i].x = cornersAmp[i].x / 4;
 				cornersAmp[i].y = cornersAmp[i].y / 4;
 			}
 
-			for (int i = 0; i < cornersAmp.size(); i++) {
-				cv::Vec3f xyz = Util::averageAroundPoint(xyzMap, cv::Point2i(cornersAmp[i].x, cornersAmp[i].y), 5);
+			for (auto i = 0; i < cornersAmp.size(); i++)
+			{
+				auto xyz = Util::averageAroundPoint(xyzMap, cv::Point2i(cornersAmp[i].x, cornersAmp[i].y), 5);
 				cv::Point3f pt;
 				pt.x = xyz[0]; pt.y = xyz[1], pt.z = xyz[2];
 				if (pt.z == 0) {
@@ -67,17 +63,18 @@ void Calibration::XYZToUnity(DepthCamera& depth_cam, int num_boards, int board_w
 				cornersXYZ.push_back(pt);
 			}
 
-			int c = cvWaitKey(1);
-			if (c == ' ') {
+			auto c = cv::waitKey(1);
+			if (c == ' ')
+			{
 				success++;
 				XYZ_points.push_back(cornersXYZ);
 				printf("%d points recorded!\n", cornersXYZ.size());
 			}
 		}
 
-
-		int c = cvWaitKey(1);
-		if (c == 'q' || c == 'Q' || c == 27) {
+		auto c = cv::waitKey(1);
+		if (c == 'q' || c == 'Q' || c == 27)
+		{
 			break;
 		}
 	}
@@ -87,47 +84,50 @@ void Calibration::XYZToUnity(DepthCamera& depth_cam, int num_boards, int board_w
 	Calibration::writeDataToFile(XYZ_points, 4, 3, "XYZ.txt");
 	float x_input[3][48];
 	float y_input[3][48];
-	int count = 0;
-	for (int i = 0; i < XYZ_points.size(); i++) {
-		for (int v = 0; v < XYZ_points[i].size(); v++) {
+	auto count = 0;
+	for (auto i = 0; i < XYZ_points.size(); i++)
+	{
+		for (auto v = 0; v < XYZ_points[i].size(); v++)
+		{
 			x_input[0][count] = XYZ_points[i][v].x;
 			x_input[1][count] = XYZ_points[i][v].y;
 			x_input[2][count] = XYZ_points[i][v].z;
-
 			y_input[0][count] = Unity_points[i][v].x;
 			y_input[1][count] = Unity_points[i][v].y;
 			y_input[2][count] = Unity_points[i][v].z;
-
 			count++;
 		}
 	}
 
-	cv::Mat x = cv::Mat(3, 48, CV_32FC1, &x_input); //XYZ
-	cv::Mat y = cv::Mat(3, 48, CV_32FC1, &y_input); //Unity
+	auto x = cv::Mat(3, 48, CV_32FC1, &x_input); //XYZ
+	auto y = cv::Mat(3, 48, CV_32FC1, &y_input); //Unity
 	cv::Mat r, t;
 	computeRT(x, y, &r, &t);
-
 	cv::FileStorage fs("RT_Transform.txt", cv::FileStorage::WRITE);
-
 	fs << "R" << r;
 	fs << "T" << t;
-
 	fs.release();
 }
-void Calibration::computeRT(cv::Mat x, cv::Mat y, cv::Mat *R, cv::Mat *t) {
+void Calibration::computeRT(cv::Mat x, cv::Mat y, cv::Mat *R, cv::Mat *t)
+{
 
 	cv::Mat x_mean, y_mean, H;
 	cv::reduce(x, x_mean, 1, CV_REDUCE_AVG);
 	cv::reduce(y, y_mean, 1, CV_REDUCE_AVG);
-	for (int i = 0; i < x.cols; i++) {
+
+	for (auto i = 0; i < x.cols; i++)
+	{
 		H = H + (x.col(i) - x_mean) * ((y.col(i) - y_mean).t());
 	}
+
 	cv::Mat u, s, v;
 	cv::SVD::compute(H, s, u, v);
 	u = -1 * u;
 	v = -1 * v.t();
 	*R = v * u.t();
-	if (cv::determinant(*R) > 0) {
+
+	if (cv::determinant(*R) > 0)
+	{
 		v.col(2) = -1 * v.col(2);
 		*R = v * u.t();
 	}
@@ -148,8 +148,10 @@ double Calibration::reprojectXYZToUnity(std::vector<std::vector<cv::Point3f>> XY
 	}
 
 	double error = 0;
-	for (int i = 0; i < XYZ_points.size(); i++) {
-		for (int v = 0; v < XYZ_points[i].size(); v++) {
+	for (auto i = 0; i < XYZ_points.size(); i++)
+	{
+		for (auto v = 0; v < XYZ_points[i].size(); v++)
+		{
 			Eigen::MatrixXf pt_xyz(3, 1);
 			Eigen::MatrixXf pt_unity(3, 1);
 			pt_xyz(0, 0) = XYZ_points[i][v].x;
@@ -176,10 +178,13 @@ std::vector<std::vector<cv::Point3f>> Calibration::prepareUnityData(std::vector<
 {
 	std::vector<std::vector<cv::Point3f>> Unity_points;
 
-	for (int i = 0; i < upper_left.size(); i++) {
+	for (auto i = 0; i < upper_left.size(); i++)
+	{
 		std::vector<cv::Point3f> points;
-		for (int y = 0; y < num_rows; y++) {
-			for (int x = 0; x < num_cols; x++) {
+		for (auto y = 0; y < num_rows; y++)
+		{
+			for (auto x = 0; x < num_cols; x++)
+			{
 				points.push_back(cv::Point3f(upper_left[i].x + x * distance, upper_left[i].y - y * distance, upper_left[i].z));
 			}
 		}
@@ -193,9 +198,12 @@ void Calibration::writeDataToFile(std::vector<std::vector<cv::Point3f>> points, 
 {
 	ofstream output_file;
 	output_file.open(filename);
-	for (int i = 0; i < points.size(); i++) {
-		for (int v = 0; v < points[i].size(); v++) {
-			if (v%board_w == 0) {
+	for (auto i = 0; i < points.size(); i++)
+	{
+		for (auto v = 0; v < points[i].size(); v++)
+		{
+			if (v%board_w == 0)
+			{
 				output_file << "\n";
 			}
 			output_file << "(" << points[i][v].x << ", " << points[i][v].y << ", " << points[i][v].z << ") ";

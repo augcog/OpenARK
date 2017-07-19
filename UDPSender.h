@@ -1,7 +1,6 @@
 #pragma once
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <winsock2.h>
-#include <stdio.h>
 #include <iostream>
 
 #pragma comment(lib,"ws2_32.lib") //Winsock Library
@@ -14,7 +13,8 @@
 * UDP client.
 * Used to communicate information with game engines such as Unity
 */
-class UDPSender {
+class UDPSender
+{
 public:
 	/**
 	* Constructs a new UPD sender.
@@ -30,7 +30,7 @@ public:
 	/**
 	* Close the current connection.
 	*/
-	int close();
+	int close() const;
 
 	struct sockaddr_in si_other;
 	int s, slen = sizeof(si_other);

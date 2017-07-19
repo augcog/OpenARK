@@ -1,5 +1,6 @@
 #include "Util.h"
 
+
 cv::Vec3b Util::colorGenerator2()
 {
 	return cv::Vec3b(rand() % 256, rand() % 256, rand() % 256);
@@ -12,16 +13,19 @@ float Util::normalize(float a, float b)
 
 bool Util::isMember(cv::Mat image, int x, int y)
 {
-	if (x < 0 || y < 0 || x >= image.cols || y >= image.rows) {
+	if (x < 0 || y < 0 || x >= image.cols || y >= image.rows)
+	{
 		return false;
 	}
 
-	if (image.at<uchar>(y, x) != 0) {
+	if (image.at<uchar>(y, x) != 0)
+	{
 		return true;
 	}
 
 	return false;
 }
+
 int Util::getDistanceT(int x1, int y1, int x2, int y2)
 {
 	return abs(y1 - y2) + abs(x2 - x1);
@@ -45,21 +49,30 @@ double Util::euclideanDistance2D(cv::Point pt1, cv::Point pt2)
 
 double Util::euclideanDistancePerPixel(cv::Mat xyzMap, cv::Point pt, int radius)
 {
-	int x = pt.x;
-	int y = pt.y;
+	auto x = pt.x;
+	auto y = pt.y;
 
-	int r_lower = (y - radius < 0) ? 0 : y - radius;
-	int c_lower = (x - radius < 0) ? 0 : x - radius;
-	int r_upper = (y + radius > xyzMap.rows) ? xyzMap.rows : y + radius;
-	int c_upper = (x + radius > xyzMap.cols) ? xyzMap.cols : x + radius;
+	auto r_lower = (y - radius < 0) ? 0 : y - radius;
+	auto c_lower = (x - radius < 0) ? 0 : x - radius;
+	auto r_upper = (y + radius > xyzMap.rows) ? xyzMap.rows : y + radius;
+	auto c_upper = (x + radius > xyzMap.cols) ? xyzMap.cols : x + radius;
 
-	int count = 0;
+	auto count = 0;
 	double average = 0;
-	for (int r = r_lower; r < r_upper; r++) {
-		for (int c = c_lower; c < c_upper; c++) {
-			if (xyzMap.at<cv::Vec3f>(r, c)[2] != 0) {
-				double distance = euclideanDistance2D(pt, cv::Point(c, r));
-				if (distance != 0) {
+
+	for (auto r = r_lower; r < r_upper; r++)
+	{
+
+		for (auto c = c_lower; c < c_upper; c++)
+		{
+
+			if (xyzMap.at<cv::Vec3f>(r, c)[2] != 0)
+			{
+
+				auto distance = euclideanDistance2D(pt, cv::Point(c, r));
+
+				if (distance != 0)
+				{
 					average += euclidianDistance3D(xyzMap.at<cv::Vec3f>(pt.y, pt.x), xyzMap.at<cv::Vec3f>(r, c)) / distance;
 					count++;
 				}
@@ -67,40 +80,49 @@ double Util::euclideanDistancePerPixel(cv::Mat xyzMap, cv::Point pt, int radius)
 		}
 	}
 
-	if (average == 0) {
+	if (average == 0)
+	{
 		return average;
 	}
+
 	return average / count;
 }
 
 cv::Mat Util::removePoints(cv::Mat img, std::vector<cv::Point2i> points)
 {
-	cv::Mat result = img.clone();
-	for (int i = 0; i < points.size(); i++) {
-		int x = points[i].x;
-		int y = points[i].y;
+	auto result = img.clone();
+
+	for (auto i = 0; i < points.size(); i++)
+	{
+		auto x = points[i].x;
+		auto y = points[i].y;
 		result.at<cv::Vec3f>(y, x)[0] = 0;
 		result.at<cv::Vec3f>(y, x)[1] = 0;
 		result.at<cv::Vec3f>(y, x)[2] = 0;
 	}
+
 	return result;
 }
 
 cv::Vec3f Util::averageAroundPoint(cv::Mat xyzMap, cv::Point2i pt, int radius)
 {
-	int x = pt.x;
-	int y = pt.y;
-
-	int r_lower = (y - radius < 0) ? 0 : y - radius;
-	int c_lower = (x - radius < 0) ? 0 : x - radius;
-	int r_upper = (y + radius > xyzMap.rows) ? xyzMap.rows : y + radius;
-	int c_upper = (x + radius > xyzMap.cols) ? xyzMap.cols : x + radius;
-
-	int count = 0;
+	auto x = pt.x;
+	auto y = pt.y;
+	auto r_lower = (y - radius < 0) ? 0 : y - radius;
+	auto c_lower = (x - radius < 0) ? 0 : x - radius;
+	auto r_upper = (y + radius > xyzMap.rows) ? xyzMap.rows : y + radius;
+	auto c_upper = (x + radius > xyzMap.cols) ? xyzMap.cols : x + radius;
+	auto count = 0;
 	cv::Vec3f average;
-	for (int r = r_lower; r < r_upper; r++) {
-		for (int c = c_lower; c < c_upper; c++) {
-			if (xyzMap.at<cv::Vec3f>(r, c)[2] != 0) {
+
+	for (auto r = r_lower; r < r_upper; r++)
+	{
+
+		for (auto c = c_lower; c < c_upper; c++)
+		{
+
+			if (xyzMap.at<cv::Vec3f>(r, c)[2] != 0)
+			{
 				average[0] += xyzMap.at<cv::Vec3f>(r, c)[0];
 				average[1] += xyzMap.at<cv::Vec3f>(r, c)[1];
 				average[2] += xyzMap.at<cv::Vec3f>(r, c)[2];
@@ -109,7 +131,8 @@ cv::Vec3f Util::averageAroundPoint(cv::Mat xyzMap, cv::Point2i pt, int radius)
 		}
 	}
 
-	if (count == 0) {
+	if (count == 0)
+	{
 		return 0;
 	}
 
@@ -124,7 +147,9 @@ cv::Point Util::findCentroid(cv::Mat xyzMap)
 {
 	cv::Mat channels[3];
 	cv::split(xyzMap, channels);
-	cv::Moments m = cv::moments(channels[2], false);
+	//using image moments to find center of mass of the depth image
+	auto m = cv::moments(channels[2], false);
+	//Cx=M10/M00 and Cy=M01/M00
 	cv::Point center(m.m10 / m.m00, m.m01 / m.m00);
 	return center;
 }
@@ -132,10 +157,9 @@ cv::Point Util::findCentroid(cv::Mat xyzMap)
 //Function to find Lenght of sides of triangle
 double Util::DistanceTwoPoints(double x1, double y1, double x2, double y2)
 {
-	double x, y, distance;
-	x = x2 - x1;
-	y = y2 - y1;
-	distance = pow(x, 2) + pow(y, 2);
+	auto x = x2 - x1;
+	auto y = y2 - y1;
+	auto distance = pow(x, 2) + pow(y, 2);
 	distance = sqrt(distance);
 	return distance;
 }
@@ -143,8 +167,7 @@ double Util::DistanceTwoPoints(double x1, double y1, double x2, double y2)
 //Function to find angle with Sine rule
 double Util::otherAngleFind(double biggerAngle, double largestDistance, double smallDistance)
 {
-	double otherAngle;
-	otherAngle = smallDistance *sin(biggerAngle*3.14159265 / 180);
+	auto otherAngle = smallDistance *sin(biggerAngle*3.14159265 / 180);
 	otherAngle = otherAngle / largestDistance;
 	otherAngle = asin(otherAngle)*180.0 / PI;
 	return otherAngle;
@@ -153,28 +176,24 @@ double Util::otherAngleFind(double biggerAngle, double largestDistance, double s
 //Function to find angle opposite to largest side of triangle
 double Util::BiggerAngleFind(double largestDistance, double smallDistanceOne, double smallDistanceTwo)
 {
-	double biggerAngle;
-	biggerAngle = pow(smallDistanceOne, 2) + pow(smallDistanceTwo, 2) - pow(largestDistance, 2);
+	auto biggerAngle = pow(smallDistanceOne, 2) + pow(smallDistanceTwo, 2) - pow(largestDistance, 2);
 	biggerAngle = fabs(biggerAngle / (2 * smallDistanceOne*smallDistanceTwo));
 	biggerAngle = acos(biggerAngle)* 180.0 / PI;
 	return biggerAngle;
 }
 
-//Calculate angle of triangle given three coordinates c++ code
+//Calculate angle of triangle given three coordinates
 double Util::TriangleAngleCalculation(double x1, double y1, double x2, double y2, double x3, double y3)
 {
-	double dist1, dist2, dist3;
 	double angle1, angle2, angle3;
 	double total;
-
-	int largestLength = 0;
-	dist1 = DistanceTwoPoints(x1, y1, x2, y2);
-	dist2 = DistanceTwoPoints(x2, y2, x3, y3);
-	dist3 = DistanceTwoPoints(x1, y1, x3, y3);
+	auto largestLength = 0;
+	auto dist1 = DistanceTwoPoints(x1, y1, x2, y2);
+	auto dist2 = DistanceTwoPoints(x2, y2, x3, y3);
+	auto dist3 = DistanceTwoPoints(x1, y1, x3, y3);
 
 	if (dist1>dist2 && dist1 > dist3)
 	{
-		//cout<<"dist1 is greater";
 		angle1 = BiggerAngleFind(dist1, dist2, dist3);
 		angle2 = otherAngleFind(angle1, dist1, dist2);
 		angle3 = otherAngleFind(angle1, dist1, dist3);
@@ -188,13 +207,12 @@ double Util::TriangleAngleCalculation(double x1, double y1, double x2, double y2
 			angle1 = 180 - angle1;
 		}
 	}
+
 	else if (dist2 > dist3 && dist2 > dist1)
 	{
-		//  cout<<"dist2 is greater";
 		angle2 = BiggerAngleFind(dist2, dist1, dist3);
 		angle1 = otherAngleFind(angle2, dist2, dist1);
 		angle3 = otherAngleFind(angle2, dist2, dist3);
-
 		total = angle1 + angle2 + angle3;
 
 		if (total <180)
@@ -202,9 +220,9 @@ double Util::TriangleAngleCalculation(double x1, double y1, double x2, double y2
 			angle2 = 180 - angle2;
 		}
 	}
+
 	else
 	{
-		//    cout<<"dist3 is greater";
 		angle3 = BiggerAngleFind(dist3, dist1, dist2);
 		angle1 = otherAngleFind(angle3, dist3, dist2);
 		angle2 = otherAngleFind(angle3, dist3, dist2);
@@ -216,30 +234,35 @@ double Util::TriangleAngleCalculation(double x1, double y1, double x2, double y2
 			angle3 = 180 - angle3;
 		}
 	}
-
-	//cout << endl << "Angle Between First Point and Second Point = " << angle3 << endl;
-	//cout << "Angle Between First Point and Third Point = " << angle2 << endl;
-	//cout << "Angle Between Second Point and Third Point = " << angle1 << endl;
 	return angle2;
 }
 
 /***
-Recursively performs floodfill on depthMap
+Recursively performs floodfill on depthMap for image segmentation
+Determines pixels in an image that are similar to a seed pixel and connected to it
 ***/
 void Util::floodFill(int x, int y, cv::Mat& depthMap, cv::Mat& mask, double max_distance)
 {
+	//check to see if the point (x,y) is within the depth image
+	//check to see if the end of recursion by checking if depth map is all zero
 	if (x < 0 || x >= depthMap.cols || y < 0 || y >= depthMap.rows || depthMap.at<cv::Vec3f>(y, x)[2] == 0.0)
 		return;
-	if (closeEnough(x, y, depthMap, 4, max_distance)) {
+	//using 4-connectivity to determine if a pixel is connected to another one
+	if (closeEnough(x, y, depthMap, 4, max_distance))
+	//if (closeEnough(x, y, depthMap, 8, max_distance)) //would using 8-connectivity give more accurate results?
+	{
+		//copy the depth map value at (x,y) to mask and zero it out in the depth map
 		mask.at<cv::Vec3f>(y, x) = depthMap.at<cv::Vec3f>(y, x);
 		depthMap.at<cv::Vec3f>(y, x)[0] = 0;
 		depthMap.at<cv::Vec3f>(y, x)[1] = 0;
 		depthMap.at<cv::Vec3f>(y, x)[2] = 0;
 	}
-	else {
+
+	else
+	{
 		return;
 	}
-
+	//try the floodfill algorithm recursively for all the 4-connected neighbors
 	floodFill(x + 1, y, depthMap, mask, max_distance);
 	floodFill(x - 1, y, depthMap, mask, max_distance);
 	floodFill(x, y + 1, depthMap, mask, max_distance);
@@ -251,21 +274,34 @@ Check whether candidate point is close enough to neighboring points
 ***/
 bool Util::closeEnough(int x, int y, cv::Mat& depthMap, int num_neighbors, double max_distance)
 {
-	int num_close = 0;
-	if (x - 1 < 0 || depthMap.at<cv::Vec3f>(y, x - 1)[2] == 0 || Util::euclidianDistance3D(depthMap.at<cv::Vec3f>(y, x), depthMap.at<cv::Vec3f>(y, x - 1)) < max_distance) {
-		num_close++;
-	}
-	if (x + 1 >= depthMap.cols || depthMap.at<cv::Vec3f>(y, x + 1)[2] == 0 || Util::euclidianDistance3D(depthMap.at<cv::Vec3f>(y, x), depthMap.at<cv::Vec3f>(y, x + 1)) < max_distance) {
-		num_close++;
-	}
-	if (y - 1 < 0 || depthMap.at<cv::Vec3f>(y - 1, x)[2] == 0 || Util::euclidianDistance3D(depthMap.at<cv::Vec3f>(y, x), depthMap.at<cv::Vec3f>(y - 1, x)) < max_distance) {
-		num_close++;
-	}
-	if (y + 1 >= depthMap.rows || depthMap.at<cv::Vec3f>(y + 1, x)[2] == 0 || Util::euclidianDistance3D(depthMap.at<cv::Vec3f>(y, x), depthMap.at<cv::Vec3f>(y + 1, x)) < max_distance) {
+	auto num_close = 0;
+    //check to see if the neighbor pixels Euclidean distance is within defined max distance
+	if (x - 1 < 0 || depthMap.at<cv::Vec3f>(y, x - 1)[2] == 0 ||
+		Util::euclidianDistance3D(depthMap.at<cv::Vec3f>(y, x), depthMap.at<cv::Vec3f>(y, x - 1)) < max_distance)
+	{
 		num_close++;
 	}
 
-	if (num_close >= num_neighbors) {
+	if (x + 1 >= depthMap.cols || depthMap.at<cv::Vec3f>(y, x + 1)[2] == 0 ||
+		Util::euclidianDistance3D(depthMap.at<cv::Vec3f>(y, x), depthMap.at<cv::Vec3f>(y, x + 1)) < max_distance)
+	{
+		num_close++;
+	}
+
+	if (y - 1 < 0 || depthMap.at<cv::Vec3f>(y - 1, x)[2] == 0 ||
+		Util::euclidianDistance3D(depthMap.at<cv::Vec3f>(y, x), depthMap.at<cv::Vec3f>(y - 1, x)) < max_distance)
+	{
+		num_close++;
+	}
+
+	if (y + 1 >= depthMap.rows || depthMap.at<cv::Vec3f>(y + 1, x)[2] == 0 ||
+		Util::euclidianDistance3D(depthMap.at<cv::Vec3f>(y, x), depthMap.at<cv::Vec3f>(y + 1, x)) < max_distance)
+	{
+		num_close++;
+	}
+
+	if (num_close >= num_neighbors)
+	{
 		return true;
 	}
 

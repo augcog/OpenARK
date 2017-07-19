@@ -1,6 +1,7 @@
 #include "UDPSender.h"
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 
+
 UDPSender::UDPSender()
 {
 	//Initialise winsock
@@ -20,7 +21,7 @@ UDPSender::UDPSender()
 	}
 
 	//setup address structure
-	memset((char *)&si_other, 0, sizeof(si_other));
+	memset(reinterpret_cast<char *>(&si_other), 0, sizeof(si_other));
 	si_other.sin_family = AF_INET;
 	si_other.sin_port = htons(PORT);
 	si_other.sin_addr.S_un.S_addr = inet_addr(SERVER);
@@ -29,7 +30,7 @@ UDPSender::UDPSender()
 
 int UDPSender::send(std::string message)
 {
-	if (sendto(s, message.c_str(), strlen(message.c_str()), 0, (struct sockaddr *) &si_other, slen) == SOCKET_ERROR)
+	if (sendto(s, message.c_str(), strlen(message.c_str()), 0, reinterpret_cast<struct sockaddr *>(&si_other), slen) == SOCKET_ERROR)
 	{
 		printf("sendto() failed with error code : %d", WSAGetLastError());
 		exit(EXIT_FAILURE);
@@ -37,7 +38,7 @@ int UDPSender::send(std::string message)
 	return 0;
 }
 
-int UDPSender::close()
+int UDPSender::close() const
 {
 	closesocket(s);
 	WSACleanup();

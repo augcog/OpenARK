@@ -8,17 +8,18 @@
 class RGBCamera
 {
 public:
+	virtual ~RGBCamera() = default;
 	/**
 	* Updates the current frame on the RGB camera.
 	* Should be overriden by a concerte implementation specific to the RGB camera
 	*/
-	virtual void update() = 0;
+	virtual void update();
 
 	/**
 	* Returns the current frame.
 	* @return the current frame
 	*/
-	cv::Mat getFrame();
+	cv::Mat getFrame() const;
 
 protected:
 	/**

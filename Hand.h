@@ -1,18 +1,15 @@
 #pragma once
 // C++ Libraries
-#include <iostream>
 #include <vector>
-#include <cmath>
 
 // OpenCV Libraries
-#include <opencv2/core/core.hpp>
 #include <opencv2/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/highgui.hpp>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/imgcodecs.hpp>
 
-class Hand {
+
+
+
+class Hand
+{
 public:
 
 
@@ -87,17 +84,17 @@ private:
 	/**
 	* Find the contour with max number of vertices.
 	**/
-	std::vector<cv::Point> findComplexContour(std::vector< std::vector<cv::Point> > contours);
+	static std::vector<cv::Point> findComplexContour(std::vector< std::vector<cv::Point> > contours);
 
 	/**
 	* Groups vertices within a threshold and selects the median of each group.
 	**/
-	std::vector<cv::Point> clusterConvexHull(std::vector<cv::Point> convexHull, int threshold);
+	std::vector<cv::Point> clusterConvexHull(std::vector<cv::Point> convexHull, int threshold) const;
 
 	/**
 	* Find the centroid of contour using 0th and 1st degree moments
 	**/
-	cv::Point findCenter(std::vector<cv::Point> contour);
+	static cv::Point findCenter(std::vector<cv::Point> contour);
 
 	// Private variables
 	float ANGLE_THRESHHOLD;

@@ -6,17 +6,17 @@ Returns the next frame if next frame is recorded
 Returns the previous frame if next frame is not recorded
 ***/
 void Converter::ConvertPXCImageToOpenCVMat(Intel::RealSense::Image *inImg, Intel::RealSense::ImageData data, cv::Mat *outImg) {
+	auto cvDataType = 0;
+	auto cvDataWidth = 0;
 
-	int cvDataType;
-	int cvDataWidth;
+	auto imgInfo = inImg->QueryInfo();
 
-	Intel::RealSense::Image::ImageInfo imgInfo = inImg->QueryInfo();
-
-	switch (data.format) {
+	switch (data.format)
+	{
 		/* STREAM_TYPE_COLOR */
 	case Intel::RealSense::Image::PIXEL_FORMAT_YUY2: /* YUY2 image  */
 	case Intel::RealSense::Image::PIXEL_FORMAT_NV12: /* NV12 image */
-		throw(0); // Not implemented
+		throw; // Not implemented
 	case Intel::RealSense::Image::PIXEL_FORMAT_RGB32:  /* BGRA layout on a little-endian machine */
 		cvDataType = CV_8UC4;
 		cvDataWidth = 4;
@@ -29,7 +29,6 @@ void Converter::ConvertPXCImageToOpenCVMat(Intel::RealSense::Image *inImg, Intel
 		cvDataType = CV_8U;
 		cvDataWidth = 1;
 		break;
-
 		/* STREAM_TYPE_DEPTH */
 	case Intel::RealSense::Image::PIXEL_FORMAT_DEPTH:  /* 16-bit unsigned integer with precision mm. */
 	case Intel::RealSense::Image::PIXEL_FORMAT_DEPTH_RAW: /* 16-bit unsigned integer with device specific precision (call device->QueryDepthUnit()) */
@@ -40,7 +39,6 @@ void Converter::ConvertPXCImageToOpenCVMat(Intel::RealSense::Image *inImg, Intel
 		cvDataType = CV_32F;
 		cvDataWidth = 4;
 		break;
-
 		/* STREAM_TYPE_IR */
 	case Intel::RealSense::Image::PIXEL_FORMAT_Y16: /* 16-Bit Gray Image */
 		cvDataType = CV_16U;
@@ -50,12 +48,14 @@ void Converter::ConvertPXCImageToOpenCVMat(Intel::RealSense::Image *inImg, Intel
 		cvDataType = CV_8U;
 		cvDataWidth = 1;
 		break;
+	default:
+		break;
 	}
 
 	// suppose that no other planes
-	if (data.planes[1] != NULL) throw(0); // not implemented
+	if (data.planes[1] != nullptr) throw; // not implemented
 										  // suppose that no sub pixel padding needed
-	if (data.pitches[0] % cvDataWidth != 0) throw(0); // not implemented
+	if (data.pitches[0] % cvDataWidth != 0) throw; // not implemented
 
 	outImg->create(imgInfo.height, data.pitches[0] / cvDataWidth, cvDataType);
 

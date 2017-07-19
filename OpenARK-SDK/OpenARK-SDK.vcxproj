@@ -107,7 +107,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Program Files\PCL 1.8.0\3rdParty\VTK\include\vtk-7.0;C:\Program Files\PCL 1.8.0\include\pcl-1.8;C:\Program Files\PCL 1.8.0\3rdParty\Eigen\eigen3;C:\Program Files\PCL 1.8.0\3rdParty\Boost\include\boost-1_61;C:\Program Files\PCL 1.8.0\3rdParty\Qhull\include;C:\Program Files\PCL 1.8.0\3rdParty\FLANN\include;C:\Program Files\PCL 1.8.0\3rdParty\Boost;C:\Program Files\OpenNI\Include;C:\Program Files\OpenNI2\Include;C:\opencv\build\include\opencv2;C:\opencv\build\include;C:\PMDSDK\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\opensource_codes\cnpy_cmake\include;C:\Program Files\PCL 1.8.0\3rdParty\VTK\include\vtk-7.0;C:\Program Files\PCL 1.8.0\include\pcl-1.8;C:\Program Files\PCL 1.8.0\3rdParty\Eigen\eigen3;C:\Program Files\PCL 1.8.0\3rdParty\Boost\include\boost-1_61;C:\Program Files\PCL 1.8.0\3rdParty\Qhull\include;C:\Program Files\PCL 1.8.0\3rdParty\FLANN\include;C:\Program Files\PCL 1.8.0\3rdParty\Boost;C:\Program Files\OpenNI\Include;C:\Program Files\OpenNI2\Include;C:\opencv\build\include\opencv2;C:\opencv\build\include;C:\PMDSDK\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -154,7 +154,19 @@
     <ClInclude Include="..\Visualizer.h" />
     <ClInclude Include="..\Webcam.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="..\packages\zlib.v120.windesktop.msvcstl.dyn.rt-dyn.1.2.8.8\build\native\zlib.v120.windesktop.msvcstl.dyn.rt-dyn.targets" Condition="Exists('..\packages\zlib.v120.windesktop.msvcstl.dyn.rt-dyn.1.2.8.8\build\native\zlib.v120.windesktop.msvcstl.dyn.rt-dyn.targets')" />
+    <Import Project="..\packages\zlib.v140.windesktop.msvcstl.dyn.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.dyn.rt-dyn.targets" Condition="Exists('..\packages\zlib.v140.windesktop.msvcstl.dyn.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.dyn.rt-dyn.targets')" />
   </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\zlib.v120.windesktop.msvcstl.dyn.rt-dyn.1.2.8.8\build\native\zlib.v120.windesktop.msvcstl.dyn.rt-dyn.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\zlib.v120.windesktop.msvcstl.dyn.rt-dyn.1.2.8.8\build\native\zlib.v120.windesktop.msvcstl.dyn.rt-dyn.targets'))" />
+    <Error Condition="!Exists('..\packages\zlib.v140.windesktop.msvcstl.dyn.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.dyn.rt-dyn.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\zlib.v140.windesktop.msvcstl.dyn.rt-dyn.1.2.8.8\build\native\zlib.v140.windesktop.msvcstl.dyn.rt-dyn.targets'))" />
+  </Target>
 </Project>

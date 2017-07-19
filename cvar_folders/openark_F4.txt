@@ -1,0 +1,3 @@
+E:\datasets\hand\CVAR\test\F4\000000_depth_modified.png 243.079 187.693 761.226
+E:\datasets\hand\CVAR\test\F4\000001_depth_modified.png 86.4374 162.982 871.54
+E:\datasets\hand\CVAR\test\F4\000002_depth_modified.png 88.7028 169.746 882.951

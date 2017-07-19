@@ -1,16 +1,6 @@
 #pragma once
-// C++ Libraries
-#include<string.h>
-
-
 // OpenCV Libraries
 #include <opencv2/opencv.hpp>
-#include "opencv2/highgui/highgui.hpp"
-#include <opencv2/video/tracking.hpp>
-#include "opencv2/imgproc/imgproc.hpp"
-#include <opencv2/objdetect/objdetect.hpp>
-#include <opencv2/features2d/features2d.hpp>
-
 
 // OpenARK Libraries
 #include "DepthCamera.h"
@@ -31,7 +21,7 @@ public:
 	* Public constructor initializing the SR300 Camera.
 	* @param use_live_sensor uses input from real sensor if TRUE. Otherwise reads from input file. Default is set to TRUE.
 	*/
-	SR300Camera(bool use_live_sensor = true);
+	explicit SR300Camera(bool use_live_sensor = true);
 
 	/**
 	* Deconstructor for the SR300 Camera.
@@ -42,12 +32,12 @@ public:
 	* Gets new frame from sensor.
 	* Updates xyzMap, ampMap, and flagMap. Resets clusters.
 	*/
-	void update();
+	void update() override;
 
 	/**
 	* Gracefully closes the SR300 camera.
 	*/
-	void destroyInstance();
+	void destroyInstance() override;
 
 private:
 	/**

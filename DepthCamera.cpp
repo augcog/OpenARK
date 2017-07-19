@@ -1,19 +1,39 @@
 #include "DepthCamera.h"
+#include <iostream>
+
+
+DepthCamera::~DepthCamera()
+{
+}
+
+void DepthCamera::update()
+{
+}
+
+void DepthCamera::destroyInstance()
+{
+}
 
 void DepthCamera::computeClusters(double max_distance, double min_size)
 {
 	clusters.clear();
-	cv::Mat depthMap = cv::Mat::zeros(depthMap.rows, depthMap.cols, depthMap.type());
+	cv::Mat depthMap;
 	cv::medianBlur(xyzMap, depthMap, 3);
 	cv::Mat mask = cv::Mat::zeros(depthMap.rows, depthMap.cols, depthMap.type());
-	for (int r = depthMap.rows - 1; r >= 0; r--) {
-		for (int c = 0; c < depthMap.cols; c++) {
-			if (depthMap.at<cv::Vec3f>(r, c)[2] > 0.2) {
+
+	for (auto r = depthMap.rows - 1; r >= 0; r--)
+	{
+		for (auto c = 0; c < depthMap.cols; c++)
+		{
+			if (depthMap.at<cv::Vec3f>(r, c)[2] > 0.2)
+			{
 				mask = cv::Mat::zeros(depthMap.rows, depthMap.cols, depthMap.type());
 				floodFill(c, r, depthMap, mask, max_distance);
 				cv::Mat channels[3];
 				cv::split(mask, channels);
-				if (cv::countNonZero(channels[2]) > min_size) {
+
+				if (cv::countNonZero(channels[2]) > min_size)
+				{
 					cv::medianBlur(mask, mask, 3);
 					clusters.push_back(mask.clone());
 				}
@@ -29,7 +49,8 @@ void DepthCamera::floodFill(int x, int y, cv::Mat& depthMap, cv::Mat& mask, doub
 {
 	if (x < 0 || x >= depthMap.cols || y < 0 || y >= depthMap.rows || depthMap.at<cv::Vec3f>(y, x)[2] == 0.0)
 		return;
-	if (closeEnough(x, y, depthMap, 4, max_distance)) {
+
+	if (closeEnough(x, y, depthMap, 2, max_distance)) {
 		mask.at<cv::Vec3f>(y, x) = depthMap.at<cv::Vec3f>(y, x);
 		depthMap.at<cv::Vec3f>(y, x)[0] = 0;
 		depthMap.at<cv::Vec3f>(y, x)[1] = 0;
@@ -50,7 +71,7 @@ Check whether candidate point is close enough to neighboring points
 ***/
 bool DepthCamera::closeEnough(int x, int y, cv::Mat& depthMap, int num_neighbors, double max_distance)
 {
-	int num_close = 0;
+	auto num_close = 0;
 	if (x - 1 < 0 || depthMap.at<cv::Vec3f>(y, x - 1)[2] == 0 || Util::euclidianDistance3D(depthMap.at<cv::Vec3f>(y, x), depthMap.at<cv::Vec3f>(y, x - 1)) < max_distance) {
 		num_close++;
 	}
@@ -74,19 +95,26 @@ bool DepthCamera::closeEnough(int x, int y, cv::Mat& depthMap, int num_neighbors
 /***
 Remove noise on zMap and xyzMap based on INVALID_FLAG_VALUE and CONFIDENCE_THRESHOLD
 ***/
-void DepthCamera::removeNoise() {
+void DepthCamera::removeNoise()
+{
 
-	for (int y = 0; y < xyzMap.rows; y++) {
-		for (int x = 0; x < xyzMap.cols; x++) {
-			if (ampMap.data != NULL) {
-				if (xyzMap.at<cv::Vec3f>(y, x)[2] > 0.9f || ampMap.at<float>(y, x) < CONFIDENCE_THRESHHOLD) {
+	for (auto y = 0; y < xyzMap.rows; y++)
+	{
+		for (auto x = 0; x < xyzMap.cols; x++)
+		{
+			if (ampMap.data != nullptr)
+			{
+				if (xyzMap.at<cv::Vec3f>(y, x)[2] > 0.9f || ampMap.at<float>(y, x) < CONFIDENCE_THRESHHOLD)
+				{
 					xyzMap.at<cv::Vec3f>(y, x)[0] = 0;
 					xyzMap.at<cv::Vec3f>(y, x)[1] = 0;
 					xyzMap.at<cv::Vec3f>(y, x)[2] = 0;
 				}
 			}
-			else {
-				if (xyzMap.at<cv::Vec3f>(y, x)[2] > 0.9f){
+			else
+			{
+				if (xyzMap.at<cv::Vec3f>(y, x)[2] > 0.9f)
+				{
 					xyzMap.at<cv::Vec3f>(y, x)[0] = 0;
 					xyzMap.at<cv::Vec3f>(y, x)[1] = 0;
 					xyzMap.at<cv::Vec3f>(y, x)[2] = 0;
@@ -97,73 +125,72 @@ void DepthCamera::removeNoise() {
 
 	cv::Mat channels[3];
 	cv::split(xyzMap, channels);
-	if ((float)cv::countNonZero(channels[2]) / (xyzMap.rows*xyzMap.cols) > 0.5) {
+
+	if (static_cast<float>(cv::countNonZero(channels[2])) / (xyzMap.rows*xyzMap.cols) > 0.5)
+	{
 		badInput = true;
 	}
 	else {
 		badInput = false;
 	}
-
-	return;
 }
 
 void DepthCamera::removePoints(std::vector<cv::Point2i> points)
 {
-	for (int i = 0; i < points.size(); i++) {
-		int x = points[i].x;
-		int y = points[i].y;
+	for (auto i = 0; i < points.size(); i++)
+	{
+		auto x = points[i].x;
+		auto y = points[i].y;
 		xyzMap.at<cv::Vec3f>(y, x)[0] = 0;
 		xyzMap.at<cv::Vec3f>(y, x)[1] = 0;
 		xyzMap.at<cv::Vec3f>(y, x)[2] = 0;
 	}
-	return;
 }
 
-int DepthCamera::getWidth()
+int DepthCamera::getWidth() const
 {
 	return X_DIMENSION;
 }
 
-int DepthCamera::getHeight()
+int DepthCamera::getHeight() const
 {
 	return Y_DIMENSION;
 }
 
-cv::Mat DepthCamera::getXYZMap()
+cv::Mat DepthCamera::getXYZMap() const
 {
 	return xyzMap;
 }
 
-cv::Mat DepthCamera::getAmpMap()
+cv::Mat DepthCamera::getAmpMap() const
 {
 	return ampMap;
 }
 
-cv::Mat DepthCamera::getFlagMap()
+cv::Mat DepthCamera::getFlagMap() const
 {
 	return flagMap;
 }
 
-std::vector<cv::Mat> DepthCamera::getClusters()
+std::vector<cv::Mat> DepthCamera::getClusters() const
 {
 	return clusters;
 }
 
 void DepthCamera::initilizeImages()
 {
-	cv::Size dimension = cv::Size(X_DIMENSION, Y_DIMENSION);
+	auto dimension = cv::Size(X_DIMENSION, Y_DIMENSION);
 	ampMap = cv::Mat(dimension, CV_32FC1);
 	xyzMap = cv::Mat(dimension, CV_32FC3);
 	flagMap = cv::Mat(dimension, CV_8UC1);
 	clusters.clear();
-
-	return;
 }
 
 /***
 write a frame into file located at "destination"
 ***/
-bool DepthCamera::writeImage(std::string destination) {
+bool DepthCamera::writeImage(std::string destination) const
+{
 	cv::FileStorage fs(destination, cv::FileStorage::WRITE);
 
 	fs << "xyzMap" << xyzMap;
@@ -177,21 +204,20 @@ bool DepthCamera::writeImage(std::string destination) {
 /***
 Reads a frame from file located at "source"
 ***/
-bool DepthCamera::readImage(std::string source) {
+bool DepthCamera::readImage(std::string source)
+{
 	cv::FileStorage fs;
 	fs.open(source, cv::FileStorage::READ);
-
 	initilizeImages();
 	fs["xyzMap"] >> xyzMap;
 	fs["ampMap"] >> ampMap;
 	fs["flagMap"] >> flagMap;
-
 	fs.release();
 
-	if (xyzMap.rows == 0 || ampMap.rows == 0 || flagMap.rows == 0) {
+	if (xyzMap.rows == 0 || ampMap.rows == 0 || flagMap.rows == 0)
+	{
 		return false;
 	}
-	else {
-		return true;
-	}
+
+	return true;
 }

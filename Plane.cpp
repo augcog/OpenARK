@@ -1,5 +1,6 @@
 #include "Plane.h"
 
+
 Plane::Plane()
 {
 
@@ -13,17 +14,18 @@ Plane::Plane(cv::Mat &src)
 	down_cloud = new pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
 	down_normals = new pcl::PointCloud<pcl::Normal>::Ptr(new pcl::PointCloud<pcl::Normal>);
 	upsampled_colored_cloud = new pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
-
 	initializeCloud(src);
 
-	if (cloud->get()->width < CLOUD_SIZE_THRESHOLD) {
+	if (cloud->get()->width < CLOUD_SIZE_THRESHOLD)
+	{
 		return;
 	}
 
 	compute();
 }
 
-Plane::~Plane() {
+Plane::~Plane()
+{
 }
 
 int Plane::compute()
@@ -32,8 +34,7 @@ int Plane::compute()
 
 	// calculate normals
 	pcl::NormalEstimationOMP<pcl::PointXYZ, pcl::Normal> normal_estimator;
-	pcl::search::Search<pcl::PointXYZ>::Ptr tree
-		= boost::shared_ptr<pcl::search::Search<pcl::PointXYZ> >(new pcl::search::KdTree<pcl::PointXYZ>);
+	auto tree = boost::static_pointer_cast<pcl::search::Search<pcl::PointXYZ>>(boost::make_shared<pcl::search::KdTree<pcl::PointXYZ>>());
 	calculateNormals(normal_estimator, tree);
 
 	// region grow with normals
@@ -41,13 +42,16 @@ int Plane::compute()
 	regionGrow(reg, tree);
 
 	// find index of dominant plane
-	int index_max = -1;
-	for (int i = 0; i < clusters.size(); i++) {
-		if (index_max == -1 || clusters[i].indices.size() > clusters[index_max].indices.size()) {
+	auto index_max = -1;
+	for (auto i = 0; i < clusters.size(); i++)
+	{
+		if (index_max == -1 || clusters[i].indices.size() > clusters[index_max].indices.size())
+		{
 			index_max = i;
 		}
 	}
-	if (index_max == -1) {
+	if (index_max == -1)
+	{
 		return -1;
 	}
 
@@ -65,8 +69,9 @@ void Plane::computePlaneLSE(pcl::PointIndices &ind)
 	Eigen::MatrixXd A(ind.indices.size(), 3);
 	Eigen::MatrixXd b(ind.indices.size(), 1);
 
-	for (int i = 0; i < ind.indices.size(); i++) {
-		int index = ind.indices[i];
+	for (auto i = 0; i < ind.indices.size(); i++)
+	{
+		auto index = ind.indices[i];
 		A(i, 0) = down_cloud->get()->points[index].x;
 		A(i, 1) = down_cloud->get()->points[index].y;
 		A(i, 2) = 1;
@@ -90,8 +95,9 @@ void Plane::computeSphereLSE( pcl::PointIndices &ind)
 	Eigen::MatrixXd A(ind.indices.size(), 4);
 	Eigen::MatrixXd b(ind.indices.size(), 1);
 
-	for (int i = 0; i < ind.indices.size(); i++) {
-		int index = ind.indices[i];
+	for (auto i = 0; i < ind.indices.size(); i++)
+	{
+		auto index = ind.indices[i];
 		A(i, 0) = 1;
 		A(i, 1) = down_cloud->get()->points[index].x;
 		A(i, 2) = down_cloud->get()->points[index].y;
@@ -106,11 +112,11 @@ void Plane::computeSphereLSE( pcl::PointIndices &ind)
 	Eigen::MatrixXd b_hat = A.transpose() * b;
 	Eigen::MatrixXd vals = inv * b_hat;
 
-	double a0 = vals(0, 0);
-	double coef_a = vals(1, 0) / 2;
-	double coef_b = vals(2, 0) / 2;
-	double coef_c = vals(3, 0) / 2;
-	double radius = sqrt(a0 + coef_a * coef_a + coef_b * coef_b + coef_c * coef_c);
+	auto a0 = vals(0, 0);
+	auto coef_a = vals(1, 0) / 2;
+	auto coef_b = vals(2, 0) / 2;
+	auto coef_c = vals(3, 0) / 2;
+	auto radius = sqrt(a0 + coef_a * coef_a + coef_b * coef_b + coef_c * coef_c);
 
 	sphere_equation.clear();
 	sphere_equation.resize(4);
@@ -122,21 +128,25 @@ void Plane::computeSphereLSE( pcl::PointIndices &ind)
 
 int Plane::computePlaneIndices()
 {
-	int rowSize = depth_img.rows;
-	int colSize = depth_img.cols;
+	auto rowSize = depth_img.rows;
+	auto colSize = depth_img.cols;
 	plane_indices.clear();
-	int num_points_detected = 0;
-	for (int r = 0; r < rowSize; r++) {
-		for (int c = 0; c < colSize; c++) {
+	auto num_points_detected = 0;
+	for (auto r = 0; r < rowSize; r++)
+	{
+		for (auto c = 0; c < colSize; c++)
+		{
 			double x = depth_img.at<cv::Vec3f>(r, c)[0];
 			double y = depth_img.at<cv::Vec3f>(r, c)[1];
 			double z = depth_img.at<cv::Vec3f>(r, c)[2];
 
-			if (z > 0) {
-				double z_hat = plane_equation[0] * x + plane_equation[1] * y + plane_equation[2];
-				double r_squared = (z - z_hat) * (z - z_hat);
+			if (z > 0)
+			{
+				auto z_hat = plane_equation[0] * x + plane_equation[1] * y + plane_equation[2];
+				auto r_squared = (z - z_hat) * (z - z_hat);
 
-				if (r_squared < R_SQUARED_DISTANCE_THRESHOLD) {
+				if (r_squared < R_SQUARED_DISTANCE_THRESHOLD)
+				{
 					plane_indices.push_back(cv::Point2i(c, r));
 					num_points_detected++;
 				}
@@ -148,23 +158,27 @@ int Plane::computePlaneIndices()
 
 int Plane::computeSphereIndices()
 {
-	int rowSize = depth_img.rows;
-	int colSize = depth_img.cols;
+	auto rowSize = depth_img.rows;
+	auto colSize = depth_img.cols;
 	sphere_indices.clear();
-	int pointsDetected = 0;
-	for (int r = 0; r < rowSize; r++) {
-		for (int c = 0; c < colSize; c++) {
+	auto pointsDetected = 0;
+	for (auto r = 0; r < rowSize; r++)
+	{
+		for (auto c = 0; c < colSize; c++)
+		{
 			double x = depth_img.at<cv::Vec3f>(r, c)[0];
 			double y = depth_img.at<cv::Vec3f>(r, c)[1];
 			double z = depth_img.at<cv::Vec3f>(r, c)[2];
 
-			if (z > 0) {
-				double radius = sqrt((x - sphere_equation[0]) * (x - sphere_equation[0])
+			if (z > 0)
+			{
+				auto radius = sqrt((x - sphere_equation[0]) * (x - sphere_equation[0])
 					+ (y - sphere_equation[1]) * (y - sphere_equation[1])
 					+ (z - sphere_equation[2]) * (z - sphere_equation[2]));
-				double radial_r_squared = (radius - sphere_equation[3]) * (radius - sphere_equation[3]);
+				auto radial_r_squared = (radius - sphere_equation[3]) * (radius - sphere_equation[3]);
 
-				if (radial_r_squared < R_SQUARED_DISTANCE_THRESHOLD) {
+				if (radial_r_squared < R_SQUARED_DISTANCE_THRESHOLD)
+				{
 					sphere_indices.push_back(cv::Point2i(c, r));
 					pointsDetected++;
 				}
@@ -174,9 +188,15 @@ int Plane::computeSphereIndices()
 	return pointsDetected;
 }
 
+int Plane::drawSphereRegressionPoints(cv::Mat& output_mat, cv::Mat& input_mat, std::vector<double>& equation, const int rowSize, const int colSize, const double threshold, bool clicked)
+{
+	return 0;
+}
+
 void Plane::regionGrow(pcl::RegionGrowing<pcl::PointXYZ, pcl::Normal> &reg, pcl::search::Search<pcl::PointXYZ>::Ptr tree)
 {
-	if (down_cloud->get()->width < 100 && down_normals->get()->width < 100) {
+	if (down_cloud->get()->width < 100 && down_normals->get()->width < 100)
+	{
 		return;
 	}
 
@@ -191,7 +211,7 @@ void Plane::regionGrow(pcl::RegionGrowing<pcl::PointXYZ, pcl::Normal> &reg, pcl:
 	reg.extract(clusters);
 }
 
-void Plane::voxelDownsample()
+void Plane::voxelDownsample() const
 {
 	pcl::PCLPointCloud2::Ptr temp_cloud(new pcl::PCLPointCloud2());
 	pcl::PCLPointCloud2::Ptr cloud_filtered(new pcl::PCLPointCloud2());
@@ -205,7 +225,7 @@ void Plane::voxelDownsample()
 }
 
 void Plane::calculateNormals(pcl::NormalEstimationOMP<pcl::PointXYZ, pcl::Normal> normal_estimator,
-	pcl::search::Search<pcl::PointXYZ>::Ptr tree)
+	pcl::search::Search<pcl::PointXYZ>::Ptr tree) const
 {
 	normal_estimator.setNumberOfThreads(NUM_CORES);
 	normal_estimator.setSearchMethod(tree);
@@ -217,12 +237,15 @@ void Plane::calculateNormals(pcl::NormalEstimationOMP<pcl::PointXYZ, pcl::Normal
 void Plane::initializeCloud(cv::Mat &src)
 {
 	depth_img = src.clone();
-	int rowSize = src.rows;
-	int colSize = src.cols;
-	int cloudSize = 0;
-	for (size_t r = 0; r < rowSize; r++) {
-		for (size_t c = 0; c < colSize; c++) {
-			if (src.at<cv::Vec3f>(r, c)[2] != 0) {
+	auto rowSize = src.rows;
+	auto colSize = src.cols;
+	auto cloudSize = 0;
+	for (size_t r = 0; r < rowSize; r++)
+	{
+		for (size_t c = 0; c < colSize; c++)
+		{
+			if (src.at<cv::Vec3f>(r, c)[2] != 0)
+			{
 				cloudSize++;
 			}
 		}
@@ -231,10 +254,13 @@ void Plane::initializeCloud(cv::Mat &src)
 	cloud->get()->height = 1;
 	cloud->get()->points.resize(cloud->get()->width * cloud->get()->height);
 
-	int index = 0;
-	for (size_t r = 0; r < rowSize; r++) {
-		for (size_t c = 0; c < colSize; c++) {
-			if (src.at<cv::Vec3f>(r, c)[2] != 0) {
+	auto index = 0;
+	for (size_t r = 0; r < rowSize; r++)
+	{
+		for (size_t c = 0; c < colSize; c++)
+		{
+			if (src.at<cv::Vec3f>(r, c)[2] != 0)
+			{
 				cloud->get()->points[index].x = src.at<cv::Vec3f>(r, c)[0];
 				cloud->get()->points[index].y = src.at<cv::Vec3f>(r, c)[1];
 				cloud->get()->points[index].z = src.at<cv::Vec3f>(r, c)[2];
@@ -245,32 +271,32 @@ void Plane::initializeCloud(cv::Mat &src)
 
 }
 
-pcl::PointCloud<pcl::PointXYZ>::Ptr Plane::getCloud()
+pcl::PointCloud<pcl::PointXYZ>::Ptr Plane::getCloud() const
 {
 	return *cloud;
 }
 
-pcl::PointCloud<pcl::PointXYZ>::Ptr Plane::getDownCloud()
+pcl::PointCloud<pcl::PointXYZ>::Ptr Plane::getDownCloud() const
 {
 	return *down_cloud;
 }
 
-std::vector<double> Plane::getPlaneEquation()
+std::vector<double> Plane::getPlaneEquation() const
 {
 	return plane_equation;
 }
 
-std::vector<double> Plane::getSphereEquation()
+std::vector<double> Plane::getSphereEquation() const
 {
 	return sphere_equation;
 }
 
-std::vector<cv::Point2i> Plane::getPlaneIndicies()
+std::vector<cv::Point2i> Plane::getPlaneIndicies() const
 {
 	return plane_indices;
 }
 
-std::vector<cv::Point2i> Plane::getSphereIndices()
+std::vector<cv::Point2i> Plane::getSphereIndices() const
 {
 	return sphere_indices;
 }

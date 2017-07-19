@@ -1,35 +1,32 @@
 #pragma once
-// C++ Libraries
-#include <iostream>
 
 // OpenCV Libraries
-#include "opencv2/highgui/highgui.hpp"
-#include <opencv2/video/tracking.hpp>
-#include "opencv2/imgproc/imgproc.hpp"
 #include <opencv2/objdetect/objdetect.hpp>
 #include <opencv2/features2d/features2d.hpp>
 
-// OpenARK Libraries
+//OpenARK libraries
 #include "Util.h"
 
 /**
  * Class defining general behavior of a depth camera.
- * Any depth camera should be able to generate a XYXMap, AmpMap (confidence), and FlagMap.
+ * Any depth camera should be able to generate a XYZMap, AmpMap (confidence), and FlagMap.
  */
 class DepthCamera
 {
 public:
+	cv::Mat xyzMap;
+	virtual ~DepthCamera();
 	/**
 	 * Update the depth camera by one frame.
 	 * This function should be overriden with a concrete implementation depending on the specific depth camera
 	 */
-	virtual void update() = 0;
+	virtual void update();
 
 	/**
 	 * Closes and exists the depth camera.
 	 * This function should be overriden with a concrete implementation depending on the specific depth camera
 	 */
-	virtual void destroyInstance() = 0;
+	virtual void destroyInstance();
 
 	/**
 	 * Performs euclidean clustering to separate discrete objects in the input point cloud.
@@ -48,7 +45,7 @@ public:
 	 * Writes the current frame into file.
 	 * @param destination the directory which the frame should be written to
 	 */
-	bool writeImage(std::string destination);
+	bool writeImage(std::string destination) const;
 
 	/**
 	 * Removes noise from the XYZMap based on confidence provided in the AmpMap and FlagMap.
@@ -64,34 +61,34 @@ public:
 	/**
 	 * Return the current XYZMap.
 	 */
-	cv::Mat getXYZMap();
+	cv::Mat getXYZMap() const;
 
 	/**
 	 * Return the current AmpMap
 	 */
-	cv::Mat getAmpMap();
+	cv::Mat getAmpMap() const;
 
 	/**
 	 * Return the current FlagMap.
 	 */
-	cv::Mat getFlagMap();
+	cv::Mat getFlagMap() const;
 
 	/**
 	 * Returns the width of the frame in pixels.
 	 */
-	int getWidth();
+	int getWidth() const;
 
 	/**
 	 * Returns the height of the frame in pixels.
 	 */
-	int getHeight();
+	int getHeight() const;
 
 	/**
 	 * Returns all the clusters (discrete objects) in the current frame.
 	 * @see computeClusters
 	 * @return vector of matrixes with each matrix corresponding to a cluster in no particular order
 	 */
-	std::vector<cv::Mat> getClusters();
+	std::vector<cv::Mat> getClusters() const;
 
 	bool badInput;
 
@@ -111,7 +108,7 @@ protected:
 	 * @param [out] mask the resulting region of the floodfill
 	 * @param max_distance the maximum euclidean distance allowed between neighbors
 	 */
-	void floodFill(int x, int y, cv::Mat& zMap, cv::Mat& mask, double max_distance);
+	static void floodFill(int x, int y, cv::Mat& zMap, cv::Mat& mask, double max_distance);
 
 	/**
 	 * Analyze the candidate point with its neighbors to determine whether they belong to the same cluster.
@@ -121,13 +118,13 @@ protected:
 	 * @param num_neighbors the number of neighbors to consider
 	 * @param max_distance the maximum euclidean distance allowed between neighbors
 	 */
-	bool closeEnough(int x, int y, cv::Mat& depthMap, int num_neighbors, double max_distance);
+	static bool closeEnough(int x, int y, cv::Mat& depthMap, int num_neighbors, double max_distance);
 
 	/**
 	 * Stores the (x,y,z) data of every point in the observable world.
 	 * Matrix type CV_32FC3
 	 */
-	cv::Mat xyzMap;
+
 
 	/**
 	 * Stores the confidence value of each corresponding point in the world.
@@ -162,12 +159,14 @@ protected:
 	 * The image width resolution (pixels) that the depth sensor produces.
 	 */
 	//mona int X_DIMENSION = 176;
-	int X_DIMENSION = 640;
+	//int X_DIMENSION = 640;
+	int X_DIMENSION = 321;
 
 
 	/**
 	 * The image height resolution (pixels) that the depth sensor produces.
 	 */
     //mona int Y_DIMENSION = 120;
-	int Y_DIMENSION = 480;
+	//int Y_DIMENSION = 480;
+	int Y_DIMENSION = 240;
 };

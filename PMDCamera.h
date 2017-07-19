@@ -1,18 +1,14 @@
 #pragma once
 // C++ Libraries
-#include<string.h>
+#include <iostream>
 
 // PMD Libraries
 #include <pmdsdk2.h>
 
 // OpenCV Libraries
-#include <opencv/cxcore.h>
-#include <opencv/highgui.h>
-#include "opencv2/highgui/highgui.hpp"
 #include <opencv2/video/tracking.hpp>
 #include "opencv2/imgproc/imgproc.hpp"
-#include <opencv2/objdetect/objdetect.hpp>
-#include <opencv2/features2d/features2d.hpp>
+
 
 // OpenARK Libraries
 #include "DepthCamera.h"
@@ -29,7 +25,7 @@ public:
 	* Public constructor initializing the PMD Camera.
 	* @param use_live_sensor uses input from real sensor if TRUE. Otherwise reads from input file. Default is set to TRUE.
 	*/
-	PMDCamera(bool use_live_sensor = true);
+	explicit PMDCamera(bool use_live_sensor = true);
 
 	/**
 	* Deconstructor for the PMD Camera.
@@ -40,12 +36,12 @@ public:
 	* Gets new frame from sensor.
 	* Updates xyzMap, ampMap, and flagMap. Resets clusters.
 	*/
-	void update();
+	void update() override;
 
 	/**
 	* Gracefully closes the PMD camera.
 	*/
-	void destroyInstance();
+	void destroyInstance() override;
 
 private:
 	/**
@@ -82,23 +78,18 @@ private:
 	*/
 	void fillInAmps();
 
-	//Private Variable
+	//Private Variables
 	const char* SOURCE_PLUGIN = "camboardpico";
 	const char* SOURCE_PARAM = "";
 	const char* PROC_PLUGIN = "camboardpicoproc";
 	const char* PROC_PARAM = "";
-
 	PMDHandle hnd;
 	PMDDataDescription dd;
 	char err[128]; // Char array for storing PMD's error log
-
 	int numPixels;
 	float* dists;
 	float* amps;
-
 	cv::Mat frame;
-	cv::KalmanFilter KF;
-	cv::Mat_<float> measurement;
 };
 
 /*

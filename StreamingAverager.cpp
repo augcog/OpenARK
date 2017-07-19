@@ -1,5 +1,6 @@
 #include "StreamingAverager.h"
 
+
 StreamingAverager::StreamingAverager(int frequency, double rejectionDistance)
 {
 	sampleFrequency = frequency;
@@ -9,13 +10,15 @@ StreamingAverager::StreamingAverager(int frequency, double rejectionDistance)
 
 cv::Vec3f StreamingAverager::addDataPoint(cv::Vec3f pt)
 {
-	if (dataPoints.size() > 0 && Util::euclidianDistance3D(pt, getCurrentAverage()) > rejectionThreshold) {
+	if (dataPoints.size() > 0 && Util::euclidianDistance3D(pt, getCurrentAverage()) > rejectionThreshold)
+	{
 		addEmptyPoint();
 		return getCurrentAverage();
 	}
 
-	if (dataPoints.size() >= sampleFrequency) {
-		cv::Vec3f extra = dataPoints.front();
+	if (dataPoints.size() >= sampleFrequency)
+	{
+		auto extra = dataPoints.front();
 		dataPoints.pop_front();
 		currentValue -= extra;
 	}
@@ -27,8 +30,9 @@ cv::Vec3f StreamingAverager::addDataPoint(cv::Vec3f pt)
 
 void StreamingAverager::addEmptyPoint()
 {
-	if (dataPoints.size() > 0) {
-		cv::Vec3f extra = dataPoints.front();
+	if (dataPoints.size() > 0)
+	{
+		auto extra = dataPoints.front();
 		dataPoints.pop_front();
 		currentValue = currentValue - extra;
 	}
@@ -37,7 +41,8 @@ void StreamingAverager::addEmptyPoint()
 cv::Vec3f StreamingAverager::getCurrentAverage()
 {
 	cv::Vec3f average;
-	if (dataPoints.size() != 0) {
+	if (dataPoints.size() != 0)
+	{
 		average[0] = currentValue[0] / dataPoints.size();
 		average[1] = currentValue[1] / dataPoints.size();
 		average[2] = currentValue[2] / dataPoints.size();

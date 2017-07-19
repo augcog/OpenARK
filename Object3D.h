@@ -25,9 +25,13 @@ public:
 
 	/**
 	* Constructs a instance of Object3D based on a point cloud.
-	* @param cluster point cloud representatino of the object
+	* @param cluster point cloud representation of the object
 	*/
-	Object3D(cv::Mat cluster);
+	explicit Object3D(cv::Mat cluster);
+	Hand getHand();
+	Plane getPlane();
+	cv::Mat getShape();
+
 
 	/**
 	* Deconstructs a Object3D instance.
@@ -54,19 +58,30 @@ public:
 	* Gets instance of hand object if a hand is found.
 	* @return instance of hand object
 	*/
-	Hand getHand();
+	Hand getHand() const;
 
 	/**
 	* Gets instance of plane object is plane is found.
 	* @return instance of plane object
 	*/
-	Plane getPlane();
+	Plane getPlane() const;
 
 	/**
 	* Gets instance of shape object.
 	* @return instance of shape object
 	*/
-	cv::Mat getShape();
+	cv::Mat getShape() const;
+
+
+
+	/**
+	* Returns all points within a radius of a centroid
+	* @param cluster the input point cloud
+	* @param distance the radius (meters)
+	* @return the percentage of points in the cluster that is "distance" away from the centroid
+	*/
+	double centroidCircleSweep(cv::Mat cluster, double distance) const;
+
 
 private:
 	/**
@@ -98,13 +113,9 @@ private:
 	* @param pointer_finger_distance the length of the pointer finger (meters)
 	* @return whether the cluster is a hand
 	*/
-	bool checkForHand(cv::Mat cluster, double min_coverage, double max_coverage, double pointer_finger_distance = 0.08);
+	bool checkForHand(cv::Mat cluster, double min_coverage, double max_coverage, double pointer_finger_distance = 0.08); //original
+	//bool checkForHand(cv::Mat cluster, double min_coverage, double max_coverage, double pointer_finger_distance = 0.04);
 
-	/**
-	* Returns all points within a radius of a centroid
-	* @param cluster the input point cloud
-	* @param distance the radius (meters)
-	* @return the percentage of points in the cluster that is "distance" away from the centroid
-	*/
-	double centroidCircleSweep(cv::Mat cluster, double distance);
+
+
 };

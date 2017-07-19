@@ -1,6 +1,4 @@
 #pragma once
-// OpenCV Libaries
-
 // OpenARK Libraries
 #include "RGBCamera.h"
 
@@ -14,7 +12,7 @@ public:
 	* Constructs a new webcam instance.
 	* @param code the code for the webcam. Default is 0 if there is only one webcam connected
 	*/
-	Webcam(int code = 0);
+	explicit Webcam(int code = 0);
 
 	/**
 	* Deconstructs a webcam instance.
@@ -24,7 +22,7 @@ public:
 	/**
 	* Updates the webcam infomration with the current frame.
 	*/
-	void update();
+	void update() override;
 
 private:
 };

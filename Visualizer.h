@@ -1,7 +1,5 @@
 #pragma once
 //OpenCV Libraries
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
@@ -9,11 +7,11 @@
 
 // PCL Libraries
 #include <pcl/point_types.h>
-#include <pcl/io/pcd_io.h>
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/surface/gp3.h>
 #include <pcl/visualization/cloud_viewer.h>
+
 
 /**
 * Utility class containing various conversions and visualization techniques.

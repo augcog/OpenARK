@@ -55,6 +55,7 @@ public:
 	*/
 	static double euclidianDistance3D(cv::Vec3f pt1, cv::Vec3f pt2);
 
+	//TODO needs description
 	static double euclideanDistancePerPixel(cv::Mat xyzMap, cv::Point pt, int radius);
 
 	/**

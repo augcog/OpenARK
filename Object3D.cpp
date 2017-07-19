@@ -14,10 +14,12 @@ Object3D::Object3D(cv::Mat cluster) {
 	hasHand = false;
 	hasPlane = false;
 	hasShape = false;
-
+	cv::namedWindow("hand", cv::WINDOW_AUTOSIZE);
+	cv::imshow("hand", cluster);
 	// Step 1: determine whether cluster is hand
 
-	if (checkForHand(cluster, 0.005, 0.25)) {
+	//if (checkForHand(cluster, 0.005, 0.25)) { //original
+	if (checkForHand(cluster, 0.005, 0.4)) {
 		hand = Hand(cluster, 50);
 		hasHand = true;
 		return;
@@ -25,68 +27,78 @@ Object3D::Object3D(cv::Mat cluster) {
 
 
 	// Step 2: determine whether there is a plane
-
 	plane = new Plane(cluster);
+
 	// Step 2.1 If there is plane, remove plane and look for hand
-	std::vector<cv::Point2i> points = plane->getPlaneIndicies();
-	if (points.size() != 0) {
+	auto points = plane->getPlaneIndicies();
+
+	if (points.size() != 0)
+	{
 		hasPlane = true;
-		for (int i = 0; i < points.size();i++) {
-			int x = points[i].x;
-			int y = points[i].y;
+
+		for (auto i = 0; i < points.size(); i++)
+		{
+			auto x = points[i].x;
+			auto y = points[i].y;
 			cluster.at<cv::Vec3f>(y, x)[0] = 0;
 			cluster.at<cv::Vec3f>(y, x)[1] = 0;
 			cluster.at<cv::Vec3f>(y, x)[2] = 0;
 		}
 
-		cv::Point center = Util::findCentroid(cluster);
-
+		auto center = Util::findCentroid(cluster);
 		cv::Mat hand_cluster = cv::Mat::zeros(cluster.rows, cluster.cols, cluster.type());
+
+		//determining the pixels that are similar to center and connected to it
 		Util::floodFill(center.x, center.y, cluster, hand_cluster, 0.02);
 
-		if (checkForHand(hand_cluster, -0.99, 0.2)) {
+		if (checkForHand(hand_cluster, -0.99, 0.2))
+		{
 			hand = Hand(hand_cluster, 30);
-			double finger_length = Util::euclidianDistance3D(hand.fingers_xyz[0], hand.centroid_xyz);
-			if (finger_length > 0.03 && finger_length < 0.2) {
+			auto finger_length = Util::euclidianDistance3D(hand.fingers_xyz[0], hand.centroid_xyz);
+			if (finger_length > 0.03 && finger_length < 0.2)
+			{
 				hasHand = true;
 				return;
 			}
 		}
 	}
 
-
 	// Step 2.1.1 If there is plane, no hand, then the rest of points are shape
 	shape = cluster;
 	hasShape = true;
 }
 
-Hand Object3D::getHand() {
+Hand Object3D::getHand()
+{
 	return hand;
 }
 
-Plane Object3D::getPlane() {
+Plane Object3D::getPlane()
+{
 	return *plane;
 }
 
-cv::Mat Object3D::getShape() {
+cv::Mat Object3D::getShape()
+{
 	return shape;
 }
 
-double Object3D::centroidCircleSweep(cv::Mat cluster, double distance)
+//talk to Joe--some of the code that was there was not working!
+double Object3D::centroidCircleSweep(cv::Mat cluster, double distance) const
 {
 	cv::Mat channels[3];
 	cv::split(cluster, channels);
-	cv::Mat show_img = Visualizer::visualizeXYZMap(cluster);
 
-	// Step 1: Find the center
-	cv::Moments m = cv::moments(channels[2], false);
+	// Step 1: Find the centroid
+	auto m = cv::moments(channels[2], false);
 	cv::Point center(m.m10 / m.m00, m.m01 / m.m00);
-	cv::circle(show_img, center, 2, cv::Scalar(255, 0, 0),2);
 
 	// Step 2: Find the radius (pixels) that correspond to distance (meters)
-	double distancePerPixel = Util::euclideanDistancePerPixel(cluster, center, 5);
-	int radius = distance / distancePerPixel;
-	if (radius <= 0 || radius > cluster.cols / 4) {
+	auto distancePerPixel = Util::euclideanDistancePerPixel(cluster, center, 5);
+	float radius = distance / distancePerPixel;
+
+	if (radius <= 0 || radius > cluster.cols / 4)
+	{
 		return -1;
 	}
 
@@ -97,69 +109,83 @@ double Object3D::centroidCircleSweep(cv::Mat cluster, double distance)
 	cv::Mat dstImg = cv::Mat::zeros(binary_img.size(), binary_img.type());
 	cv::circle(mask, center, radius, cv::Scalar(255, 255, 255));
 	binary_img.copyTo(dstImg, mask);
+	auto covered = 0;
+	//cv::namedWindow("mask", cv::WINDOW_AUTOSIZE);
+	//cv::imshow("mask", mask);
 
-
-	int covered = 0;
-	for (int r = center.y; r > 0; r--) {
-		for (int c = 0; c < dstImg.cols; c++) {
+	for (auto r = center.y; r > 0; r--) {
+		for (auto c = 0; c < dstImg.cols; c++) {
 			if (dstImg.at<uchar>(r, c) != 0) {
 				covered++;
 			}
 		}
 	}
-
-	double coverage = (double) covered / cv::countNonZero(mask);
+	//returns 1 for covered and 1 for countNonZero(mask)
+	auto coverage = static_cast<double>(covered) / cv::countNonZero(mask);
 	return coverage;
 }
 
 bool Object3D::checkForHand(cv::Mat cluster, double min_coverage, double max_coverage, double pointer_finger_distance)
 {
+
 	checkEdgeConnected(cluster);
-	if ((rightEdgeConnected && !leftEdgeConnected) || (leftEdgeConnected && rightEdgeConnected)) {
-		double coverage = centroidCircleSweep(cluster, pointer_finger_distance);
-		if (coverage < max_coverage && coverage > min_coverage) {
+	//if ((rightEdgeConnected && !leftEdgeConnected) || (leftEdgeConnected && rightEdgeConnected)) { //original
+		auto coverage = centroidCircleSweep(cluster, pointer_finger_distance);
+		if (coverage < max_coverage && coverage > min_coverage)
+		{
 			return true;
 		}
-	}
 
 	return false;
 }
 
-void Object3D::checkEdgeConnected(cv::Mat cluster) {
-	int cols = cluster.cols;
-	int rows = cluster.rows;
 
-	// Bottom Sweep
-	int r = (int)(rows * 0.9);
-	for (int c = 0; c < cols / 4 ; c++) {
-		if (cluster.at<cv::Vec3f>(r, c)[2] != 0) {
+void Object3D::checkEdgeConnected(cv::Mat cluster)
+{
+	auto cols = cluster.cols;
+	auto rows = cluster.rows;
+
+	// bottom Sweep
+	auto r1 = static_cast<int>(rows * 0.9);
+	for (auto c1 = 0; c1 < cols / 4; c1++)
+	{
+		if (cluster.at<cv::Vec3f>(r1, c1)[2] != 0)
+		{
 			leftEdgeConnected = true;
 			break;
 		}
 	}
 
 	// Left Side Sweep
-	int c = (int)(cols * 0.2);
-	for (int r = 0; r < rows; r++) {
-		if (cluster.at<cv::Vec3f>(r, c)[2] != 0) {
+	auto c2 = static_cast<int>(cols * 0.2);
+
+	for (auto r2 = 0; r2 < rows; r2++)
+	{
+		if (cluster.at<cv::Vec3f>(r2, c2)[2] != 0)
+		{
 			leftEdgeConnected = true;
 			break;
 		}
 	}
 
 	// Bottom Sweep
-	r = (int)(rows * 0.9);
-	for (int c = cols / 4; c < cols; c++) {
-		if (cluster.at<cv::Vec3f>(r, c)[2] != 0) {
+	auto r3 = static_cast<int>(rows * 0.9);
+	//for (auto c3 = cols / 4; c3 < cols; c3++) { //original
+	for (auto c3 = cols - (cols / 4); c3 < cols; c3++)
+	{ //fixed
+		if (cluster.at<cv::Vec3f>(r3, c3)[2] != 0)
+		{
 			rightEdgeConnected = true;
 			break;
 		}
 	}
 
 	// Right Side Sweep
-	c = (int)(cols * 0.8);
-	for (int r = rows / 2; r < rows; r++) {
-		if (cluster.at<cv::Vec3f>(r, c)[2] != 0) {
+	auto c4 = static_cast<int>(cols * 0.8);
+	for (auto r4 = rows / 2; r4 < rows; r4++)
+	{
+		if (cluster.at<cv::Vec3f>(r4, c4)[2] != 0)
+		{
 			rightEdgeConnected = true;
 			break;
 		}
@@ -168,7 +194,23 @@ void Object3D::checkEdgeConnected(cv::Mat cluster) {
 }
 
 
+
 Object3D::~Object3D()
 {
 
+}
+
+Hand Object3D::getHand() const
+{
+	return {};
+}
+
+Plane Object3D::getPlane() const
+{
+	return Plane();
+}
+
+cv::Mat Object3D::getShape() const
+{
+	return {};
 }

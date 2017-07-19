@@ -280,7 +280,7 @@ __pycache__/
 opencv_*
 pmdaccess2.dll
 OpenNI2.dll
-main.cpp
+#main.cpp
 
 # Cake - Uncomment if you are using it
 # tools/**

@@ -1,5 +1,6 @@
 #include "Visualizer.h"
 
+
 pcl::visualization::PCLVisualizer Visualizer::viewer = pcl::visualization::PCLVisualizer("Point Cloud");
 
 /***
@@ -33,10 +34,14 @@ cv::Mat Visualizer::visualizeXYZMap(cv::Mat &xyzMap)
 cv::Mat Visualizer::visualizeHand(cv::Mat xyzMap, cv::Point2i finger, cv::Point2i centroid)
 {
 	cv::Mat displayImg;
-	if (xyzMap.type() == CV_32FC3) {
+
+	if (xyzMap.type() == CV_32FC3)
+	{
 		displayImg = Visualizer::visualizeXYZMap(xyzMap);
 	}
-	else {
+
+	else
+	{
 		displayImg = xyzMap;
 	}
 
@@ -48,18 +53,24 @@ cv::Mat Visualizer::visualizeHand(cv::Mat xyzMap, cv::Point2i finger, cv::Point2
 void Visualizer::visualizeCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)
 {
 	viewer.setBackgroundColor(0, 0, 0);
+
 	if (!viewer.updatePointCloud(cloud))
 		viewer.addPointCloud(cloud);
+
 	viewer.spinOnce();
 }
 
 cv::Mat Visualizer::visualizePlaneRegression(cv::Mat &input_mat, std::vector<double> &equation, const double threshold, bool clicked)
 {
 	cv::Mat output_mat;
-	if (input_mat.type() == CV_32FC3) {
+
+	if (input_mat.type() == CV_32FC3)
+	{
 		output_mat = Visualizer::visualizeXYZMap(input_mat);
 	}
-	else {
+
+	else
+	{
 		output_mat = input_mat;
 	}
 
@@ -67,51 +78,67 @@ cv::Mat Visualizer::visualizePlaneRegression(cv::Mat &input_mat, std::vector<dou
 	{
 		return output_mat;
 	}
-	int rowSize = input_mat.rows;
-	int colSize = input_mat.cols;
+
+	auto rowSize = input_mat.rows;
+	auto colSize = input_mat.cols;
 	cv::Scalar color;
-	if (clicked) {
+
+	if (clicked)
+	{
 		color = cv::Scalar(255, 255, 0);
 	}
-	else {
+
+	else
+	{
 		color = cv::Scalar(0, 255, 0);
 	}
 
-	int pointsDetected = 0;
-	for (int r = 0; r < rowSize; r++) {
-		for (int c = 0; c < colSize; c++) {
+	auto pointsDetected = 0;
+
+	for (auto r = 0; r < rowSize; r++)
+	{
+
+		for (auto c = 0; c < colSize; c++)
+		{
+
 			double x = input_mat.at<cv::Vec3f>(r, c)[0];
 			double y = input_mat.at<cv::Vec3f>(r, c)[1];
 			double z = input_mat.at<cv::Vec3f>(r, c)[2];
 
-			if (z == 0) {
+			if (z == 0)
+			{
 				continue;
 			}
 
-			double z_hat = equation[0] * x + equation[1] * y + equation[2];
-			double r_squared = (z - z_hat) * (z - z_hat);
+			auto z_hat = equation[0] * x + equation[1] * y + equation[2];
+			auto r_squared = (z - z_hat) * (z - z_hat);
 
-			if (r_squared < threshold) {
+			if (r_squared < threshold)
+			{
 				cv::circle(output_mat, cv::Point(c, r), 1, color, -1);
 				pointsDetected++;
 			}
+
 		}
+
 	}
 	return output_mat;
 }
 
 void Visualizer::visualizePlanePoints(cv::Mat &input_mat, std::vector<cv::Point2i> indicies)
 {
-	for (int i = 0; i < indicies.size(); i++) {
-		input_mat.at<uchar>(indicies[i].y, indicies[i].x) = (uchar)255;
+	for (auto i = 0; i < indicies.size(); i++) {
+		input_mat.at<uchar>(indicies[i].y, indicies[i].x) = static_cast<uchar>(255);
 	}
 }
 
 void Visualizer::visulizePolygonMesh(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)
 {
-	if (cloud.get()->width == 0) {
+	if (cloud.get()->width == 0)
+	{
 		return;
 	}
+
 	// Normal estimation*
 	pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> n;
 	pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>);
@@ -153,7 +180,9 @@ void Visualizer::visulizePolygonMesh(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)
 	gp3.reconstruct(triangles);
 
 	viewer.setBackgroundColor(0, 0, 0);
+
 	if (!viewer.updatePolygonMesh(triangles))
 		viewer.addPolygonMesh(triangles);
+
 	viewer.spinOnce();
 }

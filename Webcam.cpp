@@ -1,9 +1,11 @@
 #include "Webcam.h"
 
+
 /***
 Opens a webcam and returns the handle
 ***/
-Webcam::Webcam(int code) {
+Webcam::Webcam(int code)
+{
 	cap.release();
 	cap.open(code);
 }
