@@ -59,4 +59,4 @@ The Center for Augmented Cognition welcome interested industry partners to join 
 
 ## Credits and references
 
-Bill Zhou, Allen Yang, S. Shankar Sastry, Will Huang, Larry Yang, Eric Nyugen, Michelli Ni, Peter Li, Jessica Jiang, Mona Jalal.
+Bill Zhou, Allen Yang, S. Shankar Sastry, Will Huang, Larry Yang, Eric Nyugen, Michelli Ni, Peter Li, Jessica Jiang, Mona Jalal, Joseph Menke.
