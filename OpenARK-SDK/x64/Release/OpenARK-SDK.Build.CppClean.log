@@ -9,13 +9,12 @@ c:\openark\openark-sdk\x64\release\rgbcamera.obj
 c:\openark\openark-sdk\x64\release\pmdcamera.obj
 c:\openark\openark-sdk\x64\release\plane.obj
 c:\openark\openark-sdk\x64\release\object3d.obj
+c:\openark\openark-sdk\x64\release\main.obj
 c:\openark\openark-sdk\x64\release\hand.obj
 c:\openark\openark-sdk\x64\release\global.obj
 c:\openark\openark-sdk\x64\release\depthcamera.obj
 c:\openark\openark-sdk\x64\release\converter.obj
 c:\openark\openark-sdk\x64\release\calibration.obj
-c:\openark\openark-sdk\x64\release\testcamera.obj
-c:\openark\openark-sdk\x64\release\test.obj
 c:\openark\x64\release\openark-sdk.exe
 c:\openark\x64\release\openark-sdk.ipdb
 c:\openark\x64\release\openark-sdk.iobj

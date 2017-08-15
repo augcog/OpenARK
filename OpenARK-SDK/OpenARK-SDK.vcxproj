@@ -120,13 +120,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\OpenARK_test\test.cpp" />
-    <ClCompile Include="..\..\OpenARK_test\TestCamera.cpp" />
     <ClCompile Include="..\Calibration.cpp" />
     <ClCompile Include="..\Converter.cpp" />
     <ClCompile Include="..\DepthCamera.cpp" />
     <ClCompile Include="..\global.cpp" />
     <ClCompile Include="..\Hand.cpp" />
+    <ClCompile Include="..\main.cpp" />
     <ClCompile Include="..\Object3D.cpp" />
     <ClCompile Include="..\Plane.cpp" />
     <ClCompile Include="..\PMDCamera.cpp" />
@@ -139,7 +138,6 @@
     <ClCompile Include="..\Webcam.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\OpenARK_test\TestCamera.h" />
     <ClInclude Include="..\Calibration.h" />
     <ClInclude Include="..\Converter.h" />
     <ClInclude Include="..\DepthCamera.h" />

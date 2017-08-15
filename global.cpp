@@ -1,7 +1,7 @@
 #include "global.h"
 
 
-char * camera_name = "test";
+char * camera_name = "sr300";
 String file_name = nullptr;
 std::ofstream os("..\\OpenARK_test\\fingertips_openark.txt");
 
