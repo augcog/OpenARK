@@ -7,7 +7,6 @@ At a Glance
   - **Technology stack**: C++, OpenCV, PCL, Boost, OpenNI, RealSense 3D SDK, PMD SDK
   - **Status**:  Beta 0.8
   - **Application Demo**: vimeo.com/205084929
-  [![Application Demo](http://imgur.com/a/BpcJd)](https://vimeo.com/205084929 "Application Demo - Click to Watch!")
 
 
 
