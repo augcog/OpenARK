@@ -3,7 +3,7 @@
 
 char * camera_name = "sr300";
 std::string file_name;// = nullptr;
-std::ofstream os; //("..\\OpenARK_test\\fingertips_openark.txt");
+std::ofstream os("..\\..\\OpenARK_test\\fingertips_openark.txt");
 
 /***
  *  Intrinsics for Creative Senz3D camera
