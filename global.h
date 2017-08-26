@@ -1,11 +1,9 @@
 #pragma once
-#include <core/cvstd.hpp>
 #include <fstream>
 
-using namespace cv;
 extern char * camera_name;
-extern String file_name;
-extern String figertips_filename;
+extern std::string file_name;
+extern std::string figertips_filename;
 extern std::ofstream os;
 extern double FX;
 extern double FY;
