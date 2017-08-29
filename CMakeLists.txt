@@ -1,11 +1,9 @@
 cmake_minimum_required(VERSION 2.8)
 project( OpenARK )
 
-include(ExternalProject)
-
 set(CMAKE_CXX_STACK_SIZE "10000000")
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake_modules")
-option(BUILD_TESTS "BUILD_TESTS" ON)
+option(BUILD_TESTS "BUILD_TESTS" OFF)
 
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
@@ -60,9 +58,7 @@ set(
   RGBCamera.cpp
   UDPSender.cpp 
   StreamingAverager.cpp 
-  global.cpp 
   Calibration.cpp 
-#  SensorIO.cpp 
   Util.cpp	
   Visualizer.cpp	
   SR300Camera.cpp
@@ -82,10 +78,10 @@ if(${BUILD_TESTS})
     execute_process(
       COMMAND git clone https://github.com/joemenke/OpenARK_test.git
       WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-  else()
-    execute_process(
-    COMMAND git pull
-      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/OpenARK_test)
+  #else()
+  #  execute_process(
+  #  COMMAND git pull
+  #    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/OpenARK_test)
   endif(NOT EXISTS ${PROJECT_SOURCE_DIR}/OpenARK_test)
 
 

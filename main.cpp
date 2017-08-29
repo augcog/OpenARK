@@ -19,17 +19,18 @@
 #include "UDPSender.h"
 #include "Object3D.h"
 #include "StreamingAverager.h"
-#include "global.h"
 
 using namespace cv;
+
+#define CAMERA_TYPE "sr300"
 
 int main() {
 	auto starttime = clock();
 	DepthCamera * camera = nullptr;
-	if (camera_name == "pmd") {
+	if (CAMERA_TYPE == "pmd") {
 		camera = new PMDCamera();
 	}
-	else if (camera_name == "sr300") {
+	else if (CAMERA_TYPE == "sr300") {
 		camera = new SR300Camera();
 	}
 
@@ -54,12 +55,6 @@ int main() {
 	while (true)
 	{
 		camera->update();
-
-		/**
-		std::string filename = "..//OpenARK_Datasets//TwoHandDataSet1//img" + std::to_string(frame) + ".yml";
-		if (!pmd->readImage(filename))
-		break;
-		**/
 
 		// Loading image from sensor
 		camera->removeNoise();
