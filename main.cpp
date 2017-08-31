@@ -27,11 +27,14 @@ using namespace cv;
 int main() {
 	auto starttime = clock();
 	DepthCamera * camera = nullptr;
-	if (CAMERA_TYPE == "pmd") {
+	if (!strcmp(CAMERA_TYPE, "pmd")) {
 		camera = new PMDCamera();
 	}
-	else if (CAMERA_TYPE == "sr300") {
+	else if (!strcmp(CAMERA_TYPE,"sr300")) {
 		camera = new SR300Camera();
+	}
+	else {
+		return 0;
 	}
 
 	//RGBCamera *cam = new Webcam(1);
@@ -47,7 +50,7 @@ int main() {
 	fs.release();
 
 	auto u = UDPSender();
-	namedWindow("Results", CV_WINDOW_NORMAL);
+	//namedWindow("Results", CV_WINDOW_NORMAL);
 
 	auto handAverager = StreamingAverager(4, 0.1);
 	auto paleeteAverager = StreamingAverager(6, 0.05);
@@ -90,17 +93,17 @@ int main() {
 			handObject = objects[handObjectIndex];
 
 			clicked = handObject.getHand().touchObject(planeObject.getPlane().getPlaneEquation(), planeObject.getPlane().R_SQUARED_DISTANCE_THRESHOLD * 5);
-			auto scene = Visualizer::visualizePlaneRegression(camera->getXYZMap(), planeObject.getPlane().getPlaneEquation(), planeObject.getPlane().R_SQUARED_DISTANCE_THRESHOLD, clicked);
+			//auto scene = Visualizer::visualizePlaneRegression(camera->getXYZMap(), planeObject.getPlane().getPlaneEquation(), planeObject.getPlane().R_SQUARED_DISTANCE_THRESHOLD, clicked);
 			//scene = Visualizer::visualizeHand(scene, handObject.getHand().pointer_finger_ij, handObject.getHand().shape_centroid_ij);
 			if (planeObject.leftEdgeConnected) {
 				Visualizer::visualizePlanePoints(mask, planeObject.getPlane().getPlaneIndicies());
 				auto m = moments(mask, false);
 				paletteCenter = Point(m.m10 / m.m00, m.m01 / m.m00);
-				circle(scene, paletteCenter, 2, Scalar(0, 0, 255), 2);
+				//circle(scene, paletteCenter, 2, Scalar(0, 0, 255), 2);
 				paletteFound = true;
 			}
-			namedWindow("Results", CV_WINDOW_AUTOSIZE);
-			imshow("Results", scene);
+			//namedWindow("Results", CV_WINDOW_AUTOSIZE);
+			//imshow("Results", scene);
 		}
 		else if (handObjectIndex != -1) {
 			handObject = objects[handObjectIndex];
@@ -108,16 +111,16 @@ int main() {
 		}
 		else if (planeObjectIndex != -1) {
 			planeObject = objects[planeObjectIndex];
-			auto scene = Visualizer::visualizePlaneRegression(camera->getXYZMap(), planeObject.getPlane().getPlaneEquation(), planeObject.getPlane().R_SQUARED_DISTANCE_THRESHOLD, clicked);
+			//auto scene = Visualizer::visualizePlaneRegression(camera->getXYZMap(), planeObject.getPlane().getPlaneEquation(), planeObject.getPlane().R_SQUARED_DISTANCE_THRESHOLD, clicked);
 			if (planeObject.leftEdgeConnected) {
 				Visualizer::visualizePlanePoints(mask, planeObject.getPlane().getPlaneIndicies());
 				auto m = moments(mask, false);
 				paletteCenter = Point(m.m10 / m.m00, m.m01 / m.m00);
-			    circle(scene, paletteCenter, 2, Scalar(0, 0, 255), 2);
+			    //circle(scene, paletteCenter, 2, Scalar(0, 0, 255), 2);
 				paletteFound = true;
 			}
-			namedWindow("Results", CV_WINDOW_AUTOSIZE);
-			imshow("Results", scene);
+			//namedWindow("Results", CV_WINDOW_AUTOSIZE);
+			//imshow("Results", scene);
 		}
 
 		// Organize the data and send to game engine
@@ -128,9 +131,9 @@ int main() {
 		if (handObjectIndex != -1) {
 			auto handPos = handAverager.addDataPoint(objects[handObjectIndex].getHand().fingers_xyz[0]);
 			//float hand_pt[3] = { objects[handObjectIndex].getHand().pointer_finger_xyz[0], objects[handObjectIndex].getHand().pointer_finger_xyz[1], objects[handObjectIndex].getHand().pointer_finger_xyz[2]};
-			float hand_pt[3] = { handPos[0], handPos[1], handPos[2] };
+			double hand_pt[3] = { handPos[0], handPos[1], handPos[2] };
 			auto hand_mat = Mat(3, 1, CV_32FC1, &hand_pt);
-			hand_mat = r*hand_mat + t;
+			//hand_mat = r*hand_mat + t;
 			handX = std::to_string(hand_mat.at<float>(0, 0));
 			handY = std::to_string(hand_mat.at<float>(1, 0));
 			handZ = std::to_string(hand_mat.at<float>(2, 0));
@@ -143,7 +146,7 @@ int main() {
 			auto pt = paleeteAverager.addDataPoint(camera->getXYZMap().at<Vec3f>(paletteCenter.y, paletteCenter.x));
 			float palette_pt[3] = { pt[0], pt[1], pt[2] };
 			auto palette_mat = Mat(3, 1, CV_32FC1, &palette_pt);
-			palette_mat = r*palette_mat + t;
+			//palette_mat = r*palette_mat + t;
 			paletteX = std::to_string(palette_mat.at<float>(0, 0));
 			paletteY = std::to_string(palette_mat.at<float>(1, 0));
 			paletteZ = std::to_string(palette_mat.at<float>(2, 0));

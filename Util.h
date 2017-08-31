@@ -14,6 +14,15 @@
 class Util
 {
 public:
+	/**
+	* Splits a string into components based on delimeter
+	* @param string_in string to split 
+	* @param delimeters c_str of delimeters to split at
+	* @return vector of string components
+	*/
+	static std::vector<std::string> split(char* string_in, char* delimeters);
+
+
 
 	/**
 	* Generates a random RGB color.

@@ -1,5 +1,19 @@
 #include "Util.h"
 
+std::vector<std::string> Util::split(char* string_in, char* delimeters){
+	int str_size = strlen(string_in);
+	std::auto_ptr<char> buffer(new char[str_size+1]);
+	strcpy(buffer.get(),string_in);
+	char* token;
+	std::vector<std::string> strings_out;
+	token = strtok (buffer.get(),delimeters);
+	while (token != NULL)
+	{
+		strings_out.push_back(std::string(token));
+		token = strtok (NULL, delimeters);
+	}
+	return strings_out;
+}
 
 cv::Vec3b Util::colorGenerator2()
 {
