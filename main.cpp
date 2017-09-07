@@ -8,8 +8,13 @@
 #include "opencv2/highgui/highgui.hpp"
 
 // OpenARK Libraries
-#include "PMDCamera.h"
-#include "SR300Camera.h"
+#include "version.h"
+#ifdef PMDSDK_ENABLED
+	#include "PMDCamera.h"
+#endif
+#ifdef RSSDK_ENABLED
+	#include "SR300Camera.h"
+#endif
 #include "Webcam.h"
 #include "Visualizer.h"
 #include "Hand.h"
@@ -22,20 +27,26 @@
 
 using namespace cv;
 
-#define CAMERA_TYPE "sr300"
-
 int main() {
 	auto starttime = clock();
 	DepthCamera * camera = nullptr;
-	if (!strcmp(CAMERA_TYPE, "pmd")) {
+
+#ifdef PMDSDK_ENABLED
+	if (!strcmp(OPENARK_CAMERA_TYPE, "pmd")) {
 		camera = new PMDCamera();
+	}else {
+		return 0;
 	}
-	else if (!strcmp(CAMERA_TYPE,"sr300")) {
+#endif
+#ifdef RSSDK_ENABLED
+	if (!strcmp(OPENARK_CAMERA_TYPE,"sr300")) {
 		camera = new SR300Camera();
 	}
 	else {
 		return 0;
 	}
+#endif
+
 
 	//RGBCamera *cam = new Webcam(1);
 	int frame = 0;
