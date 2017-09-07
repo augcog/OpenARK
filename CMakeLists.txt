@@ -86,7 +86,7 @@ else()
   set(DEPENDENCIES ${DEPENDENCIES} ${PMDSDK_LIBRARIES})
 endif(NOT PMDSDK_FOUND)
 
-configure_file(Version.h.in ${PROJECT_SOURCE_DIR}/Version.h)
+configure_file(Version.h.in ${PROJECT_SOURCE_DIR}/version.h)
 
 
 add_executable( OpenARK main.cpp ${SOURCES} )
