@@ -97,7 +97,7 @@ set_target_properties( OpenARK PROPERTIES
 if(${BUILD_TESTS})
   if(NOT EXISTS ${PROJECT_SOURCE_DIR}/OpenARK_test)
     execute_process(
-      COMMAND git clone https://github.com/joemenke/OpenARK_test.git
+      COMMAND git clone https://github.com/augcog/OpenARK_test.git
       WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
   #else()
   #  execute_process(
