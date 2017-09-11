@@ -1,0 +1,9 @@
+#ifndef _VERSION_H_
+#define _VERSION_H_
+
+@RSSDK@#define RSSDK_ENABLED
+@RSSDK@#define OPENARK_CAMERA_TYPE "sr300"
+@PMDSDK@#define PMDSDK_ENABLED
+@PMDSDK@#define OPENARK_CAMERA_TYPE "pmd" 
+
+#endif // _VERSION_H_ 

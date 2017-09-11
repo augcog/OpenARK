@@ -2,7 +2,6 @@
 
 #include "Util.h"
 #include "Visualizer.h"
-#include "global.h"
 
 Hand::Hand()
 {
@@ -229,21 +228,12 @@ void Hand::analyzeHand(cv::Mat xyzMap)
 		}
 	}
 
-	if (strcmp(camera_name, "pmd") == 0)
-	{
-		cv::namedWindow("Contours", CV_WINDOW_AUTOSIZE);
-		cv::imshow("Contours", img);
 
-	}
+	cv::Mat img_dst;
+	cv::resize(img, img_dst, cv::Size(640, 480), 0, 0, cv::INTER_AREA);
+	cv::namedWindow("Contours", CV_WINDOW_AUTOSIZE);
+	cv::imshow("Contours", img_dst);
 
-	else
-	{
-		cv::Mat img_dst;
-		cv::resize(img, img_dst, cv::Size(640, 480), 0, 0, cv::INTER_AREA);
-		cv::namedWindow("Contours", CV_WINDOW_AUTOSIZE);
-		cv::imshow("Contours", img_dst);
-
-	}
 }
 
 //find the contour with the maximum number of points
