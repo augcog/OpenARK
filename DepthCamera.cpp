@@ -14,27 +14,32 @@ void DepthCamera::destroyInstance()
 {
 }
 
-void DepthCamera::computeClusters(double max_distance, double min_size)
+void DepthCamera::computeClusters(double max_distance, double min_size, int floodfill_interval)
 {
 	clusters.clear();
+
 	cv::Mat depthMap;
-	cv::medianBlur(xyzMap, depthMap, 3);
+
+    cv::Mat eKernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4));
+    cv::Mat dKernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(1, 2));
+    cv::erode(xyzMap, depthMap, eKernel);
+	//cv::medianBlur(xyzMap, depthMap, 3);
+
 	cv::Mat mask = cv::Mat::zeros(depthMap.rows, depthMap.cols, depthMap.type());
 
-	for (auto r = depthMap.rows - 1; r >= 0; r--)
+	for (auto r = depthMap.rows - 1; r >= 0; r-=floodfill_interval)
 	{
-		for (auto c = 0; c < depthMap.cols; c++)
+		for (auto c = 0; c < depthMap.cols; c+=floodfill_interval)
 		{
 			if (depthMap.at<cv::Vec3f>(r, c)[2] > 0.2)
 			{
-				mask = cv::Mat::zeros(depthMap.rows, depthMap.cols, depthMap.type());
-				floodFill(c, r, depthMap, mask, max_distance);
-				cv::Mat channels[3];
-				cv::split(mask, channels);
+                mask.setTo(cv::Scalar(0, 0, 0));
+				int pts = floodFill(c, r, depthMap, mask, max_distance);
 
-				if (cv::countNonZero(channels[2]) > min_size)
+				if (pts > min_size)
 				{
 					cv::medianBlur(mask, mask, 3);
+                    cv::dilate(mask, mask, dKernel);
 					clusters.push_back(mask.clone());
 				}
 			}
@@ -45,52 +50,62 @@ void DepthCamera::computeClusters(double max_distance, double min_size)
 /***
 Recursively performs floodfill on depthMap
 ***/
-void DepthCamera::floodFill(int x, int y, cv::Mat& depthMap, cv::Mat& mask, double max_distance)
+int DepthCamera::floodFill(int x, int y, cv::Mat& depthMap, cv::Mat& mask, double max_distance)
 {
-	if (x < 0 || x >= depthMap.cols || y < 0 || y >= depthMap.rows || depthMap.at<cv::Vec3f>(y, x)[2] == 0.0)
-		return;
 
-	if (closeEnough(x, y, depthMap, 2, max_distance)) {
-		mask.at<cv::Vec3f>(y, x) = depthMap.at<cv::Vec3f>(y, x);
-		depthMap.at<cv::Vec3f>(y, x)[0] = 0;
-		depthMap.at<cv::Vec3f>(y, x)[1] = 0;
-		depthMap.at<cv::Vec3f>(y, x)[2] = 0;
-	}
-	else {
-		return;
-	}
+    if (x < 0 || x >= depthMap.cols || y < 0 || y >= depthMap.rows || depthMap.at<cv::Vec3f>(y, x)[2] == 0.0)
+        return 0;
 
-	floodFill(x + 1, y, depthMap, mask, max_distance);
-	floodFill(x - 1, y, depthMap, mask, max_distance);
-	floodFill(x, y + 1, depthMap, mask, max_distance);
-	floodFill(x, y - 1, depthMap, mask, max_distance);
+    int total = 0;
+
+    mask.at<cv::Vec3f>(y, x) = depthMap.at<cv::Vec3f>(y, x);
+    if (depthMap.at<cv::Vec3f>(y, x)[2]) total = 1;
+
+    depthMap.at<cv::Vec3f>(y, x)[0] = 0;
+    depthMap.at<cv::Vec3f>(y, x)[1] = 0;
+    depthMap.at<cv::Vec3f>(y, x)[2] = 0;
+
+    std::pair<int, int> nxtPoints[4] = { {x + 1, y}, {x - 1, y}, {x, y + 1}, {x, y - 1} };
+
+    for (int i = 0; i < sizeof nxtPoints / sizeof(nxtPoints[0]); ++i) {
+        int nx = nxtPoints[i].first, ny = nxtPoints[i].second;
+        if (nx < 0 || nx >= depthMap.cols || ny < 0 || ny >= depthMap.rows || depthMap.at<cv::Vec3f>(ny, nx)[2] == 0)
+            continue;
+
+        double dist = Util::euclidianDistance3D(depthMap.at<cv::Vec3f>(y, x), depthMap.at<cv::Vec3f>(ny, nx));
+        if (dist < max_distance) {
+            total += floodFill(nx, ny, depthMap, mask, max_distance);
+        }
+    }
+
+    return total;
 }
 
-/***
-Check whether candidate point is close enough to neighboring points
-***/
-bool DepthCamera::closeEnough(int x, int y, cv::Mat& depthMap, int num_neighbors, double max_distance)
-{
-	auto num_close = 0;
-	if (x - 1 < 0 || depthMap.at<cv::Vec3f>(y, x - 1)[2] == 0 || Util::euclidianDistance3D(depthMap.at<cv::Vec3f>(y, x), depthMap.at<cv::Vec3f>(y, x - 1)) < max_distance) {
-		num_close++;
-	}
-	if (x + 1 >= depthMap.cols || depthMap.at<cv::Vec3f>(y, x + 1)[2] == 0 || Util::euclidianDistance3D(depthMap.at<cv::Vec3f>(y, x), depthMap.at<cv::Vec3f>(y, x + 1)) < max_distance) {
-		num_close++;
-	}
-	if (y - 1 < 0 || depthMap.at<cv::Vec3f>(y - 1, x)[2] == 0 || Util::euclidianDistance3D(depthMap.at<cv::Vec3f>(y, x), depthMap.at<cv::Vec3f>(y - 1, x)) < max_distance) {
-		num_close++;
-	}
-	if (y + 1 >= depthMap.rows || depthMap.at<cv::Vec3f>(y + 1, x)[2] == 0 || Util::euclidianDistance3D(depthMap.at<cv::Vec3f>(y, x), depthMap.at<cv::Vec3f>(y + 1, x)) < max_distance) {
-		num_close++;
-	}
-
-	if (num_close >= num_neighbors) {
-		return true;
-	}
-
-	return false;
-}
+///***
+//Check whether candidate point is close enough to neighboring points
+//***/
+//bool DepthCamera::closeEnough(int x, int y, cv::Mat& depthMap, int num_neighbors, double max_distance)
+//{
+//	auto num_close = 0;
+//	if (x - 1 < 0 || depthMap.at<cv::Vec3f>(y, x - 1)[2] == 0 || Util::euclidianDistance3D(depthMap.at<cv::Vec3f>(y, x), depthMap.at<cv::Vec3f>(y, x - 1)) < max_distance) {
+//		num_close++;
+//	}
+//	if (x + 1 >= depthMap.cols || depthMap.at<cv::Vec3f>(y, x + 1)[2] == 0 || Util::euclidianDistance3D(depthMap.at<cv::Vec3f>(y, x), depthMap.at<cv::Vec3f>(y, x + 1)) < max_distance) {
+//		num_close++;
+//	}
+//	if (y - 1 < 0 || depthMap.at<cv::Vec3f>(y - 1, x)[2] == 0 || Util::euclidianDistance3D(depthMap.at<cv::Vec3f>(y, x), depthMap.at<cv::Vec3f>(y - 1, x)) < max_distance) {
+//		num_close++;
+//	}
+//	if (y + 1 >= depthMap.rows || depthMap.at<cv::Vec3f>(y + 1, x)[2] == 0 || Util::euclidianDistance3D(depthMap.at<cv::Vec3f>(y, x), depthMap.at<cv::Vec3f>(y + 1, x)) < max_distance) {
+//		num_close++;
+//	}
+//
+//	if (num_close >= num_neighbors) {
+//		return true;
+//	}
+//
+//	return false;
+//}
 
 /***
 Remove noise on zMap and xyzMap based on INVALID_FLAG_VALUE and CONFIDENCE_THRESHOLD

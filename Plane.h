@@ -19,6 +19,7 @@
 #include <pcl/segmentation/region_growing.h>
 #include <pcl/features/normal_3d_omp.h>
 
+
 /**
 * Class defining a plane object.
 * The plane object will be defined by its regression equation

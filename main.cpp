@@ -73,12 +73,12 @@ int main() {
 		// Loading image from sensor
 		camera->removeNoise();
 		if (camera->badInput) {
-			waitKey(10);
+			waitKey(1);
 			continue;
 		}
 
 		// Classifying objects in the scene
-	    camera->computeClusters(0.02, 500);
+	    camera->computeClusters(0.67, 500, 10);
 		auto clusters = camera->getClusters();
 		std::vector<Object3D> objects;
 		auto handObjectIndex = -1, planeObjectIndex = -1;
@@ -94,7 +94,7 @@ int main() {
 			objects.push_back(obj);
 		}
 
-		// Interprate the relationship between the objects
+		// Interpret the relationship between the objects
 		auto clicked = false, paletteFound = false;
 		Object3D handObject, planeObject;
 		Point paletteCenter(-1. - 1);

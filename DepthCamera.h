@@ -32,8 +32,9 @@ public:
 	 * Performs euclidean clustering to separate discrete objects in the input point cloud.
 	 * @param max_distance the maximum allowed distance to be clustered
 	 * @param min_size the minimum number of points a valid cluster should have
+	 * @param floodfill_interval the x, y interval between points at which we should try to flood fill. higher = faster 
 	 */
-	void computeClusters(double max_distance, double min_size);
+	void computeClusters(double max_distance, double min_size, int floodfill_interval=10);
 
 	/**
 	 * Reads a sample frame from file.
@@ -107,18 +108,19 @@ protected:
 	 * @param [in] zMap the xyzMap point cloud
 	 * @param [out] mask the resulting region of the floodfill
 	 * @param max_distance the maximum euclidean distance allowed between neighbors
+	 * @returns number of points in component
 	 */
-	static void floodFill(int x, int y, cv::Mat& zMap, cv::Mat& mask, double max_distance);
+	static int floodFill(int x, int y, cv::Mat& zMap, cv::Mat& mask, double max_distance);
 
-	/**
-	 * Analyze the candidate point with its neighbors to determine whether they belong to the same cluster.
-	 * @param x x-coordinate of the candidate point
-	 * @param y y-coordinate of the candidate point
-	 * @param [in] depthMap the xyzMap point cloud of the scene
-	 * @param num_neighbors the number of neighbors to consider
-	 * @param max_distance the maximum euclidean distance allowed between neighbors
-	 */
-	static bool closeEnough(int x, int y, cv::Mat& depthMap, int num_neighbors, double max_distance);
+	///**
+	// * Analyze the candidate point with its neighbors to determine whether they belong to the same cluster.
+	// * @param x x-coordinate of the candidate point
+	// * @param y y-coordinate of the candidate point
+	// * @param [in] depthMap the xyzMap point cloud of the scene
+	// * @param num_neighbors the number of neighbors to consider
+	// * @param max_distance the maximum euclidean distance allowed between neighbors
+	// */
+	//static bool closeEnough(int x, int y, cv::Mat& depthMap, int num_neighbors, double max_distance);
 
 	/**
 	 * Stores the (x,y,z) data of every point in the observable world.

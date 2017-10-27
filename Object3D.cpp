@@ -14,6 +14,9 @@ Object3D::Object3D(cv::Mat cluster) {
 	hasHand = false;
 	hasPlane = false;
 	hasShape = false;
+
+    //std::string name = "obj";
+    //name += ('0' + _debugObjID);
 	cv::namedWindow("hand", cv::WINDOW_AUTOSIZE);
 	cv::imshow("hand", cluster);
 	// Step 1: determine whether cluster is hand
@@ -21,9 +24,13 @@ Object3D::Object3D(cv::Mat cluster) {
 	//if (checkForHand(cluster, 0.005, 0.25)) { //original
 	if (checkForHand(cluster, 0.005, 0.4)) {
 		hand = Hand(cluster, 50);
+
 		hasHand = true;
 		return;
 	}
+
+    // TEMPORARILY disabling plane detection
+    return;
 
 
 	// Step 2: determine whether there is a plane
@@ -53,7 +60,7 @@ Object3D::Object3D(cv::Mat cluster) {
 
 		if (checkForHand(hand_cluster, -0.99, 0.2))
 		{
-			hand = Hand(hand_cluster, 30);
+			//hand = Hand(hand_cluster, 30);
 			auto finger_length = Util::euclidianDistance3D(hand.fingers_xyz[0], hand.centroid_xyz);
 			if (finger_length > 0.03 && finger_length < 0.2)
 			{
@@ -127,7 +134,6 @@ double Object3D::centroidCircleSweep(cv::Mat cluster, double distance) const
 
 bool Object3D::checkForHand(cv::Mat cluster, double min_coverage, double max_coverage, double pointer_finger_distance)
 {
-
 	checkEdgeConnected(cluster);
 	//if ((rightEdgeConnected && !leftEdgeConnected) || (leftEdgeConnected && rightEdgeConnected)) { //original
 		auto coverage = centroidCircleSweep(cluster, pointer_finger_distance);

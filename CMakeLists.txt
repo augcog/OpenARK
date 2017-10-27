@@ -17,7 +17,8 @@ else()
     message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
 
-
+set(Boost_USE_STATIC_LIBS ON) 
+set(Boost_USE_STATIC ON) 
 find_package( PCL REQUIRED )
 
 find_package( OpenCV REQUIRED )
