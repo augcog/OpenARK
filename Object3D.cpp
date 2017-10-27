@@ -15,8 +15,6 @@ Object3D::Object3D(cv::Mat cluster) {
 	hasPlane = false;
 	hasShape = false;
 
-    //std::string name = "obj";
-    //name += ('0' + _debugObjID);
 	cv::namedWindow("hand", cv::WINDOW_AUTOSIZE);
 	cv::imshow("hand", cluster);
 	// Step 1: determine whether cluster is hand
@@ -60,7 +58,7 @@ Object3D::Object3D(cv::Mat cluster) {
 
 		if (checkForHand(hand_cluster, -0.99, 0.2))
 		{
-			//hand = Hand(hand_cluster, 30);
+			hand = Hand(hand_cluster, 30);
 			auto finger_length = Util::euclidianDistance3D(hand.fingers_xyz[0], hand.centroid_xyz);
 			if (finger_length > 0.03 && finger_length < 0.2)
 			{

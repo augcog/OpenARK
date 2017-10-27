@@ -73,7 +73,7 @@ int main() {
 		// Loading image from sensor
 		camera->removeNoise();
 		if (camera->badInput) {
-			waitKey(1);
+			waitKey(10);
 			continue;
 		}
 
