@@ -89,7 +89,7 @@ Create xyzMap, zMap, ampMap, and flagMap from sensor input
 ***/
 void PMDCamera::update()
 {
-	initilizeImages();
+	initializeImages();
 
 	fillInAmps();
 	fillInZCoords();

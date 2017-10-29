@@ -54,7 +54,7 @@ Create xyzMap, zMap, ampMap, and flagMap from sensor input
 ***/
 void SR300Camera::update()
 {
-	initilizeImages();
+	initializeImages();
 	fillInAmps();
 	fillInZCoords();
 	sm->ReleaseFrame();
@@ -73,7 +73,7 @@ void SR300Camera::fillInZCoords()
 	{
 		if (sts == Intel::RealSense::Status::STATUS_STREAM_CONFIG_CHANGED)
 		{
-			wprintf_s(L"Stream configuration was changed, re-initilizing\n");
+			wprintf_s(L"Stream configuration was changed, re-initializing\n");
 			sm ->Close();
 		}
 	}

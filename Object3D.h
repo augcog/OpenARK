@@ -32,7 +32,6 @@ public:
 	Plane getPlane();
 	cv::Mat getShape();
 
-
 	/**
 	* Deconstructs a Object3D instance.
 	*/
