@@ -54,23 +54,23 @@ Performs floodfill on depthMap
 int DepthCamera::floodFill(int seed_x, int seed_y, cv::Mat& depthMap, cv::Mat& mask, double max_distance)
 {
     static std::vector<cv::Point> stk;
-    stk.clear();
-    stk.reserve(100);
 
-    stk.push_back(cv::Point(seed_x, seed_y));
+    if (stk.size() <= depthMap.rows * depthMap.cols) {
+        stk.resize(depthMap.rows * depthMap.cols + 1);
+    }
+
+    stk[0] = cv::Point(seed_x, seed_y);
+    int stkPtr = 1;
 
     int total = 0;
 
-    while (!stk.empty()) {
-        int x = stk.back().x, y = stk.back().y;
-
-        stk.pop_back();
+    while (stkPtr) {
+        int x = stk[--stkPtr].x, y = stk[stkPtr].y;
 
         if (x < 0 || x >= depthMap.cols || y < 0 || y >= depthMap.rows || depthMap.at<cv::Vec3f>(y, x)[2] < 0.1)
             continue;
 
-        if (depthMap.at<cv::Vec3f>(y, x)[2] > 0.2) 
-            ++ total;
+        total += (depthMap.at<cv::Vec3f>(y, x)[2] > 0.2);
 
         mask.at<cv::Vec3f>(y, x) =  depthMap.at<cv::Vec3f>(y, x);
         depthMap.at<cv::Vec3f>(y, x) = cv::Vec3f(0, 0, 0);
@@ -84,11 +84,11 @@ int DepthCamera::floodFill(int seed_x, int seed_y, cv::Mat& depthMap, cv::Mat& m
                 depthMap.at<cv::Vec3f>(adjPt.y, adjPt.x)[2] == 0)
                 continue;
 
-            double dist = 
-                Util::euclidianDistance3D(depthMap.at<cv::Vec3f>(y, x), depthMap.at<cv::Vec3f>(adjPt.y, adjPt.x));
+            double dist = Util::euclidianDistance3D(depthMap.at<cv::Vec3f>(y, x),
+                                                    depthMap.at<cv::Vec3f>(adjPt.y, adjPt.x));
 
             if (dist < max_distance) {
-                stk.push_back(adjPt);
+                stk[stkPtr++] = adjPt;
             }
         }
     }

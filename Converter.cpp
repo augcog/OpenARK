@@ -6,8 +6,8 @@ Returns the next frame if next frame is recorded
 Returns the previous frame if next frame is not recorded
 ***/
 void Converter::ConvertPXCImageToOpenCVMat(Intel::RealSense::Image *inImg, Intel::RealSense::ImageData data, cv::Mat *outImg) {
-	auto cvDataType = 0;
-	auto cvDataWidth = 0;
+	int cvDataType = 0;
+	int cvDataWidth = 0;
 
 	auto imgInfo = inImg->QueryInfo();
 

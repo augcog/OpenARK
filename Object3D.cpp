@@ -106,8 +106,7 @@ double Object3D::centroidCircleSweep(cv::Mat cluster, double distance) const
     // NOTE: now computes the radius based on median distance (instead of estimating distance per pixel at centroid)
     //       it. talk to me (Alex) if this causes any problems.
 
-    static std::vector<float> pointsZ;
-    pointsZ.clear();
+    std::vector<float> pointsZ;
     pointsZ.reserve(cluster.rows * cluster.cols / 4);
 
     for (int r = 0; r < cluster.rows; ++r) {
