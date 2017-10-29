@@ -19,7 +19,7 @@ Object3D::Object3D(cv::Mat cluster) {
 
     //if (checkForHand(cluster, 0.005, 0.25)) { //original
     //if (checkForHand(cluster, 0.005, 0.4)) { //original 2
-    if (checkForHand(cluster, 0.05, 0.6, 0.08)) {
+    if (checkForHand(cluster, 0.05, 0.7, 0.08)) {
         hand = Hand(cluster, 50, 30);
 
         hasHand = true;
@@ -135,21 +135,25 @@ double Object3D::centroidCircleSweep(cv::Mat cluster, double distance) const
     cv::Mat dstImg = cv::Mat::zeros(binary_img.size(), binary_img.type());
     cv::circle(mask, center, radius, cv::Scalar(255));
     binary_img.copyTo(dstImg, mask);
-    auto covered = 0;
+
+    int covered = 0, total = 0;
 
     //cv::namedWindow("mask", cv::WINDOW_AUTOSIZE);
     //cv::imshow("mask", dstImg);
 
-    for (auto r = dstImg.rows-1; r > 0; r--) {
-        for (auto c = 0; c < dstImg.cols; c++) {
+    for (auto r = dstImg.rows-1; r >= 0; --r) {
+        for (auto c = 0; c < dstImg.cols; ++c) {
             if (dstImg.at<uchar>(r, c) != 0) {
-                covered++;
+                ++covered;
+            }
+            if (mask.at<uchar>(r, c) != 0) {
+                ++total;
             }
         }
     }
-    //returns 1 for covered and 1 for countNonZero(mask)
-    auto coverage = static_cast<double>(covered) / cv::countNonZero(mask);
-    return coverage;
+
+    // return the fraction of the circle covered
+    return static_cast<double>(covered) / total;
 }
 
 bool Object3D::checkForHand(cv::Mat cluster, double min_coverage, double max_coverage, double pointer_finger_distance)

@@ -74,10 +74,10 @@ public:
 
 
 	/**
-	* Returns all points within a radius of a centroid
+	* Returns the fraction of points in the cluster that is "distance" away from the centroid
 	* @param cluster the input point cloud
 	* @param distance the radius (meters)
-	* @return the percentage of points in the cluster that is "distance" away from the centroid
+	* @return the fraction of points in the cluster that is "distance" away from the centroid
 	*/
 	double centroidCircleSweep(cv::Mat cluster, double distance) const;
 
