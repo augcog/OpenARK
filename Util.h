@@ -115,8 +115,8 @@ public:
     /**
     * Converts a point into a value representing the direction it is at from the origin, going clockwise starting from the bottom.
     * Note: the value returned is not necessarily the slope. However, points ordered by this quantity are guarenteed to be in order of angle.
-    * This function returns x/y if pointij is in the 3rd quadrant, 2 * FLT_MAX - x/y if in 2nd quadrant, 
-                         2 * FLT_MAX + x/y if in 1st quadrant, and 4 * FLT_MAX - x/y if in 4th quadrant.
+    * This function returns x/y if pointij is in the 3rd quadrant, FLT_MAX/2 - x/y if in 2nd quadrant, 
+                         FLT_MAX/2 + x/y if in 1st quadrant, and FLT_MAX - x/y if in 4th quadrant.
     * @param pointij input point in ij coordinates
     * @returns  
     */
