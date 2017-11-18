@@ -1,5 +1,6 @@
+#include "stdafx.h"
 #include "StreamingAverager.h"
-
+#include "Util.h"
 
 StreamingAverager::StreamingAverager(int frequency, double rejectionDistance)
 {
@@ -10,7 +11,7 @@ StreamingAverager::StreamingAverager(int frequency, double rejectionDistance)
 
 cv::Vec3f StreamingAverager::addDataPoint(cv::Vec3f pt)
 {
-	if (dataPoints.size() > 0 && Util::euclidianDistance3D(pt, getCurrentAverage()) > rejectionThreshold)
+	if (dataPoints.size() > 0 && Util::euclideanDistance3D(pt, getCurrentAverage()) > rejectionThreshold)
 	{
 		addEmptyPoint();
 		return getCurrentAverage();
@@ -32,7 +33,7 @@ void StreamingAverager::addEmptyPoint()
 {
 	if (dataPoints.size() > 0)
 	{
-		auto extra = dataPoints.front();
+		cv::Vec3f extra = dataPoints.front();
 		dataPoints.pop_front();
 		currentValue = currentValue - extra;
 	}

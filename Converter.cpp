@@ -1,5 +1,5 @@
+#include "stdafx.h"
 #include "Converter.h"
-
 
 /***
 Returns the next frame if next frame is recorded

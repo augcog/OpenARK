@@ -1,24 +1,6 @@
 #pragma once
 
-// OpenCV Libaries
-#include <opencv2/imgproc/imgproc.hpp>
-
-// PCL Libaries
-#include <pcl/filters/voxel_grid.h>
-#include <pcl/point_types.h>
-#include <pcl/features/normal_3d.h>
-#include <pcl/io/pcd_io.h>
-#include <pcl/io/ply_io.h>
-#include <pcl/point_cloud.h>
-#include <pcl/console/parse.h>
-#include <pcl/common/transforms.h>
-#include <pcl/visualization/pcl_visualizer.h>
-#include <pcl/filters/passthrough.h>
-#include <pcl/features/integral_image_normal.h>
-#include <pcl/visualization/cloud_viewer.h>
-#include <pcl/segmentation/region_growing.h>
-#include <pcl/features/normal_3d_omp.h>
-
+#include "stdafx.h"
 
 /**
 * Class defining a plane object.

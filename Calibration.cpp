@@ -1,4 +1,6 @@
+#include "stdafx.h"
 #include "Calibration.h"
+#include "Util.h"
 
 
 void Calibration::XYZToUnity(DepthCamera& depth_cam, int num_boards, int board_w, int board_h)

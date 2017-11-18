@@ -108,9 +108,11 @@ protected:
      * @param [in] zMap the xyzMap point cloud
      * @param [out] mask the resulting region of the floodfill
      * @param max_distance the maximum euclidean distance allowed between neighbors
+     * @param output_points optionally, pointer to a vector in which we will 
+              store the points in the component. This vector should be AT LEAST the size of the xyz map
      * @returns number of points in component
      */
-    static int floodFill(int seed_x, int seed_y, cv::Mat& zMap, cv::Mat& mask, double max_distance);
+    static int floodFill(int seed_x, int seed_y, cv::Mat& zMap, cv::Mat& mask, double max_distance, std::vector <cv::Point> * output_points = nullptr);
 
     ///**
     // * Analyze the candidate point with its neighbors to determine whether they belong to the same cluster.

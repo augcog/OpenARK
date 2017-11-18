@@ -1,6 +1,5 @@
 #pragma once
-//OpenCV libraries
-#include "opencv2/highgui/highgui.hpp"
+#include "stdafx.h"
 
 /**
 * Abstract class that defines the behavior of a RGB camera.

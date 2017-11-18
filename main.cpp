@@ -1,13 +1,7 @@
+#include "stdafx.h"
+
+// remove to disable profiling
 #define PROFILING
-
-// C++ Libraries
-#include <stdio.h>
-#include <iostream>
-#include <string>
-#include <time.h>
-
-// OpenCV Libraries
-#include "opencv2/highgui/highgui.hpp"
 
 // OpenARK Libraries
 #include "version.h"
@@ -17,6 +11,7 @@
 #ifdef RSSDK_ENABLED
     #include "SR300Camera.h"
 #endif
+
 #include "Webcam.h"
 #include "Visualizer.h"
 #include "Hand.h"
@@ -27,10 +22,19 @@
 #include "Object3D.h"
 #include "StreamingAverager.h"
 
+#include "HandFeatureExtractor.h"
+#include "HandClassifier.h"
+
 using namespace cv;
 
+const char* SVM_MODEL_PATH = "svm/";
+const double SVM_PREDICT_BOUNDARY = 0.5;
+
+#ifdef PROFILING
+const char* profCategories[] = { "Update", "Denoise", "Clustering", "Hand Identification", "Other" };
+#endif
+
 int main() {
-    auto starttime = clock();
     DepthCamera * camera = nullptr;
 
 #ifdef PMDSDK_ENABLED
@@ -50,10 +54,10 @@ int main() {
     }
 #endif
 
-
     //RGBCamera *cam = new Webcam(1);
     int frame = 0;
     //Calibration::XYZToUnity(*pmd, 4, 4, 3);
+
     FileStorage fs;
     fs.open("RT_Transform.txt", FileStorage::READ);
 
@@ -62,12 +66,11 @@ int main() {
     fs["T"] >> t;
 
     fs.release();
+    UDPSender u = UDPSender();
 
-    auto u = UDPSender();
-    //namedWindow("Results", CV_WINDOW_NORMAL);
+    StreamingAverager handAverager = StreamingAverager(4, 0.1), paleeteAverager = StreamingAverager(6, 0.05);
 
-    auto handAverager = StreamingAverager(4, 0.1);
-    auto paleeteAverager = StreamingAverager(6, 0.05);
+    classifier::HandClassifier & handClassifier = classifier::SVMHandClassifier(SVM_MODEL_PATH);
 
 #ifdef PROFILING
     // Profiling code
@@ -76,10 +79,9 @@ int main() {
     int profCycles = 0;
 
     // set starting time
-    clock_t lastTime = clock(), delta, totalTime = 0;
+    clock_t lastTime = clock(), delta, totalTime = 0, cycleStartTime = 0;
 
     // names of profiling categories, change/add as need
-    char* profCategories[] = { "Update", "Denoise", "Clustering", "Hand Identification", "Other" };
     clock_t profTimes[sizeof profCategories / sizeof profCategories[0]];
 
     // set all times to 0 initially
@@ -92,14 +94,14 @@ int main() {
 
 #ifdef PROFILING
         ++profCycles;
-        delta = clock() - lastTime; profTimes[0] += delta; totalTime += delta; lastTime += delta;
+        delta = clock() - lastTime; profTimes[0] += delta; totalTime += delta; lastTime = clock();
 #endif
 
         // Loading image from sensor
         camera->removeNoise();
 
 #ifdef PROFILING
-        delta = clock() - lastTime; profTimes[1] += delta; totalTime += delta; lastTime += delta;
+        delta = clock() - lastTime; profTimes[1] += delta; totalTime += delta; lastTime = clock();
 #endif
 
         if (camera->badInput) {
@@ -111,43 +113,114 @@ int main() {
         }
 
         // Classifying objects in the scene
-        camera->computeClusters(0.667, 500, 10);
+        camera->computeClusters(0.667, 750, 15);
         auto clusters = camera->getClusters();
         std::vector<Object3D> objects;
-        auto handObjectIndex = -1, planeObjectIndex = -1;
+
+        int handObjectIndex = -1, handCount = 0, planeObjectIndex = -1;
+        float closestHandDist = FLT_MAX;
 
 #ifdef PROFILING
-        delta = clock() - lastTime; profTimes[2] += delta; totalTime += delta; lastTime += delta;
+        delta = clock() - lastTime; profTimes[2] += delta; totalTime += delta; lastTime = clock();
 #endif
 
-        for (auto i = 0; i < clusters.size(); i++) {
-            auto obj = Object3D(clusters[i].clone());
+        // visualization of hand objects
+        cv::Mat handVisual = cv::Mat::zeros(camera->getHeight() * 2, camera->getWidth() * 2, CV_8UC3);
+
+        for (int i = 0; i < clusters.size(); ++i) {
+            objects.emplace_back(clusters[i]);
+
+            Object3D obj = objects.back();
+
             if (obj.hasHand) {
-                handObjectIndex = i;
+                std::vector<double> feats = classifier::features::extractHandFeatures(obj, clusters[i]);
+
+                // get SVM prediction
+                double predict = handClassifier.classify(feats);
+
+                if (predict > SVM_PREDICT_BOUNDARY) {
+                    ++handCount;
+                    handVisual = Visualizer::visualizeHand(handVisual, obj.getHand());
+                    cv::polylines(handVisual, obj.getComplexContour(), true, cv::Scalar(100, 255, 100), 1);
+                    if (obj.getHand().centroid_xyz[2] < closestHandDist) {
+                        handObjectIndex = i;
+                        closestHandDist = obj.getHand().centroid_xyz[2];
+                    }
+                }
+                else {
+                    cv::polylines(handVisual, obj.getComplexContour(), true, cv::Scalar(100, 100, 200));
+                }
+
+                // display prediction
+                std::stringstream predictionDisp;
+                predictionDisp << std::setprecision(3) << std::fixed << predict;
+
+                cv::Point dispPt = cv::Point(obj.getHand().centroid_ij.x - 60, obj.getHand().centroid_ij.y);
+
+                cv::putText(handVisual, predictionDisp.str(),
+                    dispPt, 0, 2, cv::Scalar(100, 255, 100));
+
+
             }
 
             if (obj.hasPlane) {
                 planeObjectIndex = i;
             }
-            objects.push_back(obj);
+        }
+
+        if (handObjectIndex != -1) {
+            cv::polylines(handVisual, objects[handObjectIndex].getComplexContour(),
+                true, cv::Scalar(0, 255, 0), 2);
         }
 
 #ifdef PROFILING
-        delta = clock() - lastTime; profTimes[3] += delta; totalTime += delta; lastTime += delta;
+        delta = clock() - lastTime; profTimes[3] += delta; totalTime += delta; lastTime = clock();
 #endif
 
+        // Show visualizations
+        cv::Mat handScaled;
+        cv::resize(handVisual, handScaled, cv::Size(camera->getWidth(), camera->getHeight()));
+
+        cv::namedWindow("Nearest Hand", cv::WINDOW_AUTOSIZE);
+        if (handObjectIndex != -1) {
+            cv::imshow("Nearest Hand", clusters[handObjectIndex]);
+            cv::putText(handScaled,
+                std::to_string(handCount) + " Hand" + (handCount == 1 ? "" : "s"),
+                cv::Point(10, 25), 0, 0.5, cv::Scalar(255, 255, 255));
+        }
+        else {
+            cv::imshow("Nearest Hand", handScaled);
+            cv::putText(handScaled, "No Hands", cv::Point(10, 25), 0, 0.5, cv::Scalar(255,255,255));
+        }
+
+        if (cycleStartTime) {
+            float fps = (float)CLOCKS_PER_SEC / (clock() - cycleStartTime);
+            std::stringstream fpsDisplay;
+            fpsDisplay << "FPS: " << (fps < 10 ? "0" : "") << setprecision(3) << std::fixed << fps;
+
+                cv::putText(handScaled, fpsDisplay.str(),
+                    cv::Point(handScaled.cols - 120, 25), 0, 0.5, cv::Scalar(255, 255, 255));
+        }
+        cycleStartTime = clock();
+
+        cv::namedWindow("Fingers");
+        cv::imshow("Fingers", handScaled);
+
+
         // Interpret the relationship between the objects
-        auto clicked = false, paletteFound = false;
+        bool clicked = false, paletteFound = false;
+
         Object3D handObject, planeObject;
         Point paletteCenter(-1. - 1);
         Mat mask = Mat::zeros(camera->getXYZMap().rows, camera->getXYZMap().cols, CV_8UC1);
+
         if (planeObjectIndex != -1 && handObjectIndex != -1) {
             planeObject = objects[planeObjectIndex];
             handObject = objects[handObjectIndex];
 
             clicked = handObject.getHand().touchObject(planeObject.getPlane().getPlaneEquation(), planeObject.getPlane().R_SQUARED_DISTANCE_THRESHOLD * 5);
             //auto scene = Visualizer::visualizePlaneRegression(camera->getXYZMap(), planeObject.getPlane().getPlaneEquation(), planeObject.getPlane().R_SQUARED_DISTANCE_THRESHOLD, clicked);
-            //scene = Visualizer::visualizeHand(scene, handObject.getHand().pointer_finger_ij, handObject.getHand().shape_centroid_ij);
+            //scene = Visualizer::visualizeHand(scene, handObject.getHand());
             if (planeObject.leftEdgeConnected) {
                 Visualizer::visualizePlanePoints(mask, planeObject.getPlane().getPlaneIndicies());
                 auto m = moments(mask, false);
@@ -160,7 +233,7 @@ int main() {
         }
         else if (handObjectIndex != -1) {
             handObject = objects[handObjectIndex];
-            //cv::imshow("Results", Visualizer::visualizeHand(pmd->getXYZMap(), handObject.getHand().pointer_finger_ij, handObject.getHand().shape_centroid_ij));
+            //cv::imshow("Results", Visualizer::visualizeHand(pmd->getXYZMap(), handObject.getHand()));
         }
         else if (planeObjectIndex != -1) {
             planeObject = objects[planeObjectIndex];
@@ -230,6 +303,7 @@ int main() {
         if (c == 'q' || c == 'Q' || c == 27) {
             break;
         }
+
         /**** End: Loop Break Condition ****/
         frame++;
 
@@ -237,6 +311,7 @@ int main() {
         // get profiling report
         if (c == 't' || c == 'T') {
             float profDelay = (float)totalTime / profCycles / CLOCKS_PER_SEC;
+
             printf("--PROFILING REPORT--\nTotal: %d\nDelay: %f s\nFPS: %f\n\n",
                 totalTime, profDelay, 1/profDelay);
             for (int i = 0; i < sizeof profTimes / sizeof profTimes[0]; ++i) {

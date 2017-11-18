@@ -1,10 +1,10 @@
 #pragma once
+
+#include "stdafx.h"
+
 //Intel RealSense 3D SDK libraries
 #include "RealSense/SampleReader.h"
 #include "RealSense/Session.h"
-
-//OpenCV libraries
-#include <opencv2/opencv.hpp>
 
 /**
 * Class for converting Intel RealSense images to OpenCV image format

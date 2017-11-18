@@ -1,5 +1,5 @@
+#include "stdafx.h"
 #include "RGBCamera.h"
-
 
 void RGBCamera::update()
 {

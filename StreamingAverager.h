@@ -1,9 +1,5 @@
 #pragma once
-// C++ Libraries
-#include <deque>
-
-// OpenARK Libraries
-#include "Util.h"
+#include "stdafx.h"
 
 /*
 * Averages streaming data to combate outliers. A sample frequency and rejection threshold is used to determined the best fit point at the current time frame.

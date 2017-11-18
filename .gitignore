@@ -55,6 +55,7 @@ project.fragment.lock.json
 *.meta
 *.obj
 *.pch
+*.gch
 *.pdb
 *.pgc
 *.pgd

@@ -1,9 +1,5 @@
 #pragma once
-// C++ Libraries
-#include <vector>
-
-// OpenCV Libraries
-#include <opencv2/core.hpp>
+#include "stdafx.h"
 
 class Hand
 {
@@ -17,15 +13,25 @@ public:
     Hand();
 
     /**
-    * Constructs a hand object based on point cloud and constraints.
+    * Constructs a hand object from centroid, defect, and finger points
     * @param xyzMap Input point cloud containing only the hand (nothing else can be in this point cluod)
     * @param angle_treshhold Sharpest allowable angle formed by finger tip and neighboring defects
     * @param cluster_thresh Maximum allowable distance between two finger tips
     */
-    Hand(cv::Mat xyzMap, float angle_treshhold, int cluster_thresh = 30);
+    Hand(cv::Vec3f centroid_xyz, cv::Point2i centroid_ij,
+        std::vector<cv::Vec3f> fingers_xyz, std::vector<cv::Point2i> fingers_ij, 
+        std::vector<cv::Vec3f> defects_xyz, std::vector<cv::Point2i> defects_ij);
+
+    //**
+    //* Constructs a hand object based on point cloud and constraints.
+    //* @param xyzMap Input point cloud containing only the hand (nothing else can be in this point cluod)
+    //* @param angle_treshhold Sharpest allowable angle formed by finger tip and neighboring defects
+    //* @param cluster_thresh Maximum allowable distance between two finger tips
+    //*/
+    //Hand(cv::Mat xyzMap, float angle_treshhold, int cluster_thresh = 30);
 
     /**
-    * Deconstructor for the hand object
+    * Destructor for the hand object
     */
     ~Hand();
 
@@ -76,26 +82,12 @@ public:
     */
     bool touchObject(std::vector<double> &equation, const double threshold);
 
+    /**
+    * Get the number of fingers on this hand
+    */
+    int getNumFingers();
+
 private:
-    // Private constructors
-    /**
-    * Find the contour with max number of vertices.
-    **/
-    static std::vector<cv::Point> findComplexContour(std::vector< std::vector<cv::Point> > contours);
-
-    /**
-    * Groups vertices within a threshold and selects the median of each group.
-    **/
-    std::vector<cv::Point> clusterConvexHull(std::vector<cv::Point> convexHull, int threshold) const;
-
-    /**
-    * Find the centroid of contour using 0th and 1st degree moments
-    **/
-    static cv::Point findCenter(std::vector<cv::Point> contour);
-
     // Private variables
     float ANGLE_THRESHHOLD;
-
-    // Private functions
-    void analyzeHand(cv::Mat xyzMap);
 };

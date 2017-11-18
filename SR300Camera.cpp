@@ -1,6 +1,6 @@
+#include "stdafx.h"
 #include "SR300Camera.h"
 #include "Visualizer.h"
-
 
 using namespace std;
 
@@ -44,7 +44,7 @@ SR300Camera::~SR300Camera() {};
 void SR300Camera::destroyInstance()
 {
     printf("closing sensor\n");
-    sm->Release();
+    //sm->Release();
     sm->Close();
     printf("sensor closed\n");
 }
@@ -65,8 +65,6 @@ Reads the depth data from the sensor and fills in the matrix
 ***/
 void SR300Camera::fillInZCoords()
 {
-    vector<cv::Point3f>  xyzBuffer;
-
     int res;
     auto sts = sm ->AcquireFrame(true);
     if (sts < Intel::RealSense::STATUS_NO_ERROR)
@@ -80,7 +78,14 @@ void SR300Camera::fillInZCoords()
 
     sample = sm->QuerySample();
 
-    auto depthMap = sample->depth;
+    Intel::RealSense::Image * depthMap = sample->depth;
+
+    if (depthMap == nullptr) {
+        wprintf_s(L"Couldn't connect to camera. Ctrl+C to exit.\n");
+        sm ->Close();
+        return;
+    }
+
     Intel::RealSense::Image::ImageData depthImage;
 
     depthMap->AcquireAccess(Intel::RealSense::Image::ACCESS_READ, &depthImage);
@@ -90,13 +95,13 @@ void SR300Camera::fillInZCoords()
 
     cv::imshow("Depth Image by OpenARK", Visualizer::visualizeDepthMap(img));
 
-    auto imgInfo = depthMap->QueryInfo();
+    Intel::RealSense::ImageInfo imgInfo = depthMap->QueryInfo();
     depth_width = imgInfo.width;
     depth_height = imgInfo.height;
 
     int num_pixels = depth_width * depth_height;
-    auto projection = device->CreateProjection();
-    auto pos3D = new Intel::RealSense::Point3DF32[num_pixels];
+    Intel::RealSense::Projection * projection = device->CreateProjection();
+    Intel::RealSense::Point3DF32 * pos3D = new Intel::RealSense::Point3DF32[num_pixels];
 
     sts = projection->QueryVertices(depthMap, &pos3D[0]);
     depthMap->ReleaseAccess(&depthImage);
@@ -109,16 +114,19 @@ void SR300Camera::fillInZCoords()
 
     projection->Release();
 
-    xyzBuffer.clear();
+    int pixels_per_row = num_pixels / 480;
+    xyzMap = cv::Mat(480, pixels_per_row, CV_32FC3);
 
-    for (auto k = 0; k < num_pixels; k++)
+    for (int k = 0; k < num_pixels; k++)
     {
-        xyzBuffer.emplace_back(cv::Point3f(pos3D[k].x / 1000.0f, pos3D[k].y / 1000.0f, pos3D[k].z / 1000.0f));
+        xyzMap.ptr<cv::Vec3f>(k / pixels_per_row)[k % pixels_per_row] 
+            = cv::Vec3f(pos3D[k].x / 1000.0f, pos3D[k].y / 1000.0f, pos3D[k].z / 1000.0f);
+        //xyzBuffer.emplace_back(cv::Point3f(pos3D[k].x / 1000.0f, pos3D[k].y / 1000.0f, pos3D[k].z / 1000.0f));
     }
 
     delete[] pos3D;
 
-    xyzMap = cv::Mat(xyzBuffer, true).reshape(3, 480);
+    //xyzMap = cv::Mat(xyzBuffer, true).reshape(3, 480);
 }
 
 /***

@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
+
 project( OpenARK )
 
 set(CMAKE_CXX_STACK_SIZE "10000000")
@@ -18,7 +19,8 @@ else()
 endif()
 
 set(Boost_USE_STATIC_LIBS ON) 
-set(Boost_USE_STATIC ON) 
+set(Boost_USE_STATIC ON)
+
 find_package( PCL REQUIRED )
 
 find_package( OpenCV REQUIRED )
@@ -71,6 +73,9 @@ set(
   Util.cpp	
   Visualizer.cpp	
   Converter.cpp
+  HandFeatureExtractor.cpp
+  HandClassifier.cpp
+  libSVM/svm.cpp
 )
 
 if(NOT RSSDK_FOUND)
@@ -89,6 +94,30 @@ endif(NOT PMDSDK_FOUND)
 
 configure_file(Version.h.in ${PROJECT_SOURCE_DIR}/version.h)
 
+macro(ADD_MSVC_PRECOMPILED_HEADER PrecompiledHeader PrecompiledSource SourcesVar)
+  if(MSVC)
+    get_filename_component(PrecompiledBasename ${PrecompiledHeader} NAME_WE)
+    set(PrecompiledBinary "$(IntDir)/${PrecompiledBasename}.pch")
+    set(Sources ${${SourcesVar}})
+
+    if(NOT ${PrecompiledSource} STREQUAL "")
+        set(Sources ${Sources} main.cpp)
+        set_source_files_properties(${PrecompiledSource}
+                                    PROPERTIES COMPILE_FLAGS "/Yc\"${PrecompiledHeader}\" /Fp\"${PrecompiledBinary}\""
+                                               OBJECT_OUTPUTS "${PrecompiledBinary}")
+    endif(NOT ${PrecompiledSource} STREQUAL "")
+
+    set_source_files_properties(${Sources}
+                                PROPERTIES COMPILE_FLAGS "/Yu\"${PrecompiledHeader}\" /FI\"${PrecompiledHeader}\" /Fp\"${PrecompiledBinary}\""
+                                           OBJECT_DEPENDS "${PrecompiledBinary}")  
+    list(APPEND ${SourcesVar} ${PrecompiledSource})
+  endif(MSVC)
+endmacro(ADD_MSVC_PRECOMPILED_HEADER)
+
+if (MSVC)
+    ADD_MSVC_PRECOMPILED_HEADER("stdafx.h" "stdafx.cpp" SOURCES)
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+endif(MSVC)
 
 add_executable( OpenARK main.cpp ${SOURCES} )
 target_link_libraries( OpenARK ${DEPENDENCIES} )
@@ -106,6 +135,13 @@ if(${BUILD_TESTS})
   #    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/OpenARK_test)
   endif(NOT EXISTS ${PROJECT_SOURCE_DIR}/OpenARK_test)
 
+  set(
+    TEST_SOURCES 
+    OpenARK_test/test.cpp
+    OpenARK_test/TestCamera.cpp
+  )
+
+  ADD_MSVC_PRECOMPILED_HEADER("../stdafx.h" "" TEST_SOURCES)
 
   add_executable( OpenARK_test OpenARK_test/test.cpp 
     OpenARK_test/TestCamera.cpp ${SOURCES})
@@ -113,10 +149,6 @@ if(${BUILD_TESTS})
   set_target_properties( OpenARK_test PROPERTIES
     COMPILE_FLAGS ${TARGET_COMPILE_FLAGS})
 endif(${BUILD_TESTS})
-
-
-
-
 
 
 
