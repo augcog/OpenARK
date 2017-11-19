@@ -1,9 +1,12 @@
-#ifndef _VERSION_H_
-#define _VERSION_H_
+#pragma once
 
 @RSSDK@#define RSSDK_ENABLED
 @RSSDK@#define OPENARK_CAMERA_TYPE "sr300"
 @PMDSDK@#define PMDSDK_ENABLED
 @PMDSDK@#define OPENARK_CAMERA_TYPE "pmd" 
 
-#endif // _VERSION_H_ 
+// Remove to disable visualizations (if building as library)
+#define DEMO
+
+// Remove to disable built-in profiling
+#define PROFILING

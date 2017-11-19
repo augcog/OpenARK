@@ -93,7 +93,9 @@ void SR300Camera::fillInZCoords()
     cv::Mat img;
     Converter::ConvertPXCImageToOpenCVMat(depthMap, depthImage, &img);
 
-    cv::imshow("Depth Image by OpenARK", Visualizer::visualizeDepthMap(img));
+    #ifdef DEMO
+    cv::imshow("OpenARK Depth Image", Visualizer::visualizeDepthMap(img));
+    #endif
 
     Intel::RealSense::ImageInfo imgInfo = depthMap->QueryInfo();
     depth_width = imgInfo.width;
@@ -114,19 +116,21 @@ void SR300Camera::fillInZCoords()
 
     projection->Release();
 
-    int pixels_per_row = num_pixels / 480;
-    xyzMap = cv::Mat(480, pixels_per_row, CV_32FC3);
+    const int NUM_ROWS = 480;
+    int pixels_per_row = num_pixels / NUM_ROWS;
+    xyzMap = cv::Mat(NUM_ROWS, pixels_per_row, CV_32FC3);
 
-    for (int k = 0; k < num_pixels; k++)
+    int k = 0;
+    for (int r = 0; r < NUM_ROWS; ++r)
     {
-        xyzMap.ptr<cv::Vec3f>(k / pixels_per_row)[k % pixels_per_row] 
-            = cv::Vec3f(pos3D[k].x / 1000.0f, pos3D[k].y / 1000.0f, pos3D[k].z / 1000.0f);
-        //xyzBuffer.emplace_back(cv::Point3f(pos3D[k].x / 1000.0f, pos3D[k].y / 1000.0f, pos3D[k].z / 1000.0f));
+        cv::Vec3f *ptr = xyzMap.ptr<cv::Vec3f>(r);
+        for (int c = 0; c < pixels_per_row; ++c) {
+            ptr[c] = cv::Vec3f(pos3D[k].x / 1000.0f, pos3D[k].y / 1000.0f, pos3D[k].z / 1000.0f);
+            ++k;
+        }
     }
 
     delete[] pos3D;
-
-    //xyzMap = cv::Mat(xyzBuffer, true).reshape(3, 480);
 }
 
 /***

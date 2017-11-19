@@ -1,8 +1,5 @@
 #include "stdafx.h"
 
-// remove to disable profiling
-#define PROFILING
-
 // OpenARK Libraries
 #include "version.h"
 #ifdef PMDSDK_ENABLED
@@ -56,6 +53,7 @@ int main() {
 
     //RGBCamera *cam = new Webcam(1);
     int frame = 0;
+
     //Calibration::XYZToUnity(*pmd, 4, 4, 3);
 
     FileStorage fs;
@@ -70,10 +68,11 @@ int main() {
 
     StreamingAverager handAverager = StreamingAverager(4, 0.1), paleeteAverager = StreamingAverager(6, 0.05);
 
+    // Initialize SVM Hand Classifier
     classifier::HandClassifier & handClassifier = classifier::SVMHandClassifier(SVM_MODEL_PATH);
 
 #ifdef PROFILING
-    // Profiling code
+    // -- Profiling code --
 
     // cycle count
     int profCycles = 0;
@@ -88,6 +87,10 @@ int main() {
     memset(profTimes, 0, sizeof profTimes);
 #endif
 
+    // store FPS information
+    const int FPS_FRAMES = 5;
+    float currFps = 0;
+
     while (true)
     {
         camera->update();
@@ -97,13 +100,14 @@ int main() {
         delta = clock() - lastTime; profTimes[0] += delta; totalTime += delta; lastTime = clock();
 #endif
 
-        // Loading image from sensor
+        // Do noise removal
         camera->removeNoise();
 
 #ifdef PROFILING
         delta = clock() - lastTime; profTimes[1] += delta; totalTime += delta; lastTime = clock();
 #endif
 
+        // Bad input, wait a little before trying again
         if (camera->badInput) {
             waitKey(10);
             #ifdef PROFILING
@@ -135,23 +139,27 @@ int main() {
             if (obj.hasHand) {
                 std::vector<double> feats = classifier::features::extractHandFeatures(obj, clusters[i]);
 
-                // get SVM prediction
+                // get SVM prediction (confidence value in [0, 1])
                 double predict = handClassifier.classify(feats);
 
                 if (predict > SVM_PREDICT_BOUNDARY) {
                     ++handCount;
+                    
+                    // Draw this hand
                     handVisual = Visualizer::visualizeHand(handVisual, obj.getHand());
                     cv::polylines(handVisual, obj.getComplexContour(), true, cv::Scalar(100, 255, 100), 1);
+                    
                     if (obj.getHand().centroid_xyz[2] < closestHandDist) {
                         handObjectIndex = i;
                         closestHandDist = obj.getHand().centroid_xyz[2];
                     }
                 }
                 else {
+                    // Candidate considered but rejected (draw outline in gray)
                     cv::polylines(handVisual, obj.getComplexContour(), true, cv::Scalar(100, 100, 200));
                 }
 
-                // display prediction
+                // display confidence value at center of object
                 std::stringstream predictionDisp;
                 predictionDisp << std::setprecision(3) << std::fixed << predict;
 
@@ -159,7 +167,6 @@ int main() {
 
                 cv::putText(handVisual, predictionDisp.str(),
                     dispPt, 0, 2, cv::Scalar(100, 255, 100));
-
 
             }
 
@@ -181,31 +188,37 @@ int main() {
         cv::Mat handScaled;
         cv::resize(handVisual, handScaled, cv::Size(camera->getWidth(), camera->getHeight()));
 
-        cv::namedWindow("Nearest Hand", cv::WINDOW_AUTOSIZE);
+        // cv::namedWindow("Nearest Hand", cv::WINDOW_AUTOSIZE);
         if (handObjectIndex != -1) {
-            cv::imshow("Nearest Hand", clusters[handObjectIndex]);
+            // cv::imshow("Nearest Hand", clusters[handObjectIndex]);
             cv::putText(handScaled,
                 std::to_string(handCount) + " Hand" + (handCount == 1 ? "" : "s"),
                 cv::Point(10, 25), 0, 0.5, cv::Scalar(255, 255, 255));
         }
-        else {
-            cv::imshow("Nearest Hand", handScaled);
-            cv::putText(handScaled, "No Hands", cv::Point(10, 25), 0, 0.5, cv::Scalar(255,255,255));
-        }
+        // else {
+            // cv::imshow("Nearest Hand", handScaled);
+            // cv::putText(handScaled, "No Hands", cv::Point(10, 25), 0, 0.5, cv::Scalar(255,255,255));
+        // }
 
         if (cycleStartTime) {
-            float fps = (float)CLOCKS_PER_SEC / (clock() - cycleStartTime);
-            std::stringstream fpsDisplay;
-            fpsDisplay << "FPS: " << (fps < 10 ? "0" : "") << setprecision(3) << std::fixed << fps;
+            if (frame % FPS_FRAMES == 0) {
+                currFps = (float)CLOCKS_PER_SEC  * (float)FPS_FRAMES / (clock() - cycleStartTime);
+                cycleStartTime = clock();
+            }
 
+            if (frame > FPS_FRAMES) {
+                std::stringstream fpsDisplay;
+                fpsDisplay << "FPS: " << (currFps < 10 ? "0" : "") << setprecision(3) << std::fixed << currFps;
                 cv::putText(handScaled, fpsDisplay.str(),
                     cv::Point(handScaled.cols - 120, 25), 0, 0.5, cv::Scalar(255, 255, 255));
+            }
         }
-        cycleStartTime = clock();
+        else {
+            cycleStartTime = clock();
+        }
 
-        cv::namedWindow("Fingers");
-        cv::imshow("Fingers", handScaled);
-
+        cv::namedWindow("OpenARK Hand Detection");
+        cv::imshow("OpenARK Hand Detection", handScaled);
 
         // Interpret the relationship between the objects
         bool clicked = false, paletteFound = false;
@@ -305,7 +318,7 @@ int main() {
         }
 
         /**** End: Loop Break Condition ****/
-        frame++;
+        ++frame;
 
 #ifdef PROFILING
         // get profiling report
