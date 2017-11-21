@@ -19,17 +19,38 @@
 #include "Object3D.h"
 #include "StreamingAverager.h"
 
+using namespace cv;
+
+//#define USE_SVM
+
+#ifdef USE_SVM
 #include "HandFeatureExtractor.h"
 #include "HandClassifier.h"
 
-using namespace cv;
-
-const char* SVM_MODEL_PATH = "svm/";
-const double SVM_PREDICT_BOUNDARY = 0.5;
+static const char* SVM_MODEL_PATH = "svm/";
+const double SVM_PREDICT_BOUNDARY = 0.4, SVM_COMPLEX_PREDICT_BOUNDARY = 0.55, SVM_HIGH_LIKELIHOOD_THRESHOLD = 0.63;
+#endif
 
 #ifdef PROFILING
 const char* profCategories[] = { "Update", "Denoise", "Clustering", "Hand Identification", "Other" };
 #endif
+
+static inline void drawHand(cv::Mat & image, Object3D & obj, float confidence) {
+    if (obj.hasHand) {
+        image = Visualizer::visualizeHand(image, obj.getHand());
+    }
+
+    if (obj.getComplexContour().size() > 2) {
+        cv::polylines(image, obj.getComplexContour(), true, cv::Scalar(0, 255, 0), 1);
+    }
+
+    std::stringstream disp;
+    disp << std::setprecision(3) << std::fixed << confidence;
+
+    cv::Point center = obj.getCenterIj() * 2;
+    cv::Point dispPt = cv::Point(center.x - (int)disp.str().size() * 15, center.y);
+    cv::putText(image, disp.str(), dispPt, 0, 2, cv::Scalar(255, 255, 255), 2);
+}
 
 int main() {
     DepthCamera * camera = nullptr;
@@ -68,8 +89,12 @@ int main() {
 
     StreamingAverager handAverager = StreamingAverager(4, 0.1), paleeteAverager = StreamingAverager(6, 0.05);
 
+#ifdef USE_SVM
     // Initialize SVM Hand Classifier
     classifier::HandClassifier & handClassifier = classifier::SVMHandClassifier(SVM_MODEL_PATH);
+#endif
+
+    clock_t cycleStartTime = 0;
 
 #ifdef PROFILING
     // -- Profiling code --
@@ -78,7 +103,7 @@ int main() {
     int profCycles = 0;
 
     // set starting time
-    clock_t lastTime = clock(), delta, totalTime = 0, cycleStartTime = 0;
+    clock_t lastTime = clock(), delta, totalTime = 0;
 
     // names of profiling categories, change/add as need
     clock_t profTimes[sizeof profCategories / sizeof profCategories[0]];
@@ -106,6 +131,19 @@ int main() {
 #ifdef PROFILING
         delta = clock() - lastTime; profTimes[1] += delta; totalTime += delta; lastTime = clock();
 #endif
+        #ifdef DEMO
+            if (camera->getDepthImage().rows > 0) {
+                cv::imshow("OpenARK Depth Image", camera->getDepthImage());
+                if (camera->hasRGBImage()) {
+                    cv::imshow("OpenARK Color Image", camera->getRGBImage());
+                }
+                //if (camera->hasIRImage() && camera->getIRImage().rows > 0) {
+                //    cv::Mat colorMat;
+                //    camera->getIRImage().convertTo(colorMat, CV_8U);
+                //    cv::imshow("OpenARK Infrared Image", colorMat);
+                //}
+            }
+        #endif
 
         // Bad input, wait a little before trying again
         if (camera->badInput) {
@@ -116,68 +154,92 @@ int main() {
             continue;
         }
 
-        // Classifying objects in the scene
-        camera->computeClusters(0.667, 750, 15);
-        auto clusters = camera->getClusters();
-        std::vector<Object3D> objects;
+#ifdef PROFILING
+        delta = clock() - lastTime; totalTime += delta; lastTime = clock();
+#endif
 
-        int handObjectIndex = -1, handCount = 0, planeObjectIndex = -1;
-        float closestHandDist = FLT_MAX;
+        // Classifying objects in the scene
+        camera->computeClusters();
+        std::vector<cv::Mat> clusters = camera->getClusters();
+        std::vector<double> surfaceAreas = camera->getClusterAreas();
 
 #ifdef PROFILING
         delta = clock() - lastTime; profTimes[2] += delta; totalTime += delta; lastTime = clock();
 #endif
 
         // visualization of hand objects
-        cv::Mat handVisual = cv::Mat::zeros(camera->getHeight() * 2, camera->getWidth() * 2, CV_8UC3);
+        cv::Mat handVisual;
+        //if (camera->hasIRImage()) {
+        //    //resize(camera->getIRImage(), handVisual, cv::Size(camera->getWidth() * 2, camera->getHeight() * 2));
+        //    //handVisual.convertTo(handVisual, CV_8U);
+        //    //cvtColor(handVisual, handVisual, CV_GRAY2BGR, 3);
+        //    handVisual /= 2;
+        //}
+        //else
+        handVisual = cv::Mat::zeros(camera->getHeight() * 2, camera->getWidth() * 2, CV_8UC3);
 
-        for (int i = 0; i < clusters.size(); ++i) {
+#ifdef PROFILING
+        delta = clock() - lastTime; totalTime += delta; lastTime = clock();
+#endif
+
+        std::vector<Object3D> objects;
+
+        int handObjectIndex = -1, handCount = 0, planeObjectIndex = -1;
+
+#ifdef USE_SVM
+        float bestHandConf = 0;
+#else
+        float bestHandDist = FLT_MAX;
+#endif
+
+        for (int i = 0; i < clusters.size(); ++i) {  
             objects.emplace_back(clusters[i]);
 
             Object3D obj = objects.back();
 
+            //cv::circle(handVisual, obj.getCenterIj() * 2, 10, cv::Scalar(255, 255, 0), 2);
+
             if (obj.hasHand) {
+#ifdef USE_SVM
                 std::vector<double> feats = classifier::features::extractHandFeatures(obj, clusters[i]);
 
                 // get SVM prediction (confidence value in [0, 1])
-                double predict = handClassifier.classify(feats);
+                double confidence = handClassifier.classify(feats);
 
-                if (predict > SVM_PREDICT_BOUNDARY) {
-                    ++handCount;
-                    
-                    // Draw this hand
-                    handVisual = Visualizer::visualizeHand(handVisual, obj.getHand());
-                    cv::polylines(handVisual, obj.getComplexContour(), true, cv::Scalar(100, 255, 100), 1);
-                    
-                    if (obj.getHand().centroid_xyz[2] < closestHandDist) {
+                if (obj.getHand().getNumFingers() < 3 && confidence > SVM_PREDICT_BOUNDARY ||
+                    confidence > SVM_COMPLEX_PREDICT_BOUNDARY) {
+                    if (confidence > SVM_HIGH_LIKELIHOOD_THRESHOLD) {
+                        // Immediately count as hand
+                        ++handCount;
+                        // Draw this hand
+
+                        drawHand(handVisual, obj, confidence);
+                    }
+                    // else keep as candidate, if no better candidate found, then call this a hand
+
+                    if (confidence > bestHandConf) {
+                        // Update best hand confidence
                         handObjectIndex = i;
-                        closestHandDist = obj.getHand().centroid_xyz[2];
+                        bestHandConf = confidence;
                     }
                 }
-                else {
-                    // Candidate considered but rejected (draw outline in gray)
-                    cv::polylines(handVisual, obj.getComplexContour(), true, cv::Scalar(100, 100, 200));
+            }
+#else
+                float distance = obj.getDepth();
+
+                if (distance < bestHandDist){
+                    handObjectIndex = i;
+                    bestHandDist = distance;
                 }
 
-                // display confidence value at center of object
-                std::stringstream predictionDisp;
-                predictionDisp << std::setprecision(3) << std::fixed << predict;
-
-                cv::Point dispPt = cv::Point(obj.getHand().centroid_ij.x - 60, obj.getHand().centroid_ij.y);
-
-                cv::putText(handVisual, predictionDisp.str(),
-                    dispPt, 0, 2, cv::Scalar(100, 255, 100));
-
             }
+
+            drawHand(handVisual, obj, surfaceAreas[i]);
+#endif
 
             if (obj.hasPlane) {
                 planeObjectIndex = i;
             }
-        }
-
-        if (handObjectIndex != -1) {
-            cv::polylines(handVisual, objects[handObjectIndex].getComplexContour(),
-                true, cv::Scalar(0, 255, 0), 2);
         }
 
 #ifdef PROFILING
@@ -186,19 +248,35 @@ int main() {
 
         // Show visualizations
         cv::Mat handScaled;
-        cv::resize(handVisual, handScaled, cv::Size(camera->getWidth(), camera->getHeight()));
 
         // cv::namedWindow("Nearest Hand", cv::WINDOW_AUTOSIZE);
-        if (handObjectIndex != -1) {
+        //if (handObjectIndex != -1) {
             // cv::imshow("Nearest Hand", clusters[handObjectIndex]);
-            cv::putText(handScaled,
-                std::to_string(handCount) + " Hand" + (handCount == 1 ? "" : "s"),
-                cv::Point(10, 25), 0, 0.5, cv::Scalar(255, 255, 255));
-        }
+        //}
         // else {
             // cv::imshow("Nearest Hand", handScaled);
             // cv::putText(handScaled, "No Hands", cv::Point(10, 25), 0, 0.5, cv::Scalar(255,255,255));
         // }
+        if (handObjectIndex != -1) {
+#ifdef USE_SVM
+            if (bestHandConf < SVM_HIGH_LIKELIHOOD_THRESHOLD) {
+                ++handCount;
+                drawHand(handVisual, objects[handObjectIndex], bestHandConf);
+            }
+#else
+            ++handCount;
+            drawHand(handVisual, objects[handObjectIndex], surfaceAreas[handObjectIndex]);
+#endif
+        }
+
+        cv::resize(handVisual, handScaled, cv::Size(camera->getWidth(), camera->getHeight()));
+
+        if (handObjectIndex != -1) {
+            cv::putText(handScaled,
+                std::to_string(handCount) + " Hand" + (handCount == 1 ? "" : "s"),
+                cv::Point(10, 25), 0, 0.5, cv::Scalar(255, 255, 255));
+        }
+
 
         if (cycleStartTime) {
             if (frame % FPS_FRAMES == 0) {
@@ -211,6 +289,7 @@ int main() {
                 fpsDisplay << "FPS: " << (currFps < 10 ? "0" : "") << setprecision(3) << std::fixed << currFps;
                 cv::putText(handScaled, fpsDisplay.str(),
                     cv::Point(handScaled.cols - 120, 25), 0, 0.5, cv::Scalar(255, 255, 255));
+
             }
         }
         else {

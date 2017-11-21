@@ -70,7 +70,7 @@ void Calibration::XYZToUnity(DepthCamera& depth_cam, int num_boards, int board_w
 			{
 				success++;
 				XYZ_points.push_back(cornersXYZ);
-				printf("%d points recorded!\n", cornersXYZ.size());
+				printf("%I64u points recorded!\n", cornersXYZ.size());
 			}
 		}
 

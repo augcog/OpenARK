@@ -15,8 +15,6 @@ public:
     */
     static std::vector<std::string> split(char* string_in, char* delimeters);
 
-
-
     /**
     * Generates a random RGB color.
     * @return random RGB color in Vec3b format
@@ -86,14 +84,21 @@ public:
     */
     static bool isMember(cv::Mat xyzMap, int x, int y);
 
-    /*
+    /**
+    * Find the average depth of a depth image
+    * @param xyzMap depth image
+    * @returns average depth in meters
+    */
+    static double Util::averageDepth(cv::Mat xyzMap);
+
+    /**
     * Find the centroid of the point cloud
     * @param xyzMap input point cloud
     * @return (x,y) coordinate of the centroid
     */
     static cv::Point findCentroid(cv::Mat xyzMap);
 
-    /*
+    /**
     * Compute the angle formed by 3 points
     * @return the angle formed
     */
@@ -132,6 +137,20 @@ public:
     static double angleBetweenPoints(cv::Point a, cv::Point b, cv::Point center = cv::Point(0, 0));
 
     /**
+     * Compute the magnitude of a 2D point.
+     * @param vec input point
+     * @returns magnitude of point
+     */
+    static double magnitude(cv::Point2f pt);
+
+    /**
+     * Compute the magnitude of a 2D point.
+     * @param vec input point
+     * @returns magnitude of point
+     */
+    static double magnitude(cv::Point pt);
+
+    /**
      * Compute the magnitude of a 3D vector.
      * @param vec input vector
      * @returns magnitude of vector
@@ -147,10 +166,66 @@ public:
      */
     static double angleBetween3DVec(cv::Vec3f a, cv::Vec3f b, cv::Vec3f center = cv::Vec3f(0, 0, 0));
 
+
+    /**
+     * Checks if a point is within the bounds of an image.
+     * @param [in] img the image
+     * @pt the point
+     */
+    static bool pointInImage(const cv::Mat & img, const cv::Point pt, int scale = 1);
+
+    /**
+     * Computes the area of the triangle defined by three vertices
+     * @param a first vertex
+     * @param b second vertex
+     * @param c third vertex
+     * @returns area of triangle, in real meters squared
+     */
+    static double Util::triangleArea(cv::Vec3f a, cv::Vec3f b, cv::Vec3f c = cv::Vec3f(0, 0, 0));
+
+    /**
+     * Computes the area of the quadrangle defined by four vertices
+     * @param pts the vertices of the quadrangle
+     * @returns area of quadrangle, in real meters squared
+     */
+    static double quadrangleArea(cv::Vec3f pts[4]);
+
+    /**
+     * Computes the approximate surface area of all visible clusters on a depth map.
+     * @param [in] depthMap the input depth map. All points with 0 z-coordinate will be excluded.
+     * @returns surface area, in meters squared
+     */
+    static double surfaceArea(cv::Mat & depthMap);
+
+    /**
+     * Computes the approximate surface area of a cluster on a depth map, specified by a vector of points.
+     * @param [in] depthMap the input depth map.
+     * @param [in] cluster vector of points on the cluster. 
+     * @param [in] clusterSize number of points in this cluster. By default, uses all points in the 'cluster' vector.
+     * @returns surface area, in meters squared
+     */
+    static double surfaceArea(cv::Mat & depthMap, std::vector<cv::Point> & cluster, int clusterSize = -1);
+
+    /**
+     * Compares two points (Point, Point2f, Vec3i or Vec3f),
+     * first by x, then y, then z (if available). Used for sorting points.
+     */
+    template<class T>
+    class PointComparer{
+    public:
+        PointComparer(bool reverse = false, bool compare_y_then_x = false) {
+            this->reverse = reverse;
+            this->compare_y_then_x = compare_y_then_x;
+        }
+        // Compare two points. Returns true if a is less than b.
+        bool operator()(T a, T b);
+    private:
+        bool reverse = false, compare_y_then_x = false;
+    };
+
 private:
     static double distanceTwoPoints(double x1, double y1, double x2, double y2);
     static double otherAngleFind(double biggerAngle, double largestDistance, double smallDistance);
     static double biggerAngleFind(double largestDistance, double smallDistanceOne, double smallDistanceTwo);
-    static bool Util::closeEnough(int x, int y, cv::Mat& depthMap, int num_neighbors, double max_distance);
-
+    static bool closeEnough(int x, int y, cv::Mat& depthMap, int num_neighbors, double max_distance);
 };

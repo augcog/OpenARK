@@ -3,8 +3,13 @@
 #include "stdafx.h" 
 
 // OpenARK Libraries
+#include "version.h"
 #include "Hand.h"
 #include "Plane.h"
+
+#ifdef USE_SVM
+#include "HandClassifier.h"
+#endif
 
 class Object3D
 {
@@ -29,8 +34,9 @@ public:
     /**
     * Constructs a instance of Object3D based on a point cloud.
     * @param cluster point cloud representation of the object
+    * @param surfaceArea optionally, the surface area of the point cloud. By default, this is calculated on demand.
     */
-    explicit Object3D(cv::Mat cluster);
+    explicit Object3D::Object3D(cv::Mat cluster);
 
     /**
     * Deconstructs a Object3D instance.
@@ -66,6 +72,30 @@ public:
     Plane getPlane() const;
 
     /**
+    * Gets center of hand in screen coordinates
+    * @return center of hand in screen coordinates
+    */
+    cv::Point getCenterIj() const;
+
+    /**
+    * Gets center of hand in real coordinates
+    * @return center of hand in real (xyz) coordinates
+    */
+    cv::Vec3f getCenter() const;
+
+    /**
+    * Gets the average depth of the object
+    * @returns average z-coordinate of the object in meters
+    */
+    float getDepth() const;
+    
+    /**
+    * Gets the visible surface area of the object (NOTE: only available for hands)
+    * @returns surface area in meters squared
+    */
+    double getSurfaceArea() const;
+
+    /**
     * Gets instance of shape object.
     * @return instance of shape object
     */
@@ -85,45 +115,60 @@ public:
 
 private:
     /**
-    * Pointer to the hand instance.
-    */
+     * Pointer to the hand instance.
+     */
     Hand *hand = nullptr;
 
     /**
-    * Pointer to the plane instance.
-    */
+     * Pointer to the plane instance.
+     */
     Plane *plane = nullptr;
 
     /**
-    * The shape instance.
-    */
+     * The shape instance.
+     */
     cv::Mat shape;
 
-    /**
-    * Stores channels of the input point cloud
-    */
-    cv::Mat channel[3];
-
     /** 
-    * Largest contour in object
-    */
+     * Largest contour in object
+     */
     std::vector<cv::Point> complexContour;
 
     /**
-    * Convex hull of object
-    */
+     * Convex hull of object
+     */
     std::vector<cv::Point> convexHull;
 
     /* 
-    * Convex hull of this object, * with points stored as indices of the contour rather than cv::Point
-    */
+     * Convex hull of this object, * with points stored as indices of the contour rather than cv::Point
+     */
     std::vector<int> indexHull;
+
+    /*
+     * Center of the object in screen coordinates.
+     */
+    cv::Point centerIj;
+
+    /*
+     * Center of the object in real coordinates.
+     */
+    cv::Vec3f centerXyz;
+
+    /*
+     * Depth at center of object
+     */
+    double avgDepth;
+    
+    /** 
+     * Surface area in meters squared
+     */
+    double surfaceArea;
 
     /**
     * Determine whether the object is connected to an edge.
     * @param cluster point cloud of the object
     */
-    void checkEdgeConnected(cv::Mat cluster);
+    void checkEdgeConnected(cv::Mat & cluster);
 
     /**
     * Check whether the object is a hand
@@ -139,17 +184,17 @@ private:
     * @param finger_dist_min minimum distance between fingers
     * @param centroid_defect_finger_angle_min minimum angle between centroid, defect, and finger
     */
-    Hand * checkForHand(cv::Mat cluster, double angle_thresh = 5, double cluster_thresh = 20,
-        double finger_len_min = 0.01, double finger_len_max = 0.01, double max_defect_angle = 0.9 * PI,
-        double finger_defect_slope_min = -1.3, double finger_centroid_slope_min = -0.5,
-        double finger_dist_min = 0.020, double centroid_defect_finger_angle_min = 1.100);
+    Hand * checkForHand(cv::Mat cluster, double angle_thresh = 0.08, double cluster_thresh = 10,
+        double finger_len_min = 0.005, double finger_len_max = 0.19, 
+        double max_defect_angle = 0.60 * PI,
+        double finger_defect_slope_min = -1.0, double finger_centroid_slope_min = -0.45,
+        double finger_dist_min = 0.005, double centroid_defect_finger_angle_min = 0.900);
 
     /**
     * Subroutine for computing the largest contour, convex hull, etc. for this 3D object.
     * @param cluster the point cloud representing the 3D object
     */
     void computeObjectFeatures(cv::Mat cluster);
-
 
     /**
     * Find the contour with the maximum number of points
@@ -171,4 +216,11 @@ private:
     * @returns simplified convex hull
     */
     static std::vector<cv::Point> Object3D::clusterConvexHull(std::vector<cv::Point> convexHull, int threshold);
+
+#ifdef USE_SVM
+    /**
+    * SVM Hand classifier Instance
+    */
+    static classifier::SVMHandClassifier handClassifier;
+#endif
 };

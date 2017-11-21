@@ -42,7 +42,7 @@ namespace classifier {
          *  @param [in] depthMap depth map (note: must be CV_32FC3)
          *  @returns vector of features
          */
-        std::vector<double> extractHandFeatures(const Object3D & obj, const cv::Mat & depthMap);
+        std::vector<double> extractHandFeatures(const Object3D & obj, cv::Mat & depthMap);
 
         /** Extract hand-specific features from a given depth map of a hand.
          *  @param [in] depthMap the depth map

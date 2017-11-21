@@ -14,7 +14,6 @@
 class DepthCamera
 {
 public:
-    cv::Mat xyzMap;
     virtual ~DepthCamera();
     /**
      * Update the depth camera by one frame.
@@ -31,10 +30,14 @@ public:
     /**
      * Performs euclidean clustering to separate discrete objects in the input point cloud.
      * @param max_distance the maximum allowed distance to be clustered
-     * @param min_size the minimum number of points a valid cluster should have
+     * @param min_points the minimum number of points a valid cluster should have
+     * @param min_size the minimum surface area (in m^2) a valid cluster should have
+     * @param max_size the maximum surface area (in m^2) a valid cluster should have
      * @param floodfill_interval the x, y interval between points at which we should try to flood fill. higher = faster 
      */
-    void computeClusters(double max_distance, double min_size, int floodfill_interval=10);
+    void computeClusters(double max_distance = 0.02, double max_ir_distance = 150,
+        int min_points = 1900, double min_size = 0.01, double max_size = 0.055,
+        int dilate_amount = 2, int floodfill_interval = 10);
 
     /**
      * Reads a sample frame from file.
@@ -85,11 +88,47 @@ public:
     int getHeight() const;
 
     /**
-     * Returns all the clusters (discrete objects) in the current frame.
+     * Returns true if an RGB image is available from this camera.
+     */
+    virtual bool hasRGBImage() const;
+
+    /**
+     * Get the RGB Image from this camera, if available. Else, throws an error.
+     */
+    virtual cv::Mat & getRGBImage();
+
+    /**
+     * Returns true if an RGB image is available from this camera.
+     */
+    virtual bool hasIRImage() const;
+
+    /**
+     * Get the infrared (IR) Image from this camera, if available. Else, throws an error.
+     */
+    virtual cv::Mat & getIRImage();
+
+    /**
+     * Get the depth Image from this camera.
+     */
+    virtual cv::Mat & getDepthImage();
+
+    /**
+     * Returns all the clusters (discrete objects) in the current frame. 
+     * Note: Must run computeClusters() before calling this function.
      * @see computeClusters
+     * @see getClusterAreas
      * @return vector of matrixes with each matrix corresponding to a cluster in no particular order
      */
     std::vector<cv::Mat> getClusters() const;
+
+    /**
+     * Returns the surface areas of the clusters (discrete objects) in the current frame. 
+     * Note: Must run computeClusters() before calling this function.
+     * @see computeClusters
+     * @see getClusters
+     * @return vector containing surface areas of clusters, in meters squared.
+     */
+    std::vector<double> DepthCamera::getClusterAreas() const;
 
     bool badInput;
 
@@ -110,9 +149,13 @@ protected:
      * @param max_distance the maximum euclidean distance allowed between neighbors
      * @param output_points optionally, pointer to a vector in which we will 
               store the points in the component. This vector should be AT LEAST the size of the xyz map
+     * @param [in] irImg optionally, the infrared image corresponding to the point cloud
+     * @param ir_distance the maximum difference in IR distance between neighbors (only used if irImg specified)
      * @returns number of points in component
      */
-    static int floodFill(int seed_x, int seed_y, cv::Mat& zMap, cv::Mat& mask, double max_distance, std::vector <cv::Point> * output_points = nullptr);
+    static int floodFill(int seed_x, int seed_y, cv::Mat& zMap, cv::Mat& mask,
+       std::vector <cv::Point> * output_points = nullptr, double max_distance = 0.04,
+        cv::Mat& irImg = cv::Mat(), double ir_distance = 25);
 
     ///**
     // * Analyze the candidate point with its neighbors to determine whether they belong to the same cluster.
@@ -128,7 +171,7 @@ protected:
      * Stores the (x,y,z) data of every point in the observable world.
      * Matrix type CV_32FC3
      */
-
+    cv::Mat xyzMap;
 
     /**
      * Stores the confidence value of each corresponding point in the world.
@@ -143,9 +186,26 @@ protected:
     cv::Mat flagMap;
 
     /**
+     * Stores the RGB image from this camera, if available
+     * Matrix type CV_8UC3
+     */
+    cv::Mat rgbImage;
+
+    /**
+     * Stores the infrared image from this camera, if available
+     * Matrix type CV_16U
+     */
+    cv::Mat irImage;
+
+    /**
      * Stores the each individual cluster in its individual XYZMap.
      */
     std::vector<cv::Mat> clusters;
+
+    /**
+     * Stores the surface area of each cluster
+     */
+    std::vector<double> clusterAreas;
 
     /**
      * Value that determines the validity of a point in respect to the ampMap.
@@ -162,15 +222,11 @@ protected:
     /**
      * The image width resolution (pixels) that the depth sensor produces.
      */
-    //mona int X_DIMENSION = 176;
-    //int X_DIMENSION = 640;
     int X_DIMENSION = 321;
 
 
     /**
      * The image height resolution (pixels) that the depth sensor produces.
      */
-    //mona int Y_DIMENSION = 120;
-    //int Y_DIMENSION = 480;
     int Y_DIMENSION = 240;
 };

@@ -262,7 +262,7 @@ namespace classifier {
     inline int SVMHandClassifier::getSVMIdx(const std::vector<double> features){
         int numFingers = (int)features[0];
         if (numFingers == 1) {
-            if (features.size() < 15) return 0;
+            if (features.size() < 13) return 0;
             else return 1;
         }
         else {

@@ -86,7 +86,7 @@ namespace classifier {
             return result;
         }
 
-        std::vector<double> extractHandFeatures(const Object3D & obj, const cv::Mat & depthMap) {
+        std::vector<double> extractHandFeatures(const Object3D & obj,  cv::Mat & depthMap) {
             std::vector<double> result;
 
             if (obj.hasHand) {
@@ -97,21 +97,23 @@ namespace classifier {
                 cv::Vec3f center = hand.centroid_xyz;
                 cv::Point centerij = hand.centroid_ij;
 
-                double avgdist, vardist, avgdepth, vardepth;
-                computeMeanAndVariance(depthMap, center, avgdist, vardist, avgdepth, vardepth);
+                if (nFingers > 1) result.reserve(nFingers * 11 + 6);
+                else result.reserve(13);
 
                 result.push_back(nFingers);
 
-                if (nFingers > 1) result.reserve(nFingers * 11 + 8);
-                else result.reserve(15);
+                double avgdist, vardist, avgdepth, vardepth;
+                computeMeanAndVariance(depthMap, center, avgdist, vardist, avgdepth, vardepth);
 
+                double area = Util::surfaceArea(depthMap);
+
+                result.push_back(cv::contourArea(obj.getComplexContour()) / cv::contourArea(obj.getConvexHull()));
                 result.push_back(avgdist * 20.0);
                 result.push_back(sqrt(vardist) * 25.0);
-                result.push_back(avgdepth * 1.50);
+                //result.push_back(avgdepth * 1.50);
+                result.push_back(area * 5.00);
                 result.push_back(sqrt(vardepth) * 25.0);
-                result.push_back(cv::contourArea(obj.getComplexContour()) / 300000.0);
-                result.push_back(cv::contourArea(obj.getConvexHull()) / 300000.0);
-                result.push_back(cv::arcLength(obj.getComplexContour(), true) / 4000.0);
+                result.push_back(cv::contourArea(obj.getComplexContour()) / cv::contourArea(obj.getConvexHull()));
 
                 for (int i = 0; i < nFingers; ++i) {
                     cv::Vec3f finger = hand.fingers_xyz[i], defect = hand.defects_xyz[i];

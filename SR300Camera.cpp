@@ -1,16 +1,17 @@
 #include "stdafx.h"
+#include "version.h"
 #include "SR300Camera.h"
 #include "Visualizer.h"
 
 using namespace std;
-
+using namespace Intel::RealSense;
 
 /***
 Private constructor for the Intel RealSense SR300 camera depth sensor
 ***/
 SR300Camera::SR300Camera(bool use_live_sensor): dists(nullptr), amps(nullptr), depth_width(0), depth_height(0), sample(nullptr)
 {
-    session->SetCoordinateSystem(Intel::RealSense::CoordinateSystem::COORDINATE_SYSTEM_FRONT_DEFAULT);
+    session->SetCoordinateSystem(CoordinateSystem::COORDINATE_SYSTEM_FRONT_DEFAULT);
     X_DIMENSION = 640;
     Y_DIMENSION = 480;
     if (!sm)
@@ -18,21 +19,24 @@ SR300Camera::SR300Camera(bool use_live_sensor): dists(nullptr), amps(nullptr), d
         wprintf_s(L"Unable to create the SenseManager\n");
     }
     cm = sm->QueryCaptureManager();
-    auto sts = Intel::RealSense::Status::STATUS_DATA_UNAVAILABLE;
+    auto sts = Status::STATUS_DATA_UNAVAILABLE;
 
-    sm->EnableStream(Intel::RealSense::Capture::StreamType::STREAM_TYPE_DEPTH, X_DIMENSION, Y_DIMENSION, depth_fps);
+    sm->EnableStream(Capture::STREAM_TYPE_DEPTH, X_DIMENSION, Y_DIMENSION, depth_fps);
+    sm->EnableStream(Capture::STREAM_TYPE_IR, X_DIMENSION, Y_DIMENSION, depth_fps);
+
     sts = sm->Init();
-    if (sts < Intel::RealSense::Status::STATUS_NO_ERROR)
+    if (sts < Status::STATUS_NO_ERROR)
     {
         sm->Close();
-        sm->EnableStream(Intel::RealSense::Capture::STREAM_TYPE_DEPTH);
+        sm->EnableStream(Capture::STREAM_TYPE_DEPTH);
         sts = sm->Init();
-        if (sts < Intel::RealSense::Status::STATUS_NO_ERROR)
+        if (sts < Status::STATUS_NO_ERROR)
         {
             sm->Close();
             sts = sm->Init();
         }
     }
+
     device = cm->QueryDevice();
 }
 
@@ -44,7 +48,6 @@ SR300Camera::~SR300Camera() {};
 void SR300Camera::destroyInstance()
 {
     printf("closing sensor\n");
-    //sm->Release();
     sm->Close();
     printf("sensor closed\n");
 }
@@ -65,11 +68,10 @@ Reads the depth data from the sensor and fills in the matrix
 ***/
 void SR300Camera::fillInZCoords()
 {
-    int res;
-    auto sts = sm ->AcquireFrame(true);
-    if (sts < Intel::RealSense::STATUS_NO_ERROR)
+    Status sts = sm ->AcquireFrame(true);
+    if (sts < STATUS_NO_ERROR)
     {
-        if (sts == Intel::RealSense::Status::STATUS_STREAM_CONFIG_CHANGED)
+        if (sts == Status::STATUS_STREAM_CONFIG_CHANGED)
         {
             wprintf_s(L"Stream configuration was changed, re-initializing\n");
             sm ->Close();
@@ -78,37 +80,38 @@ void SR300Camera::fillInZCoords()
 
     sample = sm->QuerySample();
 
-    Intel::RealSense::Image * depthMap = sample->depth;
-
-    if (depthMap == nullptr) {
-        wprintf_s(L"Couldn't connect to camera. Ctrl+C to exit.\n");
-        sm ->Close();
+    if (!sample || sample->depth == nullptr) {
+        wprintf_s(L"Couldn't connect to camera.\n");
+        sm->Close();
         return;
     }
 
-    Intel::RealSense::Image::ImageData depthImage;
+    Image * depthSource = sample->depth, * irSource = sample->ir;
 
-    depthMap->AcquireAccess(Intel::RealSense::Image::ACCESS_READ, &depthImage);
+    Image::ImageData depthImage , irImage;
 
-    cv::Mat img;
-    Converter::ConvertPXCImageToOpenCVMat(depthMap, depthImage, &img);
+    depthSource->AcquireAccess(Image::ACCESS_READ, &depthImage);
+    irSource->AcquireAccess(Image::ACCESS_READ, Image::PixelFormat::PIXEL_FORMAT_Y16, &irImage);
 
-    #ifdef DEMO
-    cv::imshow("OpenARK Depth Image", Visualizer::visualizeDepthMap(img));
-    #endif
+    cv::Mat depthImageCV, irImageCV;
+    Converter::ConvertPXCImageToOpenCVMat(depthSource, depthImage, &depthImageCV);
+    Converter::ConvertPXCImageToOpenCVMat(irSource, irImage, &irImageCV);
 
-    Intel::RealSense::ImageInfo imgInfo = depthMap->QueryInfo();
+    this->irImage = irImageCV;
+
+    ImageInfo imgInfo = depthSource->QueryInfo();
     depth_width = imgInfo.width;
     depth_height = imgInfo.height;
 
     int num_pixels = depth_width * depth_height;
-    Intel::RealSense::Projection * projection = device->CreateProjection();
-    Intel::RealSense::Point3DF32 * pos3D = new Intel::RealSense::Point3DF32[num_pixels];
+    Projection * projection = device->CreateProjection();
+    Point3DF32 * pos3D = new Point3DF32[num_pixels];
 
-    sts = projection->QueryVertices(depthMap, &pos3D[0]);
-    depthMap->ReleaseAccess(&depthImage);
+    sts = projection->QueryVertices(depthSource, &pos3D[0]);
+    depthSource->ReleaseAccess(&depthImage);
+    irSource->ReleaseAccess(&irImage);
 
-    if (sts < Intel::RealSense::Status::STATUS_NO_ERROR)
+    if (sts < Status::STATUS_NO_ERROR)
     {
         wprintf_s(L"Projection was unsuccessful! \n");
         sm->Close();
@@ -166,4 +169,13 @@ float SR300Camera::getZ(int i, int j) const
 {
     auto flat = j * depth_width * 3 + i * 3;
     return dists[flat + 2];
+}
+
+bool SR300Camera::hasRGBImage() const {
+    // we do have access to the RGB image, but since it's not used right now we'll disable it
+    return false;
+}
+
+bool SR300Camera::hasIRImage() const {
+    return true;
 }

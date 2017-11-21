@@ -47,18 +47,12 @@ int Util::getDistanceT(int x1, int y1, int x2, int y2)
 
 double Util::euclideanDistance3D(cv::Vec3f pt1, cv::Vec3f pt2)
 {
-    double dx = pt1[0] - pt2[0];
-    double dy = pt1[1] - pt2[1];
-    double dz = pt1[2] - pt2[2];
-
-    return sqrtf(dx*dx + dy*dy + dz*dz);
+    return magnitude(pt1 - pt2);
 }
 
 double Util::euclideanDistance2D(cv::Point pt1, cv::Point pt2)
 {
-    double dx = pt1.x - pt2.x;
-    double dy = pt1.y - pt2.y;
-    return sqrtf(dx*dx + dy*dy);
+    return magnitude(pt1 - pt2);
 }
 
 double Util::euclideanDistancePerPixel(cv::Mat xyzMap, cv::Point pt, int radius)
@@ -120,27 +114,26 @@ cv::Mat Util::removePoints(cv::Mat img, std::vector<cv::Point2i> points)
 
 cv::Vec3f Util::averageAroundPoint(cv::Mat xyzMap, cv::Point2i pt, int radius)
 {
-    auto x = pt.x;
-    auto y = pt.y;
-    auto r_lower = (y - radius < 0) ? 0 : y - radius;
-    auto c_lower = (x - radius < 0) ? 0 : x - radius;
-    auto r_upper = (y + radius > xyzMap.rows) ? xyzMap.rows : y + radius;
-    auto c_upper = (x + radius > xyzMap.cols) ? xyzMap.cols : x + radius;
-    auto count = 0;
-    cv::Vec3f average;
+    int x = pt.x, y = pt.y;
+    int r_lower = std::max(0, y - radius);
+    int c_lower = std::max(0, x - radius);
+    int r_upper = std::min(xyzMap.rows - 1, y + radius);
+    int c_upper = std::min(xyzMap.cols - 1, x + radius);
+    
+    int count = 0;
+    cv::Vec3f average(0, 0, 0);
 
-    for (auto r = r_lower; r < r_upper; r++)
+    for (int r = r_lower; r <= r_upper; ++r)
     {
-
-        for (auto c = c_lower; c < c_upper; c++)
+        cv::Vec3f * ptr = xyzMap.ptr<cv::Vec3f>(r);
+        for (int c = c_lower; c <= c_upper; ++c)
         {
-
-            if (xyzMap.at<cv::Vec3f>(r, c)[2] != 0)
+            if (ptr[c][2] > 0.02)
             {
-                average[0] += xyzMap.at<cv::Vec3f>(r, c)[0];
-                average[1] += xyzMap.at<cv::Vec3f>(r, c)[1];
-                average[2] += xyzMap.at<cv::Vec3f>(r, c)[2];
-                count++;
+                average[0] += ptr[c][0];
+                average[1] += ptr[c][1];
+                average[2] += ptr[c][2];
+                ++count;
             }
         }
     }
@@ -157,6 +150,25 @@ cv::Vec3f Util::averageAroundPoint(cv::Mat xyzMap, cv::Point2i pt, int radius)
     return average;
 }
 
+double Util::averageDepth(cv::Mat xyzMap){
+    double total = 0.0;
+    int numPts = 0;
+
+    for (int r = 0; r < xyzMap.rows; ++r)
+    {
+        cv::Vec3f * ptr = xyzMap.ptr<cv::Vec3f>(r);
+        for (int c = 0; c < xyzMap.cols; ++c)
+        {
+            if (ptr[c][2] != 0){
+                total += ptr[c][2];
+                ++numPts;
+            }
+        }
+    }
+
+    return total / numPts;
+}
+
 cv::Point Util::findCentroid(cv::Mat xyzMap)
 {
     cv::Mat channels[3];
@@ -166,6 +178,110 @@ cv::Point Util::findCentroid(cv::Mat xyzMap)
     //Cx=M10/M00 and Cy=M01/M00
     cv::Point center(m.m10 / m.m00, m.m01 / m.m00);
     return center;
+}
+
+double Util::triangleArea(cv::Vec3f a, cv::Vec3f b, cv::Vec3f c)
+{
+    cv::Vec3f v0 = a - c, v1 = b - c;
+    cv::Vec3f cross = v0.cross(v1);
+    return magnitude(cross) / 2.0;
+}
+
+double Util::quadrangleArea(cv::Vec3f pts[4])
+{
+    int valid = 0, bad = -1;
+    for (int i = 0; i < 4; ++i) {
+        if (pts[i][2] > 0.1) ++valid;
+        else bad = i;
+    }
+
+    if (valid == 4) {
+        // if all four points are nonzero, add both triangles
+        return triangleArea(pts[1], pts[2], pts[0]) + triangleArea(pts[1], pts[2], pts[3]);
+    }
+    else if (valid == 3) {
+        cv::Vec3f t[] = { pts[0], pts[1], pts[2] };
+        // swap to make sure the three good points are in the first three positions
+        if (bad != 3) t[bad] = pts[3];
+
+        // if three of four points are nonzero, add the triangle formed by these points
+        return triangleArea(t[1], t[2], t[0]);
+    }
+    else {
+        // if there are <= 2 points: ignore this set of four points
+        return 0;
+    }
+}
+
+double Util::surfaceArea(cv::Mat & depthMap)
+{
+    if (depthMap.rows == 0 || depthMap.cols == 0) return 0.0;
+
+    double total = 0.0;
+
+    cv::Vec3f * ptr, * nxPtr = depthMap.ptr<cv::Vec3f>(0);
+
+    for (int r = 1; r < depthMap.rows; ++r) {
+        ptr = nxPtr; // reuse previous pointer; upper row
+        nxPtr = depthMap.ptr<cv::Vec3f>(r); // lower row
+
+        //                { top left, top right, bottom left, bottom right}
+        cv::Vec3f pts[] = { ptr[0],   ptr[0],    nxPtr[0],    nxPtr[0] };
+        const int NUM_PTS = (sizeof pts ) / (sizeof pts[0]);
+
+        for (int c = 1; c < depthMap.cols; ++c) {
+            pts[0] = pts[1]; pts[2] = pts[3]; // reuse previous points
+            pts[1] = ptr[c]; pts[3] = nxPtr[c];
+
+            total += quadrangleArea(pts);
+        }
+    }
+
+    return total;
+}
+
+ double Util::surfaceArea(cv::Mat & depthMap, std::vector<cv::Point> & cluster, int clusterSize) {
+    if (clusterSize < 0 || clusterSize > (int)cluster.size()) clusterSize = (int)cluster.size();
+
+    sort(cluster.begin(), cluster.begin() + clusterSize, Util::PointComparer<cv::Point>(false, true));
+
+    std::vector<int> rows;
+    std::vector<cv::Vec3f> xyz;
+    xyz.reserve(clusterSize);
+
+    for (unsigned i = 0; i < clusterSize; ++i) {
+        if (!i || cluster[i].y > cluster[i - 1].y) 
+            rows.push_back(i);
+        xyz.push_back(depthMap.at<cv::Vec3f>(cluster[i]));
+    }
+
+    rows.push_back(clusterSize);
+
+    double total = 0.0;
+
+    for (uint i = 0; i < rows.size() - 2; ++i) {
+        int nx = rows[i + 1];
+
+        for (uint j = rows[i]; j < rows[i + 1] - 1; ++j) {
+            uint idx = j - rows[i]; 
+
+            while (cluster[nx].x < cluster[j].x && nx < rows[i + 2]) ++nx;
+            if (nx >= rows[i+2] || cluster[nx].x > cluster[j].x || cluster[nx].y - cluster[j].y > 1) continue;
+
+            cv::Vec3f pts[4] = {xyz[j], xyz[j+1], xyz[nx], xyz[nx+1]};
+
+            if (cluster[j+1].y != cluster[j].y || 
+                cluster[j+1].x - cluster[j].x > 1) pts[1][2] = 0;
+
+            if (cluster[nx + 1].y != cluster[nx].y ||
+                cluster[nx + 1].x - cluster[nx].x > 1) pts[3][2] = 0;
+
+            total += quadrangleArea(pts);
+            ++nx;
+        }
+    }
+
+    return total;
 }
 
 //Function to find Lenght of sides of triangle
@@ -369,6 +485,14 @@ double Util::pointToSlope(cv::Point pt) {
     }
 }
 
+double Util::magnitude(cv::Point2f pt) {
+    return sqrt(pt.x * pt.x + pt.y + pt.y);
+}
+
+double Util::magnitude(cv::Point pt) {
+    return sqrt(pt.x * pt.x + pt.y + pt.y);
+}
+
 double Util::magnitude(cv::Vec3f a) {
     return sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
 }
@@ -385,3 +509,51 @@ double Util::angleBetween3DVec(cv::Vec3f a, cv::Vec3f b, cv::Vec3f center) {
     else return res;
 }
 
+bool Util::pointInImage(const cv::Mat & img, const cv::Point pt, int scale) {
+    return pt.x >= 0 && pt.x < img.cols * scale &&
+           pt.y >= 0 && pt.y < img.rows * scale;
+}
+
+bool Util::PointComparer<cv::Point>::operator()(cv::Point a, cv::Point b) {
+    if (compare_y_then_x) {
+        if (a.y == b.y) return reverse ^ (a.x < b.x);
+        return reverse ^ (a.y < b.y);
+    }
+    else{
+        if (a.x == b.x) return reverse ^ (a.y < b.y);
+        return reverse ^ (a.x < b.x);
+    }
+}
+
+bool Util::PointComparer<cv::Point2f>::operator()(cv::Point2f a, cv::Point2f b) {
+    if (compare_y_then_x) {
+        if (a.y == b.y) return reverse ^ (a.x < b.x);
+        return reverse ^ (a.y < b.y);
+    }
+    else{
+        if (a.x == b.x) return reverse ^ (a.y < b.y);
+        return reverse ^ (a.x < b.x);
+    }
+}
+
+bool Util::PointComparer<cv::Vec3f>::operator()(cv::Vec3f a, cv::Vec3f b) {
+    for (int i = (compare_y_then_x ? 2 : 0); 
+        (compare_y_then_x ? i >= 0 : i < 3); 
+        (compare_y_then_x ? --i : ++i)) {
+        if (a[i] == b[i]) continue;
+
+        return reverse ^ (a[i] < b[i]);
+    }
+    return false;
+}
+
+bool Util::PointComparer<cv::Vec3i>::operator()(cv::Vec3i a, cv::Vec3i b) {
+    for (int i = (compare_y_then_x ? 2 : 0); 
+        (compare_y_then_x ? i >= 0 : i < 3); 
+        (compare_y_then_x ? --i : ++i)) {
+        if (a[i] == b[i]) continue;
+
+        return reverse ^ (a[i] < b[i]);
+    }
+    return false;
+}
