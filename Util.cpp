@@ -119,7 +119,7 @@ cv::Vec3f Util::averageAroundPoint(cv::Mat xyzMap, cv::Point2i pt, int radius)
     int c_lower = std::max(0, x - radius);
     int r_upper = std::min(xyzMap.rows - 1, y + radius);
     int c_upper = std::min(xyzMap.cols - 1, x + radius);
-    
+
     int count = 0;
     cv::Vec3f average(0, 0, 0);
 
@@ -250,7 +250,7 @@ double Util::surfaceArea(cv::Mat & depthMap)
     xyz.reserve(clusterSize);
 
     for (unsigned i = 0; i < clusterSize; ++i) {
-        if (!i || cluster[i].y > cluster[i - 1].y) 
+        if (!i || cluster[i].y > cluster[i - 1].y)
             rows.push_back(i);
         xyz.push_back(depthMap.at<cv::Vec3f>(cluster[i]));
     }
@@ -263,14 +263,14 @@ double Util::surfaceArea(cv::Mat & depthMap)
         int nx = rows[i + 1];
 
         for (uint j = rows[i]; j < rows[i + 1] - 1; ++j) {
-            uint idx = j - rows[i]; 
+            uint idx = j - rows[i];
 
             while (cluster[nx].x < cluster[j].x && nx < rows[i + 2]) ++nx;
             if (nx >= rows[i+2] || cluster[nx].x > cluster[j].x || cluster[nx].y - cluster[j].y > 1) continue;
 
             cv::Vec3f pts[4] = {xyz[j], xyz[j+1], xyz[nx], xyz[nx+1]};
 
-            if (cluster[j+1].y != cluster[j].y || 
+            if (cluster[j+1].y != cluster[j].y ||
                 cluster[j+1].x - cluster[j].x > 1) pts[1][2] = 0;
 
             if (cluster[nx + 1].y != cluster[nx].y ||
@@ -282,6 +282,116 @@ double Util::surfaceArea(cv::Mat & depthMap)
     }
 
     return total;
+}
+
+double Util::surfaceAreaCircle(cv::Mat shape) {
+	cv::Size size = shape.size();
+	cv::Rect rect(0, 0, size.width, size.height);
+
+	int dr[8] = {1, 0, -1, 0, 1, -1, 1, -1};
+	int dc[8] = {0, 1, 0, -1, 1, 1, -1, -1};
+
+	// printf("%d %d\n", size.width, size.height);
+
+	double surfArea = 0;
+	for (int r = 0; r < size.height; r++)
+	{
+		for (int c = 0; c < size.width; c++)
+		{
+			cv::Vec3f point = shape.at<cv::Vec3f>(r, c);
+			if (point[2] == 0) {
+				continue;
+			}
+
+			const int MAX = 2147483647;
+			double radius = MAX;
+			for (int idx = 0; idx < 8; idx++) {
+				int nr = r + dr[idx];
+				int nc = c + dc[idx];
+
+				if (nr < 0 || nr >= size.height || nc < 0 || nc >= size.width) {
+					continue;
+				}
+
+				cv::Vec3f adjPoint = shape.at<cv::Vec3f>(nr, nc);
+				// printf("%d %d %f %f %f\n", nr, nc, adjPoint[0], adjPoint[1], adjPoint[2]);
+				if (adjPoint[2] == 0) {
+					continue;
+				}
+
+				double dist = euclideanDistance3D(point, adjPoint);
+				radius = (dist < radius) ? dist : radius;
+			}
+
+			if (radius != MAX) {
+				surfArea += M_PI * radius * radius;
+			}
+		}
+	}
+
+	return surfArea;
+}
+
+double Util::surfaceAreaTriangulate(cv::Mat shape) {
+	cv::Size size = shape.size();
+	cv::Rect rect(0, 0, size.width, size.height);
+
+	int dr[4] = {0, 1, 0, -1};
+	int dc[4] = {-1, 0, 1, 0};
+
+	// printf("%d %d\n", size.width, size.height);
+
+	double surfArea = 0;
+	for (int r = 0; r < size.height; r++)
+	{
+		for (int c = 0; c < size.width; c++)
+		{
+			cv::Vec3f point = shape.at<cv::Vec3f>(r, c);
+			if (point[2] == 0) {
+				continue;
+			}
+
+			cv::Vec3f adj[4];
+			bool validPoint[4] = {false};
+			for (int idx = 0; idx < 4; idx++) {
+				int nr = r + dr[idx];
+				int nc = c + dc[idx];
+
+				if (nr < 0 || nr >= size.height || nc < 0 || nc >= size.width) {
+					continue;
+				}
+
+				cv::Vec3f adjPoint = shape.at<cv::Vec3f>(nr, nc);
+				// printf("%d %d %f %f %f\n", nr, nc, adjPoint[0], adjPoint[1], adjPoint[2]);
+				if (adjPoint[2] == 0) {
+					continue;
+				}
+
+				adj[idx] = adjPoint;
+				validPoint[idx] = true;
+			}
+
+			if (validPoint[0] && validPoint[1]) {
+				double dist1 = euclideanDistance3D(point, adj[0]);
+				double dist2 = euclideanDistance3D(point, adj[1]);
+				double dist3 = euclideanDistance3D(adj[0], adj[1]);
+				double s = (dist1 + dist2 + dist3) / 2;
+				// printf("%f %f %f %f\n", s, dist1, dist2, dist3);
+				surfArea += sqrt(abs(s * (s - dist1) * (s - dist2) * (s - dist3)));
+			}
+
+			if (validPoint[2] && validPoint[3]) {
+				double dist1 = euclideanDistance3D(point, adj[2]);
+				double dist2 = euclideanDistance3D(point, adj[3]);
+				double dist3 = euclideanDistance3D(adj[2], adj[3]);
+				double s = (dist1 + dist2 + dist3) / 2;
+				// printf("%f %f %f %f\n", s, dist1, dist2, dist3);
+				surfArea += sqrt(abs(s * (s - dist1) * (s - dist2) * (s - dist3)));
+			}
+		}
+	}
+
+	return surfArea;
 }
 
 //Function to find Lenght of sides of triangle
@@ -537,8 +647,8 @@ bool Util::PointComparer<cv::Point2f>::operator()(cv::Point2f a, cv::Point2f b) 
 }
 
 bool Util::PointComparer<cv::Vec3f>::operator()(cv::Vec3f a, cv::Vec3f b) {
-    for (int i = (compare_y_then_x ? 2 : 0); 
-        (compare_y_then_x ? i >= 0 : i < 3); 
+    for (int i = (compare_y_then_x ? 2 : 0);
+        (compare_y_then_x ? i >= 0 : i < 3);
         (compare_y_then_x ? --i : ++i)) {
         if (a[i] == b[i]) continue;
 
@@ -548,8 +658,8 @@ bool Util::PointComparer<cv::Vec3f>::operator()(cv::Vec3f a, cv::Vec3f b) {
 }
 
 bool Util::PointComparer<cv::Vec3i>::operator()(cv::Vec3i a, cv::Vec3i b) {
-    for (int i = (compare_y_then_x ? 2 : 0); 
-        (compare_y_then_x ? i >= 0 : i < 3); 
+    for (int i = (compare_y_then_x ? 2 : 0);
+        (compare_y_then_x ? i >= 0 : i < 3);
         (compare_y_then_x ? --i : ++i)) {
         if (a[i] == b[i]) continue;
 
