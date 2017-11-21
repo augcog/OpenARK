@@ -9,7 +9,7 @@ class Util
 public:
     /**
     * Splits a string into components based on delimeter
-    * @param string_in string to split 
+    * @param string_in string to split
     * @param delimeters c_str of delimeters to split at
     * @return vector of string components
     */
@@ -120,10 +120,10 @@ public:
     /**
     * Converts a point into a value representing the direction it is at from the origin, going clockwise starting from the bottom.
     * Note: the value returned is not necessarily the slope. However, points ordered by this quantity are guarenteed to be in order of angle.
-    * This function returns x/y if pointij is in the 3rd quadrant, FLT_MAX/2 - x/y if in 2nd quadrant, 
+    * This function returns x/y if pointij is in the 3rd quadrant, FLT_MAX/2 - x/y if in 2nd quadrant,
                          FLT_MAX/2 + x/y if in 1st quadrant, and FLT_MAX - x/y if in 4th quadrant.
     * @param pointij input point in ij coordinates
-    * @returns  
+    * @returns
     */
     static double pointToSlope(cv::Point pointij);
 
@@ -200,11 +200,26 @@ public:
     /**
      * Computes the approximate surface area of a cluster on a depth map, specified by a vector of points.
      * @param [in] depthMap the input depth map.
-     * @param [in] cluster vector of points on the cluster. 
+     * @param [in] cluster vector of points on the cluster.
      * @param [in] clusterSize number of points in this cluster. By default, uses all points in the 'cluster' vector.
      * @returns surface area, in meters squared
      */
     static double surfaceArea(cv::Mat & depthMap, std::vector<cv::Point> & cluster, int clusterSize = -1);
+
+    /**
+      * Approximates the surface area of a depth map cluster, using circles
+      * of the smallest possible radius among adjacent points.
+      * @param shape the depth map input
+      * @returns surface area, meters squared
+      */
+    static double surfaceAreaCircle(cv::Mat shape);
+    /**
+      * Approximates the surface area of a depth map cluster by triangulation
+      * among adjacent points
+      * @param shape the depth map input
+      * @returns surface area, meters squared
+      */
+  	static double surfaceAreaTriangulate(cv::Mat shape);
 
     /**
      * Compares two points (Point, Point2f, Vec3i or Vec3f),

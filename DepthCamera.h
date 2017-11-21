@@ -35,8 +35,8 @@ public:
      * @param max_size the maximum surface area (in m^2) a valid cluster should have
      * @param floodfill_interval the x, y interval between points at which we should try to flood fill. higher = faster 
      */
-    void computeClusters(double max_distance = 0.02, double max_ir_distance = 150,
-        int min_points = 1900, double min_size = 0.01, double max_size = 0.055,
+    void computeClusters(double max_distance = 0.007, double max_ir_distance = 150,
+        int min_points = 1900, double min_size = 0.008, double max_size = 0.055,
         int dilate_amount = 2, int floodfill_interval = 10);
 
     /**
