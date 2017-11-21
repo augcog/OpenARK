@@ -128,7 +128,7 @@ cv::Vec3f Util::averageAroundPoint(cv::Mat xyzMap, cv::Point2i pt, int radius)
         cv::Vec3f * ptr = xyzMap.ptr<cv::Vec3f>(r);
         for (int c = c_lower; c <= c_upper; ++c)
         {
-            if (ptr[c][2] > 0.02)
+            if (ptr[c][2] > 0)
             {
                 average[0] += ptr[c][0];
                 average[1] += ptr[c][1];

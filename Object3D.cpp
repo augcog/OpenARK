@@ -82,7 +82,7 @@ Object3D::Object3D(cv::Mat cluster) {
     computeObjectFeatures(cluster);
 
     // Step 1: determine whether cluster is hand
-
+    
     //if (checkForHand(cluster, 0.005, 0.25))  //original
     if (hand = checkForHand(cluster)) {
         surfaceArea = Util::surfaceArea(cluster);
@@ -222,14 +222,14 @@ std::vector<cv::Point> Object3D::clusterConvexHull(std::vector<cv::Point> convex
 void Object3D::computeObjectFeatures(cv::Mat cluster)
 {
     cv::Mat input;
-    input.create(cluster.size(), CV_8UC1);
+    input.create(cluster.size(), CV_8U);
     for (uint r = 0; r < cluster.rows; ++r) {
         const cv::Vec3f * ptr = cluster.ptr<cv::Vec3f>(r);
         uchar * inputPtr = input.ptr<uchar>(r);
 
         for (uint c = 0; c < cluster.cols; ++c) {
             inputPtr[c] = (uchar)(ptr[c][2] * 255);
-            if (inputPtr[c] < 3) inputPtr[c] = 0;
+            //if (inputPtr[c] < 3) inputPtr[c] = 0;
         }
     }
 
@@ -317,7 +317,7 @@ Hand * Object3D::checkForHand(const cv::Mat cluster, double angle_thresh, double
         for (int i = 0; i < hull.size(); ++i)
         {
             cv::Point p1 = hull[i];
-            cv::Vec3f xyzP1 = Util::averageAroundPoint(cluster, p1 / 2, 22);
+            cv::Vec3f xyzP1 = Util::averageAroundPoint(cluster, p1 / IMG_SCALE, 22);
 
             double dist = Util::euclideanDistance3D(xyzP1, hand->centroid_xyz);
             double slope = (double)(hand->centroid_ij.y - p1.y) / abs(p1.x - hand->centroid_ij.x);

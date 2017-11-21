@@ -12,4 +12,4 @@
 #define PROFILING
 
 // Remove to disable SVM
-#define USE_SVM
+// #define USE_SVM
