@@ -1,7 +1,0 @@
-svm_type epsilon_svr
-kernel_type rbf
-gamma 3.1507
-nr_class 2
-total_sv 0
-rho -nan(ind)
-SV

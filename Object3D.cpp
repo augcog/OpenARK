@@ -6,11 +6,6 @@
 #include "Visualizer.h"
 #include "Util.h"
 
-#ifdef USE_SVM
-#include "HandFeatureExtractor.h"
-#include "HandClassifier.h"
-#endif
-
 namespace comparer{
     /**
     * Comparator for sorting defects in order of slope
@@ -57,11 +52,6 @@ namespace comparer{
     };
 }
 
-#ifdef USE_SVM
-const char* SVM_MODEL_PATH = "svm/";
-classifier::SVMHandClassifier Object3D::handClassifier = classifier::SVMHandClassifier(SVM_MODEL_PATH);
-#endif
-
 Object3D::Object3D()
 {
 
@@ -91,16 +81,7 @@ Object3D::Object3D(cv::Mat cluster) {
         avgDepth = Util::averageDepth(cluster);
 
         hasHand = true;
-#ifdef USE_SVM
-        std::vector<double> features = classifier::features::extractHandFeatures(*this, cluster);
-        double confidence = handClassifier.classify(features);
-
-        if (confidence < 0.05) {
-            hasHand = false;
-        }
-#endif
         return;
-
     }
     // TEMPORARILY disabling plane detection
     return;

@@ -20,8 +20,6 @@ void DepthCamera::computeClusters(double max_distance, double ir_distance, int m
     clusterAreas.clear();
 
     const cv::Mat dKernel1 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(dilate_amount, dilate_amount));
-        //ireKernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(9, 9)),
-        //irdKernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5));
 
     cv::Mat xyzMap;
     cv::dilate(this->xyzMap, xyzMap, dKernel1);

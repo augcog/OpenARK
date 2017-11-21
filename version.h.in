@@ -10,6 +10,3 @@
 
 // Remove to disable built-in profiling
 #define PROFILING
-
-// Remove to disable SVM
-// #define USE_SVM

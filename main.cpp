@@ -21,16 +21,6 @@
 
 using namespace cv;
 
-//#define USE_SVM
-
-#ifdef USE_SVM
-#include "HandFeatureExtractor.h"
-#include "HandClassifier.h"
-
-static const char* SVM_MODEL_PATH = "svm/";
-const double SVM_PREDICT_BOUNDARY = 0.4, SVM_COMPLEX_PREDICT_BOUNDARY = 0.55, SVM_HIGH_LIKELIHOOD_THRESHOLD = 0.63;
-#endif
-
 #ifdef PROFILING
 const char* profCategories[] = { "Update", "Denoise", "Clustering", "Hand Identification", "Other" };
 #endif
@@ -88,11 +78,6 @@ int main() {
     UDPSender u = UDPSender();
 
     StreamingAverager handAverager = StreamingAverager(4, 0.1), paleeteAverager = StreamingAverager(6, 0.05);
-
-#ifdef USE_SVM
-    // Initialize SVM Hand Classifier
-    classifier::HandClassifier & handClassifier = classifier::SVMHandClassifier(SVM_MODEL_PATH);
-#endif
 
     clock_t cycleStartTime = 0;
 
@@ -186,11 +171,7 @@ int main() {
 
         int handObjectIndex = -1, handCount = 0, planeObjectIndex = -1;
 
-#ifdef USE_SVM
-        float bestHandConf = 0;
-#else
         float bestHandDist = FLT_MAX;
-#endif
 
         for (int i = 0; i < clusters.size(); ++i) {  
             objects.emplace_back(clusters[i]);
@@ -200,31 +181,6 @@ int main() {
             //cv::circle(handVisual, obj.getCenterIj() * 2, 10, cv::Scalar(255, 255, 0), 2);
 
             if (obj.hasHand) {
-#ifdef USE_SVM
-                std::vector<double> feats = classifier::features::extractHandFeatures(obj, clusters[i]);
-
-                // get SVM prediction (confidence value in [0, 1])
-                double confidence = handClassifier.classify(feats);
-
-                if (obj.getHand().getNumFingers() < 3 && confidence > SVM_PREDICT_BOUNDARY ||
-                    confidence > SVM_COMPLEX_PREDICT_BOUNDARY) {
-                    if (confidence > SVM_HIGH_LIKELIHOOD_THRESHOLD) {
-                        // Immediately count as hand
-                        ++handCount;
-                        // Draw this hand
-
-                        drawHand(handVisual, obj, confidence);
-                    }
-                    // else keep as candidate, if no better candidate found, then call this a hand
-
-                    if (confidence > bestHandConf) {
-                        // Update best hand confidence
-                        handObjectIndex = i;
-                        bestHandConf = confidence;
-                    }
-                }
-            }
-#else
                 float distance = obj.getDepth();
 
                 if (distance < bestHandDist){
@@ -235,7 +191,6 @@ int main() {
             }
 
             drawHand(handVisual, obj, surfaceAreas[i]);
-#endif
 
             if (obj.hasPlane) {
                 planeObjectIndex = i;
@@ -258,15 +213,8 @@ int main() {
             // cv::putText(handScaled, "No Hands", cv::Point(10, 25), 0, 0.5, cv::Scalar(255,255,255));
         // }
         if (handObjectIndex != -1) {
-#ifdef USE_SVM
-            if (bestHandConf < SVM_HIGH_LIKELIHOOD_THRESHOLD) {
-                ++handCount;
-                drawHand(handVisual, objects[handObjectIndex], bestHandConf);
-            }
-#else
             ++handCount;
             drawHand(handVisual, objects[handObjectIndex], surfaceAreas[handObjectIndex]);
-#endif
         }
 
         cv::resize(handVisual, handScaled, cv::Size(camera->getWidth(), camera->getHeight()));
