@@ -185,7 +185,7 @@ private:
     * @param centroid_defect_finger_angle_min minimum angle between centroid, defect, and finger
     */
     Hand * checkForHand(cv::Mat cluster, double angle_thresh = 0.08, double cluster_thresh = 10,
-        double finger_len_min = 0.005, double finger_len_max = 0.18, 
+        double finger_len_min = 0.005, double finger_len_max = 0.17, 
         double max_defect_angle = 0.60 * PI,
         double finger_defect_slope_min = -1.0, double finger_centroid_slope_min = -0.45,
         double finger_dist_min = 0.005, double centroid_defect_finger_angle_min = 0.800);
