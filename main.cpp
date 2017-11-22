@@ -178,9 +178,8 @@ int main() {
                     bestHandDist = distance;
                 }
 
+                drawHand(handVisual, obj, obj.getSurfArea());
             }
-
-            drawHand(handVisual, obj, obj.getSurfArea());
 
             if (obj.hasPlane) {
                 planeObjectIndex = i;

@@ -18,13 +18,13 @@ public:
     * Whether the object is attached to the right edge of the frame.
     * Edge connected implies that object is likely connected to the user's body (hand, arm, etc)
     */
-    bool rightEdgeConnected;
+    bool rightEdgeConnected = false;
 
     /**
     * Whether the object is attached to the left edge of the frame.
     * Edge connected implies that object is likely connected to the user's body (hand, arm, etc)
     */
-    bool leftEdgeConnected;
+    bool leftEdgeConnected = false;
 
     /**
     * Constructs a empty instance of a Object3D.
@@ -63,18 +63,18 @@ public:
     /**
     * Whether the object contains a hand.
     */
-    bool hasHand;
+    bool hasHand = false;
 
     /**
     * Whether the object contains a plane.
     */
-    bool hasPlane;
+    bool hasPlane = false;
 
     /**
     * Whether the object contains a shape.
     * A shape is defined by anything that is not a plane or a hand
     */
-    bool hasShape;
+    bool hasShape = false;
 
     /**
     * Gets instance of hand object if a hand is found.

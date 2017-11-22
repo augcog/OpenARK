@@ -117,6 +117,7 @@ std::vector<Object3D> DepthCamera::queryObjects(double max_distance, double ir_d
                         }
                         
                         Object3D obj = Object3D(points, this->xyzMap, false, min_size, max_size);
+                        if (!obj.hasHand) continue;
                         objects.push_back(obj);
                     }
                 }

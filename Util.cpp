@@ -269,7 +269,14 @@ double Util::surfaceArea(cv::Mat & depthMap)
         for (uint j = rows[i]; j < rows[i + 1] - 1; ++j) {
             uint idx = j - rows[i];
 
-            while (cluster[nx].x < cluster[j].x && nx < rows[i + 2]) ++nx;
+            if (cluster[nx].x < cluster[j].x && nx < rows[i + 2]) {
+                auto it1 = cluster.begin() + (nx + 1);
+                auto it2 = cluster.begin() + (rows[i+2]);
+                nx = std::lower_bound(it1, it2,
+                    cv::Point(cluster[j].x, cluster[nx].y), Util::PointComparer<cv::Point>(0, true)) 
+                    - cluster.begin();
+            }
+
             if (nx >= rows[i+2] || cluster[nx].x > cluster[j].x || cluster[nx].y - cluster[j].y > 1) continue;
 
             cv::Vec3f pts[4] = {xyz[j], xyz[j+1], xyz[nx], xyz[nx+1]};

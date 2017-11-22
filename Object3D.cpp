@@ -79,19 +79,23 @@ Object3D::Object3D(cv::Mat depthMap, double min_size, double max_size) {
 
 Object3D::Object3D(std::vector<cv::Point> & points, cv::Mat & depthMap, bool sorted, 
                    double min_size, double max_size){
+    if (points.size() < 2) return;
+
     if (!sorted)
         std::sort(points.begin(), points.end(), Util::PointComparer<cv::Point>(false, true));
 
+    surfaceArea = Util::surfaceArea(depthMap, points, true);
+    if (surfaceArea < min_size || surfaceArea > max_size) return;
+
     this->points = points;
 
-    cv::Rect bounding (depthMap.cols, depthMap.rows, -1, points[points.size()-1].y);
+    cv::Rect bounding (depthMap.cols, points[0].y, -1, points[points.size()-1].y);
 
     for (int i = 0; i < (int)points.size(); ++i) {
         cv::Point pt = points[i];
         //cv::Vec3f v = depthMap.at<cv::Vec3f>(pt);
 
         bounding.x = std::min(pt.x, bounding.x);
-        bounding.y = std::min(pt.y, bounding.y);
         bounding.width = std::max(pt.x, bounding.width);
     }
 
@@ -119,7 +123,6 @@ Object3D::Object3D(std::vector<cv::Point> & points, cv::Mat & depthMap, bool sor
 
     //cv::imshow("XY", xyzMap);
     //cv::waitKey();
-    surfaceArea = Util::surfaceArea(depthMap, points, true);
 
     // initialize object, detect hand, etc.
     initializeObject(min_size, max_size);
@@ -187,12 +190,6 @@ std::vector<cv::Point> Object3D::clusterConvexHull(std::vector<cv::Point> convex
 void Object3D::initializeObject(double min_size, double max_size)
 {
     // step 1: initialize and compute properties
-    rightEdgeConnected = false;
-    leftEdgeConnected = false;
-    hasHand = false;
-    hasPlane = false;
-    hasShape = false;
-
     if (fullXyzMap.rows > 0) checkEdgeConnected(fullXyzMap); // TODO: fix
 
     // compute gray map
@@ -650,29 +647,32 @@ const cv::Mat & Object3D::getDepthMap()
     return fullXyzMap;
 }
 
-void Object3D::morph(int erodeAmt, int dilateAmt, bool dilateFirst, bool grayMap) {
+void Object3D::morph(int erodeAmt, int dilateAmt, bool dilateFirst, bool useGrayMap) {
     if (dilateAmt == -1) dilateAmt = erodeAmt;
 
     cv::Mat eKernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(erodeAmt, erodeAmt)),
             dKernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(dilateAmt, dilateAmt));
 
-    if (dilateFirst) cv::dilate(xyzMap, xyzMap, dKernel);
-    cv::erode(xyzMap, xyzMap, eKernel);
-    if (!dilateFirst) cv::dilate(xyzMap, xyzMap, dKernel);
+    if (useGrayMap) {
+        if (dilateFirst) cv::dilate(grayMap, grayMap, dKernel);
+        cv::erode(grayMap, grayMap, eKernel);
+        if (!dilateFirst) cv::dilate(grayMap, grayMap, dKernel);
+    }
+    else{
+        if (dilateFirst) cv::dilate(xyzMap, xyzMap, dKernel);
+        cv::erode(xyzMap, xyzMap, eKernel);
+        if (!dilateFirst) cv::dilate(xyzMap, xyzMap, dKernel);
+    }
 }
 
 void Object3D::computeGrayMap(int thresh) {
-    grayMap.create(xyzMap.size(), CV_8U);
+    grayMap =  cv::Mat::zeros(xyzMap.size(), CV_8U);
 
-    for (int r = 0; r < xyzMap.rows; ++r) {
-        cv::Vec3f * ptr = xyzMap.ptr<cv::Vec3f>(r);
-        uchar * grayPtr = grayMap.ptr<uchar>(r);
-
-        for (int c = 0; c < xyzMap.cols; ++c) {
-            grayPtr[c] = (uchar)(ptr[c][2] * 256.0);
-            if (grayPtr[c] < thresh) 
-                grayPtr[c] = 0;
-        }
+    for (int i = 0; i < points.size(); ++i) {
+        uchar & gv = grayMap.at<uchar>(points[i] - topLeftPt);
+        gv = (uchar)(xyzMap.at<cv::Vec3f>(points[i] - topLeftPt)[2] * 256.0);
+        if (gv < thresh) 
+            gv = 0;
     }
 
     morph(2, 3, false, true);
