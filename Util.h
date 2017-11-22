@@ -181,7 +181,7 @@ public:
      * @param c third vertex
      * @returns area of triangle, in real meters squared
      */
-    static double Util::triangleArea(cv::Vec3f a, cv::Vec3f b, cv::Vec3f c = cv::Vec3f(0, 0, 0));
+    static double triangleArea(cv::Vec3f a, cv::Vec3f b, cv::Vec3f c = cv::Vec3f(0, 0, 0));
 
     /**
      * Computes the area of the quadrangle defined by four vertices
@@ -201,10 +201,12 @@ public:
      * Computes the approximate surface area of a cluster on a depth map, specified by a vector of points.
      * @param [in] depthMap the input depth map.
      * @param [in] cluster vector of points on the cluster.
+     * @param [in] sorted if true, assumes that 'cluster' is sorted and does not sort it again
      * @param [in] clusterSize number of points in this cluster. By default, uses all points in the 'cluster' vector.
      * @returns surface area, in meters squared
      */
-    static double surfaceArea(cv::Mat & depthMap, std::vector<cv::Point> & cluster, int clusterSize = -1);
+    static double surfaceArea(const cv::Mat & depthMap, std::vector<cv::Point> & cluster,
+                              bool sorted = false, int clusterSize = -1);
 
     /**
       * Approximates the surface area of a depth map cluster, using circles

@@ -86,7 +86,7 @@ namespace classifier {
             return result;
         }
 
-        std::vector<double> extractHandFeatures(const Object3D & obj,  cv::Mat & depthMap) {
+        std::vector<double> extractHandFeatures(Object3D & obj,  cv::Mat & depthMap) {
             std::vector<double> result;
 
             if (obj.hasHand) {
@@ -107,13 +107,13 @@ namespace classifier {
 
                 double area = Util::surfaceArea(depthMap);
 
-                result.push_back(cv::contourArea(obj.getComplexContour()) / cv::contourArea(obj.getConvexHull()));
+                result.push_back(cv::contourArea(obj.getContour()) / cv::contourArea(obj.getConvexHull()));
                 result.push_back(avgdist * 20.0);
                 result.push_back(sqrt(vardist) * 25.0);
                 //result.push_back(avgdepth * 1.50);
                 result.push_back(area * 5.00);
                 result.push_back(sqrt(vardepth) * 25.0);
-                result.push_back(cv::contourArea(obj.getComplexContour()) / cv::contourArea(obj.getConvexHull()));
+                result.push_back(cv::contourArea(obj.getContour()) / cv::contourArea(obj.getConvexHull()));
 
                 for (int i = 0; i < nFingers; ++i) {
                     cv::Vec3f finger = hand.fingers_xyz[i], defect = hand.defects_xyz[i];

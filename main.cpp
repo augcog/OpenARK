@@ -22,7 +22,7 @@
 using namespace cv;
 
 #ifdef PROFILING
-const char* profCategories[] = { "Update", "Denoise", "Clustering", "Hand Identification", "Other" };
+const char* profCategories[] = { "Update", "Clustering", "Hand Identification", "Other" };
 #endif
 
 static inline void drawHand(cv::Mat & image, Object3D & obj, float confidence) {
@@ -30,8 +30,8 @@ static inline void drawHand(cv::Mat & image, Object3D & obj, float confidence) {
         image = Visualizer::visualizeHand(image, obj.getHand());
     }
 
-    if (obj.getComplexContour().size() > 2) {
-        cv::polylines(image, obj.getComplexContour(), true, cv::Scalar(0, 255, 0), 1);
+    if (obj.getContour().size() > 2) {
+        cv::polylines(image, obj.getContour(), true, cv::Scalar(0, 255, 0), 1);
     }
 
     std::stringstream disp;
@@ -103,22 +103,16 @@ int main() {
 
     while (true)
     {
-        camera->update();
+        camera->nextFrame();
 
 #ifdef PROFILING
         ++profCycles;
         delta = clock() - lastTime; profTimes[0] += delta; totalTime += delta; lastTime = clock();
 #endif
 
-        // Do noise removal
-        camera->removeNoise();
-
-#ifdef PROFILING
-        delta = clock() - lastTime; profTimes[1] += delta; totalTime += delta; lastTime = clock();
-#endif
         #ifdef DEMO
-            if (camera->getDepthImage().rows > 0) {
-                cv::imshow("OpenARK Depth Image", camera->getDepthImage());
+            if (camera->getXYZMap().rows > 0) {
+                cv::imshow("OpenARK Depth Image", camera->getXYZMap());
                 if (camera->hasRGBImage()) {
                     cv::imshow("OpenARK Color Image", camera->getRGBImage());
                 }
@@ -144,12 +138,12 @@ int main() {
 #endif
 
         // Classifying objects in the scene
-        camera->computeClusters();
-        std::vector<cv::Mat> clusters = camera->getClusters();
-        std::vector<double> surfaceAreas = camera->getClusterAreas();
+        std::vector<Object3D> objects = camera->queryObjects();
+        //std::vector<cv::Mat> clusters = camera->getClusters();
+        //std::vector<double> surfaceAreas = camera->getClusterAreas();
 
 #ifdef PROFILING
-        delta = clock() - lastTime; profTimes[2] += delta; totalTime += delta; lastTime = clock();
+        delta = clock() - lastTime; profTimes[1] += delta; totalTime += delta; lastTime = clock();
 #endif
 
         // visualization of hand objects
@@ -167,16 +161,12 @@ int main() {
         delta = clock() - lastTime; totalTime += delta; lastTime = clock();
 #endif
 
-        std::vector<Object3D> objects;
-
         int handObjectIndex = -1, handCount = 0, planeObjectIndex = -1;
 
         float bestHandDist = FLT_MAX;
 
-        for (int i = 0; i < clusters.size(); ++i) {  
-            objects.emplace_back(clusters[i]);
-
-            Object3D obj = objects.back();
+        for (int i = 0; i < objects.size(); ++i) {  
+            Object3D obj = objects[i];
 
             //cv::circle(handVisual, obj.getCenterIj() * 2, 10, cv::Scalar(255, 255, 0), 2);
 
@@ -190,7 +180,7 @@ int main() {
 
             }
 
-            drawHand(handVisual, obj, surfaceAreas[i]);
+            drawHand(handVisual, obj, obj.getSurfArea());
 
             if (obj.hasPlane) {
                 planeObjectIndex = i;
@@ -198,7 +188,7 @@ int main() {
         }
 
 #ifdef PROFILING
-        delta = clock() - lastTime; profTimes[3] += delta; totalTime += delta; lastTime = clock();
+        delta = clock() - lastTime; profTimes[2] += delta; totalTime += delta; lastTime = clock();
 #endif
 
         // Show visualizations
@@ -214,7 +204,8 @@ int main() {
         // }
         if (handObjectIndex != -1) {
             ++handCount;
-            drawHand(handVisual, objects[handObjectIndex], surfaceAreas[handObjectIndex]);
+            Object3D obj = objects[handObjectIndex];
+            drawHand(handVisual, obj, obj.getSurfArea());
         }
 
         cv::resize(handVisual, handScaled, cv::Size(camera->getWidth(), camera->getHeight()));
@@ -329,7 +320,7 @@ int main() {
         u.send(tempS);
 
 #ifdef PROFILING
-        delta = clock() - lastTime; profTimes[4] += delta; totalTime += delta; lastTime += delta;
+        delta = clock() - lastTime; profTimes[3] += delta; totalTime += delta; lastTime += delta;
 #endif
 
         /**** Start: Write Frames to File ****/

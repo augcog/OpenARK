@@ -24,8 +24,7 @@ void Calibration::XYZToUnity(DepthCamera& depth_cam, int num_boards, int board_w
 		cornersAmp.clear();
 		cornersXYZ.clear();
 		auto found1 = false;
-		depth_cam.update();
-		depth_cam.removeNoise();
+		depth_cam.nextFrame();
 		auto xyzMap = depth_cam.getXYZMap();
 
 		cv::Mat ampGray;

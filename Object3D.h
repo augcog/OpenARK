@@ -32,11 +32,28 @@ public:
     Object3D();
 
     /**
-    * Constructs a instance of Object3D based on a point cloud.
-    * @param cluster point cloud representation of the object
-    * @param surfaceArea optionally, the surface area of the point cloud. By default, this is calculated on demand.
+    * Constructs an instance of Object3D based on an isolated point cloud containing points in the object.
+    * Points not on the cluster must have 0 z-coordinate in the point cloud.
+    * Complexity: O(n) in relation to the total number of points in the point cloud.
+    * @param clusterDepthMap point cloud containing the object
+    * @param min_size optionally, the minimum surface area of an object on which hand detection should be performed
+    * @param max_size optionally, the maximum surface area of an object on which hand detection should be performed
     */
-    explicit Object3D::Object3D(cv::Mat cluster);
+    explicit Object3D::Object3D(cv::Mat clusterDepthMap, double min_size = 0.04, double max_size = 0.29);
+
+    /**
+    * Construct an instance of Object3D from a vector of points belonging to the object
+    * along with a reference point cloud containing all points in the scene.
+    * Complexity: O(nlogn) in the size of the 'points' vector. O(n) if already sorted (specify sorted=false)
+    * @param [in] points vector of all points (in screen coordinates) belonging to the object
+    * @param [in] depthMap the reference point cloud. (CAN contain points outside this object)
+    * @param depthMap the reference point cloud. (CAN contain points outside this object)
+    * @param sorted if true, assumes that 'points' is already ordered and skips sorting to save time.
+    * @param min_size optionally, the minimum surface area of an object on which hand detection should be performed
+    * @param max_size optionally, the maximum surface area of an object on which hand detection should be performed
+    */   
+    Object3D::Object3D(std::vector<cv::Point> & points, cv::Mat & depthMap,
+                       bool sorted = false, double min_size = 0.008, double max_size = 0.055);
 
     /**
     * Deconstructs a Object3D instance.
@@ -72,48 +89,96 @@ public:
     Plane getPlane() const;
 
     /**
-    * Gets center of hand in screen coordinates
-    * @return center of hand in screen coordinates
-    */
-    cv::Point getCenterIj() const;
-
-    /**
-    * Gets center of hand in real coordinates
-    * @return center of hand in real (xyz) coordinates
-    */
-    cv::Vec3f getCenter() const;
-
-    /**
-    * Gets the average depth of the object
-    * @returns average z-coordinate of the object in meters
-    */
-    float getDepth() const;
-    
-    /**
-    * Gets the visible surface area of the object (NOTE: only available for hands)
-    * @returns surface area in meters squared
-    */
-    double getSurfaceArea() const;
-
-    /**
     * Gets instance of shape object.
     * @return instance of shape object
     */
     cv::Mat getShape() const;
 
     /**
-    * Gets most complex (largest) contour in object
-    * @return the largest contour in this 3D object
+    * Gets approximate center of mass of object in screen coordinates
+    * @return center of object in screen coordinates
     */
-    std::vector<cv::Point > getComplexContour() const;
+    cv::Point getCenterIj();
+
+    /**
+    * Gets approximate center of mass of object in real coordinates
+    * @return center of object in real (xyz) coordinates
+    */
+    cv::Vec3f getCenter();
+
+    /**
+    * Gets bounding box of object in screen coordinates
+    * @return bounding box of object in screen coordinates
+    */
+    cv::Rect getBoundingBox() const;
+
+    /**
+    * Gets the average depth of the object
+    * @returns average z-coordinate of the object in meters
+    */
+    float getDepth();
+    
+    /**
+    * Gets the visible surface area of the object
+    * @returns surface area in meters squared
+    */
+    double getSurfArea();
+
+    /**
+     * Get the depth map of the visible portion of this object
+     * @returns depth map of visible object
+     */
+    const cv::Mat & getDepthMap();
+
+    /**
+     * Find the largest 2D contour within this cluster
+     * @returns vector of points representing the largest 2D contour within this cluster
+     */
+    std::vector<cv::Point> getContour(); 
 
     /**
     * Gets the 2D convex hull of this object
     * @return the 2D convex hull of this object, stored as a vector of points
     */
-    std::vector<cv::Point > getConvexHull() const;
+    std::vector<cv::Point> getConvexHull();
 
 private:
+    /**
+     * Stores points in this cluster
+     */
+    std::vector<cv::Point> points;
+
+    /**
+     * Top left point of bounding box of cluster
+     */
+    cv::Point topLeftPt;
+
+    /**
+     * (Partial) XYZ map of cluster (CV_32FC3).
+     */
+    cv::Mat xyzMap;
+
+    /**
+     * Full XYZ map of cluster (CV_32FC3).
+     */
+    cv::Mat fullXyzMap = cv::Mat();
+
+    /**
+     * Grayscale image containing normalized depth (z) information from the regular xyzMap (CV_8U)
+     * Note: 2x the size of xyzMap
+     */
+    cv::Mat grayMap;
+
+    /** 
+     * Stores size of full xyz map
+     */
+    cv::Size fullMapSize;
+
+    /** 
+     * Surface area in meters squared
+     */
+    double surfaceArea = -1;
+
     /**
      * Pointer to the hand instance.
      */
@@ -147,23 +212,28 @@ private:
     /*
      * Center of the object in screen coordinates.
      */
-    cv::Point centerIj;
+    cv::Point centerIj = cv::Point(INT_MAX, 0);
 
     /*
      * Center of the object in real coordinates.
      */
-    cv::Vec3f centerXyz;
+    cv::Vec3f centerXyz = cv::Vec3f(FLT_MAX, 0.0f, 0.0f);
 
     /*
-     * Depth at center of object
+     * Average depth of object
      */
-    double avgDepth;
-    
-    /** 
-     * Surface area in meters squared
-     */
-    double surfaceArea;
+    double avgDepth = -1.0;
 
+    /*
+     * Maximum depth value of object
+     */
+    double maxVal = -FLT_MAX;
+
+    /*
+     * Screen Position of maximum depth value of object
+     */
+    cv::Point maxLoc = cv::Point(-1, -1);
+    
     /**
     * Determine whether the object is connected to an edge.
     * @param cluster point cloud of the object
@@ -184,7 +254,7 @@ private:
     * @param finger_dist_min minimum distance between fingers
     * @param centroid_defect_finger_angle_min minimum angle between centroid, defect, and finger
     */
-    Hand * checkForHand(cv::Mat cluster, double angle_thresh = 0.08, double cluster_thresh = 10,
+    Hand * checkForHand(const cv::Mat & cluster, double angle_thresh = 0.08, double cluster_thresh = 10,
         double finger_len_min = 0.005, double finger_len_max = 0.17, 
         double max_defect_angle = 0.60 * PI,
         double finger_defect_slope_min = -1.0, double finger_centroid_slope_min = -0.45,
@@ -192,16 +262,10 @@ private:
 
     /**
     * Subroutine for computing the largest contour, convex hull, etc. for this 3D object.
-    * @param cluster the point cloud representing the 3D object
+    * @param min_size optionally, the minimum surface area of an object on which hand detection should be performed
+    * @param max_size optionally, the maximum surface area of an object on which hand detection should be performed
     */
-    void computeObjectFeatures(cv::Mat cluster);
-
-    /**
-    * Find the contour with the maximum number of points
-    * @param contours vector of all contours
-    * @returns contour with max number of points
-    */
-    static inline std::vector<cv::Point> findComplexContour(std::vector< std::vector<cv::Point> > contours);
+    void initializeObject(double min_size, double max_size);
 
     /**
     * Find the center of mass of an object
@@ -216,6 +280,21 @@ private:
     * @returns simplified convex hull
     */
     static std::vector<cv::Point> Object3D::clusterConvexHull(std::vector<cv::Point> convexHull, int threshold);
+
+   /**
+     * Perform erode-dilate morphological operations on the cluster's depth image
+     * @param erodeAmt size of erode kernel
+     * @param dilateAmt size of dilate kernel (by default, takes same value as erodeAmt)
+     * @param dilateFirst if true, performs dilate before erode
+     * @param grayMap if true, performs operations on the gray map instead of the xyz map
+     */
+    void morph(int erodeAmt, int dilateAmt = -1, bool dilateFirst = false, bool grayMap = false);
+
+    /**
+     * Compute the grayscale z-coordinate image of this cluster from the normal xyz map
+     * @param thresh the minimum z-coordinate of a point on the depth image below which the pixel will be zeroed out
+     */
+    void computeGrayMap(int thresh = 0);
 
 #ifdef USE_SVM
     /**
