@@ -49,11 +49,12 @@ public:
     * @param [in] depthMap the reference point cloud. (CAN contain points outside this object)
     * @param depthMap the reference point cloud. (CAN contain points outside this object)
     * @param sorted if true, assumes that 'points' is already ordered and skips sorting to save time.
+    * @param points_to_use optionally, the number of points in 'points' to use for the object. By default, uses all points.
     * @param min_size optionally, the minimum surface area of an object on which hand detection should be performed
     * @param max_size optionally, the maximum surface area of an object on which hand detection should be performed
     */   
     Object3D::Object3D(std::vector<cv::Point> & points, cv::Mat & depthMap,
-                       bool sorted = false, double min_size = 0.008, double max_size = 0.055);
+                       bool sorted = false, int points_to_use = -1, double min_size = 0.008, double max_size = 0.055);
 
     /**
     * Deconstructs a Object3D instance.
@@ -146,7 +147,12 @@ private:
     /**
      * Stores points in this cluster
      */
-    std::vector<cv::Point> points;
+    std::vector<cv::Point> * points = nullptr;
+
+    /**
+     * Stores number of points in 'points' used in the cluster
+     */
+    int num_points;
 
     /**
      * Top left point of bounding box of cluster
@@ -236,13 +242,11 @@ private:
     
     /**
     * Determine whether the object is connected to an edge.
-    * @param cluster point cloud of the object
     */
-    void checkEdgeConnected(cv::Mat & cluster);
+    void checkEdgeConnected();
 
     /**
     * Check whether the object is a hand
-    * @param cluster the input point cloud
     * @param angle_thresh minimum angle formed by finger tip and neighboring defects
     * @param cluster_thresh maximum distance between two finger tips
     * @param finger_len_min minimum finger length
@@ -262,8 +266,9 @@ private:
 
     /**
     * Subroutine for computing the largest contour, convex hull, etc. for this 3D object.
-    * @param min_size optionally, the minimum surface area of an object on which hand detection should be performed
-    * @param max_size optionally, the maximum surface area of an object on which hand detection should be performed
+    * @param pts_size the number of points in 'points' that are used in this object
+    * @param min_size the minimum surface area of an object on which hand detection should be performed
+    * @param max_size the maximum surface area of an object on which hand detection should be performed
     */
     void initializeObject(double min_size, double max_size);
 

@@ -58,40 +58,52 @@ Object3D::Object3D(cv::Mat depthMap, double min_size, double max_size) {
     xyzMap = fullXyzMap = depthMap;
     topLeftPt = cv::Point(0, 0);
     fullMapSize = depthMap.size();
+    points = new std::vector<cv::Point>;
 
     for (int r = 0; r < depthMap.rows; ++r) {
         cv::Vec3f * ptr = depthMap.ptr<cv::Vec3f>(r);
 
         for (int c = 0; c < depthMap.cols; ++c) {
             if (ptr[c][2] > 0.1) {
-                points.push_back(cv::Point(c, r));
+                points->push_back(cv::Point(c, r));
             }
-            if (ptr[c][2] > maxVal) {
-                maxVal = ptr[c][2];
-                maxLoc = cv::Point(c, r);
-            }
+            //if (ptr[c][2] > maxVal) {
+            //    maxVal = ptr[c][2];
+            //    maxLoc = cv::Point(c, r);
+            //}
         }
     }
+
+    num_points = -1;
+
+    getSurfArea();
+    if (surfaceArea < min_size || surfaceArea > max_size) return;
 
     // initialize object, detect hand, etc.
     initializeObject(min_size, max_size);
 }
 
-Object3D::Object3D(std::vector<cv::Point> & points, cv::Mat & depthMap, bool sorted, 
+Object3D::Object3D(std::vector<cv::Point> & points, cv::Mat & depthMap, bool sorted, int points_to_use,
                    double min_size, double max_size){
-    if (points.size() < 2) return;
+
+    if (points_to_use < 0 || points_to_use > (int)points.size()) 
+        num_points = (int)points.size(); 
+    else 
+        num_points = points_to_use;
+
+    static const Util::PointComparer<cv::Point> pc(false, true);
 
     if (!sorted)
-        std::sort(points.begin(), points.end(), Util::PointComparer<cv::Point>(false, true));
+        std::sort(points.begin(), points.begin() + num_points, pc);
 
-    surfaceArea = Util::surfaceArea(depthMap, points, true);
+    surfaceArea = Util::surfaceArea(depthMap, points, true, num_points);
     if (surfaceArea < min_size || surfaceArea > max_size) return;
 
-    this->points = points;
+    this->points = &points;
 
-    cv::Rect bounding (depthMap.cols, points[0].y, -1, points[points.size()-1].y);
+    cv::Rect bounding (depthMap.cols, points[0].y, -1, points[num_points-1].y);
 
-    for (int i = 0; i < (int)points.size(); ++i) {
+    for (int i = 0; i < num_points; ++i) {
         cv::Point pt = points[i];
         //cv::Vec3f v = depthMap.at<cv::Vec3f>(pt);
 
@@ -109,20 +121,17 @@ Object3D::Object3D(std::vector<cv::Point> & points, cv::Mat & depthMap, bool sor
     topLeftPt = cv::Point(bounding.x, bounding.y);
     fullMapSize = depthMap.size();
     
-    for (int i = 0; i < (int)points.size(); ++i) {
+    for (int i = 0; i < num_points; ++i) {
         cv::Point pt = points[i] - topLeftPt;
         cv::Vec3f v = depthMap.at<cv::Vec3f>(points[i]);
 
-        if (v[2] > maxVal) {
-            maxVal = v[2];
-            maxLoc = cv::Point(pt);
-        }
+        //if (v[2] > maxVal) {
+        //    maxVal = v[2];
+        //    maxLoc = pt;
+        //}
 
         xyzMap.at<cv::Vec3f>(pt) = cv::Vec3f(v);
     }
-
-    //cv::imshow("XY", xyzMap);
-    //cv::waitKey();
 
     // initialize object, detect hand, etc.
     initializeObject(min_size, max_size);
@@ -190,24 +199,16 @@ std::vector<cv::Point> Object3D::clusterConvexHull(std::vector<cv::Point> convex
 void Object3D::initializeObject(double min_size, double max_size)
 {
     // step 1: initialize and compute properties
-    if (fullXyzMap.rows > 0) checkEdgeConnected(fullXyzMap); // TODO: fix
+    checkEdgeConnected();
 
     // compute gray map
     computeGrayMap();
 
-    // compute contour
-    getContour();
-
-    // Find convex hull
+    // Find contour & convex hull
     getConvexHull();
 
-    //std::vector<cv::Point> hull;
-
     // Step 2: determine whether cluster is a hand
-    //getSurfArea();
-
-    if ((surfaceArea >= min_size) && (surfaceArea <= max_size) && (hand = checkForHand(xyzMap))) {
-        getCenter(); getCenterIj(); getDepth();
+    if (hand = checkForHand(xyzMap)) {
         hasHand = true;
         return;
     }
@@ -244,7 +245,6 @@ void Object3D::initializeObject(double min_size, double max_size)
             double finger_length = Util::euclideanDistance3D(hand->fingers_xyz[0], hand->centroid_xyz);
             if (finger_length > 0.03 && finger_length < 0.2)
             {
-                getCenter(); getCenterIj(); getDepth();
                 hasHand = true;
                 return;
             }
@@ -317,8 +317,10 @@ Hand * Object3D::checkForHand(const cv::Mat & cluster, double angle_thresh, doub
 
     std::vector<cv::Point> endpoints, fingerDefects;
 
-    //cv::Mat visualL = cv::Mat::zeros(cluster.rows * 4, cluster.cols * 4, cluster.type());
+    //cv::Mat visualL = cv::Mat::zeros(cluster.rows, cluster.cols, cluster.type());
     cv::Vec3f lastPoint;
+
+    bool first = true;
 
     for (int i = 0; i < defects.size(); ++i)
     {
@@ -327,20 +329,20 @@ Hand * Object3D::checkForHand(const cv::Mat & cluster, double angle_thresh, doub
                   end = complexContour[defect[1]] / IMG_SCALE - topLeftPt,
                   farPt = complexContour[defect[2]] / IMG_SCALE - topLeftPt;
 
-        int depth = defect[3]; // Depth from edge of contour
+        //int depth = defect[3]; // Depth from edge of contour
 
         if (!Util::pointInImage(cluster, farPt)) continue;
         if (!Util::pointInImage(cluster, start)) continue;
         if (!Util::pointInImage(cluster, end)) continue;
 
         // Defect conditions: depth is sufficient, inside contour, y value is above center
-        // (maxLoc largest depth)
+        // (maxLoc largest depth) (removed)
         // first condition replace with meters distance from the edge
         // second test if inside the hull (removed)
         // not too far below the center (no change)
 
-        if (Util::magnitude(maxLoc - center) < depth /*&&
-            cv::pointPolygonTest(hull, farPt, false) > 0 */&& 
+        if (//Util::magnitude(maxLoc - center) < depth * 2 &&
+            //cv::pointPolygonTest(hull, farPt, false) > 0 &&
             farPt.y < center.y + 30 * IMG_SCALE &&
             farPt.y + topLeftPt.y < fullMapSize.height - 10)
         {
@@ -353,33 +355,38 @@ Hand * Object3D::checkForHand(const cv::Mat & cluster, double angle_thresh, doub
                       end_xyz = Util::averageAroundPoint(cluster, end, 15);
 
             double dist = Util::euclideanDistance3D(pt1, hand->centroid_xyz);
+            double startEndDist = Util::euclideanDistance3D(start_xyz, end_xyz);
 
-            if (dist > 0.01)
+            if (dist > 0.01 && startEndDist > 0.01)
             {
-                if (i == 0 || Util::euclideanDistance3D(lastPoint, start_xyz) > 0.02) {
+                if (first || Util::euclideanDistance3D(lastPoint, start_xyz) > 0.02) {
                     endpoints.push_back(start);
                     fingerDefects.push_back(farPt);
-
-                    //cv::circle(visualL, start, 2, cv::Scalar(0, 255, 0));
-                    //cv::line(visualL, start, farPt, cv::Scalar(0, 255, 0));
+                    //cv::line(visualL, start, farPt, cv::Scalar(0, 255, 0), 2);
+                    //cv::circle(visualL, start, 5, cv::Scalar(0, 255, 0));
                 }
 
                 endpoints.push_back(end);
                 fingerDefects.push_back(farPt);
+                //cv::line(visualL, end, farPt, cv::Scalar(0, 0, 255) , 2);
 
+                first = false;
                 lastPoint = end_xyz;
-
-                //cv::circle(visualL, end, 3, cv::Scalar(0, 0, 255));
-                //cv::circle(visualL, farPt, 2, cv::Scalar(255, 0, 0), 2);
-                //cv::putText(visualL, std::to_string(i), farPt, 0, 2, cv::Scalar(255,255,255),2);
-                //cv::line(visualL, end, farPt, cv::Scalar(0, 0, 255));
             }
         }
+
+        //cv::circle(visualL, center, 2, cv::Scalar(255, 100, 255));
+        //cv::circle(visualL, maxLoc, 2, cv::Scalar(255, 100, 0));
+        //cv::circle(visualL, start, 2, cv::Scalar(0, 255, 0));
+        //cv::line(visualL, start, farPt, cv::Scalar(0, 255, 0));
+        //cv::circle(visualL, end, 3, cv::Scalar(0, 0, 255));
+        //cv::circle(visualL, farPt, 2, cv::Scalar(255, 0, 0), 2);
+        //cv::putText(visualL, std::to_string(i), farPt, 0, 0.5, cv::Scalar(255,255,255), 1);
+        //cv::line(visualL, end, farPt, cv::Scalar(0, 0, 255));
     }
 
-    //cv::Mat visual; cv::resize(visualL, visual, cv::Size(1280, 720));
     //cv::namedWindow("Defects");
-    //cv::imshow("Defects", visual);
+    //cv::imshow("Defects", visualL);
 
     std::vector<cv::Point> fingers_ij, defects_ij;
     std::vector<cv::Vec3f> fingers_xyz, defects_xyz;
@@ -490,53 +497,61 @@ Hand * Object3D::checkForHand(const cv::Mat & cluster, double angle_thresh, doub
 }
 
 
-void Object3D::checkEdgeConnected(cv::Mat & cluster)
+void Object3D::checkEdgeConnected()
 {
-    int cols = cluster.cols, rows = cluster.rows;
+    int cols = fullMapSize.width, rows = fullMapSize.height;
 
     // bottom Sweep
-    int r1 = static_cast<int>(rows * 0.9);
-    for (int c1 = 0; c1 < cols / 4; c1++)
-    {
-        if (cluster.at<cv::Vec3f>(r1, c1)[2] != 0)
+    int r1 = rows * 9 / 10 - topLeftPt.y;
+    if (r1 >= 0 && r1 < xyzMap.rows) {
+        for (int c1 = 0; c1 < cols / 4 - topLeftPt.x; ++c1)
         {
-            leftEdgeConnected = true;
-            break;
+            if (xyzMap.at<cv::Vec3f>(r1, c1)[2] != 0)
+            {
+                leftEdgeConnected = true;
+                break;
+            }
         }
     }
 
     // Left Side Sweep
-    int c2 = static_cast<int>(cols * 0.2);
-
-    for (int r2 = 0; r2 < rows; r2++)
-    {
-        if (cluster.at<cv::Vec3f>(r2, c2)[2] != 0)
+    int c2 = cols * 2 / 10 - topLeftPt.x;
+    if (c2 >= 0 && c2 < xyzMap.cols) {
+        for (int r2 = 0; r2 < rows - topLeftPt.y; ++r2)
         {
-            leftEdgeConnected = true;
-            break;
+            if (xyzMap.at<cv::Vec3f>(r2, c2)[2] != 0)
+            {
+                leftEdgeConnected = true;
+                break;
+            }
         }
     }
 
     // Bottom Sweep
-    int r3 = static_cast<int>(rows * 0.9);
-    //for (auto c3 = cols / 4; c3 < cols; c3++) //original
-    for (int c3 = cols - (cols / 4); c3 < cols; c3++)
-    { //fixed
-        if (cluster.at<cv::Vec3f>(r3, c3)[2] != 0)
-        {
-            rightEdgeConnected = true;
-            break;
+    int r3 = rows * 9 / 10 - topLeftPt.y;
+    if (r3 >= 0 && r3 < xyzMap.rows) {
+        for (int c3 = cols - (cols / 4) - topLeftPt.x; c3 < cols - topLeftPt.x; ++c3)
+        { 
+            if (c3 < 0 || c3 >= xyzMap.cols) continue;
+            if (xyzMap.at<cv::Vec3f>(r3, c3)[2] != 0)
+            {
+                rightEdgeConnected = true;
+                break;
+            }
         }
     }
 
     // Right Side Sweep
-    int c4 = static_cast<int>(cols * 0.8);
-    for (int r4 = rows / 2; r4 < rows; r4++)
-    {
-        if (cluster.at<cv::Vec3f>(r4, c4)[2] != 0)
+    int c4 = cols * 8 / 10 - topLeftPt.x;
+    if (c4 >= 0 && c4 < xyzMap.cols) {
+        for (int r4 = rows / 2 - topLeftPt.y; r4 < rows - topLeftPt.y; ++r4)
         {
-            rightEdgeConnected = true;
-            break;
+            if (r4 < 0 || r4 >= xyzMap.rows) continue;
+            if (xyzMap.at<cv::Vec3f>(r4, c4)[2] != 0)
+            {
+                rightEdgeConnected = true;
+                break;
+            }
         }
     }
 
@@ -581,7 +596,7 @@ cv::Mat Object3D::getShape() const
 double Object3D::getSurfArea() {
     if (surfaceArea == -1) {
         // lazily compute SA on demand
-        surfaceArea = Util::surfaceArea(getDepthMap(), points, true);
+        surfaceArea = Util::surfaceArea(getDepthMap(), *points, true);
     }
     return surfaceArea;
 }
@@ -595,26 +610,19 @@ std::vector<cv::Point> Object3D::getContour()
 {
     if (complexContour.size() == 0) {
         std::vector<std::vector<cv::Point> > contours;
-        cv::findContours(grayMap, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+        cv::findContours(grayMap, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, 2*topLeftPt);
 
-        size_t maxPoints = 0; unsigned maxId = 0;
+        unsigned maxId = 0;
 
-        for (unsigned i = 0; i < contours.size(); ++i)
+        for (unsigned i = 1; i < contours.size(); ++i)
         {
-            if (contours[i].size() > maxPoints)
+            if (contours[i].size() > contours[maxId].size())
             {
-                maxPoints = contours[i].size();
                 maxId = i;
             }
         }
 
-        complexContour.reserve(contours[maxId].size());
-
-        for (unsigned i = 0; i < contours[maxId].size(); ++i) {
-            complexContour.push_back(contours[maxId][i] + topLeftPt * 2);
-        }
-
-        cv::approxPolyDP(complexContour, complexContour, 0.002, true);
+        cv::approxPolyDP(contours[maxId], complexContour, 0.002, true);
     }
 
     return complexContour;
@@ -668,9 +676,12 @@ void Object3D::morph(int erodeAmt, int dilateAmt, bool dilateFirst, bool useGray
 void Object3D::computeGrayMap(int thresh) {
     grayMap =  cv::Mat::zeros(xyzMap.size(), CV_8U);
 
-    for (int i = 0; i < points.size(); ++i) {
-        uchar & gv = grayMap.at<uchar>(points[i] - topLeftPt);
-        gv = (uchar)(xyzMap.at<cv::Vec3f>(points[i] - topLeftPt)[2] * 256.0);
+    int points_to_use = num_points;
+    if (points_to_use < 0) points_to_use = (int)points->size();
+
+    for (int i = 0; i < num_points; ++i) {
+        uchar & gv = grayMap.at<uchar>((*points)[i] - topLeftPt);
+        gv = (uchar)(xyzMap.at<cv::Vec3f>((*points)[i] - topLeftPt)[2] * 256.0);
         if (gv < thresh) 
             gv = 0;
     }
@@ -681,4 +692,7 @@ void Object3D::computeGrayMap(int thresh) {
 
 Object3D::~Object3D()
 {
+    if (points != nullptr && num_points == -1) {
+        delete points;
+    }
 }

@@ -38,16 +38,14 @@ void DepthCamera::computeClusters(double max_distance, double ir_distance, int m
     cv::Mat mask = cv::Mat::zeros(xyzMap.rows, xyzMap.cols, xyzMap.type());
     std::vector<cv::Point> pts(xyzMap.rows * xyzMap.cols + 1);
 
-    const cv::Vec3f zeros = cv::Vec3f(0, 0, 0);
-    int total = 0;
+    static const cv::Vec3f zeros = cv::Vec3f(0, 0, 0);
 
-    for (int r = xyzMap.rows - 1; r >= 0; r -= floodfill_interval)
+    for (int r = 0; r < xyzMap.rows; ++r)
     {
         cv::Vec3f * ptr = xyzMap.ptr<cv::Vec3f>(r);
 
-        for (int c = 0; c < xyzMap.cols; c += floodfill_interval)
+        for (int c = 0; c < xyzMap.cols; ++c)
         {
-            total += 1;
             if (ptr[c][2] > 0)
             {
                 int points_in_comp = floodFill(c, r, xyzMap, &pts, max_distance, irImage, ir_distance, mask);
@@ -93,31 +91,24 @@ std::vector<Object3D> DepthCamera::queryObjects(double max_distance, double ir_d
         std::vector<cv::Point> allPoints(xyzMap.rows * xyzMap.cols + 1);
 
         const cv::Vec3f zeros = cv::Vec3f(0, 0, 0);
-        int total = 0;
 
-        for (int r = xyzMap.rows - 1; r >= 0; r -= floodfill_interval)
+        for (int r = 0; r < xyzMap.rows; r += floodfill_interval)
         {
             cv::Vec3f * ptr = xyzMap.ptr<cv::Vec3f>(r);
 
             for (int c = 0; c < xyzMap.cols; c += floodfill_interval)
             {
-                total += 1;
-
                 if (ptr[c][2] > 0)
                 {
                     int points_in_comp = floodFill(c, r, xyzMap, &allPoints, max_distance, irImage, ir_distance);
 
                     if (points_in_comp > min_points)
                     {
-                        std::vector<cv::Point> points;
-                        points.reserve(points_in_comp);
-
-                        for (int i = 0; i < points_in_comp; ++i) {
-                            points.push_back(allPoints[i]);
-                        }
+                        //for (int i = 0; i < points_in_comp; ++i) {
+                            //points.push_back(allPoints[i]);
+                        //}
                         
-                        Object3D obj = Object3D(points, this->xyzMap, false, min_size, max_size);
-                        if (!obj.hasHand) continue;
+                        Object3D obj = Object3D(allPoints, this->xyzMap, false, points_in_comp, min_size, max_size);
                         objects.push_back(obj);
                     }
                 }
@@ -173,11 +164,13 @@ int DepthCamera::floodFill(int seed_x, int seed_y, cv::Mat& depthMap,
 
     static const cv::Point nxtPoints[] = 
                  {
-                   cv::Point(1, 0), cv::Point(-1, 0), cv::Point(0, 1), cv::Point(0, -1) ,
-                   cv::Point(5, 0), cv::Point(-5, 0), cv::Point(0, 5), cv::Point(0, -5) 
+                   cv::Point(-5, 0),  cv::Point(-1, 0),
+                   cv::Point(0, -5), cv::Point(0, -1), cv::Point(0, 1), cv::Point(0, 5),
+                   cv::Point(1, 0), cv::Point(5, 0),   
                  };
 
     static const int nNxtPoints = (sizeof nxtPoints) / (sizeof nxtPoints[0]);
+    static const cv::Vec3f zeros = cv::Vec3f(0, 0, 0);
 
     stk[0] = cv::Point(seed_x, seed_y);
     stkXyz[0] = depthMap.at<cv::Vec3f>(stk[0]);
@@ -186,37 +179,40 @@ int DepthCamera::floodFill(int seed_x, int seed_y, cv::Mat& depthMap,
     // while stack is not empty
     while (stkPtr > 0) {
         cv::Point pt = stk[--stkPtr];
-        cv::Vec3f xyz = stkXyz[stkPtr];
+        cv::Vec3f & xyz = stkXyz[stkPtr];
 
         if (!Util::pointInImage(depthMap, pt)) continue;
 
         ushort ir = (irImage.cols ? irImage.at<ushort>(pt) : 1); 
 
-        if (mask.rows) mask.at<cv::Vec3f>(pt) = xyz;
-        depthMap.at<cv::Vec3f>(pt)[2] = 0;
+        if (mask.rows) mask.at<cv::Vec3f>(pt) = cv::Vec3f(xyz);
+        depthMap.at<cv::Vec3f>(pt) = zeros;
 
         // add point to output vector, if one is provided
-        if (output_points) 
-            (*output_points)[total++] = cv::Point(pt);
+        if (output_points) (*output_points)[total++] = pt;
 
         for (int i = 0; i < nNxtPoints; ++i) {
             // go to each adjacent point
             cv::Point adjPt = pt + nxtPoints[i];
             if (!Util::pointInImage(depthMap, adjPt)) continue; 
 
-            cv::Vec3f adjXyz = depthMap.at<cv::Vec3f>(adjPt);
+            cv::Vec3f & adjXyz = depthMap.at<cv::Vec3f>(adjPt);
             if(adjXyz[2] == 0) continue;
 
-            if (irImage.cols && !Util::pointInImage(irImage, adjPt)) continue; 
-            ushort adjIr = (irImage.cols ? irImage.at<ushort>(adjPt) : 1); 
+            ushort adjIr;
+            if (irImage.cols) {
+                if (!Util::pointInImage(irImage, adjPt)) continue; 
+                adjIr = irImage.at<ushort>(adjPt);
+            }
+            else adjIr = 1;
 
             double dist = Util::euclideanDistance3D(xyz, adjXyz);
             ushort irDiff = abs(ir - adjIr);
 
-            double scaled_dist = max_distance * (abs(nxtPoints[i].x) + abs(nxtPoints[i].y));
+            double scaled_dist = max_distance * abs(nxtPoints[i].x + nxtPoints[i].y);
 
             if (dist < scaled_dist && irDiff < ir_distance) {
-                stkXyz[stkPtr] = adjXyz;
+                stkXyz[stkPtr] = cv::Vec3f(adjXyz);
                 stk[stkPtr++] = adjPt;
                 depthMap.at<cv::Vec3f>(adjPt)[2] = 0;
             }

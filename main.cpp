@@ -21,10 +21,6 @@
 
 using namespace cv;
 
-#ifdef PROFILING
-const char* profCategories[] = { "Update", "Clustering", "Hand Identification", "Other" };
-#endif
-
 static inline void drawHand(cv::Mat & image, Object3D & obj, float confidence) {
     if (obj.hasHand) {
         image = Visualizer::visualizeHand(image, obj.getHand());
@@ -81,22 +77,6 @@ int main() {
 
     clock_t cycleStartTime = 0;
 
-#ifdef PROFILING
-    // -- Profiling code --
-
-    // cycle count
-    int profCycles = 0;
-
-    // set starting time
-    clock_t lastTime = clock(), delta, totalTime = 0;
-
-    // names of profiling categories, change/add as need
-    clock_t profTimes[sizeof profCategories / sizeof profCategories[0]];
-
-    // set all times to 0 initially
-    memset(profTimes, 0, sizeof profTimes);
-#endif
-
     // store FPS information
     const int FPS_FRAMES = 5;
     float currFps = 0;
@@ -104,11 +84,6 @@ int main() {
     while (true)
     {
         camera->nextFrame();
-
-#ifdef PROFILING
-        ++profCycles;
-        delta = clock() - lastTime; profTimes[0] += delta; totalTime += delta; lastTime = clock();
-#endif
 
         #ifdef DEMO
             if (camera->getXYZMap().rows > 0) {
@@ -127,46 +102,21 @@ int main() {
         // Bad input, wait a little before trying again
         if (camera->badInput) {
             waitKey(10);
-            #ifdef PROFILING
-                lastTime = clock();
-            #endif
             continue;
         }
 
-#ifdef PROFILING
-        delta = clock() - lastTime; totalTime += delta; lastTime = clock();
-#endif
-
         // Classifying objects in the scene
         std::vector<Object3D> objects = camera->queryObjects();
-        //std::vector<cv::Mat> clusters = camera->getClusters();
-        //std::vector<double> surfaceAreas = camera->getClusterAreas();
-
-#ifdef PROFILING
-        delta = clock() - lastTime; profTimes[1] += delta; totalTime += delta; lastTime = clock();
-#endif
 
         // visualization of hand objects
-        cv::Mat handVisual;
-        //if (camera->hasIRImage()) {
-        //    //resize(camera->getIRImage(), handVisual, cv::Size(camera->getWidth() * 2, camera->getHeight() * 2));
-        //    //handVisual.convertTo(handVisual, CV_8U);
-        //    //cvtColor(handVisual, handVisual, CV_GRAY2BGR, 3);
-        //    handVisual /= 2;
-        //}
-        //else
-        handVisual = cv::Mat::zeros(camera->getHeight() * 2, camera->getWidth() * 2, CV_8UC3);
-
-#ifdef PROFILING
-        delta = clock() - lastTime; totalTime += delta; lastTime = clock();
-#endif
+        cv::Mat handVisual = cv::Mat::zeros(camera->getHeight() * 2, camera->getWidth() * 2, CV_8UC3);
 
         int handObjectIndex = -1, handCount = 0, planeObjectIndex = -1;
 
         float bestHandDist = FLT_MAX;
 
         for (int i = 0; i < objects.size(); ++i) {  
-            Object3D obj = objects[i];
+            Object3D & obj = objects[i];
 
             //cv::circle(handVisual, obj.getCenterIj() * 2, 10, cv::Scalar(255, 255, 0), 2);
 
@@ -185,10 +135,6 @@ int main() {
                 planeObjectIndex = i;
             }
         }
-
-#ifdef PROFILING
-        delta = clock() - lastTime; profTimes[2] += delta; totalTime += delta; lastTime = clock();
-#endif
 
         // Show visualizations
         cv::Mat handScaled;
@@ -318,10 +264,6 @@ int main() {
         tempS = handX + "%" + handY + "%" + handZ + "%" + paletteX + "%" + paletteY + "%" + paletteZ + "%" + clickStatus + "%" + num_fingers;
         u.send(tempS);
 
-#ifdef PROFILING
-        delta = clock() - lastTime; profTimes[3] += delta; totalTime += delta; lastTime += delta;
-#endif
-
         /**** Start: Write Frames to File ****/
         //std::string filename = "img" + std::to_string(frame) + ".yml";
         //pmd->writeImage(filename);
@@ -336,28 +278,6 @@ int main() {
 
         /**** End: Loop Break Condition ****/
         ++frame;
-
-#ifdef PROFILING
-        // get profiling report
-        if (c == 't' || c == 'T') {
-            float profDelay = (float)totalTime / profCycles / CLOCKS_PER_SEC;
-
-            printf("--PROFILING REPORT--\nTotal: %d\nDelay: %f s\nFPS: %f\n\n",
-                totalTime, profDelay, 1/profDelay);
-            for (int i = 0; i < sizeof profTimes / sizeof profTimes[0]; ++i) {
-                printf("%s: %d (%f%%)\n", profCategories[i], profTimes[i], (float)profTimes[i] / totalTime * 100);
-            }
-            printf("--END OF REPORT--\n\n");
-        }
-        // reset time
-        else if (c == 'r' || c == 'R') {
-            totalTime = profCycles = 0;
-            // clear all times
-            memset(profTimes, 0, sizeof profTimes);
-            printf("Profiling times reset.\n");
-        }
-        lastTime = clock();
-#endif
     }
 
 
