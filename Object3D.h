@@ -35,25 +35,24 @@ public:
     * Constructs an instance of Object3D based on an isolated point cloud containing points in the object.
     * Points not on the cluster must have 0 z-coordinate in the point cloud.
     * Complexity: O(n) in relation to the total number of points in the point cloud.
-    * @param clusterDepthMap point cloud containing the object
+    * @param cluster_depth_map point cloud containing the object
     * @param min_size optionally, the minimum surface area of an object on which hand detection should be performed
     * @param max_size optionally, the maximum surface area of an object on which hand detection should be performed
     */
-    explicit Object3D::Object3D(cv::Mat clusterDepthMap, double min_size = 0.04, double max_size = 0.29);
+    explicit Object3D::Object3D(cv::Mat cluster_depth_map, double min_size = 0.04, double max_size = 0.29);
 
     /**
     * Construct an instance of Object3D from a vector of points belonging to the object
     * along with a reference point cloud containing all points in the scene.
     * Complexity: O(nlogn) in the size of the 'points' vector. O(n) if already sorted (specify sorted=false)
     * @param [in] points vector of all points (in screen coordinates) belonging to the object
-    * @param [in] depthMap the reference point cloud. (CAN contain points outside this object)
-    * @param depthMap the reference point cloud. (CAN contain points outside this object)
+    * @param [in] depth_map the reference point cloud. (CAN contain points outside this object)
     * @param sorted if true, assumes that 'points' is already ordered and skips sorting to save time.
     * @param points_to_use optionally, the number of points in 'points' to use for the object. By default, uses all points.
     * @param min_size optionally, the minimum surface area of an object on which hand detection should be performed
     * @param max_size optionally, the maximum surface area of an object on which hand detection should be performed
     */   
-    Object3D::Object3D(std::vector<cv::Point> & points, cv::Mat & depthMap,
+    Object3D::Object3D(std::vector<cv::Point> & points, cv::Mat & depth_map,
                        bool sorted = false, int points_to_use = -1, double min_size = 0.008, double max_size = 0.055);
 
     /**
@@ -281,19 +280,20 @@ private:
 
     /**
     * Simplify a convex hull by clustering points within distance 'threshold'
+    * @param convex_hull the convex hull
     * @param threshold maximum distance between points in a cluster
     * @returns simplified convex hull
     */
-    static std::vector<cv::Point> Object3D::clusterConvexHull(std::vector<cv::Point> convexHull, int threshold);
+    static std::vector<cv::Point> Object3D::clusterConvexHull(std::vector<cv::Point> convex_hull, int threshold);
 
    /**
      * Perform erode-dilate morphological operations on the cluster's depth image
-     * @param erodeAmt size of erode kernel
-     * @param dilateAmt size of dilate kernel (by default, takes same value as erodeAmt)
-     * @param dilateFirst if true, performs dilate before erode
-     * @param grayMap if true, performs operations on the gray map instead of the xyz map
+     * @param erode_sz size of erode kernel
+     * @param dilate_sz size of dilate kernel (by default, takes same value as erodeAmt)
+     * @param dilate_first if true, performs dilate before erode
+     * @param gray_map if true, performs operations on the gray map instead of the xyz map
      */
-    void morph(int erodeAmt, int dilateAmt = -1, bool dilateFirst = false, bool grayMap = false);
+    void morph(int erode_sz, int dilate_sz = -1, bool dilate_first = false, bool gray_map = false);
 
     /**
      * Compute the grayscale z-coordinate image of this cluster from the normal xyz map

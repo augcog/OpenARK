@@ -83,7 +83,7 @@ Object3D::Object3D(cv::Mat depthMap, double min_size, double max_size) {
     initializeObject(min_size, max_size);
 }
 
-Object3D::Object3D(std::vector<cv::Point> & points, cv::Mat & depthMap, bool sorted, int points_to_use,
+Object3D::Object3D(std::vector<cv::Point> & points, cv::Mat & depth_map, bool sorted, int points_to_use,
                    double min_size, double max_size){
 
     if (points_to_use < 0 || points_to_use > (int)points.size()) 
@@ -91,17 +91,18 @@ Object3D::Object3D(std::vector<cv::Point> & points, cv::Mat & depthMap, bool sor
     else 
         num_points = points_to_use;
 
-    static const Util::PointComparer<cv::Point> pc(false, true);
+    //static const Util::PointComparer<cv::Point> pc(false, true);
 
     if (!sorted)
-        std::sort(points.begin(), points.begin() + num_points, pc);
+        Util::radixSortPoints(points, depth_map.cols, depth_map.rows, points_to_use);
+        //std::sort(points.begin(), points.begin() + num_points, pc);
 
-    surfaceArea = Util::surfaceArea(depthMap, points, true, num_points);
+    surfaceArea = Util::surfaceArea(depth_map, points, true, num_points);
     if (surfaceArea < min_size || surfaceArea > max_size) return;
 
     this->points = &points;
 
-    cv::Rect bounding (depthMap.cols, points[0].y, -1, points[num_points-1].y);
+    cv::Rect bounding (depth_map.cols, points[0].y, -1, points[num_points-1].y);
 
     for (int i = 0; i < num_points; ++i) {
         cv::Point pt = points[i];
@@ -117,13 +118,13 @@ Object3D::Object3D(std::vector<cv::Point> & points, cv::Mat & depthMap, bool sor
     bounding.width -= bounding.x - 2;
     bounding.height -= bounding.y - 2;
 
-    xyzMap = cv::Mat::zeros(bounding.size(), depthMap.type());
+    xyzMap = cv::Mat::zeros(bounding.size(), depth_map.type());
     topLeftPt = cv::Point(bounding.x, bounding.y);
-    fullMapSize = depthMap.size();
+    fullMapSize = depth_map.size();
     
     for (int i = 0; i < num_points; ++i) {
         cv::Point pt = points[i] - topLeftPt;
-        cv::Vec3f v = depthMap.at<cv::Vec3f>(points[i]);
+        cv::Vec3f v = depth_map.at<cv::Vec3f>(points[i]);
 
         //if (v[2] > maxVal) {
         //    maxVal = v[2];
@@ -146,22 +147,22 @@ inline cv::Point Object3D::findCenter(std::vector<cv::Point> contour)
     return center;
 }
 
-std::vector<cv::Point> Object3D::clusterConvexHull(std::vector<cv::Point> convexHull, int threshold)
+std::vector<cv::Point> Object3D::clusterConvexHull(std::vector<cv::Point> convex_hull, int threshold)
 {
     std::vector<cv::Point> clusterHull;
     int i = 0;
 
-    while (i < convexHull.size())
+    while (i < convex_hull.size())
     {
         // Select a point from cluster
         std::vector<cv::Point> cluster;
-        cv::Point hullPoint = convexHull[i];
+        cv::Point hullPoint = convex_hull[i];
         cluster.push_back(hullPoint);
         i++;
 
-        while (i < convexHull.size())
+        while (i < convex_hull.size())
         {
-            cv::Point clusterPoint = convexHull[i];
+            cv::Point clusterPoint = convex_hull[i];
             double distance = cv::norm(hullPoint - clusterPoint);
 
             if (distance < threshold)
@@ -177,7 +178,7 @@ std::vector<cv::Point> Object3D::clusterConvexHull(std::vector<cv::Point> convex
         }
 
         hullPoint = cluster[cluster.size() / 2];
-        cv::Point center = findCenter(convexHull);
+        cv::Point center = findCenter(convex_hull);
         int maxDist = cv::norm(hullPoint - center);
 
         for (int j = 0; j < cluster.size(); j++)
@@ -347,7 +348,8 @@ Hand * Object3D::checkForHand(const cv::Mat & cluster, double angle_thresh, doub
             farPt.y + topLeftPt.y < fullMapSize.height - 10)
         {
 
-            double angle = Util::angleBetweenPoints(start, end, farPt); // The angle from start through farPt to end
+            // The angle from start through farPt to end
+            double angle = Util::angleBetweenPoints(start, end, farPt); 
             if (angle > max_defect_angle) continue;
 
             cv::Vec3f pt1 = cluster.at<cv::Vec3f>(farPt);
@@ -655,21 +657,21 @@ const cv::Mat & Object3D::getDepthMap()
     return fullXyzMap;
 }
 
-void Object3D::morph(int erodeAmt, int dilateAmt, bool dilateFirst, bool useGrayMap) {
-    if (dilateAmt == -1) dilateAmt = erodeAmt;
+void Object3D::morph(int erode_sz, int dilate_sz, bool dilate_first, bool gray_map) {
+    if (dilate_sz == -1) dilate_sz = erode_sz;
 
-    cv::Mat eKernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(erodeAmt, erodeAmt)),
-            dKernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(dilateAmt, dilateAmt));
+    cv::Mat eKernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(erode_sz, erode_sz)),
+            dKernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(dilate_sz, dilate_sz));
 
-    if (useGrayMap) {
-        if (dilateFirst) cv::dilate(grayMap, grayMap, dKernel);
+    if (gray_map) {
+        if (dilate_first) cv::dilate(grayMap, grayMap, dKernel);
         cv::erode(grayMap, grayMap, eKernel);
-        if (!dilateFirst) cv::dilate(grayMap, grayMap, dKernel);
+        if (!dilate_first) cv::dilate(grayMap, grayMap, dKernel);
     }
     else{
-        if (dilateFirst) cv::dilate(xyzMap, xyzMap, dKernel);
+        if (dilate_first) cv::dilate(xyzMap, xyzMap, dKernel);
         cv::erode(xyzMap, xyzMap, eKernel);
-        if (!dilateFirst) cv::dilate(xyzMap, xyzMap, dKernel);
+        if (!dilate_first) cv::dilate(xyzMap, xyzMap, dKernel);
     }
 }
 

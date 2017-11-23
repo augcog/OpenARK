@@ -146,8 +146,7 @@ namespace classifier {
                             }
                         }
 
-                        double angle = Util::triangleAngleCalculation(index_left.x, index_left.y,
-                            index.x, index.y, index_right.x, index_right.y) / 360.0;
+                        double angle = Util::angleBetweenPoints(index_left, index_right, index) / (2 * PI);
 
                         result.push_back(angle);
                     }

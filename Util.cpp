@@ -247,7 +247,8 @@ double Util::surfaceArea(cv::Mat & depthMap)
     if (clusterSize < 3) return 0;
 
     if (!sorted)
-        sort(cluster.begin(), cluster.begin() + clusterSize, Util::PointComparer<cv::Point>(false, true));
+        radixSortPoints(cluster, depthMap.cols, depthMap.rows, clusterSize);
+        //sort(cluster.begin(), cluster.begin() + clusterSize, Util::PointComparer<cv::Point>(false, true));
 
     std::vector<int> rows;
     std::vector<cv::Vec3f> xyz;
@@ -295,6 +296,7 @@ double Util::surfaceArea(cv::Mat & depthMap)
     return total;
 }
 
+// By Justin W Yang
 double Util::surfaceAreaCircle(cv::Mat shape) {
     cv::Size size = shape.size();
     cv::Rect rect(0, 0, size.width, size.height);
@@ -343,6 +345,7 @@ double Util::surfaceAreaCircle(cv::Mat shape) {
     return surfArea;
 }
 
+// By Justin W Yang
 double Util::surfaceAreaTriangulate(cv::Mat shape) {
     cv::Size size = shape.size();
     cv::Rect rect(0, 0, size.width, size.height);
@@ -405,89 +408,90 @@ double Util::surfaceAreaTriangulate(cv::Mat shape) {
     return surfArea;
 }
 
-//Function to find Lenght of sides of triangle
-double Util::distanceTwoPoints(double x1, double y1, double x2, double y2)
-{
-    auto x = x2 - x1;
-    auto y = y2 - y1;
-    auto distance = pow(x, 2) + pow(y, 2);
-    distance = sqrt(distance);
-    return distance;
-}
-
-//Function to find angle with Sine rule
-double Util::otherAngleFind(double biggerAngle, double largestDistance, double smallDistance)
-{
-    auto otherAngle = smallDistance *sin(biggerAngle*3.14159265 / 180);
-    otherAngle = otherAngle / largestDistance;
-    otherAngle = asin(otherAngle)*180.0 / PI;
-    return otherAngle;
-}
-
-//Function to find angle opposite to largest side of triangle
-double Util::biggerAngleFind(double largestDistance, double smallDistanceOne, double smallDistanceTwo)
-{
-    auto biggerAngle = pow(smallDistanceOne, 2) + pow(smallDistanceTwo, 2) - pow(largestDistance, 2);
-    biggerAngle = fabs(biggerAngle / (2 * smallDistanceOne*smallDistanceTwo));
-    biggerAngle = acos(biggerAngle)* 180.0 / PI;
-    return biggerAngle;
-}
-
-//Calculate angle of triangle given three coordinates
-double Util::triangleAngleCalculation(double x1, double y1, double x2, double y2, double x3, double y3)
-{
-    double angle1, angle2, angle3;
-    double total;
-    auto largestLength = 0;
-    auto dist1 = distanceTwoPoints(x1, y1, x2, y2);
-    auto dist2 = distanceTwoPoints(x2, y2, x3, y3);
-    auto dist3 = distanceTwoPoints(x1, y1, x3, y3);
-
-    if (dist1>dist2 && dist1 > dist3)
-    {
-        angle1 = biggerAngleFind(dist1, dist2, dist3);
-        angle2 = otherAngleFind(angle1, dist1, dist2);
-        angle3 = otherAngleFind(angle1, dist1, dist3);
-
-        //angle2 = OtherAngleFind(angle1, dist1, dist2);
-
-        total = angle1 + angle2 + angle3;
-
-        if (total <180)
-        {
-            angle1 = 180 - angle1;
-        }
-    }
-
-    else if (dist2 > dist3 && dist2 > dist1)
-    {
-        angle2 = biggerAngleFind(dist2, dist1, dist3);
-        angle1 = otherAngleFind(angle2, dist2, dist1);
-        angle3 = otherAngleFind(angle2, dist2, dist3);
-        total = angle1 + angle2 + angle3;
-
-        if (total <180)
-        {
-            angle2 = 180 - angle2;
-        }
-    }
-
-    else
-    {
-        angle3 = biggerAngleFind(dist3, dist1, dist2);
-        angle1 = otherAngleFind(angle3, dist3, dist2);
-        angle2 = otherAngleFind(angle3, dist3, dist2);
-
-        total = angle1 + angle2 + angle3;
-
-        if (total <180)
-        {
-            angle3 = 180 - angle3;
-        }
-    }
-    return angle2;
-}
-
+////Function to find Lenght of sides of triangle
+//double Util::distanceTwoPoints(double x1, double y1, double x2, double y2)
+//{
+//    auto x = x2 - x1;
+//    auto y = y2 - y1;
+//    auto distance = pow(x, 2) + pow(y, 2);
+//    distance = sqrt(distance);
+//    return distance;
+//}
+//
+////Function to find angle with Sine rule
+//double Util::otherAngleFind(double biggerAngle, double largestDistance, double smallDistance)
+//{
+//    auto otherAngle = smallDistance *sin(biggerAngle*3.14159265 / 180);
+//    otherAngle = otherAngle / largestDistance;
+//    otherAngle = asin(otherAngle)*180.0 / PI;
+//    return otherAngle;
+//}
+//
+////Function to find angle opposite to largest side of triangle
+//double Util::biggerAngleFind(double largestDistance, double smallDistanceOne, double smallDistanceTwo)
+//{
+//    auto biggerAngle = pow(smallDistanceOne, 2) + pow(smallDistanceTwo, 2) - pow(largestDistance, 2);
+//    biggerAngle = fabs(biggerAngle / (2 * smallDistanceOne*smallDistanceTwo));
+//    biggerAngle = acos(biggerAngle)* 180.0 / PI;
+//    return biggerAngle;
+//}
+//
+////Calculate angle of triangle given three coordinates
+//double Util::triangleAngleCalculation(double x1, double y1, double x2, double y2, double x3, double y3)
+//{
+//    double angle1, angle2, angle3;
+//    double total;
+//    auto largestLength = 0;
+//    auto dist1 = distanceTwoPoints(x1, y1, x2, y2);
+//    auto dist2 = distanceTwoPoints(x2, y2, x3, y3);
+//    auto dist3 = distanceTwoPoints(x1, y1, x3, y3);
+//
+//    if (dist1>dist2 && dist1 > dist3)
+//    {
+//        angle1 = biggerAngleFind(dist1, dist2, dist3);
+//        angle2 = otherAngleFind(angle1, dist1, dist2);
+//        angle3 = otherAngleFind(angle1, dist1, dist3);
+//
+//        //angle2 = OtherAngleFind(angle1, dist1, dist2);
+//
+//        total = angle1 + angle2 + angle3;
+//
+//        if (total <180)
+//        {
+//            angle1 = 180 - angle1;
+//        }
+//    }
+//
+//    else if (dist2 > dist3 && dist2 > dist1)
+//    {
+//        angle2 = biggerAngleFind(dist2, dist1, dist3);
+//        angle1 = otherAngleFind(angle2, dist2, dist1);
+//        angle3 = otherAngleFind(angle2, dist2, dist3);
+//        total = angle1 + angle2 + angle3;
+//
+//        if (total <180)
+//        {
+//            angle2 = 180 - angle2;
+//        }
+//    }
+//
+//    else
+//    {
+//        angle3 = biggerAngleFind(dist3, dist1, dist2);
+//        angle1 = otherAngleFind(angle3, dist3, dist2);
+//        angle2 = otherAngleFind(angle3, dist3, dist2);
+//
+//        total = angle1 + angle2 + angle3;
+//
+//        if (total <180)
+//        {
+//            angle3 = 180 - angle3;
+//        }
+//    }
+//
+//    return angle2;
+//}
+//
 /***
 Recursively performs floodfill on depthMap for image segmentation
 Determines pixels in an image that are similar to a seed pixel and connected to it
@@ -633,6 +637,35 @@ double Util::angleBetween3DVec(cv::Vec3f a, cv::Vec3f b, cv::Vec3f center) {
 bool Util::pointInImage(const cv::Mat & img, const cv::Point pt, int scale) {
     return pt.x >= 0 && pt.x < img.cols * scale &&
            pt.y >= 0 && pt.y < img.rows * scale;
+}
+
+void Util::radixSortPoints(std::vector<cv::Point> & points, int wid, int hi, int num_pts) {
+    if (num_pts < 0 || num_pts >(int)points.size())
+        num_pts = (int)points.size();
+   
+    std::vector<std::vector<cv::Point> > buck(std::max(wid, hi));
+
+    // order by x
+    for (int i = 0; i < num_pts; ++i) buck[points[i].x].push_back(points[i]);
+
+    int idx = -1;
+    for (int i = 0; i < wid; ++i) {
+        for (unsigned j = 0; j < buck[i].size(); ++j) {
+            points[++idx] = buck[i][j];
+        }
+        buck[i].clear();
+    }
+
+    // order by y
+    for (int i = 0; i < num_pts; ++i) buck[points[i].y].push_back(points[i]);
+
+    idx = -1;
+    for (int i = 0; i < hi; ++i) {
+        for (unsigned j = 0; j < buck[i].size(); ++j) {
+            points[++idx] = buck[i][j];
+        }
+        buck[i].clear();
+    }
 }
 
 bool Util::PointComparer<cv::Point>::operator()(cv::Point a, cv::Point b) {

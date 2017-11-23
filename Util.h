@@ -2,7 +2,7 @@
 #include "stdafx.h"
 
 /**
-* Class containing generic helper functions.
+* Class containing generic static helper functions.
 */
 class Util
 {
@@ -98,11 +98,11 @@ public:
     */
     static cv::Point findCentroid(cv::Mat xyzMap);
 
-    /**
-    * Compute the angle formed by 3 points
-    * @return the angle formed
-    */
-    static double triangleAngleCalculation(double x1, double y1, double x2, double y2, double x3, double y3);
+    ///**
+    //* Compute the angle formed by 3 points
+    //* @return the angle formed
+    //*/
+    //static double triangleAngleCalculation(double x1, double y1, double x2, double y2, double x3, double y3);
 
     /**
     * Perform flood fill on a depth map from the given coordinates
@@ -198,7 +198,7 @@ public:
     static double surfaceArea(cv::Mat & depthMap);
 
     /**
-     * Computes the approximate surface area of a cluster on a depth map, specified by a vector of points.
+     * Computes the approximate surface area of a cluster containing the points specified
      * @param [in] depthMap the input depth map.
      * @param [in] cluster vector of points on the cluster.
      * @param [in] sorted if true, assumes that 'cluster' is sorted and does not sort it again
@@ -215,6 +215,7 @@ public:
       * @returns surface area, meters squared
       */
     static double surfaceAreaCircle(cv::Mat shape);
+
     /**
       * Approximates the surface area of a depth map cluster by triangulation
       * among adjacent points
@@ -222,6 +223,15 @@ public:
       * @returns surface area, meters squared
       */
   	static double surfaceAreaTriangulate(cv::Mat shape);
+
+    /**
+      * EXPERIMENTAL: sort points by y and then x using radix sort
+      * @param points [in] vector containing the points
+      * @param wid width of overall depth image
+      * @param hi height of overall depth image
+      * @param num_pts number of points in'points' to use. By default, uses all.
+     */
+   	static void radixSortPoints(std::vector<cv::Point> & points, int wid, int hi, int num_pts = -1);
 
     /**
      * Compares two points (Point, Point2f, Vec3i or Vec3f),
@@ -241,8 +251,5 @@ public:
     };
 
 private:
-    static double distanceTwoPoints(double x1, double y1, double x2, double y2);
-    static double otherAngleFind(double biggerAngle, double largestDistance, double smallDistance);
-    static double biggerAngleFind(double largestDistance, double smallDistanceOne, double smallDistanceTwo);
     static bool closeEnough(int x, int y, cv::Mat& depthMap, int num_neighbors, double max_distance);
 };
