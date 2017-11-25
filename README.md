@@ -61,4 +61,5 @@ The Center for Augmented Cognition welcomes interested industry partners to join
 
 ## Credits and references
 
-[Bill Zhou](http://www.billzhou.me/), [Allen Y. Yang](https://people.eecs.berkeley.edu/~yang/), [S. Shankar Sastry](http://robotics.eecs.berkeley.edu/~sastry/), [Will Huang](https://www.linkedin.com/in/hwjwill/), [Larry Yang](https://www.linkedin.com/in/larry-yang-33bab1aa/), [Eric Nguyen](https://www.linkedin.com/in/eric-nguyen-71577678/), Michelli Ni, [Peter Li](https://www.linkedin.com/in/peter-li-a770ab88/), [Jessica Jiang](https://github.com/jessicajiang), [Mona Jalal](http://monajalal.com/), [Joseph Menke](https://people.eecs.berkeley.edu/~joemenke/).
+[Bill Zhou](http://www.billzhou.me/), [Allen Y. Yang](https://people.eecs.berkeley.edu/~yang/), [S. Shankar Sastry](http://robotics.eecs.berkeley.edu/~sastry/), [Will Huang](https://www.linkedin.com/in/hwjwill/), [Larry Yang](https://www.linkedin.com/in/larry-yang-33bab1aa/), [Eric Nguyen](https://www.linkedin.com/in/eric-nguyen-71577678/), Michelli Ni, [Peter Li](https://www.linkedin.com/in/peter-li-a770ab88/), [Jessica Jiang](https://github.com/jessicajiang), [Mona Jalal](http://monajalal.com/), [Joseph Menke](https://people.eecs.berkeley.edu/~joemenke/),
+Lawrence Chen, Kuan Lu, Rachel Lee, Justin Yang, [Alex Yu](https://alexyu.net).
