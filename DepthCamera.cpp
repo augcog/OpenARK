@@ -1,39 +1,32 @@
 #include "stdafx.h"
 #include "DepthCamera.h"
+#include "Hand.h"
+#include "Object3D.h"
 
-DepthCamera::~DepthCamera()
-{
-}
+DepthCamera::~DepthCamera() { }
 
-void DepthCamera::nextFrame(bool removeNoise)
+bool DepthCamera::nextFrame(bool removeNoise)
 {
     objects.clear();
     clusters.clear();
     clusterAreas.clear();
     update();
-    if (removeNoise) this->removeNoise();
+    if (!badInput() && removeNoise) this->removeNoise();
+    return !badInput();
 }
 
-void DepthCamera::computeClusters(double max_distance, double ir_distance, int min_points,
-                                  double min_size, double max_size, int dilate_amount, int floodfill_interval)
+void DepthCamera::computeClusters(double max_distance, int min_points,
+                                  double min_size, double max_size, int floodfill_interval)
 {
     clusters.clear();
     clusterAreas.clear();
 
-    const cv::Mat dKernel1 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(dilate_amount, dilate_amount));
+    //const cv::Mat dKernel1 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(dilate_amount, dilate_amount));
 
-    cv::Mat xyzMap;
-    cv::dilate(this->xyzMap, xyzMap, dKernel1);
+    cv::Mat xyzMap = this->xyzMap.clone();
 
-    cv::Mat irImage;
-    if (hasIRImage()) {
-        irImage = this->irImage;
-        //cv::erode(this->irImage, irImage, ireKernel);
-        //cv::dilate(irImage, irImage, irdKernel);
-    }
-    else {
-        irImage = cv::Mat::ones(xyzMap.rows, xyzMap.cols, CV_8U);
-    }
+    //cv::dilate(this->xyzMap, xyzMap, dKernel1);
+
 
     cv::Mat mask = cv::Mat::zeros(xyzMap.rows, xyzMap.cols, xyzMap.type());
     std::vector<cv::Point> pts(xyzMap.rows * xyzMap.cols + 1);
@@ -48,7 +41,7 @@ void DepthCamera::computeClusters(double max_distance, double ir_distance, int m
         {
             if (ptr[c][2] > 0)
             {
-                int points_in_comp = floodFill(c, r, xyzMap, &pts, max_distance, irImage, ir_distance, mask);
+                int points_in_comp = floodFill(c, r, xyzMap, &pts, max_distance, mask);
                 
                 if (points_in_comp > min_points)
                 {   
@@ -68,26 +61,17 @@ void DepthCamera::computeClusters(double max_distance, double ir_distance, int m
     }
 }
 
-std::vector<Object3D> DepthCamera::queryObjects(double max_distance, double ir_distance, int min_points,
-                                  double min_size, double max_size, int dilate_amount, int floodfill_interval)
+std::vector<Object3D> DepthCamera::queryObjects(double min_size,
+ double max_size,
+                                  double max_distance, int min_points, int floodfill_interval)
 {
     if (objects.size() == 0) {
-        const cv::Mat dKernel1 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(dilate_amount, dilate_amount));
+        //const cv::Mat dKernel1 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(dilate_amount, dilate_amount));
 
-        cv::Mat xyzMap;
-        cv::dilate(this->xyzMap, xyzMap, dKernel1);
+        cv::Mat origXyzMap, xyzMap;
+        origXyzMap = this->xyzMap.clone();
+        xyzMap = origXyzMap.clone();
 
-        cv::Mat irImage;
-        if (hasIRImage()) {
-            irImage = this->irImage;
-            //cv::erode(this->irImage, irImage, ireKernel);
-            //cv::dilate(irImage, irImage, irdKernel);
-        }
-        else {
-            irImage = cv::Mat::ones(xyzMap.rows, xyzMap.cols, CV_8U);
-        }
-
-        //cv::Mat mask = cv::Mat::zeros(xyzMap.rows, xyzMap.cols, xyzMap.type());
         std::vector<cv::Point> allPoints(xyzMap.rows * xyzMap.cols + 1);
 
         const cv::Vec3f zeros = cv::Vec3f(0, 0, 0);
@@ -100,15 +84,11 @@ std::vector<Object3D> DepthCamera::queryObjects(double max_distance, double ir_d
             {
                 if (ptr[c][2] > 0)
                 {
-                    int points_in_comp = floodFill(c, r, xyzMap, &allPoints, max_distance, irImage, ir_distance);
+                    int points_in_comp = floodFill(c, r, xyzMap, &allPoints, max_distance);
 
                     if (points_in_comp > min_points)
                     {
-                        //for (int i = 0; i < points_in_comp; ++i) {
-                            //points.push_back(allPoints[i]);
-                        //}
-                        
-                        Object3D obj = Object3D(allPoints, this->xyzMap, false, points_in_comp, min_size, max_size);
+                        Object3D obj = Object3D(allPoints, origXyzMap, false, points_in_comp, min_size, max_size);
                         objects.push_back(obj);
                     }
                 }
@@ -118,17 +98,17 @@ std::vector<Object3D> DepthCamera::queryObjects(double max_distance, double ir_d
     return objects;
 }
 
-std::vector<Hand> DepthCamera::queryHands(double max_distance, double ir_distance, int min_points,
-    double min_size, double max_size, int dilate_amount, int floodfill_interval) {
+std::vector<Object3D> DepthCamera::queryHands(double hand_high_confidence_thresh, double max_distance, int min_points,
+    double min_size, double max_size, int floodfill_interval) {
 
-    queryObjects(max_distance, ir_distance, min_points, min_size, max_size, dilate_amount, floodfill_interval);
+    queryObjects(min_size, max_size, max_distance, min_points, floodfill_interval);
 
-    std::vector<Hand> result;
+    std::vector<Object3D> result;
 
     float bestHandDist = FLT_MAX, handObjectIndex = -1;
+
     for (int i = 0; i < objects.size(); ++i) {
         Object3D obj = objects[i];
-
 
         if (obj.hasHand) {
             float distance = obj.getDepth();
@@ -138,20 +118,63 @@ std::vector<Hand> DepthCamera::queryHands(double max_distance, double ir_distanc
                 bestHandDist = distance;
             }
 
-            return result;
+            if (obj.getHand().svm_confidence > hand_high_confidence_thresh) {
+                if (handObjectIndex == i) handObjectIndex = -1; // avoid duplicate hand
+                result.push_back(obj);
+            }
         }
     }
 
-    if (handObjectIndex != -1) result.push_back(objects[handObjectIndex].getHand());
+    if (handObjectIndex != -1) {
+        result.push_back(objects[handObjectIndex]);
+    }
 
     return result;
 }
+
+bool DepthCamera::operator()(bool removeNoise)
+{
+    return nextFrame(removeNoise);
+}
+
+bool DepthCamera::operator >> (cv::Mat & img)
+{
+    if (!nextFrame()) return false;
+    assert(img.rows == 0 || img.channels == 1 || img.channels == 3);
+
+    if (img.rows == 0 || img.type() == CV_32FC3) {
+        img = getXYZMap();
+        return true;
+    }
+    else if (img.channels() == 1 && hasIRImage()) {
+        img = getIRImage();
+        return true;
+    }
+    else if (hasRGBImage()) {
+        img = getRGBImage();
+        return true;
+    }
+    
+    return false;
+}
+
+bool DepthCamera::operator >> (std::vector<Object3D> & objs)
+{
+    if (!nextFrame()) return false;
+    objs = queryObjects();
+    return true;
+}
+
+bool DepthCamera::badInput()
+{
+    return _badInput;
+}
+
 /**
  * Performs floodfill on depthMap
  */
 int DepthCamera::floodFill(int seed_x, int seed_y, cv::Mat& depthMap,
-                          std::vector <cv::Point> * output_points, double max_distance,
-                          cv::Mat& irImage, double ir_distance, cv::Mat& mask)
+                          std::vector <cv::Point> * output_points, double max_distance, cv::Mat& mask)
 {
     static std::vector<cv::Point> stk;
     static std::vector<cv::Vec3f> stkXyz;
@@ -164,13 +187,13 @@ int DepthCamera::floodFill(int seed_x, int seed_y, cv::Mat& depthMap,
 
     static const cv::Point nxtPoints[] = 
                  {
-                   cv::Point(-5, 0),  cv::Point(-1, 0),
-                   cv::Point(0, -5), cv::Point(0, -1), cv::Point(0, 1), cv::Point(0, 5),
-                   cv::Point(1, 0), cv::Point(5, 0),   
+                   cv::Point(-6, 0),  cv::Point(-1, 0),
+                   cv::Point(0, -6), cv::Point(0, -1), cv::Point(0, 1), cv::Point(0, 6),
+                   cv::Point(1, 0), cv::Point(6, 0),   
                  };
 
     static const int nNxtPoints = (sizeof nxtPoints) / (sizeof nxtPoints[0]);
-    static const cv::Vec3f zeros = cv::Vec3f(0, 0, 0);
+    //static const cv::Vec3f zeros = cv::Vec3f(0, 0, 0);
 
     stk[0] = cv::Point(seed_x, seed_y);
     stkXyz[0] = depthMap.at<cv::Vec3f>(stk[0]);
@@ -183,10 +206,10 @@ int DepthCamera::floodFill(int seed_x, int seed_y, cv::Mat& depthMap,
 
         if (!Util::pointInImage(depthMap, pt)) continue;
 
-        ushort ir = (irImage.cols ? irImage.at<ushort>(pt) : 1); 
+        //ushort ir = (irImage.cols ? irImage.at<ushort>(pt) : 1); 
 
         if (mask.rows) mask.at<cv::Vec3f>(pt) = cv::Vec3f(xyz);
-        depthMap.at<cv::Vec3f>(pt) = zeros;
+        depthMap.at<cv::Vec3f>(pt)[2] = 0;
 
         // add point to output vector, if one is provided
         if (output_points) (*output_points)[total++] = pt;
@@ -199,19 +222,22 @@ int DepthCamera::floodFill(int seed_x, int seed_y, cv::Mat& depthMap,
             cv::Vec3f & adjXyz = depthMap.at<cv::Vec3f>(adjPt);
             if(adjXyz[2] == 0) continue;
 
-            ushort adjIr;
-            if (irImage.cols) {
-                if (!Util::pointInImage(irImage, adjPt)) continue; 
-                adjIr = irImage.at<ushort>(adjPt);
-            }
-            else adjIr = 1;
+            // Disabling IR segmentation
+            //ushort adjIr;
+            //if (irImage.cols) {
+            //    if (!Util::pointInImage(irImage, adjPt)) continue; 
+            //    adjIr = irImage.at<ushort>(adjPt);
+            //}
+            //else adjIr = 1;
 
             double dist = Util::euclideanDistance3D(xyz, adjXyz);
-            ushort irDiff = abs(ir - adjIr);
+            //ushort irDiff = abs(ir - adjIr);
 
-            double scaled_dist = max_distance * abs(nxtPoints[i].x + nxtPoints[i].y);
+            double scaled_dist = max_distance;
+            if (abs(nxtPoints[i].x + nxtPoints[i].y) != 1)
+                scaled_dist *= 4;
 
-            if (dist < scaled_dist && irDiff < ir_distance) {
+            if (dist < scaled_dist /*&& irDiff < ir_distance*/) {
                 stkXyz[stkPtr] = cv::Vec3f(adjXyz);
                 stk[stkPtr++] = adjPt;
                 depthMap.at<cv::Vec3f>(adjPt)[2] = 0;
@@ -237,14 +263,14 @@ void DepthCamera::removeNoise()
         {
             if (ptr[c][2] > 0.0f) {
                 ++nonZero;
-                if (ptr[c][2] > 0.95f && (ampMap.data == nullptr || ampptr[c] < CONFIDENCE_THRESHHOLD)) {
+                if (ptr[c][2] > 0.9f && (ampMap.data == nullptr || ampptr[c] < CONFIDENCE_THRESHHOLD)) {
                     ptr[c][0] = ptr[c][1] = ptr[c][2] = 0.0f;
                 }
             }
         }
     }
 
-    badInput = (static_cast<float>(nonZero) / (xyzMap.rows*xyzMap.cols) > 0.9);
+    _badInput = (static_cast<float>(nonZero) / (xyzMap.rows*xyzMap.cols) > 0.9);
 }
 
 //void DepthCamera::removePoints(std::vector<cv::Point2i> points)

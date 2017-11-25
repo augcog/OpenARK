@@ -5,13 +5,12 @@
 #include "Util.h"
 #include "Visualizer.h"
 
-Hand::Hand()
-{
-
+Hand::Hand() { 
 }
 
 Hand::Hand(cv::Vec3f centroid_xyz, cv::Point2i centroid_ij, std::vector<cv::Vec3f> fingers_xyz,
-    std::vector<cv::Point2i> fingers_ij, std::vector<cv::Vec3f> defects_xyz, std::vector<cv::Point2i> defects_ij)
+    std::vector<cv::Point2i> fingers_ij, std::vector<cv::Vec3f> defects_xyz, std::vector<cv::Point2i> defects_ij,
+    double svm_confidence)
 {
     this->centroid_xyz = centroid_xyz;
     this->centroid_ij = centroid_ij;
@@ -19,21 +18,12 @@ Hand::Hand(cv::Vec3f centroid_xyz, cv::Point2i centroid_ij, std::vector<cv::Vec3
     this->fingers_ij = fingers_ij;
     this->defects_xyz = defects_xyz;
     this->defects_ij = defects_ij;
+    this->svm_confidence = svm_confidence;
 }
 
-//Hand::Hand(cv::Mat xyzMap, float angle_threshhold, int cluster_thresh)
-//{
-//    CLUSTER_THRESHOLD = cluster_thresh * (float)xyzMap.cols / 320.0;
-//    ANGLE_THRESHHOLD = angle_threshhold;
-//}
-//
+Hand::~Hand() { }
 
-Hand::~Hand()
-{
-
-}
-
-int Hand::getNumFingers() {
+int Hand::numFingers() {
     return (int)fingers_xyz.size();
 }
 

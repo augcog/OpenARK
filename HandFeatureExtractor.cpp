@@ -10,12 +10,68 @@ using namespace boost::filesystem;
 namespace classifier {
     namespace features {
         // default image extension
-        static const std::string IMG_EXT = ".png";
+        static const std:: string IMG_EXT = ".tsi";
+
+        template <class T>
+        static inline void readBinary(std::ifstream & ifs, T * val) {
+            ifs.read(reinterpret_cast<char *>(val), sizeof(*val));
+        }
+
+        static void readTSI(cv::Mat & m, std::string path) {
+            std::ifstream ifs(path, std::ios::binary | std::ios::in);
+
+            ushort wid, hi;
+            readBinary(ifs, &hi);
+            readBinary(ifs, &wid);
+
+            m = cv::Mat::zeros(hi, wid, CV_32FC3);
+
+            int zr = 0;
+
+            for (int i = 0; i < hi; ++i) {
+                cv::Vec3f * ptr = m.ptr<cv::Vec3f>(i);
+                for (int j = 0; j < wid; ++j) {
+                    if (zr) --zr;
+                    else {
+                        if (!ifs) break;
+                        float x; readBinary(ifs, &x);
+                        if (x <= 1) {
+                            ptr[j][0] = x;
+                            readBinary(ifs, &ptr[j][1]);
+                            readBinary(ifs, &ptr[j][2]);
+                        }
+                        else {
+                            zr = (int)x - 2;
+                        }
+                    }
+                }
+            }
+        }
+
+        static inline double contourDiameter(const std::vector<cv::Point> & cont) {
+            double maxd;
+            cv::Point startp, bestp;
+            startp = bestp = cont[0];
+
+            for (int _ = 0; _ < 2; ++_) {
+                maxd = 0;
+                for (auto p : cont) {
+                    double curd = Util::magnitude(p - startp);
+                    if (curd > maxd) {
+                        bestp = p;
+                        maxd = curd;
+                    }
+                }
+                startp = bestp;
+            }
+
+            return maxd;
+        }
 
         void computeMeanAndVariance(const cv::Mat& clean, cv::Vec3f center,
-            double& avgdist, double& vardist, double& avgdepth, double& vardepth) {
+            double& avg_dist, double& var_dist, double& avg_depth, double& var_depth) {
 
-            avgdist = avgdepth = 0;
+            avg_dist = avg_depth = 0;
             int totalpts = 0;
 
             for (int r = 0; r < clean.rows; ++r) {
@@ -24,43 +80,43 @@ namespace classifier {
                     cv::Vec3f pt = ptr[c];
                     if (pt[2] != 0) {
                         cv::Point2f xypt(pt[0], pt[1]);
-                        avgdist += 
+                        avg_dist +=
                             sqrtf((pt[0] - center[0]) * (pt[0] - center[0]) + (pt[1] - center[1]) * (pt[1] - center[1]));
-                        avgdepth += pt[2];
+                        avg_depth += pt[2];
                         ++totalpts;
                     }
                 }
             }
 
             if (totalpts == 0) {
-                avgdist = avgdepth = 1.0;
-                vardist = vardepth = 0.0;
+                avg_dist = avg_depth = 1.0;
+                var_dist = var_depth = 0.0;
                 return;
             }
 
-            avgdist /= totalpts;
-            avgdepth /= totalpts;
+            avg_dist /= totalpts;
+            avg_depth /= totalpts;
 
-            vardist = vardepth = 0;
+            var_dist = var_depth = 0;
 
             for (int r = 0; r < clean.rows; ++r) {
                 const cv::Vec3f * ptr = clean.ptr<cv::Vec3f>(r);
+
                 for (int c = 0; c < clean.cols; ++c) {
                     cv::Vec3f pt = ptr[c];
                     if (pt[2] != 0) {
                         cv::Point2f xypt(pt[0], pt[1]);
-                        double dist = 
+                        double dist =
                             sqrtf((pt[0] - center[0]) * (pt[0] - center[0]) + (pt[1] - center[1]) * (pt[1] - center[1]));
-                        vardist += (dist - avgdist) * (dist - avgdist);
-                        vardepth += (pt[2] - avgdepth) * (pt[2] - avgdepth);
+                        var_dist += (dist - avg_dist) * (dist - avg_dist);
+                        var_depth += (pt[2] - avg_depth) * (pt[2] - avg_depth);
                     }
                 }
             }
 
-            vardist /= totalpts;
-            vardepth /= totalpts;
+            var_dist /= totalpts;
+            var_depth /= totalpts;
         }
-
 
         std::vector<double> extractHandInfo(const cv::Mat & depth_original) {
 
@@ -73,61 +129,92 @@ namespace classifier {
 
             if (obj.hasHand) {
                 Hand hand = obj.getHand();
-                result.push_back(hand.getNumFingers());
+                result.push_back(hand.numFingers());
 
-                for (int j = 0; j<3; ++j) result.push_back(hand.centroid_xyz[j]);
+                for (int j = 0; j < 3; ++j) result.push_back(hand.centroid_xyz[j]);
 
-                for (int i = 0; i < hand.getNumFingers(); ++i) {
-                    for (int j = 0; j<3; ++j) result.push_back(hand.fingers_xyz[i][j]);
-                    for (int j = 0; j<3; ++j) result.push_back(hand.defects_xyz[i][j]);
+                for (int i = 0; i < hand.numFingers(); ++i) {
+                    for (int j = 0; j < 3; ++j) result.push_back(hand.fingers_xyz[i][j]);
+                    for (int j = 0; j < 3; ++j) result.push_back(hand.defects_xyz[i][j]);
                 }
             }
 
             return result;
         }
 
-        std::vector<double> extractHandFeatures(Object3D & obj,  cv::Mat & depthMap) {
+        std::vector<double> extractHandFeatures(Object3D & obj, const cv::Mat & depth_map, 
+                                    cv::Point top_left, double img_scale, int full_wid) {
+            if (full_wid < 0) full_wid = depth_map.cols;
+
             std::vector<double> result;
 
             if (obj.hasHand) {
                 Hand hand = obj.getHand();
 
-                int nFingers = hand.getNumFingers();
+                int nFingers = hand.numFingers();
 
                 cv::Vec3f center = hand.centroid_xyz;
                 cv::Point centerij = hand.centroid_ij;
 
-                if (nFingers > 1) result.reserve(nFingers * 11 + 6);
-                else result.reserve(13);
+                double avgdist, vardist, avgdepth, vardepth;
+                computeMeanAndVariance(depth_map, center, avgdist, vardist, avgdepth, vardepth);
 
                 result.push_back(nFingers);
 
-                double avgdist, vardist, avgdepth, vardepth;
-                computeMeanAndVariance(depthMap, center, avgdist, vardist, avgdepth, vardepth);
+                if (nFingers > 1) result.reserve(nFingers * 13 + 10);
+                else result.reserve(13);
 
-                double area = Util::surfaceArea(depthMap);
+                double area = obj.getSurfArea();
 
-                result.push_back(cv::contourArea(obj.getContour()) / cv::contourArea(obj.getConvexHull()));
                 result.push_back(avgdist * 20.0);
                 result.push_back(sqrt(vardist) * 25.0);
-                //result.push_back(avgdepth * 1.50);
-                result.push_back(area * 5.00);
+                result.push_back(area * 10.00);
                 result.push_back(sqrt(vardepth) * 25.0);
-                result.push_back(cv::contourArea(obj.getContour()) / cv::contourArea(obj.getConvexHull()));
 
+                double contArea = cv::contourArea(obj.getContour());
+                result.push_back(contArea / cv::contourArea(obj.getConvexHull()));
+
+                float radius; cv::Point2f circCenter;
+                cv::minEnclosingCircle(obj.getContour(), circCenter, radius);
+                result.push_back(contArea / (PI * radius * radius));
+
+                result.push_back(cv::arcLength(obj.getContour(), true) /
+                    cv::arcLength(obj.getConvexHull(), true) / 2.0);
+
+                result.push_back(contourDiameter(obj.getContour()) / (double)full_wid);
+
+                std::vector<std::pair<double, int>> fingerOrder;
+
+                double avgLen = 0;
                 for (int i = 0; i < nFingers; ++i) {
                     cv::Vec3f finger = hand.fingers_xyz[i], defect = hand.defects_xyz[i];
-                    cv::Point fingerij = hand.fingers_ij[i], defectij = hand.defects_ij[i];
 
-                    result.push_back(Util::euclideanDistance3D(finger, defect) * 5.0);
+                    double finger_len = Util::euclideanDistance3D(finger, defect);
+                    avgLen += finger_len;
+
+                    fingerOrder.push_back(std::make_pair(finger_len, i));
+                }
+
+                std::sort(fingerOrder.begin(), fingerOrder.end(), std::greater<std::pair<int, int> >());
+
+                result.push_back(avgLen / nFingers * 5.0);
+
+                for (int k = 0; k < nFingers; ++k) {
+                    int j = fingerOrder[k].second;
+
+                    cv::Vec3f finger = hand.fingers_xyz[j], defect = hand.defects_xyz[j];
+                    cv::Point fingerij = hand.fingers_ij[j], defectij = hand.defects_ij[j];
+
                     if (defect != center) {
+                        result.push_back(Util::euclideanDistance3D(finger, defect) * 5.0);
                         result.push_back(Util::euclideanDistance3D(defect, center) * 5.0);
+                        result.push_back(Util::euclideanDistance3D(finger, center) * 5.0);
                     }
-                    result.push_back(Util::euclideanDistance3D(finger, center) * 5.0);
 
                     if (defectij == centerij) {
                         cv::Point index, index_right, index_left;
                         double farthest = 0;
+                        int hullIdx = 0;
 
                         std::vector<cv::Point> hull = obj.getConvexHull();
 
@@ -136,9 +223,16 @@ namespace classifier {
                             for (int i = 0; i < hull.size(); i++)
                             {
                                 cv::Point p1 = hull[i], p2 = hull[(i + 1) % hull.size()];
-                                if (p1.y < centerij.y && Util::euclideanDistance2D(p1, centerij) > farthest)
+                                cv::Vec3f xyzP1 = 
+                                    Util::averageAroundPoint(depth_map, p1 / img_scale - top_left, 22);
+
+                                double dist = Util::euclideanDistance3D(xyzP1, center);
+
+                                if (p1.y < centerij.y + 5 &&
+                                     dist > farthest)
                                 {
-                                    farthest = Util::euclideanDistance2D(p1, centerij);
+                                    farthest = dist;
+                                    hullIdx = i;
                                     index = p1;
                                     index_right = hull[(i + 1) % hull.size()];
                                     index_left = hull[(i - 1) % hull.size()];
@@ -149,51 +243,64 @@ namespace classifier {
                         double angle = Util::angleBetweenPoints(index_left, index_right, index) / (2 * PI);
 
                         result.push_back(angle);
+
+                        if (hull.size() > 3)
+                        {
+                            index_right = hull[(hullIdx + 2) % hull.size()];
+                            index_left = hull[(hullIdx - 2) % hull.size()];
+                            angle = Util::angleBetweenPoints(index_left, index_right, index) / (2 * PI);
+                            result.push_back(angle);
+                        }
                     }
                     else {
                         result.push_back(Util::angleBetween3DVec(finger, defect, center) / PI);
                         result.push_back(Util::angleBetweenPoints(fingerij, centerij, defectij) / PI);
                     }
 
-                    result.push_back(Util::pointToAngle(fingerij - centerij));
                     if (defectij != centerij) {
+                        result.push_back(Util::pointToAngle(fingerij - centerij));
                         result.push_back(Util::pointToAngle(defectij - centerij));
                     }
 
-                    double minDistDefect = depthMap.cols, minDistFinger = depthMap.cols;
+                    double minDistDefect = depth_map.cols, minDistFinger = depth_map.cols;
                     double maxDistDefect = 0, maxDistFinger = 0;
 
+                    //double minSp = depth_map.cols, maxSp = 0;
+
                     if (nFingers > 1) {
-                        for (int j = 0; j < nFingers; ++j) {
-                            if (i == j) continue;
+                        for (int jj = 0; jj < nFingers; ++jj) {
+                            if (j == jj) continue;
 
-                            double distDefect = Util::euclideanDistance3D(defect, hand.defects_xyz[j]),
-                                distFinger = Util::euclideanDistance3D(finger, hand.fingers_xyz[j]);
+                            double distDefect = Util::euclideanDistance3D(defect, hand.defects_xyz[jj]),
+                                   distFinger = Util::euclideanDistance3D(finger, hand.fingers_xyz[jj]);
 
-                            if (distDefect < minDistDefect) {
-                                minDistDefect = distDefect;
-                            }
-                            if (distDefect > maxDistDefect) {
-                                maxDistDefect = distDefect;
-                            }
-                            if (distFinger < minDistFinger) {
-                                minDistFinger = distFinger;
-                            }
-                            if (distFinger > maxDistFinger) {
-                                maxDistFinger = distFinger;
-                            }
+                            //double spFinger = Util::clusterShortestPath(depth_map, 
+                            //                               fingerij / img_scale - top_left,
+                            //                               hand.fingers_ij[jj] / img_scale - top_left);
+
+                            if (distDefect < minDistDefect) minDistDefect = distDefect;
+                            if (distDefect > maxDistDefect) maxDistDefect = distDefect;
+                            if (distFinger < minDistFinger) minDistFinger = distFinger;
+                            if (distFinger > maxDistFinger) maxDistFinger = distFinger;
+                            //if (spFinger > minSp) minSp = spFinger;
+                            //if (spFinger > maxSp) maxSp = spFinger;
                         }
 
                         result.push_back(minDistFinger * 5.0);
                         result.push_back(maxDistFinger * 5.0);
                         result.push_back(minDistDefect * 5.0);
                         result.push_back(maxDistDefect * 5.0);
+                        //result.push_back(minSp * 5.0);
+                        //result.push_back(maxSp * 5.0);
                     }
                 }
 
                 for (unsigned i = 0; i < result.size(); ++i) {
                     if (isnan(result[i])) {
                         result[i] = 1.0;
+                    }
+                    else if (result[i] >= FLT_MAX) {
+                        result[i] = 100.0;
                     }
                 }
             }
@@ -219,14 +326,18 @@ namespace classifier {
         */
         static std::vector<double> extractFileHelper(std::string testCaseName, std::string dataDir,
             std::string depthPath, std::vector<double>(*extractFunc)
-            (const cv::Mat & depthMap)) {
+            (const cv::Mat & depth_map)) {
 
             if (dataDir[dataDir.size() - 1] != '/' && dataDir[dataDir.size() - 1] != '\\') {
                 dataDir += path::preferred_separator;
             }
 
             // read depth map
-            cv::Mat depth = cv::imread(dataDir + depthPath + testCaseName + IMG_EXT);
+            cv::Mat depth;
+            if (IMG_EXT == ".tsi")
+                readTSI(depth, dataDir + depthPath + testCaseName + IMG_EXT);
+            else
+                depth = cv::imread(dataDir + depthPath + testCaseName + IMG_EXT);
             return extractFunc(depth);
         }
 

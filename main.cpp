@@ -19,34 +19,38 @@
 #include "Object3D.h"
 #include "StreamingAverager.h"
 
+#include "HandFeatureExtractor.h"
+#include "HandClassifier.h"
+
 using namespace cv;
 
 static inline void drawHand(cv::Mat & image, Object3D & obj, float confidence) {
-    if (obj.hasHand) {
-        image = Visualizer::visualizeHand(image, obj.getHand());
-    }
-
     if (obj.getContour().size() > 2) {
         cv::polylines(image, obj.getContour(), true, cv::Scalar(0, 255, 0), 1);
+    }
+
+    if (obj.hasHand) {
+        image = Visualizer::visualizeHand(image, obj.getHand());
     }
 
     std::stringstream disp;
     disp << std::setprecision(3) << std::fixed << confidence;
 
-    cv::Point center = obj.getCenterIj() * 2;
-    cv::Point dispPt = cv::Point(center.x - (int)disp.str().size() * 15, center.y);
-    cv::putText(image, disp.str(), dispPt, 0, 2, cv::Scalar(255, 255, 255), 2);
+    cv::Point center = obj.getCenterIj();
+    cv::Point dispPt = cv::Point(center.x - (int)disp.str().size() * 8, center.y);
+    cv::putText(image, disp.str(), dispPt, 0, 0.8, cv::Scalar(255, 255, 255), 1);
 }
 
 int main() {
-    DepthCamera * camera = nullptr;
+
+    DepthCamera * camera;
 
 #ifdef PMDSDK_ENABLED
     if (!strcmp(OPENARK_CAMERA_TYPE, "pmd")) {
         camera = new PMDCamera();
     }
     else {
-        return 0;
+        return -1;
     }
 #endif
 #ifdef RSSDK_ENABLED
@@ -54,7 +58,7 @@ int main() {
         camera = new SR300Camera();
     }
     else {
-        return 0;
+        return -1;
     }
 #endif
 
@@ -73,7 +77,7 @@ int main() {
     fs.release();
     UDPSender u = UDPSender();
 
-    StreamingAverager handAverager = StreamingAverager(4, 0.1), paleeteAverager = StreamingAverager(6, 0.05);
+    StreamingAverager handAverager = StreamingAverager(4, 0.15), paleeteAverager = StreamingAverager(6, 0.05);
 
     clock_t cycleStartTime = 0;
 
@@ -99,36 +103,52 @@ int main() {
             }
         #endif
 
-        // Bad input, wait a little before trying again
-        if (camera->badInput) {
-            waitKey(10);
-            continue;
-        }
-
         // Classifying objects in the scene
         std::vector<Object3D> objects = camera->queryObjects();
 
         // visualization of hand objects
-        cv::Mat handVisual = cv::Mat::zeros(camera->getHeight() * 2, camera->getWidth() * 2, CV_8UC3);
+        cv::Mat handVisual;
+
+#ifdef DEMO
+        if (camera->hasIRImage() && camera->getIRImage().rows > 0) {
+            camera->getIRImage().convertTo(handVisual, CV_8UC1);
+            cv::cvtColor(handVisual, handVisual, cv::COLOR_GRAY2BGR, 3);
+            handVisual /= 2;
+        }
+        else {
+#endif
+            handVisual = cv::Mat::zeros(camera->getHeight(), camera->getWidth(), CV_8UC3);
+#ifdef DEMO
+        }
+#endif
 
         int handObjectIndex = -1, handCount = 0, planeObjectIndex = -1;
 
-        float bestHandDist = FLT_MAX;
+        // object is "certainly" if SVM confidence is above this
+        static const double SVM_HIGH_CONFIDENCE_THRESH = 0.59;
+
+        float bestHandDist = FLT_MAX, bestDistConf = 0;
 
         for (int i = 0; i < objects.size(); ++i) {  
             Object3D & obj = objects[i];
 
-            //cv::circle(handVisual, obj.getCenterIj() * 2, 10, cv::Scalar(255, 255, 0), 2);
-
             if (obj.hasHand) {
                 float distance = obj.getDepth();
 
+                double conf = obj.getHand().svm_confidence;
+                
                 if (distance < bestHandDist){
                     handObjectIndex = i;
                     bestHandDist = distance;
+                    bestDistConf = conf;
                 }
 
-                drawHand(handVisual, obj, obj.getSurfArea());
+                if (conf > SVM_HIGH_CONFIDENCE_THRESH) {
+                    drawHand(handVisual, obj, conf);
+                    ++handCount;
+
+                    if (handObjectIndex == i) handObjectIndex = -1;
+                }
             }
 
             if (obj.hasPlane) {
@@ -137,26 +157,14 @@ int main() {
         }
 
         // Show visualizations
-        cv::Mat handScaled;
-
-        // cv::namedWindow("Nearest Hand", cv::WINDOW_AUTOSIZE);
-        //if (handObjectIndex != -1) {
-            // cv::imshow("Nearest Hand", clusters[handObjectIndex]);
-        //}
-        // else {
-            // cv::imshow("Nearest Hand", handScaled);
-            // cv::putText(handScaled, "No Hands", cv::Point(10, 25), 0, 0.5, cv::Scalar(255,255,255));
-        // }
         if (handObjectIndex != -1) {
             ++handCount;
             Object3D obj = objects[handObjectIndex];
-            drawHand(handVisual, obj, obj.getSurfArea());
+            drawHand(handVisual, obj, bestDistConf);
         }
 
-        cv::resize(handVisual, handScaled, cv::Size(camera->getWidth(), camera->getHeight()));
-
-        if (handObjectIndex != -1) {
-            cv::putText(handScaled,
+        if (handCount > 0) {
+            cv::putText(handVisual,
                 std::to_string(handCount) + " Hand" + (handCount == 1 ? "" : "s"),
                 cv::Point(10, 25), 0, 0.5, cv::Scalar(255, 255, 255));
         }
@@ -171,8 +179,8 @@ int main() {
             if (frame > FPS_FRAMES) {
                 std::stringstream fpsDisplay;
                 fpsDisplay << "FPS: " << (currFps < 10 ? "0" : "") << setprecision(3) << std::fixed << currFps;
-                cv::putText(handScaled, fpsDisplay.str(),
-                    cv::Point(handScaled.cols - 120, 25), 0, 0.5, cv::Scalar(255, 255, 255));
+                cv::putText(handVisual, fpsDisplay.str(),
+                    cv::Point(handVisual.cols - 120, 25), 0, 0.5, cv::Scalar(255, 255, 255));
 
             }
         }
@@ -181,7 +189,7 @@ int main() {
         }
 
         cv::namedWindow("OpenARK Hand Detection");
-        cv::imshow("OpenARK Hand Detection", handScaled);
+        cv::imshow("OpenARK Hand Detection", handVisual);
 
         // Interpret the relationship between the objects
         bool clicked = false, paletteFound = false;
@@ -271,7 +279,7 @@ int main() {
         /**** End: Write Frames to File ****/
 
         /**** Start: Loop Break Condition ****/
-        auto c = waitKey(1);
+        int c = waitKey(1);
         if (c == 'q' || c == 'Q' || c == 27) {
             break;
         }
@@ -279,7 +287,6 @@ int main() {
         /**** End: Loop Break Condition ****/
         ++frame;
     }
-
 
     camera->destroyInstance();
     destroyAllWindows();

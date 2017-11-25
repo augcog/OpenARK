@@ -12,8 +12,10 @@ Private constructor for the Intel RealSense SR300 camera depth sensor
 SR300Camera::SR300Camera(bool use_live_sensor): dists(nullptr), amps(nullptr), depth_width(0), depth_height(0), sample(nullptr)
 {
     session->SetCoordinateSystem(CoordinateSystem::COORDINATE_SYSTEM_FRONT_DEFAULT);
+
     X_DIMENSION = 640;
     Y_DIMENSION = 480;
+
     if (!sm)
     {
         wprintf_s(L"Unable to create the SenseManager\n");
@@ -47,6 +49,7 @@ SR300Camera::~SR300Camera() {};
 
 void SR300Camera::destroyInstance()
 {
+    _badInput = true;
     printf("closing sensor\n");
     sm->Close();
     printf("sensor closed\n");
@@ -75,6 +78,7 @@ void SR300Camera::fillInZCoords()
         {
             wprintf_s(L"Stream configuration was changed, re-initializing\n");
             sm ->Close();
+            _badInput = true;
         }
     }
 
@@ -83,6 +87,9 @@ void SR300Camera::fillInZCoords()
     if (!sample || sample->depth == nullptr) {
         wprintf_s(L"Couldn't connect to camera.\n");
         sm->Close();
+        _badInput = true;
+        cv::waitKey(100);
+        sts = sm->Init();
         return;
     }
 

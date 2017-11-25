@@ -183,7 +183,9 @@ cv::Point Util::findCentroid(cv::Mat xyzMap)
 double Util::triangleArea(cv::Vec3f a, cv::Vec3f b, cv::Vec3f c)
 {
     cv::Vec3f v0 = a - c, v1 = b - c;
-    cv::Vec3f cross = v0.cross(v1);
+    cv::Vec3f cross(v0[1] * v1[2] - v1[1] * v0[2],
+                    v0[2] * v1[0] - v1[2] * v0[0],
+                    v0[0] * v1[1] - v1[0] * v0[1]);
     return magnitude(cross) / 2.0;
 }
 
@@ -191,13 +193,16 @@ double Util::quadrangleArea(cv::Vec3f pts[4])
 {
     int valid = 0, bad = -1;
     for (int i = 0; i < 4; ++i) {
-        if (pts[i][2] > 0.1) ++valid;
+        if (pts[i][2] > 0.0) ++valid;
         else bad = i;
     }
 
     if (valid == 4) {
         // if all four points are nonzero, add both triangles
-        return triangleArea(pts[1], pts[2], pts[0]) + triangleArea(pts[1], pts[2], pts[3]);
+        double a1 = triangleArea(pts[1], pts[2], pts[0]),
+               a2 = triangleArea(pts[1], pts[2], pts[3]);
+
+        return a1 + a2;
     }
     else if (valid == 3) {
         cv::Vec3f t[] = { pts[0], pts[1], pts[2] };
@@ -255,9 +260,12 @@ double Util::surfaceArea(cv::Mat & depthMap)
     xyz.reserve(clusterSize);
 
     for (unsigned i = 0; i < clusterSize; ++i) {
+        
+        cv::Vec3f xyzPt = depthMap.at<cv::Vec3f>(cluster[i]);
+        xyz.push_back(xyzPt);
+
         if (!i || cluster[i].y > cluster[i - 1].y)
             rows.push_back(i);
-        xyz.push_back(depthMap.at<cv::Vec3f>(cluster[i]));
     }
 
     rows.push_back(clusterSize);
@@ -273,8 +281,8 @@ double Util::surfaceArea(cv::Mat & depthMap)
             if (cluster[nx].x < cluster[j].x && nx < rows[i + 2]) {
                 auto it1 = cluster.begin() + (nx + 1);
                 auto it2 = cluster.begin() + (rows[i+2]);
-                nx = std::lower_bound(it1, it2,
-                    cv::Point(cluster[j].x, cluster[nx].y), Util::PointComparer<cv::Point>(0, true)) 
+                nx = std::lower_bound(it1, it2, cv::Point(cluster[j].x, cluster[nx].y), 
+                    Util::PointComparer<cv::Point>(0, true)) 
                     - cluster.begin();
             }
 
@@ -292,6 +300,8 @@ double Util::surfaceArea(cv::Mat & depthMap)
             ++nx;
         }
     }
+
+    if (isnan(total)) return 0.0;
 
     return total;
 }
@@ -666,6 +676,135 @@ void Util::radixSortPoints(std::vector<cv::Point> & points, int wid, int hi, int
         }
         buck[i].clear();
     }
+}
+
+cv::Point Util::findPointOnCluster(const cv::Mat m, cv::Point pt, int max_tries) {
+    int tries = 0, run = 1, len = 2, direction = 0;
+
+    pt.x = std::min(std::max(0, pt.x), m.cols-1);
+    pt.y = std::min(std::max(0, pt.y), m.rows-1);
+
+    cv::Vec3f xyz = m.at<cv::Vec3f>(pt);
+    cv::Point orig_pt = pt;
+
+    // travel in a spiral and find a nearby nonzero point
+    while (xyz[2] == 0  && tries < max_tries) {
+        switch (direction) {
+        case 0:
+            ++pt.y;
+            break;
+        case 1:
+            ++pt.x;
+            break;
+        case 2:
+            --pt.y;
+            break;
+        default:
+            --pt.x;
+            break;
+        }
+        if ((--run) == 0) {
+            run = (++len) / 2;
+            direction = (direction + 1) % 4;
+        }
+
+        ++tries;
+        if (!pointInImage(m, pt)) continue;
+
+        xyz = m.at<cv::Vec3f>(pt);
+    }
+
+    if (tries >= max_tries) return orig_pt;
+
+    return pt;
+}
+
+double Util::clusterShortestPath(const cv::Mat & m, cv::Point src, cv::Point sink) {
+    if (!Util::pointInImage(m, src) || !Util::pointInImage(m, sink)) return FLT_MAX;
+
+    int N = (m.rows + 1) * (m.cols + 1);
+    std::set<std::pair<double, std::pair<int, int> > > st;
+
+    st.insert(std::make_pair(0.0, std::make_pair(src.x, src.y)));
+    
+    cv::Vec3f sinkXyz = m.at<cv::Vec3f>(sink);
+
+    double * dist = new double[N];
+
+    bool * vis = new bool[N];
+    memset(vis, 0, N * sizeof(bool));
+
+    // A* Heuristic
+    double * snkDist = new double[N];
+
+    for (int r = 0; r<m.rows; ++r){
+        const cv::Vec3f * ptr = m.ptr<cv::Vec3f>(r);
+        for (int c = 0; c < m.cols; ++c) {
+            dist[c + r * m.cols] = FLT_MAX;
+            if (ptr[c][2] != 0) {
+                snkDist[c + r * m.cols] = euclideanDistance3D(ptr[c], sinkXyz);
+            }
+        }
+    }
+
+    dist[src.x + src.y * m.cols] = 0;
+
+    static const cv::Point nxtPoints[] = 
+                 {
+                   cv::Point(-1, 0), cv::Point(0, -1), cv::Point(0, 1), cv::Point(1, 0),
+                   cv::Point(-5, 0), cv::Point(0, -5), cv::Point(0, 5), cv::Point(5, 0),
+                   cv::Point(-1, -1), cv::Point(1, -1), cv::Point(1, 1), cv::Point(-1, 1),
+                 };
+
+    static const int nNxtPoints = (sizeof nxtPoints) / (sizeof nxtPoints[0]);
+
+    while (!st.empty()) {
+        auto tmpPair = *st.begin();
+        cv::Point pt(tmpPair.second.first, tmpPair.second.second);
+        if (pt == sink) break;
+
+        vis[pt.x + pt.y * m.cols] = true;
+        st.erase(st.begin());
+
+        const cv::Vec3f & xyz = m.at<cv::Vec3f>(pt);
+
+        double currDist = dist[pt.x + pt.y * m.cols];
+
+        for (int i = 0; i < nNxtPoints; ++i) {
+            // go to each adjacent point
+
+            cv::Point adjPt = pt + nxtPoints[i];
+            int adjIdx = adjPt.x + adjPt.y * m.cols;
+
+            if (!Util::pointInImage(m, adjPt) || vis[adjIdx]) continue;
+
+            const cv::Vec3f & adjXyz = m.at<cv::Vec3f>(adjPt);
+            if (adjXyz[2] == 0) continue;
+
+            double * adjDist = &dist[adjIdx];
+
+            double between = euclideanDistance3D(adjXyz, xyz);
+
+            if (currDist + between < *adjDist) {
+                auto oldPair = std::make_pair(*adjDist + snkDist[adjIdx],
+                                              std::make_pair(adjPt.x, adjPt.y));
+                auto it = st.find(oldPair);
+                if (it != st.end()) st.erase(it);
+
+                *adjDist = currDist + between;
+                auto newPair = std::make_pair(*adjDist + snkDist[adjIdx],
+                                               std::make_pair(adjPt.x, adjPt.y));
+                st.insert(newPair);
+            }
+        }
+    }
+
+    double result = dist[sink.x + sink.y * m.cols];
+    delete[] dist;
+    delete[] vis;
+    delete[] snkDist;
+
+    return result;
 }
 
 bool Util::PointComparer<cv::Point>::operator()(cv::Point a, cv::Point b) {

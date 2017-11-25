@@ -45,7 +45,7 @@ public:
     /**
     * Gracefully closes the SR300 camera.
     */
-    void destroyInstance() override;
+    void destroyInstance();
 
 private:
     /**

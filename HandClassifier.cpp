@@ -14,11 +14,10 @@ namespace classifier {
 
     const double SVMHandClassifier::DEFAULT_HYPERPARAMS[5 * NUM_SVMS] = {
         // gamma    coef0          C       eps     p
-           1.6000,     0.5762,     0.0450, 1e-16,  0.9877,
-           1.3014,     0.5000,     0.0736, 1e-16,  0.9877,
-           1.0000,     0.5000,     0.3500, 1e-16,  0.9963,
-           1.0000,     0.5000,     0.4000, 1e-15,  0.9877,
-           1.0000,     0.5000,     0.4500, 1e-15,  0.9877,
+           0.9753,     0.5000,     0.4603, 1e-15,  0.9621,
+           0.8904,     0.5000,     0.1581, 1e-16,  0.9877,
+           0.8219,     0.5000,     0.2945, 1e-16,  0.9963,
+           0.8219,     0.5000,     0.4100, 1e-16,  0.9963,
     };
 
     static inline svm_parameter * makeSVMParam(const double hyperparams[5 * SVMHandClassifier::NUM_SVMS],
@@ -247,26 +246,27 @@ namespace classifier {
         if (nFeat > MAX_FEATURES) nFeat = MAX_FEATURES;
 
         for (int i = 1; i < nFeat; ++i) {
-            nd[i-1].index = i;
-            nd[i-1].value = features[i];
+            nd[i - 1].index = i;
+            nd[i - 1].value = features[i];
         }
 
-        nd[nFeat-1].index = -1;
+        nd[nFeat - 1].index = -1;
 
-        double result = (svm_predict(model[getSVMIdx(features)], nd) + 1.0) / 2.0;
+        int svmIdx = getSVMIdx(features);
+
+        double result = (svm_predict(model[svmIdx], nd) + 1.0) / 2.0;
         delete[] nd;
 
-        return (std::max(0.495, std::min(0.505, result)) - 0.495) * 100.0;
+        if (svmIdx == 0) 
+            return (std::max(0.45, std::min(0.55, result)) - 0.45) * 10.0;
+        else if (svmIdx == 3) 
+            return (std::max(0.4975, std::min(0.5025, result)) - 0.4975) * 200.0;
+        else 
+            return (std::max(0.495, std::min(0.505, result)) - 0.495) * 100.0;
     }
 
     inline int SVMHandClassifier::getSVMIdx(const std::vector<double> features){
         int numFingers = (int)features[0];
-        if (numFingers == 1) {
-            if (features.size() < 13) return 0;
-            else return 1;
-        }
-        else {
-            return std::min(numFingers, NUM_SVMS-1);
-        }
+        return std::min(numFingers - 1, NUM_SVMS-1);
     }
 }

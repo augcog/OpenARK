@@ -20,27 +20,15 @@ public:
     */
     Hand(cv::Vec3f centroid_xyz, cv::Point2i centroid_ij,
         std::vector<cv::Vec3f> fingers_xyz, std::vector<cv::Point2i> fingers_ij, 
-        std::vector<cv::Vec3f> defects_xyz, std::vector<cv::Point2i> defects_ij);
-
-    //**
-    //* Constructs a hand object based on point cloud and constraints.
-    //* @param xyzMap Input point cloud containing only the hand (nothing else can be in this point cluod)
-    //* @param angle_treshhold Sharpest allowable angle formed by finger tip and neighboring defects
-    //* @param cluster_thresh Maximum allowable distance between two finger tips
-    //*/
-    //Hand(cv::Mat xyzMap, float angle_treshhold, int cluster_thresh = 30);
+        std::vector<cv::Vec3f> defects_xyz, std::vector<cv::Point2i> defects_ij, 
+        double svm_confidence);
 
     /**
-    * Destructor for the hand object
+    * Destructs the hand instance
     */
     ~Hand();
 
     // Public variables
-
-    /**
-    * Maximum allowable distance between adjacent finger tips
-    */
-    int CLUSTER_THRESHOLD;
 
     /**
     * (x,y,z) position of all detected finger tips
@@ -48,7 +36,7 @@ public:
     std::vector<cv::Vec3f> fingers_xyz;
 
     /**
-    * (i,j) coordinates of all detected finger tips
+    * (i,j) (screen) coordinates of all detected finger tips
     */
     std::vector<cv::Point2i> fingers_ij;
 
@@ -58,7 +46,7 @@ public:
     cv::Vec3f centroid_xyz;
 
     /**
-    * (i,j) coordinates of hand centroid
+    * (i,j) (screen) coordinates of hand centroid
     */
     cv::Point2i centroid_ij;
 
@@ -68,7 +56,7 @@ public:
     std::vector<cv::Vec3f> defects_xyz;
 
     /**
-    * (i,j) position of detected defects
+    * (i,j) (screen) position of detected defects
     */
     std::vector<cv::Point2i> defects_ij;
 
@@ -83,11 +71,14 @@ public:
     bool touchObject(std::vector<double> &equation, const double threshold);
 
     /**
+    * The confidence value (in [0, 1]) assigned to this hand by the SVM classifier, 
+    * higher = more likely to be hand
+    */
+    double svm_confidence;
+
+    /**
     * Get the number of fingers on this hand
     */
-    int getNumFingers();
+    int numFingers();
 
-private:
-    // Private variables
-    float ANGLE_THRESHHOLD;
 };

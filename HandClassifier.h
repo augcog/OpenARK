@@ -79,7 +79,7 @@ namespace classifier {
          * 1 SVM is used for each number of visible fingers, i.e. 1 for hands with 1 visible finger, 
          * 1 for hands with 2 visible fingers, etc.
          */
-        static const int NUM_SVMS = 5;
+        static const int NUM_SVMS = 4;
 
         /**
         * Default SVM hyperparameters
@@ -148,7 +148,7 @@ namespace classifier {
         /**
          * Maximum number of features. Any additonal features will be cut off.
          */
-        static const int MAX_FEATURES = 52;
+        static const int MAX_FEATURES = 54;
 
         // SVM storage
         svm_model * model[NUM_SVMS];

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Visualizer.h"
+#include "Util.h"
 
 pcl::visualization::PCLVisualizer * Visualizer::viewer = nullptr;
 
@@ -44,14 +45,23 @@ cv::Mat Visualizer::visualizeHand(cv::Mat xyzMap, const Hand hand)
         displayImg = xyzMap;
     }
 
+    float unitWid = (float)xyzMap.cols / 640;
+
+    cv::circle(displayImg, hand.centroid_ij, (int) (unitWid * 10), cv::Scalar(255, 0, 0));
+
     for (int i = 0; i < std::min(hand.fingers_ij.size(), hand.defects_ij.size()); ++i)
     {
-        cv::circle(displayImg, hand.fingers_ij[i], 5, cv::Scalar(0, 0, 255), 3);
+        cv::circle(displayImg, hand.fingers_ij[i], (int) (unitWid * 6), cv::Scalar(0, 0, 255), -1);
+        cv::line(displayImg, hand.defects_ij[i], hand.fingers_ij[i], cv::Scalar(0, 0, 255), (int) (unitWid * 2));
 
-        cv::line(displayImg, hand.defects_ij[i], hand.fingers_ij[i], cv::Scalar(255, 0, 255), 2);
-        cv::circle(displayImg, hand.defects_ij[i], 3, cv::Scalar(0, 255, 255), 2);
+        std::stringstream sstr;
+        sstr << setprecision(1) << std::fixed << Util::euclideanDistance3D(hand.defects_xyz[i], hand.fingers_xyz[i]) * 100;
+        cv::putText(displayImg,
+            sstr.str(),
+            (hand.defects_ij[i] + hand.fingers_ij[i]) / 2 - cv::Point(15, 0), 0, 0.7 * unitWid, cv::Scalar(0, 255, 255), 1);
 
-        cv::line(displayImg, hand.defects_ij[i], hand.centroid_ij, cv::Scalar(255, 0, 255), 2);
+        cv::circle(displayImg, hand.defects_ij[i], (int) (unitWid * 5), cv::Scalar(255, 0, 200), -1);
+        cv::line(displayImg, hand.defects_ij[i], hand.centroid_ij, cv::Scalar(255, 0, 200), (int) (unitWid * 2));
     }
 
     return displayImg;

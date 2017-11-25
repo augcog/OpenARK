@@ -2,14 +2,13 @@
 
 #include "stdafx.h" 
 
-// OpenARK Libraries
+// OpenARK headers
 #include "version.h"
 #include "Hand.h"
 #include "Plane.h"
 
-#ifdef USE_SVM
+// SVM integration
 #include "HandClassifier.h"
-#endif
 
 class Object3D
 {
@@ -27,36 +26,37 @@ public:
     bool leftEdgeConnected = false;
 
     /**
-    * Constructs a empty instance of a Object3D.
+    * Constructs an empty Object3D instance. 
     */
     Object3D();
 
     /**
-    * Constructs an instance of Object3D based on an isolated point cloud containing points in the object.
-    * Points not on the cluster must have 0 z-coordinate in the point cloud.
-    * Complexity: O(n) in relation to the total number of points in the point cloud.
+    * Constructs an Object3D instance based on an isolated point cloud.
+    * Note: points not on the cluster must have 0 z-coordinate in the point cloud.
     * @param cluster_depth_map point cloud containing the object
-    * @param min_size optionally, the minimum surface area of an object on which hand detection should be performed
-    * @param max_size optionally, the maximum surface area of an object on which hand detection should be performed
+    * @param min_size optionally, the minimum surface area of an object to continue with hand detection.
+                      note: objects with low/high surface area are eliminated before hand detection is performed for performance considerations 
+    * @param max_size optionally, the maximum surface area of an object to continue with hand detection.
+                      note: objects with low/high surface area are eliminated before hand detection is performed for performance considerations 
     */
-    explicit Object3D::Object3D(cv::Mat cluster_depth_map, double min_size = 0.04, double max_size = 0.29);
+    explicit Object3D::Object3D(cv::Mat cluster_depth_map, double min_size = 0.008, double max_size = 0.055);
 
     /**
-    * Construct an instance of Object3D from a vector of points belonging to the object
-    * along with a reference point cloud containing all points in the scene.
-    * Complexity: O(nlogn) in the size of the 'points' vector. O(n) if already sorted (specify sorted=false)
+    * Construct an Object3D instance from a vector of points.
     * @param [in] points vector of all points (in screen coordinates) belonging to the object
     * @param [in] depth_map the reference point cloud. (CAN contain points outside this object)
     * @param sorted if true, assumes that 'points' is already ordered and skips sorting to save time.
     * @param points_to_use optionally, the number of points in 'points' to use for the object. By default, uses all points.
-    * @param min_size optionally, the minimum surface area of an object on which hand detection should be performed
-    * @param max_size optionally, the maximum surface area of an object on which hand detection should be performed
+    * @param min_size optionally, the minimum surface area of an object to continue with hand detection.
+                      note: objects with low/high surface area are eliminated before hand detection is performed for performance considerations 
+    * @param max_size optionally, the maximum surface area of an object to continue with hand detection.
+                      note: objects with low/high surface area are eliminated before hand detection is performed for performance considerations 
     */   
     Object3D::Object3D(std::vector<cv::Point> & points, cv::Mat & depth_map,
                        bool sorted = false, int points_to_use = -1, double min_size = 0.008, double max_size = 0.055);
 
     /**
-    * Deconstructs a Object3D instance.
+    * Destructs an Object3D instance.
     */
     ~Object3D();
 
@@ -229,16 +229,6 @@ private:
      */
     double avgDepth = -1.0;
 
-    /*
-     * Maximum depth value of object
-     */
-    double maxVal = -FLT_MAX;
-
-    /*
-     * Screen Position of maximum depth value of object
-     */
-    cv::Point maxLoc = cv::Point(-1, -1);
-    
     /**
     * Determine whether the object is connected to an edge.
     */
@@ -250,6 +240,8 @@ private:
     * @param cluster_thresh maximum distance between two finger tips
     * @param finger_len_min minimum finger length
     * @param finger_len_max maximum finger length
+    * @param single_finger_len_min minimum finger length, for the special case where only one finger is detected
+    * @param single_finger_len_max maximum finger length, for the special case where only one finger is detected
     * @param max_defect_angle maximum angle (ij) at each defect
     * @param finger_defect_slope_min minimum value of (finger_y - defect_y)/abs(finger_x - defect_x) for any finger.
                         Used to filter out low fingers. Used to filter out fingers pointing straight down.
@@ -257,19 +249,22 @@ private:
     * @param finger_dist_min minimum distance between fingers
     * @param centroid_defect_finger_angle_min minimum angle between centroid, defect, and finger
     */
-    Hand * checkForHand(const cv::Mat & cluster, double angle_thresh = 0.08, double cluster_thresh = 10,
-        double finger_len_min = 0.005, double finger_len_max = 0.17, 
+    Hand * checkForHand(const cv::Mat & cluster,
+        double angle_thresh = 0.08, double cluster_thresh = 10, 
+        double finger_len_min = 0.005, double finger_len_max = 0.17,
+        double single_finger_len_min = 0.040, double single_finger_len_max = 0.2299,
         double max_defect_angle = 0.60 * PI,
         double finger_defect_slope_min = -1.0, double finger_centroid_slope_min = -0.45,
-        double finger_dist_min = 0.005, double centroid_defect_finger_angle_min = 0.800);
+        double finger_dist_min = 0.005, double centroid_defect_finger_angle_min = 0.800) const;
 
     /**
     * Subroutine for computing the largest contour, convex hull, etc. for this 3D object.
     * @param pts_size the number of points in 'points' that are used in this object
     * @param min_size the minimum surface area of an object on which hand detection should be performed
     * @param max_size the maximum surface area of an object on which hand detection should be performed
+    * @param svm_confidence_thresh minimum SVM confidence value ([0...1]) to continue with hand detection
     */
-    void initializeObject(double min_size, double max_size);
+    void initializeObject(double min_size, double max_size, double svm_confidence_thresh = 0.35);
 
     /**
     * Find the center of mass of an object
@@ -301,10 +296,8 @@ private:
      */
     void computeGrayMap(int thresh = 0);
 
-#ifdef USE_SVM
     /**
-    * SVM Hand classifier Instance
+    * SVM Hand classifier instance
     */
-    static classifier::SVMHandClassifier handClassifier;
-#endif
+    static classifier::HandClassifier & handClassifier;
 };

@@ -181,7 +181,7 @@ public:
      * @param c third vertex
      * @returns area of triangle, in real meters squared
      */
-    static double triangleArea(cv::Vec3f a, cv::Vec3f b, cv::Vec3f c = cv::Vec3f(0, 0, 0));
+    static inline double triangleArea(cv::Vec3f a, cv::Vec3f b, cv::Vec3f c = cv::Vec3f(0, 0, 0));
 
     /**
      * Computes the area of the quadrangle defined by four vertices
@@ -225,13 +225,34 @@ public:
   	static double surfaceAreaTriangulate(cv::Mat shape);
 
     /**
-      * EXPERIMENTAL: sort points by y and then x using radix sort
+      * Sort points by y and then x in linear time using radix sort
       * @param points [in] vector containing the points
       * @param wid width of overall depth image
       * @param hi height of overall depth image
       * @param num_pts number of points in'points' to use. By default, uses all.
      */
    	static void radixSortPoints(std::vector<cv::Point> & points, int wid, int hi, int num_pts = -1);
+
+    /** 
+     * Find a nonzero point on 'cluster' close to 'starting_point' by searching in a spiral from the starting point.
+     * Used for snapping computed centroids, etc. to actual points on the object.
+     * If the value at 'starting_point' is nonzero, then returns 'starting_point' without proceeding.
+     * @param cluster the depth map representing the cluster
+     * @param starting_point startin point of search
+     * @param max_tries maximum number of points to look at before cutting off the
+                        search and simply returning the starting point
+     * @returns first nonzero point on 'cluster' close to 'starting_point' encountered by travelling in a spiral
+     */
+    static cv::Point findPointOnCluster(const cv::Mat cluster, cv::Point starting_point, int max_tries = 500);
+
+    /** 
+     * Find the shortest path from 'src' to 'sink' within the given cluster
+     * @param cluster the depth map representing the cluster
+     * @param src source point in screen coordinates
+     * @param sink sink point in screen coordinates
+     * @return shortest path between 'src' and 'sink' in meters; DBL_MAX if no path exists between the points.
+     */
+    static double clusterShortestPath(const cv::Mat & cluster, cv::Point src, cv::Point sink);
 
     /**
      * Compares two points (Point, Point2f, Vec3i or Vec3f),

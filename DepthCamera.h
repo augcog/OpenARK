@@ -6,7 +6,6 @@
 
 //OpenARK libraries
 #include "Util.h"
-#include "Hand.h"
 #include "Object3D.h"
 
 /**
@@ -16,19 +15,25 @@
 class DepthCamera
 {
 public:
-    virtual ~DepthCamera();
-
     /**
-     * Retrieve the next frame from the depth camera
-     * @param removeNoise if true, performs noise removal on the depth image after retrieving it
+     * Destroys this DepthCamera instance
+     * @see destroyInstance
      */
-    void nextFrame(bool removeNoise = true);
+    ~DepthCamera();
 
     /**
      * Closes and exists the depth camera.
      * This function should be overriden with a concrete implementation depending on the specific depth camera
      */
     virtual void destroyInstance() =0;
+
+    /**
+     * Retrieve the next frame from the depth camera. 
+     * Calls the update() function of the derived camera class and resets stored information.
+     * @param removeNoise if true, performs noise removal on the depth image after retrieving it
+     * @return true on success, false on bad input
+     */
+    bool nextFrame(bool removeNoise = true);
 
     /**
      * @Deprecated
@@ -40,9 +45,8 @@ public:
      * @param max_size the maximum surface area (in m^2) a valid cluster should have
      * @param floodfill_interval the x, y interval between points at which we should try to flood fill. higher = faster 
      */
-    void computeClusters(double max_distance = 0.007, double max_ir_distance = 150,
-        int min_points = 1900, double min_size = 0.008, double max_size = 0.055,
-        int dilate_amount = 2, int floodfill_interval = 10);
+    void computeClusters(double max_distance = 0.007, int min_points = 1900, 
+        double min_size = 0.008, double max_size = 0.055, int floodfill_interval = 10);
 
     /**
      * Reads a sample frame from file.
@@ -144,13 +148,15 @@ public:
      * @param floodfill_interval the x, y interval between points at which we should try to flood fill. higher = faster 
      * @return vector of visible objects
      */
-    std::vector<Object3D> queryObjects(double max_distance = 0.007, double max_ir_distance = 150,
-        int min_points = 1900, double min_size = 0.008, double max_size = 0.055,
-        int dilate_amount = 2, int floodfill_interval = 10);
+    std::vector<Object3D> queryObjects(double min_size = 0.008, 
+        double max_size = 0.055, double max_distance = 0.007, int min_points = 1900,
+        int floodfill_interval = 10);
 
     /*
      * Retrieve a list of hands visible in the current frame
      * @see queryObjects
+     * @param hand_high_confidence_thresh the threshold above which an object is considered to certainly be a hand 
+     *        (used for detection multiple hands)
      * @param max_distance the maximum allowed distance to be clustered
      * @param min_points the minimum number of points a valid cluster should have
      * @param min_size the minimum surface area (in m^2) a valid cluster should have
@@ -158,13 +164,49 @@ public:
      * @param floodfill_interval the x, y interval between points at which we should try to flood fill. higher = faster 
      * @return vector of visible hands
      */
-    std::vector<Hand> queryHands(double max_distance = 0.007, double max_ir_distance = 150,
-        int min_points = 1900, double min_size = 0.008, double max_size = 0.055,
-        int dilate_amount = 2, int floodfill_interval = 10);
+    std::vector<Object3D> queryHands(double hand_high_confidence_thresh = 0.59,
+        double max_distance = 0.007, int min_points = 1900, 
+        double min_size = 0.008, double max_size = 0.055,
+        int floodfill_interval = 10);
 
-    bool badInput;
+    /**
+     * Retrieve the next frame from the depth camera
+     * @param removeNoise if true, performs noise removal on the depth image after retrieving it
+     * @return true on success, false on bad input
+     */
+    bool operator()(bool removeNoise = true);
+
+    /**
+     * Retrieves the next frame from from the depth camera and outputs the resulting depth/rgb/ir image to 'img' 
+     * depending on the type of 'img'
+     * 'img' must either be an empty image or have 1 or 3 channels
+     * Outputs the IR image if 'img' has 1 channel, the XYZ map if it has format CV_32FC3 or is empty,
+     * and the RGB image otherwise
+     * image if type of image is CV_32FC3
+     * @param [in] img output image
+     * @return true on success, false on bad input or failure
+     */
+    bool operator>> (cv::Mat & img);
+
+    /**
+     * Retrieves the next frame from from the depth camera and outputs a list of visible objects to 'objs'
+     * @param [in] objs empty vector of Object3D instances
+     * @return true on success, false on bad input
+     */
+    bool operator >> (std::vector<Object3D> & objs);
+
+    /**
+     * Check if the camera input is invalid. 
+     * @returns true on bad input.
+     */
+    virtual bool badInput();
 
 protected:
+    /**
+     * True if input is invalid 
+     */
+    bool _badInput;
+
     /**
      * Retrieve the next frame from the camera
      * This function should be overriden with a concrete implementation depending on the specific depth camera
@@ -185,14 +227,12 @@ protected:
      * @param max_distance the maximum euclidean distance allowed between neighbors
      * @param output_points optionally, pointer to a vector in which we will 
               store the points in the component. This vector should be AT LEAST the size of the xyz map
-     * @param [in] irImg optionally, the infrared image corresponding to the point cloud
-     * @param ir_distance the maximum difference in IR distance between neighbors (only used if irImg specified)
      * @param [out] mask optionally, output image containing points visited by the floodfill
      * @returns number of points in component
      */
     static int floodFill(int seed_x, int seed_y, cv::Mat& zMap,
-       std::vector <cv::Point> * output_points = nullptr, double max_distance = 0.04,
-        cv::Mat& irImg = cv::Mat(), double ir_distance = 25, cv::Mat& mask = cv::Mat());
+       std::vector <cv::Point> * output_points = nullptr, double max_distance = 0.004,
+        cv::Mat& mask = cv::Mat());
 
     ///**
     // * Analyze the candidate point with its neighbors to determine whether they belong to the same cluster.
