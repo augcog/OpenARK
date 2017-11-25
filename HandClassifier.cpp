@@ -13,8 +13,8 @@ namespace classifier {
     // SVMHandClassifier implementation
 
     const double SVMHandClassifier::DEFAULT_HYPERPARAMS[5 * NUM_SVMS] = {
-        // gamma    coef0          C       eps     p
-           0.9753,     0.5000,     0.4603, 1e-15,  0.9621,
+        // gamma       coef0       C       eps     p
+           2.4603,     0.5000,     0.4603, 9e-16,  0.9800,
            0.8904,     0.5000,     0.1581, 1e-16,  0.9877,
            0.8219,     0.5000,     0.2945, 1e-16,  0.9963,
            0.8219,     0.5000,     0.4100, 1e-16,  0.9963,
