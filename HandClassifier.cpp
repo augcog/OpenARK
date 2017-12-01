@@ -257,12 +257,17 @@ namespace classifier {
         double result = (svm_predict(model[svmIdx], nd) + 1.0) / 2.0;
         delete[] nd;
 
-        if (svmIdx == 0) 
-            return (std::max(0.45, std::min(0.55, result)) - 0.45) * 10.0;
-        else if (svmIdx == 3) 
-            return (std::max(0.4975, std::min(0.5025, result)) - 0.4975) * 200.0;
-        else 
+        // normalize confidences for each SVM
+        if (svmIdx == 0)
+            return (std::max(0.44, std::min(0.54, result)) - 0.44) * 10.0;
+        else if (svmIdx == 1)
             return (std::max(0.495, std::min(0.505, result)) - 0.495) * 100.0;
+        else if (svmIdx == 2)
+            return (std::max(0.495, std::min(0.505, result)) - 0.495) * 100.0;
+        else if (svmIdx == 3)
+            return (std::max(0.4985, std::min(0.5035, result)) - 0.4985) * 200.0;
+        else
+            return 0;
     }
 
     inline int SVMHandClassifier::getSVMIdx(const std::vector<double> features){
