@@ -22,13 +22,13 @@
 #include "HandFeatureExtractor.h"
 #include "HandClassifier.h"
 
-using namespace cv;
+using namespace ark;
 
-static inline void drawHand(cv::Mat & image, Object3D & obj, float confidence) {
+static inline void drawHand(cv::Mat & image, Object3D & obj, float confidence = 0.0) {
     if (obj.getContour().size() > 2) {
         cv::polylines(image, obj.getContour(), true, cv::Scalar(0, 255, 0), 1);
-    }
-
+    } 
+       
     if (obj.hasHand) {
         image = Visualizer::visualizeHand(image, obj.getHand());
     }
@@ -36,8 +36,8 @@ static inline void drawHand(cv::Mat & image, Object3D & obj, float confidence) {
     std::stringstream disp;
     disp << std::setprecision(3) << std::fixed << confidence;
 
-    cv::Point center = obj.getCenterIj();
-    cv::Point dispPt = cv::Point(center.x - (int)disp.str().size() * 8, center.y);
+    Point2i center = obj.getCenterIj();
+    Point2i dispPt = Point2i(center.x - (int)disp.str().size() * 8, center.y);
     cv::putText(image, disp.str(), dispPt, 0, 0.8, cv::Scalar(255, 255, 255), 1);
 }
 
@@ -67,10 +67,10 @@ int main() {
 
     //Calibration::XYZToUnity(*pmd, 4, 4, 3);
 
-    FileStorage fs;
-    fs.open("RT_Transform.txt", FileStorage::READ);
+    cv::FileStorage fs;
+    fs.open("RT_Transform.txt", cv::FileStorage::READ);
 
-    Mat r, t;
+    cv::Mat r, t;
     fs["R"] >> r;
     fs["T"] >> t;
 
@@ -110,10 +110,10 @@ int main() {
         cv::Mat handVisual;
 
 #ifdef DEMO
-        if (camera->hasIRImage() && camera->getIRImage().rows > 0) {
+        if (camera->hasIRImage()) {
             camera->getIRImage().convertTo(handVisual, CV_8UC1);
-            cv::cvtColor(handVisual, handVisual, cv::COLOR_GRAY2BGR, 3);
             handVisual /= 2;
+            cv::cvtColor(handVisual, handVisual, cv::COLOR_GRAY2BGR, 3);
         }
         else {
 #endif
@@ -124,13 +124,19 @@ int main() {
 
         int handObjectIndex = -1, handCount = 0, planeObjectIndex = -1;
 
-        // object is "certainly" if SVM confidence is above this
+        // object is immediately considered to be hand if SVM confidence is above this
         static const double SVM_HIGH_CONFIDENCE_THRESH = 0.59;
 
         float bestHandDist = FLT_MAX, bestDistConf = 0;
 
         for (int i = 0; i < objects.size(); ++i) {  
             Object3D & obj = objects[i];
+
+            if (obj.hasPlane) {
+                planeObjectIndex = i;
+                cv::polylines(handVisual, obj.getContour(), true, 
+                    cv::Scalar(255, 0, 255));
+            }
 
             if (obj.hasHand) {
                 float distance = obj.getDepth();
@@ -150,13 +156,9 @@ int main() {
                     if (handObjectIndex == i) handObjectIndex = -1;
                 }
             }
-
-            if (obj.hasPlane) {
-                planeObjectIndex = i;
-            }
         }
 
-        // Show visualizations
+        // Draw hands
         if (handObjectIndex != -1) {
             ++handCount;
             Object3D obj = objects[handObjectIndex];
@@ -166,7 +168,7 @@ int main() {
         if (handCount > 0) {
             cv::putText(handVisual,
                 std::to_string(handCount) + " Hand" + (handCount == 1 ? "" : "s"),
-                cv::Point(10, 25), 0, 0.5, cv::Scalar(255, 255, 255));
+                Point2i(10, 25), 0, 0.5, cv::Scalar(255, 255, 255));
         }
 
 
@@ -180,7 +182,7 @@ int main() {
                 std::stringstream fpsDisplay;
                 fpsDisplay << "FPS: " << (currFps < 10 ? "0" : "") << setprecision(3) << std::fixed << currFps;
                 cv::putText(handVisual, fpsDisplay.str(),
-                    cv::Point(handVisual.cols - 120, 25), 0, 0.5, cv::Scalar(255, 255, 255));
+                    Point2i(handVisual.cols - 120, 25), 0, 0.5, cv::Scalar(255, 255, 255));
 
             }
         }
@@ -196,22 +198,22 @@ int main() {
 
         Object3D handObject, planeObject;
         Point paletteCenter(-1. - 1);
-        Mat mask = Mat::zeros(camera->getXYZMap().rows, camera->getXYZMap().cols, CV_8UC1);
+        cv::Mat mask = cv::Mat::zeros(camera->getXYZMap().rows, camera->getXYZMap().cols, CV_8UC1);
 
         if (planeObjectIndex != -1 && handObjectIndex != -1) {
-            planeObject = objects[planeObjectIndex];
-            handObject = objects[handObjectIndex];
+            //planeObject = objects[planeObjectIndex];
+            //handObject = objects[handObjectIndex];
 
-            clicked = handObject.getHand().touchObject(planeObject.getPlane().getPlaneEquation(), planeObject.getPlane().R_SQUARED_DISTANCE_THRESHOLD * 5);
-            //auto scene = Visualizer::visualizePlaneRegression(camera->getXYZMap(), planeObject.getPlane().getPlaneEquation(), planeObject.getPlane().R_SQUARED_DISTANCE_THRESHOLD, clicked);
-            //scene = Visualizer::visualizeHand(scene, handObject.getHand());
-            if (planeObject.leftEdgeConnected) {
-                Visualizer::visualizePlanePoints(mask, planeObject.getPlane().getPlaneIndicies());
-                auto m = moments(mask, false);
-                paletteCenter = Point(m.m10 / m.m00, m.m01 / m.m00);
-                //circle(scene, paletteCenter, 2, Scalar(0, 0, 255), 2);
-                paletteFound = true;
-            }
+            //clicked = handObject.getHand().touchObject(planeObject.getPlane().getPlaneEquation(), planeObject.getPlane().R_SQUARED_DISTANCE_THRESHOLD * 5);
+            ////auto scene = Visualizer::visualizePlaneRegression(camera->getXYZMap(), planeObject.getPlane().getPlaneEquation(), planeObject.getPlane().R_SQUARED_DISTANCE_THRESHOLD, clicked);
+            ////scene = Visualizer::visualizeHand(scene, handObject.getHand());
+            //if (planeObject.leftEdgeConnected) {
+            //    Visualizer::visualizePlanePoints(mask, planeObject.getPlane().getPlaneIndicies());
+            //    auto m = moments(mask, false);
+            //    paletteCenter = Point(m.m10 / m.m00, m.m01 / m.m00);
+            //    //circle(scene, paletteCenter, 2, Scalar(0, 0, 255), 2);
+            //    paletteFound = true;
+            //}
             //namedWindow("Results", CV_WINDOW_AUTOSIZE);
             //imshow("Results", scene);
         }
@@ -225,7 +227,7 @@ int main() {
             if (planeObject.leftEdgeConnected) {
                 Visualizer::visualizePlanePoints(mask, planeObject.getPlane().getPlaneIndicies());
                 auto m = moments(mask, false);
-                paletteCenter = Point(m.m10 / m.m00, m.m01 / m.m00);
+                paletteCenter = Point2i(m.m10 / m.m00, m.m01 / m.m00);
                 //circle(scene, paletteCenter, 2, Scalar(0, 0, 255), 2);
                 paletteFound = true;
             }
@@ -238,11 +240,11 @@ int main() {
         std::string paletteX = "-", paletteY = "-", paletteZ = "-";
         std::string clickStatus = "2";
         std::string num_fingers = "0";
-        if (handObjectIndex != -1) {
+        if (handObjectIndex != -1 && !objects[handObjectIndex].getHand().fingers_xyz.empty()) {
             auto handPos = handAverager.addDataPoint(objects[handObjectIndex].getHand().fingers_xyz[0]);
             //float hand_pt[3] = { objects[handObjectIndex].getHand().pointer_finger_xyz[0], objects[handObjectIndex].getHand().pointer_finger_xyz[1], objects[handObjectIndex].getHand().pointer_finger_xyz[2]};
             double hand_pt[3] = { handPos[0], handPos[1], handPos[2] };
-            auto hand_mat = Mat(3, 1, CV_32FC1, &hand_pt);
+            auto hand_mat = cv::Mat(3, 1, CV_32FC1, &hand_pt);
             //hand_mat = r*hand_mat + t;
             handX = std::to_string(hand_mat.at<float>(0, 0));
             handY = std::to_string(hand_mat.at<float>(1, 0));
@@ -253,9 +255,9 @@ int main() {
             handAverager.addEmptyPoint();
         }
         if (paletteFound) {
-            auto pt = paleeteAverager.addDataPoint(camera->getXYZMap().at<Vec3f>(paletteCenter.y, paletteCenter.x));
+            auto pt = paleeteAverager.addDataPoint(camera->getXYZMap().at<Point3f>(paletteCenter.y, paletteCenter.x));
             float palette_pt[3] = { pt[0], pt[1], pt[2] };
-            auto palette_mat = Mat(3, 1, CV_32FC1, &palette_pt);
+            auto palette_mat = cv::Mat(3, 1, CV_32FC1, &palette_pt);
             //palette_mat = r*palette_mat + t;
             paletteX = std::to_string(palette_mat.at<float>(0, 0));
             paletteY = std::to_string(palette_mat.at<float>(1, 0));
@@ -279,7 +281,7 @@ int main() {
         /**** End: Write Frames to File ****/
 
         /**** Start: Loop Break Condition ****/
-        int c = waitKey(1);
+        int c = cv::waitKey(1);
         if (c == 'q' || c == 'Q' || c == 27) {
             break;
         }
@@ -289,6 +291,6 @@ int main() {
     }
 
     camera->destroyInstance();
-    destroyAllWindows();
+    cv::destroyAllWindows();
     return 0;
 }

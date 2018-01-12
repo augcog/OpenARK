@@ -1,6 +1,6 @@
 #pragma once
 
-// Constants Redefined
+// Constants
 #ifndef M_PI
     #define M_PI 3.14159265358979323846
 #endif
@@ -62,6 +62,9 @@
 #include <pcl/features/integral_image_normal.h>
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/segmentation/region_growing.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/sample_consensus/method_types.h>
+#include <pcl/sample_consensus/model_types.h>
 #include <pcl/features/normal_3d_omp.h>
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/surface/gp3.h>
@@ -76,3 +79,15 @@
 
 // LibSVM
 #include "libSVM/svm.h"
+
+// OpenARK namespace
+namespace ark {
+    typedef cv::Point Point;
+    typedef cv::Point2i Point2i;
+    typedef cv::Point2f Point2f;
+    typedef cv::Point2d Point2d;
+    typedef cv::Vec3b Point3b;
+    typedef cv::Vec3f Point3f;
+    typedef cv::Vec3d Point3d;
+    typedef cv::Vec3i Point3i;
+}

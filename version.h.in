@@ -8,5 +8,5 @@
 // Remove to disable visualizations (if building as library)
 #define DEMO
 
-// Remove to disable built-in profiling
-#define PROFILING
+// Remove to disable debug code
+#define DEBUG

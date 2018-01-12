@@ -11,9 +11,9 @@ include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
 CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
 if(COMPILER_SUPPORTS_CXX11)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 /EHsc")
 elseif(COMPILER_SUPPORTS_CXX0X)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x /EHsc")
 else()
     message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
@@ -78,10 +78,31 @@ set(
   libSVM/svm.cpp
 )
 
+set(
+  HEADERS 
+  Object3D.h
+  ObjectParams.h
+  Hand.h Plane.h
+  Webcam.h
+  DepthCamera.h 
+  RGBCamera.h
+  UDPSender.h 
+  StreamingAverager.h 
+  Calibration.h 
+  Util.h	
+  Visualizer.h	
+  Converter.h
+  stdafx.h
+  HandFeatureExtractor.h
+  HandClassifier.h
+  libSVM/svm.h
+)
+
 if(NOT RSSDK_FOUND)
   SET(RSSDK "//")
 else()
   set(SOURCES ${SOURCES} SR300Camera.cpp)
+  set(HEADERS ${HEADERS} SR300Camera.h)
 endif(NOT RSSDK_FOUND)
 
 if(NOT PMDSDK_FOUND)
@@ -89,12 +110,14 @@ if(NOT PMDSDK_FOUND)
 else()
   include_directories(${PMDSDK_INCLUDE_DIR})
   set(SOURCES ${SOURCES} PMDCamera.cpp)
+  set(HEADERS ${HEADERS} PMDCamera.h)
   set(DEPENDENCIES ${DEPENDENCIES} ${PMDSDK_LIBRARIES})
 endif(NOT PMDSDK_FOUND)
 
 configure_file(Version.h.in ${PROJECT_SOURCE_DIR}/version.h)
+set(HEADERS ${HEADERS} version.h)
 
-macro(ADD_MSVC_PRECOMPILED_HEADER PrecompiledHeader PrecompiledSource SourcesVar)
+macro(add_msvc_pch PrecompiledHeader PrecompiledSource SourcesVar)
   if(MSVC)
     get_filename_component(PrecompiledBasename ${PrecompiledHeader} NAME_WE)
     set(PrecompiledBinary "$(IntDir)/${PrecompiledBasename}.pch")
@@ -112,14 +135,16 @@ macro(ADD_MSVC_PRECOMPILED_HEADER PrecompiledHeader PrecompiledSource SourcesVar
                                            OBJECT_DEPENDS "${PrecompiledBinary}")  
     list(APPEND ${SourcesVar} ${PrecompiledSource})
   endif(MSVC)
-endmacro(ADD_MSVC_PRECOMPILED_HEADER)
+endmacro(add_msvc_pch)
 
 if (MSVC)
-    ADD_MSVC_PRECOMPILED_HEADER("stdafx.h" "stdafx.cpp" SOURCES)
+    add_msvc_pch("stdafx.h" "stdafx.cpp" SOURCES)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 endif(MSVC)
 
-add_executable( OpenARK main.cpp ${SOURCES} )
+source_group("Header Files" *.h)
+
+add_executable( OpenARK main.cpp ${SOURCES} ${HEADERS})
 target_link_libraries( OpenARK ${DEPENDENCIES} )
 set_target_properties( OpenARK PROPERTIES
   COMPILE_FLAGS ${TARGET_COMPILE_FLAGS})
@@ -141,10 +166,10 @@ if(${BUILD_TESTS})
     OpenARK_test/TestCamera.cpp
   )
 
-  ADD_MSVC_PRECOMPILED_HEADER("../stdafx.h" "" TEST_SOURCES)
+  add_msvc_pch("../stdafx.h" "" TEST_SOURCES)
 
   add_executable( OpenARK_test OpenARK_test/test.cpp 
-    OpenARK_test/TestCamera.cpp ${SOURCES})
+    OpenARK_test/TestCamera.cpp ${SOURCES} OpenARK_test/TestCamera.h ${HEADERS})
   target_link_libraries( OpenARK_test ${DEPENDENCIES} )
   set_target_properties( OpenARK_test PROPERTIES
     COMPILE_FLAGS ${TARGET_COMPILE_FLAGS})

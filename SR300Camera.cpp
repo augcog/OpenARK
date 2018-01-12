@@ -3,186 +3,201 @@
 #include "SR300Camera.h"
 #include "Visualizer.h"
 
-using namespace std;
 using namespace Intel::RealSense;
 
-/***
-Private constructor for the Intel RealSense SR300 camera depth sensor
-***/
-SR300Camera::SR300Camera(bool use_live_sensor): dists(nullptr), amps(nullptr), depth_width(0), depth_height(0), sample(nullptr)
-{
-    session->SetCoordinateSystem(CoordinateSystem::COORDINATE_SYSTEM_FRONT_DEFAULT);
+namespace ark {
+    static const int REAL_WID = 640, REAL_HI = 480;
 
-    X_DIMENSION = 640;
-    Y_DIMENSION = 480;
-
-    if (!sm)
+    /***
+    Private constructor for the Intel RealSense SR300 camera depth sensor
+    ***/
+    SR300Camera::SR300Camera(bool use_live_sensor) : dists(nullptr), amps(nullptr), depth_width(0), depth_height(0), sample(nullptr)
     {
-        wprintf_s(L"Unable to create the SenseManager\n");
+        session->SetCoordinateSystem(CoordinateSystem::COORDINATE_SYSTEM_FRONT_DEFAULT);
+
+        // cut off 35 px to eliminate shadow on right
+        X_DIMENSION = REAL_WID - 35;
+        Y_DIMENSION = REAL_HI;
+
+        if (!sm)
+        {
+            wprintf_s(L"Unable to create the SenseManager!\n");
+            return;
+        }
+
+        initCamera();
     }
-    cm = sm->QueryCaptureManager();
-    auto sts = Status::STATUS_DATA_UNAVAILABLE;
 
-    sm->EnableStream(Capture::STREAM_TYPE_DEPTH, X_DIMENSION, Y_DIMENSION, depth_fps);
-    sm->EnableStream(Capture::STREAM_TYPE_IR, X_DIMENSION, Y_DIMENSION, depth_fps);
+    // Initialize camera
+    void SR300Camera::initCamera() {
+        cm = sm->QueryCaptureManager();
+        auto sts = Status::STATUS_DATA_UNAVAILABLE;
 
-    sts = sm->Init();
-    if (sts < Status::STATUS_NO_ERROR)
-    {
-        sm->Close();
-        sm->EnableStream(Capture::STREAM_TYPE_DEPTH);
+        sm->EnableStream(Capture::STREAM_TYPE_DEPTH, REAL_WID, REAL_HI, depth_fps);
+        sm->EnableStream(Capture::STREAM_TYPE_IR, REAL_WID, REAL_HI, depth_fps);
+
         sts = sm->Init();
+        device = cm->QueryDevice();
+    }
+
+    /***
+    Public deconstructor for the SR300 Camera depth sensor
+    ***/
+    SR300Camera::~SR300Camera() {};
+
+    void SR300Camera::destroyInstance()
+    {
+        _badInput = true;
+        printf("closing sensor\n");
+        sm->Close();
+        printf("sensor closed\n");
+    }
+
+    /***
+    Create xyzMap, zMap, ampMap, and flagMap from sensor input
+    ***/
+    void SR300Camera::update()
+    {
+        initializeImages();
+        fillInAmps();
+        fillInZCoords();
+        sm->ReleaseFrame();
+    }
+
+    /***
+    Reads the depth data from the sensor and fills in the matrix
+    ***/
+    void SR300Camera::fillInZCoords()
+    {
+        Status sts = sm->AcquireFrame(true);
+        if (sts < STATUS_NO_ERROR)
+        {
+            if (sts == Status::STATUS_STREAM_CONFIG_CHANGED)
+            {
+                wprintf_s(L"Stream configuration was changed, re-initializing\n");
+                sm->Close();
+                _badInput = true;
+            }
+        }
+
+        sample = sm->QuerySample();
+
+        if (!sample || sample->depth == nullptr) {
+            wprintf_s(L"Couldn't connect to camera, retrying in 0.5s...\n");
+            sm->ReleaseFrame();
+            sm->Close();
+            _badInput = true;
+            cv::waitKey(500);
+            initCamera();
+            return;
+        }
+
+        Image * depthSource = sample->depth, *irSource = sample->ir;
+
+        Image::ImageData depthImage, irImage;
+
+        depthSource->AcquireAccess(Image::ACCESS_READ, Image::PixelFormat::PIXEL_FORMAT_DEPTH_F32, &depthImage);
+
+        ImageInfo imgInfo = depthSource->QueryInfo();
+        depth_width = imgInfo.width;
+        depth_height = imgInfo.height;
+
+        int num_pixels = depth_width * depth_height;
+        Projection * projection = device->CreateProjection();
+        Point3DF32 * pos3D = new Point3DF32[num_pixels];
+
+        sts = projection->QueryVertices(depthSource, &pos3D[0]);
+        depthSource->ReleaseAccess(&depthImage);
+
         if (sts < Status::STATUS_NO_ERROR)
         {
+            wprintf_s(L"Projection was unsuccessful! \n");
             sm->Close();
-            sts = sm->Init();
         }
-    }
 
-    device = cm->QueryDevice();
-}
+        projection->Release();
 
-/***
-Public deconstructor for the SR300 Camera depth sensor
-***/
-SR300Camera::~SR300Camera() {};
+        int pixels_per_row = num_pixels / Y_DIMENSION;
+        xyzMap = cv::Mat(Y_DIMENSION, pixels_per_row, CV_32FC3);
 
-void SR300Camera::destroyInstance()
-{
-    _badInput = true;
-    printf("closing sensor\n");
-    sm->Close();
-    printf("sensor closed\n");
-}
-
-/***
-Create xyzMap, zMap, ampMap, and flagMap from sensor input
-***/
-void SR300Camera::update()
-{
-    initializeImages();
-    fillInAmps();
-    fillInZCoords();
-    sm->ReleaseFrame();
-}
-
-/***
-Reads the depth data from the sensor and fills in the matrix
-***/
-void SR300Camera::fillInZCoords()
-{
-    Status sts = sm ->AcquireFrame(true);
-    if (sts < STATUS_NO_ERROR)
-    {
-        if (sts == Status::STATUS_STREAM_CONFIG_CHANGED)
+        int k = 0;
+        for (int r = 0; r < Y_DIMENSION; ++r)
         {
-            wprintf_s(L"Stream configuration was changed, re-initializing\n");
-            sm ->Close();
-            _badInput = true;
+            Point3f *ptr = xyzMap.ptr<Point3f>(r);
+            for (int c = 0; c < pixels_per_row; ++c) {
+                ptr[c] = Point3f(pos3D[k].x / 1000.0f, pos3D[k].y / 1000.0f, pos3D[k].z / 1000.0f);
+                ++k;
+            }
         }
-    }
 
-    sample = sm->QuerySample();
+        // convert IR image
+        irSource->AcquireAccess(Image::ACCESS_READ, Image::PixelFormat::PIXEL_FORMAT_Y16, &irImage);
 
-    if (!sample || sample->depth == nullptr) {
-        wprintf_s(L"Couldn't connect to camera.\n");
-        sm->Close();
-        _badInput = true;
-        cv::waitKey(100);
-        sts = sm->Init();
-        return;
-    }
+        Converter::ConvertPXCImageToOpenCVMat(irSource, irImage, &this->irImage);
 
-    Image * depthSource = sample->depth, * irSource = sample->ir;
+        irSource->ReleaseAccess(&irImage);
 
-    Image::ImageData depthImage , irImage;
+        cv::Rect rect = cv::Rect(0, 0, X_DIMENSION, Y_DIMENSION);
 
-    depthSource->AcquireAccess(Image::ACCESS_READ, &depthImage);
-    irSource->AcquireAccess(Image::ACCESS_READ, Image::PixelFormat::PIXEL_FORMAT_Y16, &irImage);
-
-    cv::Mat depthImageCV, irImageCV;
-    Converter::ConvertPXCImageToOpenCVMat(depthSource, depthImage, &depthImageCV);
-    Converter::ConvertPXCImageToOpenCVMat(irSource, irImage, &irImageCV);
-
-    this->irImage = irImageCV;
-
-    ImageInfo imgInfo = depthSource->QueryInfo();
-    depth_width = imgInfo.width;
-    depth_height = imgInfo.height;
-
-    int num_pixels = depth_width * depth_height;
-    Projection * projection = device->CreateProjection();
-    Point3DF32 * pos3D = new Point3DF32[num_pixels];
-
-    sts = projection->QueryVertices(depthSource, &pos3D[0]);
-    depthSource->ReleaseAccess(&depthImage);
-    irSource->ReleaseAccess(&irImage);
-
-    if (sts < Status::STATUS_NO_ERROR)
-    {
-        wprintf_s(L"Projection was unsuccessful! \n");
-        sm->Close();
-    }
-
-    projection->Release();
-
-    const int NUM_ROWS = 480;
-    int pixels_per_row = num_pixels / NUM_ROWS;
-    xyzMap = cv::Mat(NUM_ROWS, pixels_per_row, CV_32FC3);
-
-    int k = 0;
-    for (int r = 0; r < NUM_ROWS; ++r)
-    {
-        cv::Vec3f *ptr = xyzMap.ptr<cv::Vec3f>(r);
-        for (int c = 0; c < pixels_per_row; ++c) {
-            ptr[c] = cv::Vec3f(pos3D[k].x / 1000.0f, pos3D[k].y / 1000.0f, pos3D[k].z / 1000.0f);
-            ++k;
+        // crop images to correct dimensions
+        if (this->irImage.rows != Y_DIMENSION || this->irImage.cols != X_DIMENSION) {
+            this->irImage = this->irImage(rect);
         }
+
+        if (xyzMap.rows != Y_DIMENSION || xyzMap.cols != X_DIMENSION) {
+            xyzMap = xyzMap(rect);
+        }
+
+        delete[] pos3D;
     }
 
-    delete[] pos3D;
-}
+    /***
+    Reads the amplitude data from the sensor and fills in the matrix
+    ***/
+    void SR300Camera::fillInAmps()
+    {
+        ampMap.data = nullptr;
+    }
 
-/***
-Reads the amplitude data from the sensor and fills in the matrix
-***/
-void SR300Camera::fillInAmps()
-{
-    ampMap.data = nullptr;
-}
+    /**
+    * Returns the X value at (i, j)
+    */
+    float SR300Camera::getX(int i, int j) const
+    {
+        int flat = j * depth_width * 3 + i * 3;
+        return dists[flat];
+    }
 
-/***
-Returns the X value at (i, j)
-***/
-float SR300Camera::getX(int i, int j) const
-{
-    auto flat = j * depth_width * 3 + i * 3;
-    return dists[flat];
-}
+    /**
+    * Returns the Y value at (i, j)
+    */
+    float SR300Camera::getY(int i, int j) const
+    {
+        int flat = j * depth_width * 3 + i * 3;
+        return dists[flat + 1];
+    }
 
-/***
-Returns the Y value at (i, j)
-***/
-float SR300Camera::getY(int i, int j) const
-{
-    auto flat = j * depth_width * 3 + i * 3;
-    return dists[flat + 1];
-}
+    /**
+    * Returns the Z value at (i, j)
+    */
+    float SR300Camera::getZ(int i, int j) const
+    {
+        auto flat = j * depth_width * 3 + i * 3;
+        return dists[flat + 2];
+    }
 
-/***
-Returns the Z value at (i, j)
-***/
-float SR300Camera::getZ(int i, int j) const
-{
-    auto flat = j * depth_width * 3 + i * 3;
-    return dists[flat + 2];
-}
+    /*
+    * True if has RGB image
+    */
+    bool SR300Camera::hasRGBImage() const {
+        // disabled for now
+        return false;
+    }
 
-bool SR300Camera::hasRGBImage() const {
-    // we do have access to the RGB image, but since it's not used right now we'll disable it
-    return false;
-}
-
-bool SR300Camera::hasIRImage() const {
-    return true;
-}
+    /*
+    * True if has IR image
+    */
+    bool SR300Camera::hasIRImage() const {
+        return irImage.rows > 0;
+    }
+};

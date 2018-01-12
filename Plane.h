@@ -2,147 +2,160 @@
 
 #include "stdafx.h"
 
-/**
-* Class defining a plane object.
-* The plane object will be defined by its regression equation
-* Example on tracking hand and background plane object simulateously
-* @include HandandPlane.cpp
-*/
-class Plane {
-public:
-	Plane();
+namespace ark {
+    /**
+    * Class defining a plane object.
+    * The plane object will be defined by its regression equation
+    * Example on tracking hand and background plane object simulateously
+    * @include HandandPlane.cpp
+    */
+    class Plane {
+    public:
+        Plane();
 
-	/**
-	* Constructs a plane object from a unsegemented xyzMap.
-	* @param [in] src the raw xyzMap.
-	*/
-	explicit Plane(cv::Mat &src);
+        /**
+        * Constructs a plane object from a unsegmented xyzMap.
+        * @param [in] src the raw xyzMap.
+        * @param pts points in the cluster
+        * @param num_pts number of points in pts to use, uses all by default
+        */
+        explicit Plane(const cv::Mat &src, const std::vector<Point2i> & pts, int num_pts = -1);
 
-	/**
-	* Deconstructs the plane object.
-	*/
-	~Plane();
+        /**
+        * Deconstructs the plane object.
+        */
+        ~Plane();
 
-	/**
-	* Initializes all the required point clouds.
-	* @param [in] src the raw xyzMap
-	*/
-	void initializeCloud(cv::Mat &src);
+        /**
+        * Initializes all the required point clouds.
+        */
+        void initializeCloud();
 
-	/**
-	* Returns the PCL representation of the xyzMap.
-	* @return PCL point cloud
-	*/
-	pcl::PointCloud<pcl::PointXYZ>::Ptr getCloud() const;
+        /**
+        * Returns the PCL representation of the xyzMap.
+        * @return PCL point cloud
+        */
+        pcl::PointCloud<pcl::PointXYZ>::Ptr getCloud() const;
 
-	/**
-	* Returns the PCL representatino of a down sampled xyzMap.
-	* @return down sampled PCL point cloud
-	*/
-	pcl::PointCloud<pcl::PointXYZ>::Ptr getDownCloud() const;
+        /**
+        * Returns the PCL representatino of a down sampled xyzMap.
+        * @return down sampled PCL point cloud
+        */
+        pcl::PointCloud<pcl::PointXYZ>::Ptr getDownCloud() const;
 
-	/**
-	* Returns the planar regression equation of the identified plane.
-	* @return coefficients for the planar regression equation
-	*/
-	std::vector<double> getPlaneEquation() const;
+        /**
+        * Returns the planar regression equation of the identified plane.
+        * @return coefficients for the planar regression equation
+        */
+        std::vector<double> getPlaneEquation() const;
 
-	/**
-	* Returns the sphereical regression equation of the identified plane.
-	* @return coefficients for the sphereical regression equation
-	*/
-	std::vector<double> getSphereEquation() const;
+        /**
+        * Returns the sphereical regression equation of the identified plane.
+        * @return coefficients for the sphereical regression equation
+        */
+        std::vector<double> getSphereEquation() const;
 
-	/**
-	* Returns the (i,j) indices for which the plane appears on the xyzMap.
-	* @return vector of (i,j) coordinates defining the points that make up the plane on the xyzMap
-	*/
-	std::vector<cv::Point2i> getPlaneIndicies() const;
+        /**
+        * Returns the (i,j) indices for which the plane appears on the xyzMap.
+        * @return vector of (i,j) coordinates defining the points that make up the plane on the xyzMap
+        */
+        std::vector<Point2i> getPlaneIndicies() const;
 
-	/**
-	* Returns the (i,j) indices for which the plane appears on the xyzMap.
-	* @return vector of (i,j) coordinates defining the points that make up the plane on the xyzMap
-	*/
-	std::vector<cv::Point2i> getSphereIndices() const;
+        /**
+        * Returns the (i,j) indices for which the plane appears on the xyzMap.
+        * @return vector of (i,j) coordinates defining the points that make up the plane on the xyzMap
+        */
+        std::vector<Point2i> getSphereIndices() const;
 
-	/**
-	* Maximum cloud size (pixel) allowed.
-	*/
-	const int CLOUD_SIZE_THRESHOLD = 1000;
+        /**
+        * Maximum cloud size (pixel) allowed.
+        */
+        const int CLOUD_SIZE_THRESHOLD = 1000;
 
-	/**
-	* Maximum distance (mm) allowed between real point and regression equation.
-	*/
-	const double R_SQUARED_DISTANCE_THRESHOLD = 0.0005;
+        /**
+        * Maximum distance (mm) allowed between real point and regression equation.
+        */
+        const double R_SQUARED_DISTANCE_THRESHOLD = 0.005;
 
-private:
-	/**
-	* Performs a series of computations to find the plane.
-	*/
-	int compute();
+    private:
 
-	/**
-	* Computes the normals at every point.
-	* @param [in] normal_estimator a OMP instance of the normal estimator
-	* @param [in] tree a KD-tree used by the normal estimator to preform neareest neighbor searches
-	*/
-	void calculateNormals(pcl::NormalEstimationOMP<pcl::PointXYZ, pcl::Normal> normal_estimator, pcl::search::Search<pcl::PointXYZ>::Ptr tree) const;
+        /**
+        * Find a plane using the random sample consensus (RANSAC) algorithm
+        */
+        int findPlaneRANSAC();
 
-	/**
-	* Down samples the cloud via a median filter.
-	*/
-	void voxelDownsample() const;
+        /**
+        * Performs a series of computations to find the plane.
+        */
+        int compute();
 
-	/**
-	* Aggregates points with like normals.
-	* @param [out] reg equation of the final plane
-	* @param [in] tree KD-tree used for nearest neighbor search
-	*/
-	void regionGrow(pcl::RegionGrowing<pcl::PointXYZ, pcl::Normal> &reg, pcl::search::Search<pcl::PointXYZ>::Ptr tree);
+        /**
+        * Computes the normals at every point.
+        * @param [in] normal_estimator a OMP instance of the normal estimator
+        * @param [in] tree a KD-tree used by the normal estimator to preform neareest neighbor searches
+        */
+        void calculateNormals(pcl::NormalEstimationOMP<pcl::PointXYZ, pcl::Normal> normal_estimator, pcl::search::Search<pcl::PointXYZ>::Ptr tree) const;
 
-	/**
-	* Compute a planar regression equation.
-	* @param [in] ind all the points on the plane
-	*/
-	void computePlaneLSE(pcl::PointIndices &ind);
+        /**
+        * Down samples the cloud via a median filter.
+        */
+        void voxelDownsample() const;
 
-	/**
-	* Compute a sphereical regression equation.
-	* @param [in] ind all the points on the plane
-	*/
-	void computeSphereLSE(pcl::PointIndices &ind);
+        /**
+        * Aggregates points with like normals.
+        * @param [out] reg equation of the final plane
+        * @param [in] tree KD-tree used for nearest neighbor search
+        */
+        void regionGrow(pcl::RegionGrowing<pcl::PointXYZ, pcl::Normal> &reg, pcl::search::Search<pcl::PointXYZ>::Ptr tree);
 
-	/**
-	* Compute all the (i,j) index of the plane points from the planar regression.
-	*/
-	int computePlaneIndices();
+        /**
+        * Compute a planar regression equation.
+        * @param [in] ind all the points on the plane
+        */
+        void computePlaneLSE(pcl::PointIndices &ind);
 
-	/**
-	* Compute all the (i,j) index of the plane points from the sphereical regression.
-	*/
-	int computeSphereIndices();
+        /**
+        * Compute a sphereical regression equation.
+        * @param [in] ind all the points on the plane
+        */
+        void computeSphereLSE(pcl::PointIndices &ind);
 
-	static int drawSphereRegressionPoints(cv::Mat &output_mat, cv::Mat &input_mat, std::vector<double> &equation,
-		const int rowSize, const int colSize, const double threshold, bool clicked);
+        /**
+        * Compute all the (i,j) index of the plane points from the planar regression.
+        */
+        int computePlaneIndices();
 
-	// Private Variables
-	pcl::PointCloud<pcl::PointXYZ>::Ptr *cloud;
-	pcl::PointCloud <pcl::Normal>::Ptr *normals;
-	pcl::PointCloud<pcl::PointXYZ>::Ptr *down_cloud;
-	pcl::PointCloud<pcl::Normal>::Ptr *down_normals;
-	pcl::PointCloud <pcl::PointXYZRGB>::Ptr *colored_cloud;
-	pcl::PointCloud <pcl::PointXYZRGB>::Ptr *upsampled_colored_cloud;
-	std::vector<pcl::PointIndices> clusters;
-	std::vector<double> plane_equation;
-	std::vector<double> sphere_equation;
-	std::vector<cv::Point2i> plane_indices;
-	std::vector<cv::Point2i> sphere_indices;
-	cv::Mat sphere_mat;
-	cv::Mat plane_mat;
-	cv::Mat display_img;
-	cv::Mat depth_img;
-	int num_sphere_points;
-	int num_plane_points;
+        /**
+        * Compute all the (i,j) index of the plane points from the sphereical regression.
+        */
+        int computeSphereIndices();
 
-	const int NUM_CORES = boost::thread::hardware_concurrency();
-};
+        static int drawSphereRegressionPoints(cv::Mat &output_mat, cv::Mat &input_mat, std::vector<double> &equation,
+            const int rowSize, const int colSize, const double threshold, bool clicked);
+
+        // Private Variables
+        pcl::PointCloud<pcl::PointXYZ>::Ptr *cloud;
+        pcl::PointCloud <pcl::Normal>::Ptr *normals;
+        pcl::PointCloud<pcl::PointXYZ>::Ptr *down_cloud;
+        pcl::PointCloud<pcl::Normal>::Ptr *down_normals;
+        pcl::PointCloud <pcl::PointXYZRGB>::Ptr *colored_cloud;
+        pcl::PointCloud <pcl::PointXYZRGB>::Ptr *upsampled_colored_cloud;
+        std::vector<pcl::PointIndices> clusters;
+        std::vector<double> plane_equation;
+        std::vector<double> sphere_equation;
+        std::vector<Point2i> plane_indices;
+        std::vector<Point2i> sphere_indices;
+        cv::Mat sphere_mat;
+        cv::Mat plane_mat;
+        cv::Mat display_img;
+
+        const cv::Mat * depth_img;
+        const std::vector<Point2i> * points;
+        int num_points;
+
+        int num_sphere_points;
+        int num_plane_points;
+
+        const int NUM_CORES = boost::thread::hardware_concurrency();
+    };
+}

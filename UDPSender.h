@@ -10,32 +10,34 @@
 #define BUFLEN 512  //Max length of buffer
 #define PORT 8051   //The port on which to listen for incoming data
 
-/**
-* UDP client.
-* Used to communicate information with game engines such as Unity
-*/
-class UDPSender
-{
-public:
-	/**
-	* Constructs a new UPD sender.
-	*/
-	UDPSender();
+namespace ark {
+    /**
+    * UDP client.
+    * Used to communicate information with game engines such as Unity
+    */
+    class UDPSender
+    {
+    public:
+        /**
+        * Constructs a new UPD sender.
+        */
+        UDPSender();
 
-	/**
-	* Sends a message.
-	* @param message the data to be sent
-	*/
-	int send(std::string message);
+        /**
+        * Sends a message.
+        * @param message the data to be sent
+        */
+        int send(std::string message);
 
-	/**
-	* Close the current connection.
-	*/
-	int close() const;
+        /**
+        * Close the current connection.
+        */
+        int close() const;
 
-	struct sockaddr_in si_other;
-	int s, slen = sizeof(si_other);
-	char buf[BUFLEN];
-	char message[BUFLEN];
-	WSADATA wsa;
-};
+        struct sockaddr_in si_other;
+        int s, slen = sizeof(si_other);
+        char buf[BUFLEN];
+        char message[BUFLEN];
+        WSADATA wsa;
+    };
+}

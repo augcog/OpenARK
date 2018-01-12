@@ -6,94 +6,101 @@
 #include "DepthCamera.h"
 #include "Converter.h"
 
-/**
-* Class defining the behavior of an SR300 Camera.
-* Example on how to read from sensor and visualize its output
-* @include SensorIO.cpp
-*/
-class SR300Camera : public DepthCamera
-{
-public:
-
+namespace ark {
     /**
-    * Public constructor initializing the SR300 Camera.
-    * @param use_live_sensor uses input from real sensor if TRUE. Otherwise reads from input file. Default is set to TRUE.
+    * Class defining the behavior of an SR300 Camera.
+    * Example on how to read from sensor and visualize its output
+    * @include SensorIO.cpp
     */
-    explicit SR300Camera(bool use_live_sensor = true);
+    class SR300Camera : public DepthCamera
+    {
+    public:
 
-    /**
-    * Deconstructor for the SR300 Camera.
-    */
-    ~SR300Camera();
+        /**
+        * Public constructor initializing the SR300 Camera.
+        * @param use_live_sensor uses input from real sensor if TRUE. Otherwise reads from input file. Default is set to TRUE.
+        */
+        explicit SR300Camera(bool use_live_sensor = true);
 
-    /**
-    * Gets new frame from sensor.
-    * Updates xyzMap, ampMap, and flagMap. Resets clusters.
-    */
-    void update() override;
+        /**
+        * Deconstructor for the SR300 Camera.
+        */
+        ~SR300Camera();
 
-    /**
-     * Returns true if an RGB image is available from this camera.
-     */
-    bool hasRGBImage() const;
+        /**
+        * Gets new frame from sensor.
+        * Updates xyzMap, ampMap, and flagMap. Resets clusters.
+        */
+        void update() override;
 
-    /**
-     * Returns true if an infrared (IR) image is available from this camera.
-     */
-    bool hasIRImage() const;
+        /**
+         * Returns true if an RGB image is available from this camera.
+         */
+        bool hasRGBImage() const;
 
-    /**
-    * Gracefully closes the SR300 camera.
-    */
-    void destroyInstance();
+        /**
+         * Returns true if an infrared (IR) image is available from this camera.
+         */
+        bool hasIRImage() const;
 
-private:
-    /**
-    * Getter method for the x-coordinate at (i,j).
-    * @param i ith row
-    * @param j jth column
-    * @return x-coodinate at (i,j)
-    */
-    float getX(int i, int j) const;
+        /**
+        * Gracefully closes the SR300 camera.
+        */
+        void destroyInstance();
 
-    /**
-    * Getter method for the x-coordinate at (i,j).
-    * @param i ith row
-    * @param j jth column
-    * @return x-coodinate at (i,j)
-    */
-    float getY(int i, int j) const;
+    private:
+        /**
+        * Getter method for the x-coordinate at (i,j).
+        * @param i ith row
+        * @param j jth column
+        * @return x-coodinate at (i,j)
+        */
+        float getX(int i, int j) const;
 
-    /**
-    * Getter method for the x-coordinate at (i,j).
-    * @param i ith row
-    * @param j jth column
-    * @return x-coodinate at (i,j)
-    */
-    float getZ(int i, int j) const;
+        /**
+        * Getter method for the x-coordinate at (i,j).
+        * @param i ith row
+        * @param j jth column
+        * @return x-coodinate at (i,j)
+        */
+        float getY(int i, int j) const;
 
-    /**
-    * Update the z-coordinates of the xyzMap.
-    */
-    void fillInZCoords();
+        /**
+        * Getter method for the x-coordinate at (i,j).
+        * @param i ith row
+        * @param j jth column
+        * @return x-coodinate at (i,j)
+        */
+        float getZ(int i, int j) const;
 
-    /**
-    * Update the values in the ampMap.
-    */
-    void fillInAmps();
+        /**
+        * Update the z-coordinates of the xyzMap.
+        */
+        void fillInZCoords();
 
-    //Private Variables
-    float* dists;
-    float* amps;
-    cv::Mat frame;
-    const int depth_fps = 30;
-    int depth_width;
-    int depth_height;
-    cv::Size bufferSize;
-    const Intel::RealSense::Sample *sample;
-    Intel::RealSense::SenseManager *sm = Intel::RealSense::SenseManager::CreateInstance();
-    Intel::RealSense::Session *session = sm->QuerySession();
-    Intel::RealSense::Device *device;
-    Intel::RealSense::CaptureManager *cm;
+        /**
+        * Update the values in the ampMap.
+        */
+        void fillInAmps();
 
-};
+        /**
+         * Initializat the camera
+         */
+        void initCamera();
+
+        //Private Variables
+        float* dists;
+        float* amps;
+        cv::Mat frame;
+        const int depth_fps = 30;
+        int depth_width;
+        int depth_height;
+        cv::Size bufferSize;
+        const Intel::RealSense::Sample *sample;
+        Intel::RealSense::SenseManager *sm = Intel::RealSense::SenseManager::CreateInstance();
+        Intel::RealSense::Session *session = sm->QuerySession();
+        Intel::RealSense::Device *device;
+        Intel::RealSense::CaptureManager *cm;
+
+    };
+}
