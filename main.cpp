@@ -61,6 +61,7 @@ int main() {
         return -1;
     }
 #endif
+    srand(time(NULL))
 
     //RGBCamera *cam = new Webcam(1);
     int frame = 0;
