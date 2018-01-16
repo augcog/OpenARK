@@ -19,9 +19,9 @@ namespace ark {
             return strings_out;
         }
 
-        Point3b colorGenerator()
+        Vec3b colorGenerator()
         {
-            return Point3b(rand() % 256, rand() % 256, rand() % 256);
+            return Vec3b(rand() % 256, rand() % 256, rand() % 256);
         }
 
         float normalize(float a, float b)
@@ -83,14 +83,14 @@ namespace ark {
                 for (int c = c_lower; c < c_upper; c++)
                 {
 
-                    if (xyzMap.at<Point3f>(r, c)[2] != 0)
+                    if (xyzMap.at<Vec3f>(r, c)[2] != 0)
                     {
 
                         double distance = euclideanDistance(pt, Point2i(c, r));
 
                         if (distance != 0)
                         {
-                            average += euclideanDistance(xyzMap.at<Point3f>(pt.y, pt.x), xyzMap.at<Point3f>(r, c)) / distance;
+                            average += euclideanDistance(xyzMap.at<Vec3f>(pt.y, pt.x), xyzMap.at<Vec3f>(r, c)) / distance;
                             count++;
                         }
                     }
@@ -111,13 +111,13 @@ namespace ark {
 
             for (int i = 0; i < points.size(); i++)
             {
-                result.at<Point3f>(points[i]) = 0;
+                result.at<Vec3f>(points[i]) = 0;
             }
 
             return result;
         }
 
-        Point3f averageAroundPoint(cv::Mat xyzMap, Point2i pt, int radius)
+        Vec3f averageAroundPoint(cv::Mat xyzMap, Point2i pt, int radius)
         {
             int r_lower = std::max(0, pt.y - radius);
             int c_lower = std::max(0, pt.x - radius);
@@ -125,11 +125,11 @@ namespace ark {
             int c_upper = std::min(xyzMap.cols - 1, pt.x + radius);
 
             int count = 0;
-            Point3f average(0, 0, 0);
+            Vec3f average(0, 0, 0);
 
             for (int r = r_lower; r <= r_upper; ++r)
             {
-                Point3f * ptr = xyzMap.ptr<Point3f>(r);
+                Vec3f * ptr = xyzMap.ptr<Vec3f>(r);
                 for (int c = c_lower; c <= c_upper; ++c)
                 {
                     if (ptr[c][2] > 0)
@@ -158,7 +158,7 @@ namespace ark {
 
             for (int r = 0; r < xyzMap.rows; ++r)
             {
-                Point3f * ptr = xyzMap.ptr<Point3f>(r);
+                Vec3f * ptr = xyzMap.ptr<Vec3f>(r);
                 for (int c = 0; c < xyzMap.cols; ++c)
                 {
                     if (ptr[c][2] != 0) {
@@ -182,21 +182,21 @@ namespace ark {
             return center;
         }
 
-        static inline float getTriangleArea(Point3f a, Point3f b, Point3f c)
+        static inline float getTriangleArea(Vec3f a, Vec3f b, Vec3f c)
         {
-            Point3f v0 = a - c, v1 = b - c;
-            Point3f cross(v0[1] * v1[2] - v1[1] * v0[2],
+            Vec3f v0 = a - c, v1 = b - c;
+            Vec3f cross(v0[1] * v1[2] - v1[1] * v0[2],
                 v0[2] * v1[0] - v1[2] * v0[0],
                 v0[0] * v1[1] - v1[0] * v0[1]);
             return magnitude(cross) / 2.0f;
         }
 
-        float triangleArea(Point3f a, Point3f b, Point3f c)
+        float triangleArea(Vec3f a, Vec3f b, Vec3f c)
         {
             return getTriangleArea(a, b, c);
         }
 
-        float quadrangleArea(Point3f pts[4])
+        float quadrangleArea(Vec3f pts[4])
         {
             int valid = 0, bad = -1;
             for (int i = 0; i < 4; ++i) {
@@ -230,14 +230,14 @@ namespace ark {
 
             double total = 0.0;
 
-            Point3f * ptr, *nxPtr = depthMap.ptr<Point3f>(0);
+            Vec3f * ptr, *nxPtr = depthMap.ptr<Vec3f>(0);
 
             for (int r = 1; r < depthMap.rows; ++r) {
                 ptr = nxPtr; // reuse previous pointer; upper row
-                nxPtr = depthMap.ptr<Point3f>(r); // lower row
+                nxPtr = depthMap.ptr<Vec3f>(r); // lower row
 
                 //                { top left, top right, bottom left, bottom right}
-                Point3f pts[] = { ptr[0],   ptr[0],    nxPtr[0],    nxPtr[0] };
+                Vec3f pts[] = { ptr[0],   ptr[0],    nxPtr[0],    nxPtr[0] };
                 const int NUM_PTS = (sizeof pts) / (sizeof pts[0]);
 
                 for (int c = 1; c < depthMap.cols; ++c) {
@@ -253,7 +253,7 @@ namespace ark {
 
         double surfaceArea(const cv::Mat & depth_map,
             std::vector<Point2i> & points_ij,
-            std::vector<Point3f> & points_xyz,
+            std::vector<Vec3f> & points_xyz,
             bool sorted, int cluster_size) {
 
             if (cluster_size < 0 || cluster_size >(int)points_ij.size())
@@ -293,7 +293,7 @@ namespace ark {
                         nx >= rowStart[i + 2] || points_ij[nx].x > points_ij[j].x ||
                         points_ij[nx].y - points_ij[j].y > 1) continue;
 
-                    Point3f quad[4] =
+                    Vec3f quad[4] =
                     { points_xyz[j], points_xyz[j + 1], points_xyz[nx], points_xyz[nx + 1] };
 
                     if (points_ij[j + 1].y != points_ij[j].y ||
@@ -327,7 +327,7 @@ namespace ark {
             {
                 for (int c = 0; c < size.width; c++)
                 {
-                    Point3f point = shape.at<Point3f>(r, c);
+                    Vec3f point = shape.at<Vec3f>(r, c);
                     if (point[2] == 0) {
                         continue;
                     }
@@ -342,7 +342,7 @@ namespace ark {
                             continue;
                         }
 
-                        Point3f adjPoint = shape.at<Point3f>(nr, nc);
+                        Vec3f adjPoint = shape.at<Vec3f>(nr, nc);
                         // printf("%d %d %f %f %f\n", nr, nc, adjPoint[0], adjPoint[1], adjPoint[2]);
                         if (adjPoint[2] == 0) {
                             continue;
@@ -376,12 +376,12 @@ namespace ark {
             {
                 for (int c = 0; c < size.width; c++)
                 {
-                    Point3f point = shape.at<Point3f>(r, c);
+                    Vec3f point = shape.at<Vec3f>(r, c);
                     if (point[2] == 0) {
                         continue;
                     }
 
-                    Point3f adj[4];
+                    Vec3f adj[4];
                     bool validPoint[4] = { false };
                     for (int idx = 0; idx < 4; idx++) {
                         int nr = r + dr[idx];
@@ -391,7 +391,7 @@ namespace ark {
                             continue;
                         }
 
-                        Point3f adjPoint = shape.at<Point3f>(nr, nc);
+                        Vec3f adjPoint = shape.at<Vec3f>(nr, nc);
                         // printf("%d %d %f %f %f\n", nr, nc, adjPoint[0], adjPoint[1], adjPoint[2]);
                         if (adjPoint[2] == 0) {
                             continue;
@@ -431,26 +431,26 @@ namespace ark {
         {
             auto num_close = 0;
             //check to see if the neighbor pixels Euclidean distance is within defined max distance
-            if (x - 1 < 0 || depthMap.at<Point3f>(y, x - 1)[2] == 0 ||
-                euclideanDistance(depthMap.at<Point3f>(y, x), depthMap.at<Point3f>(y, x - 1)) < max_distance)
+            if (x - 1 < 0 || depthMap.at<Vec3f>(y, x - 1)[2] == 0 ||
+                euclideanDistance(depthMap.at<Vec3f>(y, x), depthMap.at<Vec3f>(y, x - 1)) < max_distance)
             {
                 num_close++;
             }
 
-            if (x + 1 >= depthMap.cols || depthMap.at<Point3f>(y, x + 1)[2] == 0 ||
-                euclideanDistance(depthMap.at<Point3f>(y, x), depthMap.at<Point3f>(y, x + 1)) < max_distance)
+            if (x + 1 >= depthMap.cols || depthMap.at<Vec3f>(y, x + 1)[2] == 0 ||
+                euclideanDistance(depthMap.at<Vec3f>(y, x), depthMap.at<Vec3f>(y, x + 1)) < max_distance)
             {
                 num_close++;
             }
 
-            if (y - 1 < 0 || depthMap.at<Point3f>(y - 1, x)[2] == 0 ||
-                euclideanDistance(depthMap.at<Point3f>(y, x), depthMap.at<Point3f>(y - 1, x)) < max_distance)
+            if (y - 1 < 0 || depthMap.at<Vec3f>(y - 1, x)[2] == 0 ||
+                euclideanDistance(depthMap.at<Vec3f>(y, x), depthMap.at<Vec3f>(y - 1, x)) < max_distance)
             {
                 num_close++;
             }
 
-            if (y + 1 >= depthMap.rows || depthMap.at<Point3f>(y + 1, x)[2] == 0 ||
-                euclideanDistance(depthMap.at<Point3f>(y, x), depthMap.at<Point3f>(y + 1, x)) < max_distance)
+            if (y + 1 >= depthMap.rows || depthMap.at<Vec3f>(y + 1, x)[2] == 0 ||
+                euclideanDistance(depthMap.at<Vec3f>(y, x), depthMap.at<Vec3f>(y + 1, x)) < max_distance)
             {
                 num_close++;
             }
@@ -463,38 +463,96 @@ namespace ark {
             return false;
         }
 
-
-
-        /***
-        Recursively performs floodfill on depthMap for image segmentation
-        Determines pixels in an image that are similar to a seed pixel and connected to it
-        ***/
-        void floodFill(int x, int y, cv::Mat& depthMap, cv::Mat& mask, double max_distance)
+        /**
+         * Performs floodfill on depthMap
+         */
+        int floodFill(int seed_x, int seed_y, cv::Mat& depthMap,
+            std::vector <Point2i> * output_ij_points,
+            std::vector <Vec3f> * output_xyz_points,
+            double max_distance,
+            cv::Mat * mask)
         {
-            //check to see if the point (x,y) is within the depth image
-            //check to see if the end of recursion by checking if depth map is all zero
-            if (x < 0 || x >= depthMap.cols || y < 0 || y >= depthMap.rows || depthMap.at<Point3f>(y, x)[2] == 0.0)
-                return;
-            //using 4-connectivity to determine if a pixel is connected to another one
-            if (closeEnough(x, y, depthMap, 4, max_distance))
-                //if (closeEnough(x, y, depthMap, 8, max_distance)) //would using 8-connectivity give more accurate results?
+            /*
+            Listing of adjacent points to go to in each floodfill step ((6, 0) means to go right 6).
+            Goes to 6,0, etc to fill in small gaps
+            */
+            static const Point2i nxtPoints[] =
             {
-                //copy the depth map value at (x,y) to mask and zero it out in the depth map
-                mask.at<Point3f>(y, x) = depthMap.at<Point3f>(y, x);
-                depthMap.at<Point3f>(y, x)[0] = 0;
-                depthMap.at<Point3f>(y, x)[1] = 0;
-                depthMap.at<Point3f>(y, x)[2] = 0;
+                Point2i(-6, 0),  
+                Point2i(-1, 0),
+                Point2i(0, -6), 
+                Point2i(0, -1),
+                Point2i(0, 1),
+                Point2i(0, 6),
+                Point2i(1, 0),
+                Point2i(6, 0),   
+            };
+
+            static const int nNxtPoints = (sizeof nxtPoints) / (sizeof nxtPoints[0]);
+
+            // stack for storing the 2d and 3d points
+            static std::vector<std::pair<Point2i, Vec3f> > stk;
+
+            // permanently allocate memory for our stack
+            if (stk.size() <= depthMap.rows * depthMap.cols) {
+                stk.resize(depthMap.rows * depthMap.cols + 1);
             }
 
-            else
-            {
-                return;
+            // add seed to stack
+            Point2i seed = Point2i(seed_x, seed_y);
+            stk[0] = std::make_pair(seed, depthMap.at<Vec3f>(seed));
+
+            // pointer to top (first empty index) of stack
+            int stkPtr = 1;
+            // counts the total number of points visited
+            int total = 0;
+
+            // begin DFS
+            while (stkPtr > 0) {
+                // pop current point from stack
+                Point2i pt = stk[--stkPtr].first;
+                Vec3f & xyz = stk[stkPtr].second;
+
+                if (!util::pointInImage(depthMap, pt)) continue;
+                if (mask) mask->at<Vec3f>(pt) = Vec3f(xyz);
+                depthMap.at<Vec3f>(pt)[2] = 0;
+
+                // put point into the output vectors if provided
+                if (output_ij_points) (*output_ij_points)[total] = pt;
+                if (output_xyz_points) (*output_xyz_points)[total] = xyz;
+
+                // increment the total # of points
+                ++total;
+
+                // go to each adjacent point
+                for (int i = 0; i < nNxtPoints; ++i) {
+                    Point2i adjPt = pt + nxtPoints[i];
+
+                    // stop if outside bound of image
+                    if (!util::pointInImage(depthMap, adjPt)) continue;
+
+                    Vec3f & adjXyz = depthMap.at<Vec3f>(adjPt);
+
+                    // stop if already visited
+                    if (adjXyz[2] == 0) continue;
+
+                    // compute 3D distance
+                    double dist = util::euclideanDistance(xyz, adjXyz);
+                    //scaled_dist_thresh = max_distance;
+
+                    // scale distance for 'skip' points
+                    if (abs(nxtPoints[i].x + nxtPoints[i].y) != 1)
+                        dist /= 4;
+
+                     // update & go to if point is close enough
+                    if (dist < max_distance) {
+                        stk[stkPtr++] = std::make_pair(adjPt, Vec3f(adjXyz));
+                        depthMap.at<Vec3f>(adjPt)[2] = 0;
+                    }
+                }
             }
-            //try the floodfill algorithm recursively for all the 4-connected neighbors
-            floodFill(x + 1, y, depthMap, mask, max_distance);
-            floodFill(x - 1, y, depthMap, mask, max_distance);
-            floodFill(x, y + 1, depthMap, mask, max_distance);
-            floodFill(x, y - 1, depthMap, mask, max_distance);
+
+            return total;
         }
 
         // convert an ij point to an angle, clockwise from the bottom (0 at 0 degrees, 2 * PI at 360)
@@ -545,17 +603,17 @@ namespace ark {
         }
 
         template <class T>
-        double magnitude(cv::Point_<T> pt){
+        double magnitude(cv::Point_<T> pt) {
             return sqrt(pt.x * pt.x + pt.y * pt.y);
         }
 
         template <class T>
-        double magnitude(cv::Point3_<T> pt){
+        double magnitude(cv::Point3_<T> pt) {
             return sqrt(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
         }
 
         template <class T, int n>
-        double magnitude(cv::Vec<T, n> pt){
+        double magnitude(cv::Vec<T, n> pt) {
             double sm = 0;
             for (int i = 0; i < n; ++i) sm += pt[i] * pt[i];
             return sqrt(sm);
@@ -571,10 +629,10 @@ namespace ark {
         template double magnitude<ushort, 3>(cv::Vec<ushort, 3> pt);
         template double magnitude<int, 3>(cv::Vec<int, 3> pt);
         template double magnitude<float, 3>(cv::Vec<float, 3> pt);
-        template double magnitude<double, 3>(cv::Vec<double,3> pt);
+        template double magnitude<double, 3>(cv::Vec<double, 3> pt);
 
         // get angle between two 3D vectors through a central point
-        double angleBetween3DVec(Point3f a, Point3f b, Point3f center) {
+        double angleBetween3DVec(Vec3f a, Vec3f b, Vec3f center) {
             a -= center; b -= center;
             cv::Mat A(a), B(b);
             double dot = A.dot(B), mA = magnitude(a), mB = magnitude(b);
@@ -604,7 +662,7 @@ namespace ark {
         }
 
         void radixSortPoints(std::vector<Point2i> & points, int wid, int hi, int num_pts,
-            std::vector<Point3f> * points_xyz) {
+            std::vector<Vec3f> * points_xyz) {
             if (num_pts < 0 || num_pts >(int)points.size())
                 num_pts = (int)points.size();
 
@@ -614,7 +672,7 @@ namespace ark {
             static int lastWid, lastHi;
 
             static Point2i * tmpPoints = nullptr;
-            static Point3f * tmpXyzPoints = nullptr;
+            static Vec3f * tmpXyzPoints = nullptr;
 
             int maxDim = std::max(wid, hi);
 
@@ -627,7 +685,7 @@ namespace ark {
                 bucketSize = new int[maxDim];
 
                 tmpPoints = new Point2i[wid * hi];
-                tmpXyzPoints = new Point3f[wid * hi];
+                tmpXyzPoints = new Vec3f[wid * hi];
 
                 lastWid = wid;
                 lastHi = hi;
@@ -681,7 +739,7 @@ namespace ark {
             pt.x = std::min(std::max(0, pt.x), m.cols - 1);
             pt.y = std::min(std::max(0, pt.y), m.rows - 1);
 
-            Point3f xyz = m.at<Point3f>(pt);
+            Vec3f xyz = m.at<Vec3f>(pt);
             Point2i orig_pt = pt;
 
             // travel in a spiral and find a nearby nonzero point
@@ -708,7 +766,7 @@ namespace ark {
                 ++tries;
                 if (!pointInImage(m, pt)) continue;
 
-                xyz = m.at<Point3f>(pt);
+                xyz = m.at<Vec3f>(pt);
             }
 
             if (tries >= max_tries) return orig_pt;
@@ -718,7 +776,7 @@ namespace ark {
 
         Point2f largestInscribedCircle(const std::vector<Point2i> & contour,
             const std::vector<Point2i> & cluster,
-            const std::vector<Point3f> & cluster_xyz,
+            const std::vector<Vec3f> & cluster_xyz,
             int cluster_size, float top_dist_thresh,
             double * radius, int step) {
 
@@ -729,7 +787,7 @@ namespace ark {
             int besti = 0;
 
             int top_row_pts = 0;
-            Point3f top_avg = Point3f(0, 0, 0);
+            Vec3f top_avg = Vec3f(0, 0, 0);
 
             for (unsigned i = 0; i < cluster.size(); ++i) {
                 if (i && cluster[i].y != cluster[i - 1].y)
@@ -799,7 +857,7 @@ namespace ark {
             }
         }
 
-        bool PointComparer<Point3f>::operator()(Point3f a, Point3f b) {
+        bool PointComparer<Vec3f>::operator()(Vec3f a, Vec3f b) {
             for (int i = (compare_y_then_x ? 2 : 0);
                 (compare_y_then_x ? i >= 0 : i < 3);
                 (compare_y_then_x ? --i : ++i)) {

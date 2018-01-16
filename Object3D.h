@@ -50,7 +50,7 @@ namespace ark {
         * @param points_to_use optionally, the number of points in 'points' to use for the object. By default, uses all points.
         */
         Object3D::Object3D(std::vector<Point2i> & points_ij,
-            std::vector<Point3f> & points_xyz,
+            std::vector<Vec3f> & points_xyz,
             cv::Mat & depth_map,
             const ObjectParams * params = nullptr,
             bool sorted = false,
@@ -106,7 +106,7 @@ namespace ark {
         * Gets approximate center of mass of object in real coordinates
         * @return center of object in real (xyz) coordinates
         */
-        Point3f getCenter();
+        Vec3f getCenter();
 
         /**
         * Gets bounding box of object in screen coordinates
@@ -153,7 +153,7 @@ namespace ark {
         /**
          * Stores xyz coordinates of points in this cluster
          */
-        std::vector<Point3f> * points_xyz = nullptr;
+        std::vector<Vec3f> * points_xyz = nullptr;
 
         /**
          * Stores number of points in 'points' used in the cluster
@@ -229,7 +229,7 @@ namespace ark {
         /**
          * Center of the object in real coordinates.
          */
-        Point3f centerXyz = Point3f(FLT_MAX, 0.0f, 0.0f);
+        Vec3f centerXyz = Vec3f(FLT_MAX, 0.0f, 0.0f);
 
         /**
          * Average depth of object
@@ -246,12 +246,15 @@ namespace ark {
         * @param cluster input cluster (defaults to &this->xyzMap)
         * @param points vector of points in cluster (defaults to this->points_xyz)
         * @param points_xyz vector of xyz coords of points in cluster (defaults to this->points_xyz)
+        * @param num_points number of points
         * @param params parameters for hand detection (defaults to this->params)
         */
         Hand * checkForHand(const cv::Mat * cluster = nullptr,
             const std::vector<Point2i> * points = nullptr,
-            const std::vector<Point3f> * points_xyz = nullptr,
-            const ObjectParams * params = nullptr) const;
+            const std::vector<Vec3f> * points_xyz = nullptr,
+            cv::Point topLeftPt = cv::Point(INT_MAX, 0),
+            int num_points = -1,
+            const ObjectParams * params = nullptr);
 
         /**
         * Subroutine for computing the largest contour, convex hull, etc. for this 3D object.
@@ -283,10 +286,29 @@ namespace ark {
         void morph(int erode_sz, int dilate_sz = -1, bool dilate_first = false, bool gray_map = false);
 
         /**
-         * Compute the grayscale z-coordinate image of this cluster from the normal xyz map
+         * Compute the cluster's contour
+         * @param input depth map containing points within bounding box of cluster
+         * @param points points in cluster (absolute coordinates)
+         * @param points_xyz xyz coords of points in cluster
+         * @param topLeftPt top left point of cluster
+         * @param num_points number of points in cluster
          * @param thresh the minimum z-coordinate of a point on the depth image below which the pixel will be zeroed out
          */
-        void computeGrayMap(int thresh = 0);
+        void Object3D::computeContour(const cv::Mat & xyzMap, const std::vector<cv::Point> * points, 
+            const std::vector<cv::Vec3f> * points_xyz,
+            cv::Point topLeftPt, int num_points);
+
+        /**
+         * Compute the grayscale z-coordinate image of this cluster from the normal xyz map
+         * @param input depth map containing points within bounding box of cluster
+         * @param points points in cluster (absolute coordinates)
+         * @param points_xyz xyz coords of points in cluster
+         * @param topLeftPt top left point of cluster
+         * @param num_points number of points in cluster
+         * @param thresh the minimum z-coordinate of a point on the depth image below which the pixel will be zeroed out
+         */
+        void computeGrayMap(const cv::Mat & xyzMap, const std::vector<cv::Point> * points, 
+            const std::vector<cv::Vec3f> * points_xyz, cv::Point topLeftPt, int num_points,  int thresh = 0);
 
         /*
          * Parameters for object/hand detection

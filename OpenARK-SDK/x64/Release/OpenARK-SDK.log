@@ -1,1 +1,738 @@
-﻿
+﻿  Calibration.cpp
+  Converter.cpp
+  DepthCamera.cpp
+  Hand.cpp
+  HandClassifier.cpp
+  HandFeatureExtractor.cpp
+C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include\utility(123): warning C4244: 'initializing': conversion from 'const double' to 'int', possible loss of data
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include\algorithm(2691): note: see reference to function template instantiation 'std::pair<int,int>::pair<double,int,void,0>(const std::pair<double,int> &)' being compiled
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include\algorithm(2690): note: see reference to function template instantiation 'std::pair<int,int>::pair<double,int,void,0>(const std::pair<double,int> &)' being compiled
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include\algorithm(2748): note: see reference to function template instantiation 'std::pair<_RanIt,_RanIt> std::_Partition_by_median_guess_unchecked<_RanIt,_Pr>(_RanIt,_RanIt,_Pr &)' being compiled
+          with
+          [
+              _RanIt=std::pair<double,int> *,
+              _Pr=std::greater<std::pair<int,int>>
+          ]
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include\algorithm(2776): note: see reference to function template instantiation 'void std::_Sort_unchecked1<_RanIt,__int64,_Pr>(_RanIt,_RanIt,_Diff,_Pr &)' being compiled
+          with
+          [
+              _RanIt=std::pair<double,int> *,
+              _Pr=std::greater<std::pair<int,int>>,
+              _Diff=__int64
+          ]
+  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include\algorithm(2784): note: see reference to function template instantiation 'void std::_Sort_unchecked<std::pair<double,int>*,_Pr>(_RanIt,_RanIt,_Pr &)' being compiled
+          with
+          [
+              _Pr=std::greater<std::pair<int,int>>,
+              _RanIt=std::pair<double,int> *
+          ]
+  ..\HandFeatureExtractor.cpp(200): note: see reference to function template instantiation 'void std::sort<std::_Vector_iterator<std::_Vector_val<std::_Simple_types<std::pair<double,int>>>>,std::greater<std::pair<int,int>>>(_RanIt,_RanIt,_Pr)' being compiled
+          with
+          [
+              _RanIt=std::_Vector_iterator<std::_Vector_val<std::_Simple_types<std::pair<double,int>>>>,
+              _Pr=std::greater<std::pair<int,int>>
+          ]
+  HandFeatureExtractor.h
+  Object3D.cpp
+  Plane.cpp
+D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/bind/bind.hpp(592): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/bind/bind.hpp(1282): note: see reference to function template instantiation 'R boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>::operator ()<int,F,boost::_bi::rrlist5<A1,std::A2,A3,A4,A5>>(boost::_bi::type<int>,F &,A &,long)' being compiled
+          with
+          [
+              R=int,
+              F=boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>,
+              A1=const pcl::PointCloud<pcl::PointXYZ> &,
+              A2=std::size_t,
+              A3=double,
+              A4=std::vector<int,std::allocator<int>> &,
+              A5=std::vector<float,std::allocator<float>> &,
+              A=boost::_bi::rrlist5<const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/bind/bind.hpp(1282): note: see reference to function template instantiation 'R boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>::operator ()<int,F,boost::_bi::rrlist5<A1,std::A2,A3,A4,A5>>(boost::_bi::type<int>,F &,A &,long)' being compiled
+          with
+          [
+              R=int,
+              F=boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>,
+              A1=const pcl::PointCloud<pcl::PointXYZ> &,
+              A2=std::size_t,
+              A3=double,
+              A4=std::vector<int,std::allocator<int>> &,
+              A5=std::vector<float,std::allocator<float>> &,
+              A=boost::_bi::rrlist5<const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(138): note: see reference to function template instantiation 'int boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>::operator ()<const pcl::PointCloud<pcl::PointXYZ>&,std::T,double,std::vector<_Ty,std::allocator<_Ty>>&,std::vector<float,std::allocator<float>>&>(A1,A2 &&,A3 &&,A4,A5)' being compiled
+          with
+          [
+              _Ty=int,
+              T=std::size_t,
+              A1=const pcl::PointCloud<pcl::PointXYZ> &,
+              A2=std::size_t,
+              A3=double,
+              A4=std::vector<int,std::allocator<int>> &,
+              A5=std::vector<float,std::allocator<float>> &
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(138): note: see reference to function template instantiation 'int boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>::operator ()<const pcl::PointCloud<pcl::PointXYZ>&,std::T,double,std::vector<_Ty,std::allocator<_Ty>>&,std::vector<float,std::allocator<float>>&>(A1,A2 &&,A3 &&,A4,A5)' being compiled
+          with
+          [
+              _Ty=int,
+              T=std::size_t,
+              A1=const pcl::PointCloud<pcl::PointXYZ> &,
+              A2=std::size_t,
+              A3=double,
+              A4=std::vector<int,std::allocator<int>> &,
+              A5=std::vector<float,std::allocator<float>> &
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(132): note: while compiling class template member function 'int boost::detail::function::function_obj_invoker5<FunctionObj,R,T0,std::T1,T2,T3,T4>::invoke(boost::detail::function::function_buffer &,T0,std::T1,T2,T3,T4)'
+          with
+          [
+              FunctionObj=boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>,
+              R=int,
+              T0=const pcl::PointCloud<pcl::PointXYZ> &,
+              T1=std::size_t,
+              T2=double,
+              T3=std::vector<int,std::allocator<int>> &,
+              T4=std::vector<float,std::allocator<float>> &
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(937): note: see reference to function template instantiation 'int boost::detail::function::function_obj_invoker5<FunctionObj,R,T0,std::T1,T2,T3,T4>::invoke(boost::detail::function::function_buffer &,T0,std::T1,T2,T3,T4)' being compiled
+          with
+          [
+              FunctionObj=boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>,
+              R=int,
+              T0=const pcl::PointCloud<pcl::PointXYZ> &,
+              T1=std::size_t,
+              T2=double,
+              T3=std::vector<int,std::allocator<int>> &,
+              T4=std::vector<float,std::allocator<float>> &
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(937): note: see reference to class template instantiation 'boost::detail::function::function_obj_invoker5<FunctionObj,R,T0,std::T1,T2,T3,T4>' being compiled
+          with
+          [
+              FunctionObj=boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>,
+              R=int,
+              T0=const pcl::PointCloud<pcl::PointXYZ> &,
+              T1=std::size_t,
+              T2=double,
+              T3=std::vector<int,std::allocator<int>> &,
+              T4=std::vector<float,std::allocator<float>> &
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(727): note: see reference to function template instantiation 'void boost::function5<R,T0,std::T1,T2,T3,T4>::assign_to<Functor>(Functor)' being compiled
+          with
+          [
+              R=int,
+              T0=const pcl::PointCloud<pcl::PointXYZ> &,
+              T1=std::size_t,
+              T2=double,
+              T3=std::vector<int,std::allocator<int>> &,
+              T4=std::vector<float,std::allocator<float>> &,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(727): note: see reference to function template instantiation 'void boost::function5<R,T0,std::T1,T2,T3,T4>::assign_to<Functor>(Functor)' being compiled
+          with
+          [
+              R=int,
+              T0=const pcl::PointCloud<pcl::PointXYZ> &,
+              T1=std::size_t,
+              T2=double,
+              T3=std::vector<int,std::allocator<int>> &,
+              T4=std::vector<float,std::allocator<float>> &,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(1074): note: see reference to function template instantiation 'boost::function5<R,T0,std::T1,T2,T3,T4>::function5<boost::_bi::bind_t<R,boost::_mfi::cmf5<R,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>>(Functor,int)' being compiled
+          with
+          [
+              R=int,
+              T0=const pcl::PointCloud<pcl::PointXYZ> &,
+              T1=std::size_t,
+              T2=double,
+              T3=std::vector<int,std::allocator<int>> &,
+              T4=std::vector<float,std::allocator<float>> &,
+              _Ty=int,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(1073): note: see reference to function template instantiation 'boost::function5<R,T0,std::T1,T2,T3,T4>::function5<boost::_bi::bind_t<R,boost::_mfi::cmf5<R,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>>(Functor,int)' being compiled
+          with
+          [
+              R=int,
+              T0=const pcl::PointCloud<pcl::PointXYZ> &,
+              T1=std::size_t,
+              T2=double,
+              T3=std::vector<int,std::allocator<int>> &,
+              T4=std::vector<float,std::allocator<float>> &,
+              _Ty=int,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(1126): note: see reference to function template instantiation 'boost::function<int (const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &)>::function<boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<_Ty,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>>(Functor,int)' being compiled
+          with
+          [
+              _Ty=int,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(1126): note: see reference to function template instantiation 'boost::function<int (const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &)>::function<boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<_Ty,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>>(Functor,int)' being compiled
+          with
+          [
+              _Ty=int,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>
+          ]
+  D:\PCL 1.8.0\include\pcl-1.8\pcl/features/impl/feature.hpp(160): note: see reference to function template instantiation 'boost::function<int (const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &)> &boost::function<int (const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<_Ty,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &)>::operator =<boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<_Ty,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>>(Functor)' being compiled
+          with
+          [
+              _Ty=int,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>
+          ]
+  D:\PCL 1.8.0\include\pcl-1.8\pcl/features/impl/feature.hpp(160): note: see reference to function template instantiation 'boost::function<int (const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &)> &boost::function<int (const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<_Ty,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &)>::operator =<boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<_Ty,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>>(Functor)' being compiled
+          with
+          [
+              _Ty=int,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>
+          ]
+  D:\PCL 1.8.0\include\pcl-1.8\pcl/features/impl/feature.hpp(94): note: while compiling class template member function 'bool pcl::Feature<PointInT,PointOutT>::initCompute(void)'
+          with
+          [
+              PointInT=pcl::PointXYZ,
+              PointOutT=pcl::Normal
+          ]
+  D:\PCL 1.8.0\include\pcl-1.8\pcl/features/impl/feature.hpp(191): note: see reference to function template instantiation 'bool pcl::Feature<PointInT,PointOutT>::initCompute(void)' being compiled
+          with
+          [
+              PointInT=pcl::PointXYZ,
+              PointOutT=pcl::Normal
+          ]
+  D:\PCL 1.8.0\include\pcl-1.8\pcl/features/normal_3d.h(200): note: see reference to class template instantiation 'pcl::Feature<PointInT,PointOutT>' being compiled
+          with
+          [
+              PointInT=pcl::PointXYZ,
+              PointOutT=pcl::Normal
+          ]
+  D:\PCL 1.8.0\include\pcl-1.8\pcl/features/normal_3d_omp.h(55): note: see reference to class template instantiation 'pcl::NormalEstimation<PointInT,PointOutT>' being compiled
+          with
+          [
+              PointInT=pcl::PointXYZ,
+              PointOutT=pcl::Normal
+          ]
+  ..\Plane.cpp(71): note: see reference to class template instantiation 'pcl::NormalEstimationOMP<pcl::PointXYZ,pcl::Normal>' being compiled
+D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/bind/bind.hpp(592): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/bind/bind.hpp(666): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/bind/bind.hpp(1282): note: see reference to function template instantiation 'R boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<T>>::operator ()<int,F,boost::_bi::rrlist5<A1,std::A2,A3,A4,A5>>(boost::_bi::type<T>,F &,A &,long)' being compiled
+          with
+          [
+              R=int,
+              T=int,
+              F=boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &,unsigned int>,
+              A1=const pcl::PointCloud<pcl::PointXYZ> &,
+              A2=std::size_t,
+              A3=double,
+              A4=std::vector<int,std::allocator<int>> &,
+              A5=std::vector<float,std::allocator<float>> &,
+              A=boost::_bi::rrlist5<const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/bind/bind.hpp(1282): note: see reference to function template instantiation 'R boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<T>>::operator ()<int,F,boost::_bi::rrlist5<A1,std::A2,A3,A4,A5>>(boost::_bi::type<T>,F &,A &,long)' being compiled
+          with
+          [
+              R=int,
+              T=int,
+              F=boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &,unsigned int>,
+              A1=const pcl::PointCloud<pcl::PointXYZ> &,
+              A2=std::size_t,
+              A3=double,
+              A4=std::vector<int,std::allocator<int>> &,
+              A5=std::vector<float,std::allocator<float>> &,
+              A=boost::_bi::rrlist5<const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(138): note: see reference to function template instantiation 'int boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<T>>>::operator ()<const pcl::PointCloud<pcl::PointXYZ>&,unsigned __int64,double,std::vector<_Ty,std::allocator<_Ty>>&,std::vector<float,std::allocator<float>>&>(A1,A2 &&,A3 &&,A4,A5)' being compiled
+          with
+          [
+              _Ty=int,
+              T=int,
+              A1=const pcl::PointCloud<pcl::PointXYZ> &,
+              A2=std::size_t,
+              A3=double,
+              A4=std::vector<int,std::allocator<int>> &,
+              A5=std::vector<float,std::allocator<float>> &
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(138): note: see reference to function template instantiation 'int boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<T>>>::operator ()<const pcl::PointCloud<pcl::PointXYZ>&,unsigned __int64,double,std::vector<_Ty,std::allocator<_Ty>>&,std::vector<float,std::allocator<float>>&>(A1,A2 &&,A3 &&,A4,A5)' being compiled
+          with
+          [
+              _Ty=int,
+              T=int,
+              A1=const pcl::PointCloud<pcl::PointXYZ> &,
+              A2=std::size_t,
+              A3=double,
+              A4=std::vector<int,std::allocator<int>> &,
+              A5=std::vector<float,std::allocator<float>> &
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(132): note: while compiling class template member function 'int boost::detail::function::function_obj_invoker5<FunctionObj,R,T0,std::T1,T2,T3,T4>::invoke(boost::detail::function::function_buffer &,T0,std::T1,T2,T3,T4)'
+          with
+          [
+              FunctionObj=boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<int>>>,
+              R=int,
+              T0=const pcl::PointCloud<pcl::PointXYZ> &,
+              T1=std::size_t,
+              T2=double,
+              T3=std::vector<int,std::allocator<int>> &,
+              T4=std::vector<float,std::allocator<float>> &
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(937): note: see reference to function template instantiation 'int boost::detail::function::function_obj_invoker5<FunctionObj,R,T0,std::T1,T2,T3,T4>::invoke(boost::detail::function::function_buffer &,T0,std::T1,T2,T3,T4)' being compiled
+          with
+          [
+              FunctionObj=boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<int>>>,
+              R=int,
+              T0=const pcl::PointCloud<pcl::PointXYZ> &,
+              T1=std::size_t,
+              T2=double,
+              T3=std::vector<int,std::allocator<int>> &,
+              T4=std::vector<float,std::allocator<float>> &
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(937): note: see reference to class template instantiation 'boost::detail::function::function_obj_invoker5<FunctionObj,R,T0,std::T1,T2,T3,T4>' being compiled
+          with
+          [
+              FunctionObj=boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<int>>>,
+              R=int,
+              T0=const pcl::PointCloud<pcl::PointXYZ> &,
+              T1=std::size_t,
+              T2=double,
+              T3=std::vector<int,std::allocator<int>> &,
+              T4=std::vector<float,std::allocator<float>> &
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(727): note: see reference to function template instantiation 'void boost::function5<R,T0,std::T1,T2,T3,T4>::assign_to<Functor>(Functor)' being compiled
+          with
+          [
+              R=int,
+              T0=const pcl::PointCloud<pcl::PointXYZ> &,
+              T1=std::size_t,
+              T2=double,
+              T3=std::vector<int,std::allocator<int>> &,
+              T4=std::vector<float,std::allocator<float>> &,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<int>>>
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(727): note: see reference to function template instantiation 'void boost::function5<R,T0,std::T1,T2,T3,T4>::assign_to<Functor>(Functor)' being compiled
+          with
+          [
+              R=int,
+              T0=const pcl::PointCloud<pcl::PointXYZ> &,
+              T1=std::size_t,
+              T2=double,
+              T3=std::vector<int,std::allocator<int>> &,
+              T4=std::vector<float,std::allocator<float>> &,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<int>>>
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(1074): note: see reference to function template instantiation 'boost::function5<R,T0,std::T1,T2,T3,T4>::function5<boost::_bi::bind_t<R,boost::_mfi::cmf6<R,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<T>>>>(Functor,int)' being compiled
+          with
+          [
+              R=int,
+              T0=const pcl::PointCloud<pcl::PointXYZ> &,
+              T1=std::size_t,
+              T2=double,
+              T3=std::vector<int,std::allocator<int>> &,
+              T4=std::vector<float,std::allocator<float>> &,
+              _Ty=int,
+              T=int,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<int>>>
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(1073): note: see reference to function template instantiation 'boost::function5<R,T0,std::T1,T2,T3,T4>::function5<boost::_bi::bind_t<R,boost::_mfi::cmf6<R,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<T>>>>(Functor,int)' being compiled
+          with
+          [
+              R=int,
+              T0=const pcl::PointCloud<pcl::PointXYZ> &,
+              T1=std::size_t,
+              T2=double,
+              T3=std::vector<int,std::allocator<int>> &,
+              T4=std::vector<float,std::allocator<float>> &,
+              _Ty=int,
+              T=int,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<int>>>
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(1126): note: see reference to function template instantiation 'boost::function<int (const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &)>::function<boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<_Ty,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<T>>>>(Functor,int)' being compiled
+          with
+          [
+              _Ty=int,
+              T=int,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<int>>>
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(1126): note: see reference to function template instantiation 'boost::function<int (const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &)>::function<boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<_Ty,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<T>>>>(Functor,int)' being compiled
+          with
+          [
+              _Ty=int,
+              T=int,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<int>>>
+          ]
+  D:\PCL 1.8.0\include\pcl-1.8\pcl/features/impl/feature.hpp(149): note: see reference to function template instantiation 'boost::function<int (const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &)> &boost::function<int (const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<_Ty,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &)>::operator =<boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<_Ty,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<T>>>>(Functor)' being compiled
+          with
+          [
+              _Ty=int,
+              T=int,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<int>>>
+          ]
+  D:\PCL 1.8.0\include\pcl-1.8\pcl/features/impl/feature.hpp(149): note: see reference to function template instantiation 'boost::function<int (const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &)> &boost::function<int (const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<_Ty,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &)>::operator =<boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<_Ty,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<T>>>>(Functor)' being compiled
+          with
+          [
+              _Ty=int,
+              T=int,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<int>>>
+          ]
+  RGBCamera.cpp
+  SR300Camera.cpp
+  SensorIO.cpp
+  StreamingAverager.cpp
+  UDPSender.cpp
+  Util.cpp
+  Visualizer.cpp
+D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/bind/bind.hpp(592): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/bind/bind.hpp(1282): note: see reference to function template instantiation 'R boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<PointInT>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>::operator ()<int,F,boost::_bi::rrlist5<A1,std::A2,A3,A4,A5>>(boost::_bi::type<int>,F &,A &,long)' being compiled
+          with
+          [
+              R=int,
+              PointInT=pcl::PointXYZ,
+              F=boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>,
+              A1=const pcl::PointCloud<pcl::PointXYZ> &,
+              A2=std::size_t,
+              A3=double,
+              A4=std::vector<int,std::allocator<int>> &,
+              A5=std::vector<float,std::allocator<float>> &,
+              A=boost::_bi::rrlist5<const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/bind/bind.hpp(1282): note: see reference to function template instantiation 'R boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<PointInT>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>::operator ()<int,F,boost::_bi::rrlist5<A1,std::A2,A3,A4,A5>>(boost::_bi::type<int>,F &,A &,long)' being compiled
+          with
+          [
+              R=int,
+              PointInT=pcl::PointXYZ,
+              F=boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>,
+              A1=const pcl::PointCloud<pcl::PointXYZ> &,
+              A2=std::size_t,
+              A3=double,
+              A4=std::vector<int,std::allocator<int>> &,
+              A5=std::vector<float,std::allocator<float>> &,
+              A=boost::_bi::rrlist5<const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(138): note: see reference to function template instantiation 'int boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<PointInT>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<PointInT>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>::operator ()<const pcl::PointCloud<pcl::PointXYZ>&,std::T,double,std::vector<_Ty,std::allocator<_Ty>>&,std::vector<float,std::allocator<float>>&>(A1,A2 &&,A3 &&,A4,A5)' being compiled
+          with
+          [
+              PointInT=pcl::PointXYZ,
+              _Ty=int,
+              T=std::size_t,
+              A1=const pcl::PointCloud<pcl::PointXYZ> &,
+              A2=std::size_t,
+              A3=double,
+              A4=std::vector<int,std::allocator<int>> &,
+              A5=std::vector<float,std::allocator<float>> &
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(138): note: see reference to function template instantiation 'int boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<PointInT>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<PointInT>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>::operator ()<const pcl::PointCloud<pcl::PointXYZ>&,std::T,double,std::vector<_Ty,std::allocator<_Ty>>&,std::vector<float,std::allocator<float>>&>(A1,A2 &&,A3 &&,A4,A5)' being compiled
+          with
+          [
+              PointInT=pcl::PointXYZ,
+              _Ty=int,
+              T=std::size_t,
+              A1=const pcl::PointCloud<pcl::PointXYZ> &,
+              A2=std::size_t,
+              A3=double,
+              A4=std::vector<int,std::allocator<int>> &,
+              A5=std::vector<float,std::allocator<float>> &
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(132): note: while compiling class template member function 'int boost::detail::function::function_obj_invoker5<FunctionObj,R,T0,std::T1,T2,T3,T4>::invoke(boost::detail::function::function_buffer &,T0,std::T1,T2,T3,T4)'
+          with
+          [
+              FunctionObj=boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>,
+              R=int,
+              T0=const pcl::PointCloud<pcl::PointXYZ> &,
+              T1=std::size_t,
+              T2=double,
+              T3=std::vector<int,std::allocator<int>> &,
+              T4=std::vector<float,std::allocator<float>> &
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(937): note: see reference to function template instantiation 'int boost::detail::function::function_obj_invoker5<FunctionObj,R,T0,std::T1,T2,T3,T4>::invoke(boost::detail::function::function_buffer &,T0,std::T1,T2,T3,T4)' being compiled
+          with
+          [
+              FunctionObj=boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>,
+              R=int,
+              T0=const pcl::PointCloud<pcl::PointXYZ> &,
+              T1=std::size_t,
+              T2=double,
+              T3=std::vector<int,std::allocator<int>> &,
+              T4=std::vector<float,std::allocator<float>> &
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(937): note: see reference to class template instantiation 'boost::detail::function::function_obj_invoker5<FunctionObj,R,T0,std::T1,T2,T3,T4>' being compiled
+          with
+          [
+              FunctionObj=boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>,
+              R=int,
+              T0=const pcl::PointCloud<pcl::PointXYZ> &,
+              T1=std::size_t,
+              T2=double,
+              T3=std::vector<int,std::allocator<int>> &,
+              T4=std::vector<float,std::allocator<float>> &
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(727): note: see reference to function template instantiation 'void boost::function5<R,T0,std::T1,T2,T3,T4>::assign_to<Functor>(Functor)' being compiled
+          with
+          [
+              R=int,
+              T0=const pcl::PointCloud<pcl::PointXYZ> &,
+              T1=std::size_t,
+              T2=double,
+              T3=std::vector<int,std::allocator<int>> &,
+              T4=std::vector<float,std::allocator<float>> &,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(727): note: see reference to function template instantiation 'void boost::function5<R,T0,std::T1,T2,T3,T4>::assign_to<Functor>(Functor)' being compiled
+          with
+          [
+              R=int,
+              T0=const pcl::PointCloud<pcl::PointXYZ> &,
+              T1=std::size_t,
+              T2=double,
+              T3=std::vector<int,std::allocator<int>> &,
+              T4=std::vector<float,std::allocator<float>> &,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(1074): note: see reference to function template instantiation 'boost::function5<R,T0,std::T1,T2,T3,T4>::function5<boost::_bi::bind_t<R,boost::_mfi::cmf5<R,pcl::search::Search<PointInT>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<PointInT>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>>(Functor,int)' being compiled
+          with
+          [
+              R=int,
+              T0=const pcl::PointCloud<pcl::PointXYZ> &,
+              T1=std::size_t,
+              T2=double,
+              T3=std::vector<int,std::allocator<int>> &,
+              T4=std::vector<float,std::allocator<float>> &,
+              PointInT=pcl::PointXYZ,
+              _Ty=int,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(1073): note: see reference to function template instantiation 'boost::function5<R,T0,std::T1,T2,T3,T4>::function5<boost::_bi::bind_t<R,boost::_mfi::cmf5<R,pcl::search::Search<PointInT>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<PointInT>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>>(Functor,int)' being compiled
+          with
+          [
+              R=int,
+              T0=const pcl::PointCloud<pcl::PointXYZ> &,
+              T1=std::size_t,
+              T2=double,
+              T3=std::vector<int,std::allocator<int>> &,
+              T4=std::vector<float,std::allocator<float>> &,
+              PointInT=pcl::PointXYZ,
+              _Ty=int,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(1126): note: see reference to function template instantiation 'boost::function<int (const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &)>::function<boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<PointInT>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<_Ty,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<PointInT>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>>(Functor,int)' being compiled
+          with
+          [
+              _Ty=int,
+              PointInT=pcl::PointXYZ,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(1126): note: see reference to function template instantiation 'boost::function<int (const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &)>::function<boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<PointInT>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<_Ty,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<PointInT>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>>(Functor,int)' being compiled
+          with
+          [
+              _Ty=int,
+              PointInT=pcl::PointXYZ,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>
+          ]
+  D:\PCL 1.8.0\include\pcl-1.8\pcl/features/impl/feature.hpp(160): note: see reference to function template instantiation 'boost::function<int (const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &)> &boost::function<int (const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<_Ty,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &)>::operator =<boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<PointInT>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<_Ty,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<PointInT>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>>(Functor)' being compiled
+          with
+          [
+              _Ty=int,
+              PointInT=pcl::PointXYZ,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>
+          ]
+  D:\PCL 1.8.0\include\pcl-1.8\pcl/features/impl/feature.hpp(160): note: see reference to function template instantiation 'boost::function<int (const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &)> &boost::function<int (const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<_Ty,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &)>::operator =<boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<PointInT>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<_Ty,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<PointInT>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>>(Functor)' being compiled
+          with
+          [
+              _Ty=int,
+              PointInT=pcl::PointXYZ,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf5<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,int,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>,boost::_bi::list6<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>>>
+          ]
+  D:\PCL 1.8.0\include\pcl-1.8\pcl/features/impl/feature.hpp(94): note: while compiling class template member function 'bool pcl::Feature<PointInT,PointOutT>::initCompute(void)'
+          with
+          [
+              PointInT=pcl::PointXYZ,
+              PointOutT=pcl::Normal
+          ]
+  D:\PCL 1.8.0\include\pcl-1.8\pcl/features/impl/feature.hpp(191): note: see reference to function template instantiation 'bool pcl::Feature<PointInT,PointOutT>::initCompute(void)' being compiled
+          with
+          [
+              PointInT=pcl::PointXYZ,
+              PointOutT=pcl::Normal
+          ]
+  D:\PCL 1.8.0\include\pcl-1.8\pcl/features/normal_3d.h(200): note: see reference to class template instantiation 'pcl::Feature<PointInT,PointOutT>' being compiled
+          with
+          [
+              PointInT=pcl::PointXYZ,
+              PointOutT=pcl::Normal
+          ]
+  ..\Visualizer.cpp(186): note: see reference to class template instantiation 'pcl::NormalEstimation<pcl::PointXYZ,pcl::Normal>' being compiled
+D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/bind/bind.hpp(592): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/bind/bind.hpp(666): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/bind/bind.hpp(1282): note: see reference to function template instantiation 'R boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<PointInT>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<T>>::operator ()<int,F,boost::_bi::rrlist5<A1,std::A2,A3,A4,A5>>(boost::_bi::type<T>,F &,A &,long)' being compiled
+          with
+          [
+              R=int,
+              PointInT=pcl::PointXYZ,
+              T=int,
+              F=boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &,unsigned int>,
+              A1=const pcl::PointCloud<pcl::PointXYZ> &,
+              A2=std::size_t,
+              A3=double,
+              A4=std::vector<int,std::allocator<int>> &,
+              A5=std::vector<float,std::allocator<float>> &,
+              A=boost::_bi::rrlist5<const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/bind/bind.hpp(1282): note: see reference to function template instantiation 'R boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<PointInT>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<T>>::operator ()<int,F,boost::_bi::rrlist5<A1,std::A2,A3,A4,A5>>(boost::_bi::type<T>,F &,A &,long)' being compiled
+          with
+          [
+              R=int,
+              PointInT=pcl::PointXYZ,
+              T=int,
+              F=boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &,unsigned int>,
+              A1=const pcl::PointCloud<pcl::PointXYZ> &,
+              A2=std::size_t,
+              A3=double,
+              A4=std::vector<int,std::allocator<int>> &,
+              A5=std::vector<float,std::allocator<float>> &,
+              A=boost::_bi::rrlist5<const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &>
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(138): note: see reference to function template instantiation 'int boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<PointInT>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<PointInT>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<T>>>::operator ()<const pcl::PointCloud<pcl::PointXYZ>&,unsigned __int64,double,std::vector<_Ty,std::allocator<_Ty>>&,std::vector<float,std::allocator<float>>&>(A1,A2 &&,A3 &&,A4,A5)' being compiled
+          with
+          [
+              PointInT=pcl::PointXYZ,
+              _Ty=int,
+              T=int,
+              A1=const pcl::PointCloud<pcl::PointXYZ> &,
+              A2=std::size_t,
+              A3=double,
+              A4=std::vector<int,std::allocator<int>> &,
+              A5=std::vector<float,std::allocator<float>> &
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(138): note: see reference to function template instantiation 'int boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<PointInT>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<PointInT>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<T>>>::operator ()<const pcl::PointCloud<pcl::PointXYZ>&,unsigned __int64,double,std::vector<_Ty,std::allocator<_Ty>>&,std::vector<float,std::allocator<float>>&>(A1,A2 &&,A3 &&,A4,A5)' being compiled
+          with
+          [
+              PointInT=pcl::PointXYZ,
+              _Ty=int,
+              T=int,
+              A1=const pcl::PointCloud<pcl::PointXYZ> &,
+              A2=std::size_t,
+              A3=double,
+              A4=std::vector<int,std::allocator<int>> &,
+              A5=std::vector<float,std::allocator<float>> &
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(132): note: while compiling class template member function 'int boost::detail::function::function_obj_invoker5<FunctionObj,R,T0,std::T1,T2,T3,T4>::invoke(boost::detail::function::function_buffer &,T0,std::T1,T2,T3,T4)'
+          with
+          [
+              FunctionObj=boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<int>>>,
+              R=int,
+              T0=const pcl::PointCloud<pcl::PointXYZ> &,
+              T1=std::size_t,
+              T2=double,
+              T3=std::vector<int,std::allocator<int>> &,
+              T4=std::vector<float,std::allocator<float>> &
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(937): note: see reference to function template instantiation 'int boost::detail::function::function_obj_invoker5<FunctionObj,R,T0,std::T1,T2,T3,T4>::invoke(boost::detail::function::function_buffer &,T0,std::T1,T2,T3,T4)' being compiled
+          with
+          [
+              FunctionObj=boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<int>>>,
+              R=int,
+              T0=const pcl::PointCloud<pcl::PointXYZ> &,
+              T1=std::size_t,
+              T2=double,
+              T3=std::vector<int,std::allocator<int>> &,
+              T4=std::vector<float,std::allocator<float>> &
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(937): note: see reference to class template instantiation 'boost::detail::function::function_obj_invoker5<FunctionObj,R,T0,std::T1,T2,T3,T4>' being compiled
+          with
+          [
+              FunctionObj=boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<int>>>,
+              R=int,
+              T0=const pcl::PointCloud<pcl::PointXYZ> &,
+              T1=std::size_t,
+              T2=double,
+              T3=std::vector<int,std::allocator<int>> &,
+              T4=std::vector<float,std::allocator<float>> &
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(727): note: see reference to function template instantiation 'void boost::function5<R,T0,std::T1,T2,T3,T4>::assign_to<Functor>(Functor)' being compiled
+          with
+          [
+              R=int,
+              T0=const pcl::PointCloud<pcl::PointXYZ> &,
+              T1=std::size_t,
+              T2=double,
+              T3=std::vector<int,std::allocator<int>> &,
+              T4=std::vector<float,std::allocator<float>> &,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<int>>>
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(727): note: see reference to function template instantiation 'void boost::function5<R,T0,std::T1,T2,T3,T4>::assign_to<Functor>(Functor)' being compiled
+          with
+          [
+              R=int,
+              T0=const pcl::PointCloud<pcl::PointXYZ> &,
+              T1=std::size_t,
+              T2=double,
+              T3=std::vector<int,std::allocator<int>> &,
+              T4=std::vector<float,std::allocator<float>> &,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<int>>>
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(1074): note: see reference to function template instantiation 'boost::function5<R,T0,std::T1,T2,T3,T4>::function5<boost::_bi::bind_t<R,boost::_mfi::cmf6<R,pcl::search::Search<PointInT>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<PointInT>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<T>>>>(Functor,int)' being compiled
+          with
+          [
+              R=int,
+              T0=const pcl::PointCloud<pcl::PointXYZ> &,
+              T1=std::size_t,
+              T2=double,
+              T3=std::vector<int,std::allocator<int>> &,
+              T4=std::vector<float,std::allocator<float>> &,
+              PointInT=pcl::PointXYZ,
+              _Ty=int,
+              T=int,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<int>>>
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(1073): note: see reference to function template instantiation 'boost::function5<R,T0,std::T1,T2,T3,T4>::function5<boost::_bi::bind_t<R,boost::_mfi::cmf6<R,pcl::search::Search<PointInT>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<PointInT>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<T>>>>(Functor,int)' being compiled
+          with
+          [
+              R=int,
+              T0=const pcl::PointCloud<pcl::PointXYZ> &,
+              T1=std::size_t,
+              T2=double,
+              T3=std::vector<int,std::allocator<int>> &,
+              T4=std::vector<float,std::allocator<float>> &,
+              PointInT=pcl::PointXYZ,
+              _Ty=int,
+              T=int,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<int>>>
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(1126): note: see reference to function template instantiation 'boost::function<int (const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &)>::function<boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<PointInT>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<_Ty,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<PointInT>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<T>>>>(Functor,int)' being compiled
+          with
+          [
+              _Ty=int,
+              PointInT=pcl::PointXYZ,
+              T=int,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<int>>>
+          ]
+  D:\PCL 1.8.0\3rdParty\Boost\include\boost-1_61\boost/function/function_template.hpp(1126): note: see reference to function template instantiation 'boost::function<int (const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &)>::function<boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<PointInT>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<_Ty,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<PointInT>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<T>>>>(Functor,int)' being compiled
+          with
+          [
+              _Ty=int,
+              PointInT=pcl::PointXYZ,
+              T=int,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<int>>>
+          ]
+  D:\PCL 1.8.0\include\pcl-1.8\pcl/features/impl/feature.hpp(149): note: see reference to function template instantiation 'boost::function<int (const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &)> &boost::function<int (const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<_Ty,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &)>::operator =<boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<PointInT>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<_Ty,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<PointInT>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<T>>>>(Functor)' being compiled
+          with
+          [
+              _Ty=int,
+              PointInT=pcl::PointXYZ,
+              T=int,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<int>>>
+          ]
+  D:\PCL 1.8.0\include\pcl-1.8\pcl/features/impl/feature.hpp(149): note: see reference to function template instantiation 'boost::function<int (const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<int,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &)> &boost::function<int (const pcl::PointCloud<pcl::PointXYZ> &,std::size_t,double,std::vector<_Ty,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &)>::operator =<boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<PointInT>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<_Ty,std::allocator<_Ty>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<PointInT>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<T>>>>(Functor)' being compiled
+          with
+          [
+              _Ty=int,
+              PointInT=pcl::PointXYZ,
+              T=int,
+              Functor=boost::_bi::bind_t<int,boost::_mfi::cmf6<int,pcl::search::Search<pcl::PointXYZ>,const pcl::PointCloud<pcl::PointXYZ> &,int,double,std::vector<int,std::allocator<int>> &,std::vector<float,std::allocator<float>> &,unsigned int>,boost::_bi::list7<boost::reference_wrapper<boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>>,boost::arg<1>,boost::arg<2>,boost::arg<3>,boost::arg<4>,boost::arg<5>,boost::_bi::value<int>>>
+          ]
+  Webcam.cpp
+  svm.cpp
+x64\Release\HandClassifier.obj : warning LNK4042: object specified more than once; extras ignored
+x64\Release\HandFeatureExtractor.obj : warning LNK4042: object specified more than once; extras ignored
+LINK : warning LNK4098: defaultlib 'LIBCMT' conflicts with use of other libs; use /NODEFAULTLIB:library
+  Generating code
+  105 of 2128 functions ( 4.9%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    114 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+  OpenARK-SDK.vcxproj -> D:\Programming\3VR\OpenARK\x64\Release\OpenARK-SDK.dll
+  OpenARK-SDK.vcxproj -> D:\Programming\3VR\OpenARK\x64\Release\OpenARK-SDK.pdb (Full PDB)

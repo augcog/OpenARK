@@ -33,20 +33,20 @@ namespace ark {
         cv::Mat mask = cv::Mat::zeros(xyzMap.rows, xyzMap.cols, xyzMap.type());
 
         std::vector<Point2i> pts(xyzMap.rows * xyzMap.cols + 1);
-        std::vector<Point3f> pts_xyz(xyzMap.rows * xyzMap.cols + 1);
+        std::vector<Vec3f> pts_xyz(xyzMap.rows * xyzMap.cols + 1);
 
-        static const Point3f zeros = Point3f(0, 0, 0);
+        static const Vec3f zeros = Vec3f(0, 0, 0);
 
         for (int r = 0; r < xyzMap.rows; ++r)
         {
-            Point3f * ptr = xyzMap.ptr<Point3f>(r);
+            Vec3f * ptr = xyzMap.ptr<Vec3f>(r);
 
             for (int c = 0; c < xyzMap.cols; ++c)
             {
                 if (ptr[c][2] > 0)
                 {
                     int points_in_comp =
-                        floodFill(c, r, xyzMap, &pts, &pts_xyz, max_distance, mask);
+                        util::floodFill(c, r, xyzMap, &pts, &pts_xyz, max_distance, &mask);
 
                     if (points_in_comp > min_points)
                     {
@@ -60,7 +60,7 @@ namespace ark {
                     }
 
                     for (int i = 0; i < points_in_comp; ++i) {
-                        mask.at<Point3f>(pts[i]) = zeros;
+                        mask.at<Vec3f>(pts[i]) = zeros;
                     }
                 }
             }
@@ -70,7 +70,7 @@ namespace ark {
     void DepthCamera::construct3DObject(
         std::vector<Object3D> * output_objects,
         std::vector<Point2i> * points_ij,
-        std::vector<Point3f> * points_xyz, cv::Mat * depth_map,
+        std::vector<Vec3f> * points_xyz, cv::Mat * depth_map,
         const ObjectParams * params) {
 
         Object3D obj = Object3D(*points_ij, *points_xyz, *depth_map,
@@ -88,22 +88,28 @@ namespace ark {
             cv::Mat xyzMap = this->xyzMap.clone();
 
             std::vector<Point2i> allIjPoints(xyzMap.rows * xyzMap.cols + 1);
-            std::vector<Point3f> allXyzPoints(xyzMap.rows * xyzMap.cols + 1);
+            std::vector<Vec3f> allXyzPoints(xyzMap.rows * xyzMap.cols + 1);
 
-            const Point3f zeros = Point3f(0, 0, 0);
+            const Vec3f zeros = Vec3f(0, 0, 0);
+
+            int clusterMinPoints;
+            if (params->clusterMinPoints == -1)
+                clusterMinPoints = xyzMap.rows * xyzMap.cols / 30;
+            else
+                clusterMinPoints = params->clusterMinPoints;
 
             for (int r = 0; r < xyzMap.rows; r += params->clusterInterval)
             {
-                Point3f * ptr = xyzMap.ptr<Point3f>(r);
+                Vec3f * ptr = xyzMap.ptr<Vec3f>(r);
 
                 for (int c = 0; c < xyzMap.cols; c += params->clusterInterval)
                 {
                     if (ptr[c][2] > 0)
                     {
-                        int points_in_comp = floodFill(c, r, xyzMap,
+                        int points_in_comp = util::floodFill(c, r, xyzMap,
                             &allIjPoints, &allXyzPoints, params->clusterMaxDistance);
 
-                        if (points_in_comp > params->clusterMinPoints)
+                        if (points_in_comp >= clusterMinPoints)
                         {
                             // if matching required conditions, construct 3D object
                             Object3D obj = Object3D(allIjPoints, allXyzPoints, this->xyzMap,
@@ -189,98 +195,6 @@ namespace ark {
         return _badInput;
     }
 
-    /**
-     * Performs floodfill on depthMap
-     */
-    int DepthCamera::floodFill(int seed_x, int seed_y, cv::Mat& depthMap,
-        std::vector <Point2i> * output_ij_points,
-        std::vector <Point3f> * output_xyz_points,
-        double max_distance,
-        cv::Mat& mask)
-    {
-        /*
-        Listing of adjacent points to go to in each floodfill step ((6, 0) means to go right 6).
-        Goes to 6,0, etc to fill in small gaps
-        */
-        static const Point2i nxtPoints[] =
-        {
-            //Point2i(-6, 0),  
-            Point2i(-1, 0),
-            //Point2i(0, -6), 
-            Point2i(0, -1),
-            Point2i(0, 1),
-            //Point2i(0, 6),
-            Point2i(1, 0),
-            //Point2i(6, 0),   
-        };
-
-        static const int nNxtPoints = (sizeof nxtPoints) / (sizeof nxtPoints[0]);
-
-        // stack for storing the 2d and 3d points
-        static std::vector<std::pair<Point2i, Point3f> > stk;
-
-        // permanently allocate memory for our stack
-        if (stk.size() <= depthMap.rows * depthMap.cols) {
-            stk.resize(depthMap.rows * depthMap.cols + 1);
-        }
-
-        // add seed to stack
-        Point2i seed = Point2i(seed_x, seed_y);
-        stk[0] = std::make_pair(seed, depthMap.at<Point3f>(seed));
-
-        // pointer to top (first empty index) of stack
-        int stkPtr = 1;
-        // counts the total number of points visited
-        int total = 0;
-
-        // begin DFS
-        while (stkPtr > 0) {
-            // pop current point from stack
-            Point2i pt = stk[--stkPtr].first;
-            Point3f & xyz = stk[stkPtr].second;
-
-            if (!util::pointInImage(depthMap, pt)) continue;
-            if (mask.rows) mask.at<Point3f>(pt) = Point3f(xyz);
-            depthMap.at<Point3f>(pt)[2] = 0;
-
-            // put point into the output vectors if provided
-            if (output_ij_points) (*output_ij_points)[total] = pt;
-            if (output_xyz_points) (*output_xyz_points)[total] = xyz;
-
-            // increment the total # of points
-            ++total;
-
-            // go to each adjacent point
-            for (int i = 0; i < nNxtPoints; ++i) {
-                Point2i adjPt = pt + nxtPoints[i];
-
-                // stop if outside bound of image
-                if (!util::pointInImage(depthMap, adjPt)) continue;
-
-                Point3f & adjXyz = depthMap.at<Point3f>(adjPt);
-
-                // stop if already visited
-                if (adjXyz[2] == 0) continue;
-
-                // compute 3D distance
-                double dist = util::euclideanDistance(xyz, adjXyz);
-                //scaled_dist_thresh = max_distance;
-
-         //// scale distance threshold for points with higher distance
-         //if (abs(nxtPoints[i].x + nxtPoints[i].y) != 1)
-             //scaled_dist_thresh *= 4;
-
-         // update & go to if point is close enough
-                if (dist < max_distance) {
-                    stk[stkPtr++] = std::make_pair(adjPt, Point3f(adjXyz));
-                    depthMap.at<Point3f>(adjPt)[2] = 0;
-                }
-            }
-        }
-
-        return total;
-    }
-
     /***
     Remove noise on zMap and xyzMap based on INVALID_FLAG_VALUE and CONFIDENCE_THRESHOLD
     ***/
@@ -289,7 +203,7 @@ namespace ark {
         int nonZero = 0;
         for (int r = 0; r < xyzMap.rows; ++r)
         {
-            Point3f * ptr = xyzMap.ptr<Point3f>(r);
+            Vec3f * ptr = xyzMap.ptr<Vec3f>(r);
             float * ampptr = ampMap.ptr<float>(r);
 
             for (int c = 0; c < xyzMap.cols; ++c)

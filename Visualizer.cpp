@@ -27,7 +27,7 @@ namespace ark {
         return img;
     }
 
-    cv::Mat Visualizer::visualizeXYZMap(cv::Mat &xyzMap)
+    cv::Mat Visualizer::visualizeXYZMap(const cv::Mat &xyzMap)
     {
         cv::Mat channels[3];
         cv::split(xyzMap, channels);
@@ -51,19 +51,21 @@ namespace ark {
 
         cv::circle(displayImg, hand.center_ij, (int)(unitWid * 10), cv::Scalar(255, 0, 0));
 
-        Point2i box = Point2i(unitWid * 7, unitWid * 7);
+        Point2i box = Point2i(unitWid * 6, unitWid * 6);
         cv::rectangle(displayImg, hand.wrist_ij[0] - box, hand.wrist_ij[0] + box,
-            cv::Scalar(0, 255, 255), unitWid * 2.0);
+            cv::Scalar(255, 255, 0), unitWid * 1.5);
         cv::rectangle(displayImg, hand.wrist_ij[1] - box, hand.wrist_ij[1] + box,
-            cv::Scalar(0, 255, 255), unitWid * 2.0);
+            cv::Scalar(255, 255, 0), unitWid * 1.5);
+
+        //cv::line(displayImg, hand.wrist_ij[0], hand.wrist_ij[1], cv::Scalar(255, 255, 0), roundf(unitWid * 2));
 
         cv::circle(displayImg, hand.center_ij, hand.circle_radius,
             cv::Scalar(100, 100, 100), 1);
 
         for (int i = 0; i < std::min(hand.fingers_ij.size(), hand.defects_ij.size()); ++i)
         {
-            cv::circle(displayImg, hand.fingers_ij[i], (int)(unitWid * 6), cv::Scalar(0, 0, 255), -1);
-            cv::line(displayImg, hand.defects_ij[i], hand.fingers_ij[i], cv::Scalar(0, 0, 255), (int)(unitWid * 2));
+            cv::line(displayImg, hand.defects_ij[i], hand.fingers_ij[i], cv::Scalar(0, 150, 255), roundf(unitWid * 2));
+            cv::circle(displayImg, hand.fingers_ij[i], (int)(unitWid * 7), cv::Scalar(0, 0, 255), -1);
 
             std::stringstream sstr;
             sstr << setprecision(1) << std::fixed << util::euclideanDistance(hand.defects_xyz[i], hand.fingers_xyz[i]) * 100;
@@ -72,7 +74,7 @@ namespace ark {
                 (hand.defects_ij[i] + hand.fingers_ij[i]) / 2 - Point2i(15, 0), 0, 0.7 * unitWid, cv::Scalar(0, 255, 255), 1);
 
             cv::circle(displayImg, hand.defects_ij[i], (int)(unitWid * 5), cv::Scalar(255, 0, 200), -1);
-            cv::line(displayImg, hand.defects_ij[i], hand.center_ij, cv::Scalar(255, 0, 200), (int)(unitWid * 2));
+            cv::line(displayImg, hand.defects_ij[i], hand.center_ij, cv::Scalar(255, 0, 200), roundf(unitWid * 2));
 
             sstr.str("");
             sstr << util::euclideanDistance(hand.defects_xyz[i], hand.center_xyz) * 100;
@@ -81,11 +83,9 @@ namespace ark {
                 sstr.str(),
                 (hand.defects_ij[i] + hand.center_ij) / 2 - Point2i(15, 0), 0, 0.4 * unitWid, cv::Scalar(0, 255, 255), 1);
 
-
-
-            cv::putText(displayImg,
-                std::to_string(hand.fingers_ij.size() - i),
-                hand.fingers_ij[i] + Point2i(-6, -18), 0, 0.7 * unitWid, cv::Scalar(255, 0, 255), 1);
+            //cv::putText(displayImg,
+            //    std::to_string(hand.fingers_ij.size() - i),
+            //    hand.fingers_ij[i] + Point2i(-6, -18), 0, 0.7 * unitWid, cv::Scalar(255, 0, 255), 1);
         }
 
         return displayImg;
@@ -143,9 +143,9 @@ namespace ark {
             for (auto c = 0; c < colSize; c++)
             {
 
-                double x = input_mat.at<Point3f>(r, c)[0];
-                double y = input_mat.at<Point3f>(r, c)[1];
-                double z = input_mat.at<Point3f>(r, c)[2];
+                double x = input_mat.at<Vec3f>(r, c)[0];
+                double y = input_mat.at<Vec3f>(r, c)[1];
+                double z = input_mat.at<Vec3f>(r, c)[2];
 
                 if (z == 0)
                 {

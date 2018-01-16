@@ -1,8 +1,5 @@
 #include "stdafx.h"
-#include "version.h"
-
 #include "Plane.h"
-#include "Visualizer.h"
 
 namespace ark {
     Plane::Plane()
@@ -10,57 +7,29 @@ namespace ark {
 
     }
 
-    Plane::Plane(const cv::Mat &src, const std::vector<Point2i> & pts, int num_pts)
+    Plane::Plane(std::vector<cv::Point> * points, std::vector<cv::Vec3f> * points_xyz, int num_points)
     {
-        depth_img = &src;
-        this->points = &pts;
-        this->num_points = num_pts;
+        if (num_points == -1) num_points = points->size();
+        if (num_points < CLOUD_SIZE_THRESHOLD) return;
 
-        if (num_pts < 0 || num_pts > pts.size())
-            num_pts = (int)pts.size();
+        this->num_points = num_points;
 
-        if (num_pts < CLOUD_SIZE_THRESHOLD) return;
+        this->points = points;
+        this->points_xyz = points_xyz;
 
+        // Initialize Variables
+        cloud = new pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud <pcl::PointXYZ>);
+        normals = new pcl::PointCloud <pcl::Normal>::Ptr(new pcl::PointCloud <pcl::Normal>);
+        down_cloud = new pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
+        down_normals = new pcl::PointCloud<pcl::Normal>::Ptr(new pcl::PointCloud<pcl::Normal>);
+        upsampled_colored_cloud = new pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
         initializeCloud();
 
         compute();
-        //findPlaneRANSAC();
     }
 
     Plane::~Plane()
     {
-    }
-
-    int Plane::findPlaneRANSAC()
-    {
-        // referencing: http://pointclouds.org/documentation/tutorials/planar_segmentation.php
-
-        pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
-        pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
-        pcl::SACSegmentation<pcl::PointXYZ> seg;
-
-        seg.setOptimizeCoefficients(true);
-        seg.setModelType(pcl::SACMODEL_PLANE);
-        seg.setMethodType(pcl::SAC_RANSAC);
-        seg.setDistanceThreshold(0.01);
-
-        seg.setInputCloud(*cloud);
-        seg.segment(*inliers, *coefficients);
-
-        if (inliers->indices.size() == 0) {
-            num_plane_points = 0;
-            return -1;
-        }
-
-        plane_equation.resize(4);
-
-        for (int i = 0; i < 4; ++i) {
-            plane_equation[i] = coefficients->values[i];
-        }
-
-        num_plane_points = computePlaneIndices();
-
-        return 0;
     }
 
     int Plane::compute()
@@ -69,8 +38,7 @@ namespace ark {
 
         // calculate normals
         pcl::NormalEstimationOMP<pcl::PointXYZ, pcl::Normal> normal_estimator;
-        auto ptr = boost::make_shared<pcl::search::KdTree<pcl::PointXYZ>>();
-        auto tree = boost::static_pointer_cast<pcl::search::Search<pcl::PointXYZ>>(ptr);
+        auto tree = boost::static_pointer_cast<pcl::search::Search<pcl::PointXYZ>>(boost::make_shared<pcl::search::KdTree<pcl::PointXYZ>>());
         calculateNormals(normal_estimator, tree);
 
         // region grow with normals
@@ -78,14 +46,18 @@ namespace ark {
         regionGrow(reg, tree);
 
         // find index of dominant plane
-        int index_max = 0;
-        for (int i = 1; i < clusters.size(); ++i)
+        auto index_max = -1;
+        for (auto i = 0; i < clusters.size(); i++)
         {
-            if (clusters[i].indices.size() > clusters[index_max].indices.size())
+            if (index_max == -1 || clusters[i].indices.size() > clusters[index_max].indices.size())
+            {
                 index_max = i;
+            }
         }
-
-        if (clusters.size() == 0) return -1;
+        if (index_max == -1)
+        {
+            return -1;
+        }
 
         computePlaneLSE(clusters[index_max]);
         computeSphereLSE(clusters[index_max]);
@@ -161,50 +133,24 @@ namespace ark {
     int Plane::computePlaneIndices()
     {
         plane_indices.clear();
-        int num_points_detected = 0;
 
+        int num_points_detected = 0;
         for (int i = 0; i < num_points; ++i)
         {
-            const Point2i * pt = &(*points)[i];
+            cv::Vec3f & v = (*points_xyz)[i];
+            double x = v[0], y = v[1], z = v[2];
 
-            const Point3f vec = depth_img->at<Point3f>(*pt);
-            double x = vec[0], y = vec[1], z = vec[2];
-            if (plane_equation.size() == 4) {
-                double a = plane_equation[0], b = plane_equation[1], c = plane_equation[2], d = plane_equation[3];
+            if (z > 0)
+            {
+                double z_hat = plane_equation[0] * x + plane_equation[1] * y + plane_equation[2];
+                double r_squared = (z - z_hat) * (z - z_hat);
 
-                if (z > 0)
+                if (r_squared < R_SQUARED_DISTANCE_THRESHOLD)
                 {
-                    double dist =
-                        abs(a * x + b * y + c * z + d) /
-                        sqrt(a*a + b*b + c*c);
-
-                    if (dist < R_SQUARED_DISTANCE_THRESHOLD)
-                    {
-                        plane_indices.push_back(Point2i(pt->x, pt->y));
-                        ++num_points_detected;
-                    }
+                    plane_indices.push_back((*points)[i]);
+                    num_points_detected++;
                 }
             }
-            else {
-                if (z > 0)
-                {
-                    double a = plane_equation[0], b = plane_equation[1], c = plane_equation[2];
-                    double z_hat = abs(a * x + b * y + c);
-                    double r_sq = (z - z_hat) *(z - z_hat);
-
-                    if (r_sq < 0.0001)
-                    {
-                        plane_indices.push_back(Point2i(pt->x, pt->y));
-                        ++num_points_detected;
-                    }
-                }
-
-            }
-        }
-
-        if (num_points_detected < num_points * 0.9) {
-            num_points_detected = 0;
-            plane_indices.clear();
         }
 
         return num_points_detected;
@@ -212,33 +158,30 @@ namespace ark {
 
     int Plane::computeSphereIndices()
     {
-        int rowSize = depth_img->rows;
-        int colSize = depth_img->cols;
         sphere_indices.clear();
         int pointsDetected = 0;
-        for (int r = 0; r < rowSize; r++)
+
+        for (int i = 0; i < num_points; ++i)
         {
-            for (int c = 0; c < colSize; c++)
+            
+            cv::Vec3f & v = (*points_xyz)[i];
+            double x = v[0], y = v[1], z = v[2];
+
+            if (z > 0)
             {
-                double x = depth_img->at<Point3f>(r, c)[0];
-                double y = depth_img->at<Point3f>(r, c)[1];
-                double z = depth_img->at<Point3f>(r, c)[2];
+                double radius = sqrt((x - sphere_equation[0]) * (x - sphere_equation[0])
+                    + (y - sphere_equation[1]) * (y - sphere_equation[1])
+                    + (z - sphere_equation[2]) * (z - sphere_equation[2]));
+                double radial_r_squared = (radius - sphere_equation[3]) * (radius - sphere_equation[3]);
 
-                if (z > 0)
+                if (radial_r_squared < R_SQUARED_DISTANCE_THRESHOLD)
                 {
-                    double radius = sqrt((x - sphere_equation[0]) * (x - sphere_equation[0])
-                        + (y - sphere_equation[1]) * (y - sphere_equation[1])
-                        + (z - sphere_equation[2]) * (z - sphere_equation[2]));
-                    double radial_r_squared = (radius - sphere_equation[3]) * (radius - sphere_equation[3]);
-
-                    if (radial_r_squared < R_SQUARED_DISTANCE_THRESHOLD)
-                    {
-                        sphere_indices.push_back(Point2i(c, r));
-                        pointsDetected++;
-                    }
+                    sphere_indices.push_back((*points)[i]);
+                    pointsDetected++;
                 }
             }
         }
+
         return pointsDetected;
     }
 
@@ -290,25 +233,16 @@ namespace ark {
 
     void Plane::initializeCloud()
     {
-        // Initialize Variables
-        this->cloud = new pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud <pcl::PointXYZ>);
-        this->normals = new pcl::PointCloud <pcl::Normal>::Ptr(new pcl::PointCloud <pcl::Normal>);
-        this->down_cloud = new pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
-        this->down_normals = new pcl::PointCloud<pcl::Normal>::Ptr(new pcl::PointCloud<pcl::Normal>);
-        this->upsampled_colored_cloud = new pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+        cloud->get()->width = num_points;
+        cloud->get()->height = 1;
+        cloud->get()->points.resize(cloud->get()->width * cloud->get()->height);
 
-        this->cloud->get()->width = num_points;
-        this->cloud->get()->height = 1;
-
-        auto & cloudPoints = this->cloud->get()->points;
-        cloudPoints.resize(num_points);
-
-        for (int i = 0; i < num_points; ++i)
+        int index = -1;
+        for (int i=0; i<num_points; ++i)
         {
-            const Point3f vec = depth_img->at<Point3f>((*points)[i]);
-            cloudPoints[i].x = vec[0];
-            cloudPoints[i].y = vec[1];
-            cloudPoints[i].z = vec[2];
+            cloud->get()->points[++index].x = (*points_xyz)[i][0];
+            cloud->get()->points[index].y = (*points_xyz)[i][1];
+            cloud->get()->points[index].z = (*points_xyz)[i][2];
         }
     }
 
@@ -332,12 +266,12 @@ namespace ark {
         return sphere_equation;
     }
 
-    std::vector<Point2i> Plane::getPlaneIndicies() const
+    std::vector<cv::Point2i> Plane::getPlaneIndicies() const
     {
         return plane_indices;
     }
 
-    std::vector<Point2i> Plane::getSphereIndices() const
+    std::vector<cv::Point2i> Plane::getSphereIndices() const
     {
         return sphere_indices;
     }

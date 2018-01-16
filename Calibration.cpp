@@ -9,13 +9,13 @@ namespace ark {
         auto board_sz = cv::Size(board_w, board_h);
         auto board_n = board_w * board_h;
         std::vector<Point2f> cornersAmp; // Corners of amplitude image
-        std::vector<Point3f> cornersXYZ; // Corners of the depth image
-        std::vector<std::vector<Point3f>> XYZ_points;
-        std::vector<Point3f> upper_left;
-        upper_left.push_back(Point3f(-0.05, 0.03, 0.40));
-        upper_left.push_back(Point3f(0.05, 0.03, 0.40));
-        upper_left.push_back(Point3f(0.0, 0.08, 0.35));
-        upper_left.push_back(Point3f(0.0, -0.02, 0.35));
+        std::vector<Vec3f> cornersXYZ; // Corners of the depth image
+        std::vector<std::vector<Vec3f>> XYZ_points;
+        std::vector<Vec3f> upper_left;
+        upper_left.push_back(Vec3f(-0.05, 0.03, 0.40));
+        upper_left.push_back(Vec3f(0.05, 0.03, 0.40));
+        upper_left.push_back(Vec3f(0.0, 0.08, 0.35));
+        upper_left.push_back(Vec3f(0.0, -0.02, 0.35));
         auto Unity_points = prepareUnityData(upper_left, 0.03, board_h, board_w);
         auto success = 0;
 
@@ -141,7 +141,7 @@ namespace ark {
         return;
     }
 
-    double Calibration::reprojectXYZToUnity(std::vector<std::vector<Point3f>> XYZ_points, std::vector<std::vector<Point3f>> Unity_points, Eigen::MatrixXf R, Eigen::MatrixXf T)
+    double Calibration::reprojectXYZToUnity(std::vector<std::vector<Vec3f>> XYZ_points, std::vector<std::vector<Vec3f>> Unity_points, Eigen::MatrixXf R, Eigen::MatrixXf T)
     {
         // Return error value if there is a size mismatch
         if (XYZ_points.size() != Unity_points.size())
@@ -176,18 +176,18 @@ namespace ark {
         return false;
     }
 
-    std::vector<std::vector<Point3f>> Calibration::prepareUnityData(std::vector<Point3f> upper_left, float distance, int num_rows, int num_cols)
+    std::vector<std::vector<Vec3f>> Calibration::prepareUnityData(std::vector<Vec3f> upper_left, float distance, int num_rows, int num_cols)
     {
-        std::vector<std::vector<Point3f>> Unity_points;
+        std::vector<std::vector<Vec3f>> Unity_points;
 
         for (auto i = 0; i < upper_left.size(); i++)
         {
-            std::vector<Point3f> points;
+            std::vector<Vec3f> points;
             for (auto y = 0; y < num_rows; y++)
             {
                 for (auto x = 0; x < num_cols; x++)
                 {
-                    points.push_back(cv::Point3f(upper_left[i][0] + x * distance, upper_left[i][1] - y * distance, upper_left[i][2]));
+                    points.push_back(cv::Vec3f(upper_left[i][0] + x * distance, upper_left[i][1] - y * distance, upper_left[i][2]));
                 }
             }
             Unity_points.push_back(points);
@@ -196,7 +196,7 @@ namespace ark {
         return Unity_points;
     }
 
-    void Calibration::writeDataToFile(std::vector<std::vector<Point3f>> points, int board_w, int board_h, std::string filename)
+    void Calibration::writeDataToFile(std::vector<std::vector<Vec3f>> points, int board_w, int board_h, std::string filename)
     {
         ofstream output_file;
         output_file.open(filename);

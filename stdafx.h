@@ -86,8 +86,8 @@ namespace ark {
     typedef cv::Point2i Point2i;
     typedef cv::Point2f Point2f;
     typedef cv::Point2d Point2d;
-    typedef cv::Vec3b Point3b;
-    typedef cv::Vec3f Point3f;
-    typedef cv::Vec3d Point3d;
-    typedef cv::Vec3i Point3i;
+    typedef cv::Vec3b Vec3b;
+    typedef cv::Vec3f Vec3f;
+    typedef cv::Vec3d Vec3d;
+    typedef cv::Vec3i Vec3i;
 }

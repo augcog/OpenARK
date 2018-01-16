@@ -19,9 +19,9 @@ namespace ark {
         * @param angle_treshhold Sharpest allowable angle formed by finger tip and neighboring defects
         * @param cluster_thresh Maximum allowable distance between two finger tips
         */
-        Hand(Point3f centroid_xyz, Point2i centroid_ij,
-            std::vector<Point3f> fingers_xyz, std::vector<Point2i> fingers_ij,
-            std::vector<Point3f> defects_xyz, std::vector<Point2i> defects_ij,
+        Hand(Vec3f centroid_xyz, Point2i centroid_ij,
+            std::vector<Vec3f> fingers_xyz, std::vector<Point2i> fingers_ij,
+            std::vector<Vec3f> defects_xyz, std::vector<Point2i> defects_ij,
             double svm_confidence);
 
         /**
@@ -34,7 +34,7 @@ namespace ark {
         /**
         * (x,y,z) position of the center of the hand
         */
-        Point3f center_xyz;
+        Vec3f center_xyz;
 
         /**
         * (i,j) coordinates of the center of the hand
@@ -44,7 +44,7 @@ namespace ark {
         /**
         * (x,y,z) position of all detected finger tips
         */
-        std::vector<Point3f> fingers_xyz;
+        std::vector<Vec3f> fingers_xyz;
 
         /**
         * (i,j) coordinates of all detected finger tips
@@ -54,7 +54,7 @@ namespace ark {
         /**
         * (x,y,z) position of detected defects (bases of fingers)
         */
-        std::vector<Point3f> defects_xyz;
+        std::vector<Vec3f> defects_xyz;
 
         /**
         * (i,j) position of detected defects (bases of fingers)
@@ -64,7 +64,7 @@ namespace ark {
         /**
          * (x,y,z) coordinates of the sides of the wrist ([0] is left, [1] is right)
          */
-        Point3f wrist_xyz[2];
+        Vec3f wrist_xyz[2];
 
         /**
          * (i,j) coordinates of the sides of the wrist ([0] is left, [1] is right)

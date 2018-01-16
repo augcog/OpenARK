@@ -14,15 +14,16 @@ namespace ark {
         Plane();
 
         /**
-        * Constructs a plane object from a unsegmented xyzMap.
-        * @param [in] src the raw xyzMap.
-        * @param pts points in the cluster
-        * @param num_pts number of points in pts to use, uses all by default
+        * Constructs a plane instance from a list of ij and xyz points representing a point cloud
+        * @param [in] points vector of ij points
+        * @param [in] points_xyz vector of xyz points
+        * @param num_points number of points to use
         */
-        explicit Plane(const cv::Mat &src, const std::vector<Point2i> & pts, int num_pts = -1);
+        Plane(std::vector<cv::Point> * points, std::vector<cv::Vec3f> * points_xyz,
+              int num_points = -1);
 
         /**
-        * Deconstructs the plane object.
+        * Destructs the plane instance.
         */
         ~Plane();
 
@@ -59,13 +60,13 @@ namespace ark {
         * Returns the (i,j) indices for which the plane appears on the xyzMap.
         * @return vector of (i,j) coordinates defining the points that make up the plane on the xyzMap
         */
-        std::vector<Point2i> getPlaneIndicies() const;
+        std::vector<cv::Point2i> getPlaneIndicies() const;
 
         /**
         * Returns the (i,j) indices for which the plane appears on the xyzMap.
         * @return vector of (i,j) coordinates defining the points that make up the plane on the xyzMap
         */
-        std::vector<Point2i> getSphereIndices() const;
+        std::vector<cv::Point2i> getSphereIndices() const;
 
         /**
         * Maximum cloud size (pixel) allowed.
@@ -75,15 +76,9 @@ namespace ark {
         /**
         * Maximum distance (mm) allowed between real point and regression equation.
         */
-        const double R_SQUARED_DISTANCE_THRESHOLD = 0.005;
+        const double R_SQUARED_DISTANCE_THRESHOLD = 0.0005;
 
     private:
-
-        /**
-        * Find a plane using the random sample consensus (RANSAC) algorithm
-        */
-        int findPlaneRANSAC();
-
         /**
         * Performs a series of computations to find the plane.
         */
@@ -143,14 +138,18 @@ namespace ark {
         std::vector<pcl::PointIndices> clusters;
         std::vector<double> plane_equation;
         std::vector<double> sphere_equation;
-        std::vector<Point2i> plane_indices;
-        std::vector<Point2i> sphere_indices;
+        std::vector<cv::Point2i> plane_indices;
+        std::vector<cv::Point2i> sphere_indices;
         cv::Mat sphere_mat;
         cv::Mat plane_mat;
         cv::Mat display_img;
 
-        const cv::Mat * depth_img;
-        const std::vector<Point2i> * points;
+        // input ij points
+        std::vector<cv::Point> * points;
+        // input xyz points
+        std::vector<cv::Vec3f> * points_xyz;
+
+        // number of useful input points
         int num_points;
 
         int num_sphere_points;

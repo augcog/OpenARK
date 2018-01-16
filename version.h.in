@@ -10,3 +10,6 @@
 
 // Remove to disable debug code
 #define DEBUG
+
+// Remove to disable plane detection
+#define PLANE_ENABLED

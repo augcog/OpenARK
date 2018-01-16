@@ -8,10 +8,10 @@ namespace ark {
     {
         sampleFrequency = frequency;
         rejectionThreshold = rejectionDistance;
-        dataPoints = std::deque<Point3f>();
+        dataPoints = std::deque<Vec3f>();
     }
 
-    Point3f StreamingAverager::addDataPoint(Point3f pt)
+    Vec3f StreamingAverager::addDataPoint(Vec3f pt)
     {
         if (dataPoints.size() > 0 && util::euclideanDistance(pt, getCurrentAverage()) > rejectionThreshold)
         {
@@ -35,15 +35,15 @@ namespace ark {
     {
         if (dataPoints.size() > 0)
         {
-            Point3f extra = dataPoints.front();
+            Vec3f extra = dataPoints.front();
             dataPoints.pop_front();
             currentValue = currentValue - extra;
         }
     }
 
-    Point3f StreamingAverager::getCurrentAverage()
+    Vec3f StreamingAverager::getCurrentAverage()
     {
-        Point3f average;
+        Vec3f average;
         if (dataPoints.size() != 0)
         {
             average[0] = currentValue[0] / dataPoints.size();

@@ -19,7 +19,7 @@ namespace ark {
         * Generates a random RGB color.
         * @return random RGB color in Vec3b format
         */
-        Point3b colorGenerator();
+        Vec3b colorGenerator();
 
         /**
         * Return the hypotenuse length.
@@ -71,7 +71,7 @@ namespace ark {
         * @param radius number of neighboring points to be used for computing the average
         * @return average (x,y,z) value of the point of interest
         */
-        Point3f averageAroundPoint(cv::Mat img, Point2i pt, int radius);
+        Vec3f averageAroundPoint(cv::Mat img, Point2i pt, int radius);
 
         /**
         * Determine whether (x,y) is a non-zero point in the matrix.
@@ -97,9 +97,23 @@ namespace ark {
         Point2i findCentroid(cv::Mat xyz_map);
 
         /**
-        * Perform flood fill on a depth map from the given coordinates
-        */
-        void floodFill(int x, int y, cv::Mat& depth_map, cv::Mat& mask, double max_distance);
+         * Performs floodfill on a depth map starting from seed point (x,y).
+         * @param seed_x x-coordinate of the seed point
+         * @param seed_y y-coordinate of the seed point
+         * @param [in] zMap the xyzMap point cloud
+         * @param max_distance the maximum euclidean distance allowed between neighbors
+         * @param output_ij_points optionally, pointer to a vector for storing ij coords of
+                  the points in the component. This vector should be AT LEAST the size of the xyz map
+         * @param output_xyz_points optionally, pointer to a vector for storing xyz coords of
+                  the points in the component. This vector should be AT LEAST the size of the xyz map
+         * @param [out] mask optionally, output image containing points visited by the floodfill
+         * @returns number of points in component
+         */
+        int floodFill(int seed_x, int seed_y, cv::Mat& depthMap,
+            std::vector <Point2i> * output_ij_points = nullptr,
+            std::vector <Vec3f> * output_xyz_points = nullptr,
+            double max_distance = 0.005,
+            cv::Mat * mask = nullptr);
 
         /**
         * Compute the angle in radians 'pointij' is at from the origin, going clockwise starting from the bottom
@@ -158,7 +172,7 @@ namespace ark {
          * @param center optionally, vector to subtract both a and b by before computing angle
          * @returns angle between vectors
          */
-        double angleBetween3DVec(Point3f a, Point3f b, Point3f center = Point3f(0, 0, 0));
+        double angleBetween3DVec(Vec3f a, Vec3f b, Vec3f center = Vec3f(0, 0, 0));
 
         /**
          * Checks if a point is within the bounds of an image.
@@ -205,14 +219,14 @@ namespace ark {
          * @param c third vertex
          * @returns area of triangle, in real meters squared
          */
-        float triangleArea(Point3f a, Point3f b, Point3f c = Point3f(0, 0, 0));
+        float triangleArea(Vec3f a, Vec3f b, Vec3f c = Vec3f(0, 0, 0));
 
         /**
          * Computes the area of the quadrangle defined by four vertices
          * @param pts the vertices of the quadrangle
          * @returns area of quadrangle, in real meters squared
          */
-        float quadrangleArea(Point3f pts[4]);
+        float quadrangleArea(Vec3f pts[4]);
 
         /**
          * Computes the approximate surface area of all visible clusters on a depth map.
@@ -232,7 +246,7 @@ namespace ark {
          */
         double surfaceArea(const cv::Mat & depth_map,
             std::vector<Point2i> & points_ij,
-            std::vector<Point3f> & points_xyz,
+            std::vector<Vec3f> & points_xyz,
             bool sorted = false, int cluster_size = -1);
 
         /**
@@ -262,7 +276,7 @@ namespace ark {
         void radixSortPoints(std::vector<Point2i> & points,
             int width, int height,
             int num_points = -1,
-            std::vector<Point3f> * points_xyz = nullptr);
+            std::vector<Vec3f> * points_xyz = nullptr);
 
         /**
          * Find a nonzero point on 'cluster' close to 'starting_point' by searching in a spiral from the starting point.
@@ -289,7 +303,7 @@ namespace ark {
          */
          Point2f largestInscribedCircle(const std::vector<Point2i> & contour,
             const std::vector<Point2i> & cluster,
-            const std::vector<Point3f> & cluster_xyz,
+            const std::vector<Vec3f> & cluster_xyz,
             int cluster_size = -1,
             float top_dist_thresh = FLT_MAX,
             double * radius = nullptr,

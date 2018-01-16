@@ -42,7 +42,6 @@ static inline void drawHand(cv::Mat & image, Object3D & obj, float confidence = 
 }
 
 int main() {
-
     DepthCamera * camera;
 
 #ifdef PMDSDK_ENABLED
@@ -77,8 +76,7 @@ int main() {
     fs.release();
     UDPSender u = UDPSender();
 
-    StreamingAverager handAverager = StreamingAverager(4, 0.15), paleeteAverager = StreamingAverager(6, 0.05);
-
+    StreamingAverager handAverager = StreamingAverager(4, 0.15), pAverager = StreamingAverager(6, 0.05);
     clock_t cycleStartTime = 0;
 
     // store FPS information
@@ -134,8 +132,8 @@ int main() {
 
             if (obj.hasPlane) {
                 planeObjectIndex = i;
-                cv::polylines(handVisual, obj.getContour(), true, 
-                    cv::Scalar(255, 0, 255));
+                //cv::polylines(handVisual, obj.getContour(), true, 
+                    //cv::Scalar(255, 0, 255));
             }
 
             if (obj.hasHand) {
@@ -180,7 +178,8 @@ int main() {
 
             if (frame > FPS_FRAMES) {
                 std::stringstream fpsDisplay;
-                fpsDisplay << "FPS: " << (currFps < 10 ? "0" : "") << setprecision(3) << std::fixed << currFps;
+                double fpsDisp = currFps;
+                fpsDisplay << "FPS: " << (fpsDisp < 10 ? "0" : "") << setprecision(3) << std::fixed << fpsDisp;
                 cv::putText(handVisual, fpsDisplay.str(),
                     Point2i(handVisual.cols - 120, 25), 0, 0.5, cv::Scalar(255, 255, 255));
 
@@ -188,6 +187,17 @@ int main() {
         }
         else {
             cycleStartTime = clock();
+        }
+
+        if (camera->badInput()) {
+            const int RECT_WID = 160, RECT_HI = 40;
+            cv::Rect rect(handVisual.cols / 2 - RECT_WID / 2,
+                handVisual.rows / 2 - RECT_HI / 2,
+                RECT_WID, RECT_HI);
+            cv::rectangle(handVisual, rect, cv::Scalar(0, 50, 255), -1);
+            cv::putText(handVisual, "NO SIGNAL", 
+                cv::Point(handVisual.cols / 2 - 65, handVisual.rows / 2 + 7),
+                0, 0.8, cv::Scalar(255, 255, 255), 1, cv::LINE_AA);
         }
 
         cv::namedWindow("OpenARK Hand Detection");
@@ -255,7 +265,7 @@ int main() {
             handAverager.addEmptyPoint();
         }
         if (paletteFound) {
-            auto pt = paleeteAverager.addDataPoint(camera->getXYZMap().at<Point3f>(paletteCenter.y, paletteCenter.x));
+            auto pt = pAverager.addDataPoint(camera->getXYZMap().at<Vec3f>(paletteCenter.y, paletteCenter.x));
             float palette_pt[3] = { pt[0], pt[1], pt[2] };
             auto palette_mat = cv::Mat(3, 1, CV_32FC1, &palette_pt);
             //palette_mat = r*palette_mat + t;
@@ -264,7 +274,7 @@ int main() {
             paletteZ = std::to_string(palette_mat.at<float>(2, 0));
         }
         else {
-            paleeteAverager.addEmptyPoint();
+            pAverager.addEmptyPoint();
         }
         if (clicked) {
             clickStatus = "1";

@@ -31,7 +31,7 @@ namespace ark {
                 int zr = 0;
 
                 for (int i = 0; i < hi; ++i) {
-                    Point3f * ptr = m.ptr<Point3f>(i);
+                    Vec3f * ptr = m.ptr<Vec3f>(i);
                     for (int j = 0; j < wid; ++j) {
                         if (zr) --zr;
                         else {
@@ -70,16 +70,16 @@ namespace ark {
                 return maxd;
             }
 
-            void computeMeanAndVariance(const cv::Mat& clean, Point3f center,
+            void computeMeanAndVariance(const cv::Mat& clean, Vec3f center,
                 double& avg_dist, double& var_dist, double& avg_depth, double& var_depth) {
 
                 avg_dist = avg_depth = 0;
                 int totalpts = 0;
 
                 for (int r = 0; r < clean.rows; ++r) {
-                    const Point3f * ptr = clean.ptr<Point3f>(r);
+                    const Vec3f * ptr = clean.ptr<Vec3f>(r);
                     for (int c = 0; c < clean.cols; ++c) {
-                        Point3f pt = ptr[c];
+                        Vec3f pt = ptr[c];
                         if (pt[2] != 0) {
                             Point2f xypt(pt[0], pt[1]);
                             avg_dist +=
@@ -102,10 +102,10 @@ namespace ark {
                 var_dist = var_depth = 0;
 
                 for (int r = 0; r < clean.rows; ++r) {
-                    const Point3f * ptr = clean.ptr<Point3f>(r);
+                    const Vec3f * ptr = clean.ptr<Vec3f>(r);
 
                     for (int c = 0; c < clean.cols; ++c) {
-                        Point3f pt = ptr[c];
+                        Vec3f pt = ptr[c];
                         if (pt[2] != 0) {
                             Point2f xypt(pt[0], pt[1]);
                             double dist =
@@ -155,7 +155,7 @@ namespace ark {
 
                     int nFingers = hand.numFingers();
 
-                    Point3f center = hand.center_xyz;
+                    Vec3f center = hand.center_xyz;
                     Point2i centerij = hand.center_ij;
 
                     double avgdist, vardist, avgdepth, vardepth;
@@ -189,7 +189,7 @@ namespace ark {
 
                     double avgLen = 0;
                     for (int i = 0; i < nFingers; ++i) {
-                        Point3f finger = hand.fingers_xyz[i], defect = hand.defects_xyz[i];
+                        Vec3f finger = hand.fingers_xyz[i], defect = hand.defects_xyz[i];
 
                         double finger_len = util::euclideanDistance(finger, defect);
                         avgLen += finger_len;
@@ -204,7 +204,7 @@ namespace ark {
                     for (int k = 0; k < nFingers; ++k) {
                         int j = fingerOrder[k].second;
 
-                        Point3f finger = hand.fingers_xyz[j], defect = hand.defects_xyz[j];
+                        Vec3f finger = hand.fingers_xyz[j], defect = hand.defects_xyz[j];
                         Point2i fingerij = hand.fingers_ij[j], defectij = hand.defects_ij[j];
 
                         if (defect != center) {
@@ -225,7 +225,7 @@ namespace ark {
                                 for (int i = 0; i < hull.size(); i++)
                                 {
                                     Point2i p1 = hull[i], p2 = hull[(i + 1) % hull.size()];
-                                    Point3f xyzP1 =
+                                    Vec3f xyzP1 =
                                         util::averageAroundPoint(depth_map, p1 / img_scale - top_left, 22);
 
                                     double dist = util::euclideanDistance(xyzP1, center);

@@ -25,7 +25,7 @@ namespace ark {
         * @param pt point at the current frame
         * @return the average a the current frame
         */
-        Point3f addDataPoint(Point3f pt);
+        Vec3f addDataPoint(Vec3f pt);
 
         /*
         * Adds a empty data point to the stream of points.
@@ -47,18 +47,18 @@ namespace ark {
         /*
         * The current average value
         */
-        Point3f currentValue;
+        Vec3f currentValue;
 
         /*
         * Recently seen data points
         * @see sampleFrequency
         */
-        std::deque<Point3f> dataPoints;
+        std::deque<Vec3f> dataPoints;
 
         /*
         * Compute the current average.
         * @return (x,y,z) average at current frame
         */
-        Point3f getCurrentAverage();
+        Vec3f getCurrentAverage();
     };
 }

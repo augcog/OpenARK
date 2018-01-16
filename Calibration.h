@@ -42,7 +42,7 @@ namespace ark {
         * @param T the translation matrix to use
         * @return cummulative reprojection error
         */
-        static double reprojectXYZToUnity(std::vector<std::vector<Point3f>> XYZ_points, std::vector<std::vector<Point3f>> Unity_points, Eigen::MatrixXf R, Eigen::MatrixXf T);
+        static double reprojectXYZToUnity(std::vector<std::vector<Vec3f>> XYZ_points, std::vector<std::vector<Vec3f>> Unity_points, Eigen::MatrixXf R, Eigen::MatrixXf T);
 
         /**
         * Reproject the (x,y,z) points to (i,j) RGB image points with the RT matrix to test for error.
@@ -56,7 +56,7 @@ namespace ark {
         * @param num_rows number of rows (inner intersections)
         * @param num_cols number of columns (inner intersections)
         */
-        static std::vector<std::vector<Point3f>> prepareUnityData(std::vector<Point3f> upper_left, float distance, int num_rows, int num_cols);
+        static std::vector<std::vector<Vec3f>> prepareUnityData(std::vector<Vec3f> upper_left, float distance, int num_rows, int num_cols);
 
         /**
         * Write calibration data points to file
@@ -65,7 +65,7 @@ namespace ark {
         * @param board_h board height (used for formatting the file)
         * @param filename path of the file
         */
-        static void writeDataToFile(std::vector<std::vector<Point3f>> points, int board_w, int board_h, std::string filename);
+        static void writeDataToFile(std::vector<std::vector<Vec3f>> points, int board_w, int board_h, std::string filename);
 
     private:
         /**

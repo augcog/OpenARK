@@ -91,6 +91,7 @@ namespace ark {
             initCamera();
             return;
         }
+        _badInput = false;
 
         Image * depthSource = sample->depth, *irSource = sample->ir;
 
@@ -123,9 +124,9 @@ namespace ark {
         int k = 0;
         for (int r = 0; r < Y_DIMENSION; ++r)
         {
-            Point3f *ptr = xyzMap.ptr<Point3f>(r);
+            Vec3f *ptr = xyzMap.ptr<Vec3f>(r);
             for (int c = 0; c < pixels_per_row; ++c) {
-                ptr[c] = Point3f(pos3D[k].x / 1000.0f, pos3D[k].y / 1000.0f, pos3D[k].z / 1000.0f);
+                ptr[c] = Vec3f(pos3D[k].x / 1000.0f, pos3D[k].y / 1000.0f, pos3D[k].z / 1000.0f);
                 ++k;
             }
         }

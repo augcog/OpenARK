@@ -8,54 +8,54 @@
 
 #include "HandFeatureExtractor.h"
 
-namespace ark {
-
-    // limited to file scope
-    namespace {
+// limited to file scope
+namespace {
+    /**
+    * Comparator for sorting defects in order of slope (only available in Object3D)
+    */
+    class DefectComparer {
+    public:
         /**
-        * Comparator for sorting defects in order of slope (only available in Object3D)
+        * Create a new comparator
+        * @param contour the contour which the defects were computed from
+        * @param defects list of defects
+        * @param center center point from which slopes should be computed from
         */
-        class DefectComparer {
-        public:
-            /**
-            * Create a new comparator
-            * @param contour the contour which the defects were computed from
-            * @param defects list of defects
-            * @param center center point from which slopes should be computed from
-            */
-            DefectComparer(std::vector<Point2i> contour,
-                std::vector<cv::Vec4i> defects, Point2i center) {
-                slope.resize(contour.size());
+        DefectComparer(std::vector<ark::Point2i> contour,
+            std::vector<cv::Vec4i> defects, ark::Point2i center) {
+            slope.resize(contour.size());
 
-                for (unsigned i = 0; i < defects.size(); ++i) {
-                    Point2i pt = contour[defects[i][ATTR_USED]] - center;
-                    slope[defects[i][ATTR_USED]] = util::pointToSlope(pt);
-                }
+            for (unsigned i = 0; i < defects.size(); ++i) {
+                ark::Point2i pt = contour[defects[i][ATTR_USED]] - center;
+                slope[defects[i][ATTR_USED]] = ark::util::pointToSlope(pt);
             }
+        }
 
-            /**
-            * Compare two defects (least counterclockwise from bottom is less)
-            */
-            bool operator()(cv::Vec4i a, cv::Vec4i b) const {
-                int idxA = a[ATTR_USED], idxB = b[ATTR_USED];
-                return slope[idxA] > slope[idxB];
-            }
+        /**
+        * Compare two defects (least counterclockwise from bottom is less)
+        */
+        bool operator()(cv::Vec4i a, cv::Vec4i b) const {
+            int idxA = a[ATTR_USED], idxB = b[ATTR_USED];
+            return slope[idxA] > slope[idxB];
+        }
 
-        private:
-            /**
-            * index of the Vec4i used for comparison
-            */
-            const int ATTR_USED = 2;
+    private:
+        /**
+        * index of the Vec4i used for comparison
+        */
+        const int ATTR_USED = 2;
 
-            /**
-            * stores the slopes of all the points on the contour
-            */
-            std::vector<double> slope;
+        /**
+        * stores the slopes of all the points on the contour
+        */
+        std::vector<double> slope;
 
-            // default constructor disabled
-            DefectComparer() {};
-        };
-    }
+        // default constructor disabled
+        DefectComparer() {};
+    };
+}
+
+namespace ark {
 
     static const char * SVM_PATH = "svm/";
 
@@ -73,16 +73,18 @@ namespace ark {
         fullXyzMap = depthMap;
         fullMapSize = depthMap.size();
         points = new std::vector<Point2i>;
-        points_xyz = new std::vector<Point3f>;
+        points_xyz = new std::vector<Vec3f>;
+
+        this->params = params;
 
         int minc = INT_MAX, minr = INT_MAX, maxc = 0, maxr = 0;
         for (int r = 0; r < depthMap.rows; ++r) {
-            Point3f * ptr = depthMap.ptr<Point3f>(r);
+            Vec3f * ptr = depthMap.ptr<Vec3f>(r);
 
             for (int c = 0; c < depthMap.cols; ++c) {
                 if (ptr[c][2] > 0) {
                     points->push_back(Point2i(c, r));
-                    points_xyz->push_back(Point3f(*ptr));
+                    points_xyz->push_back(Vec3f(*ptr));
 
                     minc = std::min(minc, c);
                     maxc = std::max(maxc, c);
@@ -95,28 +97,15 @@ namespace ark {
         topLeftPt = Point2i(minc, minr);
         fullXyzMap(cv::Rect(minc, minr, maxc - minc + 1, maxr - minr + 1)).copyTo(xyzMap);
 
-        // precompute contour
-        getContour();
-
-        // detect plane
-        plane = new Plane(xyzMap, *points, num_points);
-        num_points = -1;
-
-        if (plane->getPlaneIndicies().size()) {
-            hasPlane = true;
-        }
-
+        // compute surface area
         surfaceArea = util::surfaceArea(depthMap, *points, *points_xyz, true);
-        if (surfaceArea < params->handMinArea || surfaceArea > params->handMaxArea) return;
-
-        this->params = params;
 
         // initialize object, detect hand, etc.
         initializeObject();
     }
 
     Object3D::Object3D(std::vector<Point2i> & points_ij,
-        std::vector<Point3f> & points_xyz,
+        std::vector<Vec3f> & points_xyz,
         cv::Mat & depth_map,
         const ObjectParams * params,
         bool sorted, int points_to_use) {
@@ -136,15 +125,11 @@ namespace ark {
             util::radixSortPoints(points_ij, depth_map.cols, depth_map.rows, num_points, &points_xyz);
         }
 
-        // surface area criterion. need to move this if enabling plane detection
-        surfaceArea = util::surfaceArea(depth_map, points_ij, points_xyz, true, num_points);
-        if (surfaceArea < params->handMinArea || surfaceArea > params->handMaxArea) return;
-
         cv::Rect bounding(depth_map.cols, points_ij[0].y, -1, points_ij[num_points - 1].y);
 
         for (int i = 0; i < num_points; ++i) {
             Point2i pt = points_ij[i];
-            //Point3f v = depthMap.at<Point3f>(pt);
+            //Vec3f v = depthMap.at<Vec3f>(pt);
 
             bounding.x = std::min(pt.x, bounding.x);
             bounding.width = std::max(pt.x, bounding.width);
@@ -159,44 +144,12 @@ namespace ark {
 
         for (int i = 0; i < num_points; ++i) {
             Point2i pt = points_ij[i] - topLeftPt;
-            xyzMap.at<Point3f>(pt) = points_xyz[i];
+            xyzMap.at<Vec3f>(pt) = points_xyz[i];
         }
 
-        //// detect plane
-        //plane = new Plane(depth_map, points, num_points);
-
-        //std::vector<Point2i> pts = plane->getPlaneIndicies();
-
-        //if (pts.size()) {
-        //    hasPlane = true;
-
-        //    std::set<std::pair<int, int>> st;
-
-        //    for (int i = 0; i < pts.size(); i++)
-        //    {
-        //        st.insert(std::make_pair(pts[i].x, pts[i].y));
-        //        xyzMap.at<Point3f>(pts[i] - topLeftPt) = 0;
-        //    }
-
-        //    int count = 0;
-        //    for (int i = 0; i < num_points; ++i) {
-        //        if (st.find(std::make_pair(points[i].x, points[i].y)) == st.end()) {
-        //            points[count++] = points[i];
-        //        }
-        //    }
-        //    num_points = count;
-        //    this->points = &points;
-
-        //    getContour();
-
-        // #if defined(DEBUG) && defined(DEMO)
-
-        //    cv::imshow("Plane", getDepthMap());
-        // #endif
-        //}
-        //
-
         this->params = params;
+
+        surfaceArea = util::surfaceArea(depth_map, points_ij, points_xyz, true, num_points);
 
         // initialize object, detect hand, etc.
         initializeObject();
@@ -266,67 +219,63 @@ namespace ark {
         // step 1: initialize and compute properties
         checkEdgeConnected();
 
-        // if not connected skip
-        if (!params->handRequireEdgeConnected || leftEdgeConnected || rightEdgeConnected) {
-            // Find contour & convex hull
-            getConvexHull();
-
-            // Step 2: determine whether cluster is a hand
-            hand = checkForHand();
-            if (hand) {
-                hasHand = true;
-
-                if (params->handUseSVM && handClassifier.isTrained()) {
-                    // Step 2.1: final SVM check
-                    std::vector<double> features =
-                        classifier::features::extractHandFeatures(*this, xyzMap, topLeftPt, 1.0, fullMapSize.width);
-
-                    if ((hand->svm_confidence = handClassifier.classify(features)) < params->handSVMConfidenceThresh) {
-                        // SVM confidence value below threshold, reverse decision & destroy the hand instance
-                        delete hand;
-                        hand = nullptr;
-                        hasHand = false;
-                    }
-                    else return;
+        // surface area criterion. need to move this if enabling plane detection
+        if (surfaceArea >= params->handMinArea && surfaceArea <= params->handMaxArea) {
+            // if not connected skip
+            if (!params->handRequireEdgeConnected || leftEdgeConnected || rightEdgeConnected) {
+               
+                // Step 2: determine whether cluster is a hand
+                hand = checkForHand();
+                if (hand) {
+                    hasHand = true;
+                    return;
                 }
-                else return;
             }
         }
 
-        //// Step 3.1 If there is plane, remove plane and look for hand
-        //if (hasPlane && !hasHand)
-        //{
-        //    cv::Mat visual = cv::Mat::zeros(fullMapSize, xyzMap.type());
+#ifdef PLANE_ENABLED
+        plane = new Plane(points, points_xyz, num_points);
 
-        //    std::vector<Point2i> pts = plane->getPlaneIndicies();
+        std::vector<cv::Point> plane_points = plane->getPlaneIndicies();
 
-        //    for (int i = 0; i < pts.size(); i++)
-        //    {
-        //        visual.at<Point3f>(pts[i]) = xyzMap.at<Point3f>(pts[i] - topLeftPt) ;
-        //        xyzMap.at<Point3f>(pts[i] - topLeftPt) = 0;
-        //    }
+        // Step 3.1 If there is plane, remove plane and look for hand
+        if (plane_points.size() != 0)
+        {
+            hasPlane = true;
 
-        //    //cv::Mat hand_cluster = cv::Mat::zeros(xyzMap.rows, xyzMap.cols, xyzMap.type());
+            for (int i = 0; i < plane_points.size(); i++)
+            {
+                xyzMap.at<cv::Vec3f>(plane_points[i] - topLeftPt) = 0;
+            }
 
-        //    //determining the pixels that are similar to center and connected to it
-        //    //Util::floodFill(centerIj.x, centerIj.y, xyzMap, hand_cluster, 0.02);
+            cv::Mat hand_cluster = cv::Mat::zeros(xyzMap.rows, xyzMap.cols, xyzMap.type());
 
-        //    grayMap = cv::Mat(0, 0, CV_8U);
-        //    complexContour.clear();
-        //    convexHull.clear();
-        //    getConvexHull();
+            std::vector<cv::Point> hand_points (num_points);
+            std::vector<cv::Vec3f> hand_points_xyz (num_points);
 
-        //    if ((hand = checkForHand(&xyzMap)) != nullptr)
-        //    {
-        //        double finger_length = Util::euclideanDistance3D(hand->fingers_xyz[0], hand->centroid_xyz);
-        //        if (finger_length > 0.03 && finger_length < 0.2)
-        //        {
-        //            hasHand = true;
-        //            return;
-        //        }
-        //    }
+            centerIj.x = INT_MAX;
+            getCenterIj();
+            if (centerIj.x < 0 || centerIj.y < 0) return;
 
-        //}
+            //determining the pixels that are similar to center and connected to it
+            int num_hand_pts = util::floodFill(centerIj.x - topLeftPt.x, centerIj.y - topLeftPt.y,
+                                                xyzMap, &hand_points, &hand_points_xyz, 
+                                                params->clusterMaxDistance, &hand_cluster);
+
+            for (int i = 0; i < num_hand_pts; ++i) {
+                hand_points[i] += topLeftPt;
+            }
+
+            hand = checkForHand(&hand_cluster, &hand_points, &hand_points_xyz, topLeftPt, num_hand_pts);
+
+            if (hand != nullptr)
+            {
+                hasHand = true;
+                return;
+            }
+
+        }
+#endif
 
         // Step 3.1.1 If there is plane, no hand, then the rest of points are shape
         shape = xyzMap;
@@ -335,10 +284,16 @@ namespace ark {
 
     Hand * Object3D::checkForHand(const cv::Mat * cluster,
         const std::vector<Point2i> * points,
-        const std::vector<Point3f> * points_xyz,
-        const ObjectParams * params) const
+        const std::vector<Vec3f> * points_xyz,
+        Point topLeftPt,
+        int num_points,
+        const ObjectParams * params) 
     {
+    
         // Begin visualization
+
+        if (num_points < 0) num_points = this->num_points;
+
 #if defined(DEBUG) && defined(DEMO)
         cv::Mat visual = cv::Mat::zeros(fullMapSize.height, fullMapSize.width, CV_8UC3);
 #endif
@@ -349,6 +304,12 @@ namespace ark {
         if (points == nullptr) points = this->points;
         if (points_xyz == nullptr) points_xyz = this->points_xyz;
         if (params == nullptr) params = this->params;
+        if (topLeftPt.x == INT_MAX) topLeftPt = this->topLeftPt;
+
+        computeContour(*cluster, points, points_xyz, topLeftPt, num_points);
+
+        // recompute convex hull based on new contour
+        convexHull.clear(); getConvexHull();
 
         // Create empty hand instance
         Hand * hand = new Hand();
@@ -387,12 +348,12 @@ namespace ark {
         // ** Find wrist positions **
         int wristL = -1, wristR = -1;
         Point2i wristL_ij, wristR_ij;
-        Point3f wristL_xyz, wristR_xyz;
+        Vec3f wristL_xyz, wristR_xyz;
 
         // 1. get leftmost & rightmost points on contour connected to the edge
         int contactL = -1, contactR = -1, direction = 1;
         Point2i contactL_ij, contactR_ij;
-        Point3f contactL_xyz, contactR_xyz;
+        Vec3f contactL_xyz, contactR_xyz;
 
         const int lMargin = params->contactSideEdgeThresh,
             rMargin = fullMapSize.width - params->contactSideEdgeThresh;
@@ -445,7 +406,7 @@ namespace ark {
             int i = contactL;
             do {
                 Point2i pt = contour[i];
-                Point3f xyz = util::averageAroundPoint(*cluster,
+                Vec3f xyz = util::averageAroundPoint(*cluster,
                     pt - topLeftPt, params->xyzAverageSize);
 
                 float dist = util::euclideanDistance(xyz, hand->center_xyz);
@@ -461,7 +422,7 @@ namespace ark {
             i = contactR;
             do {
                 Point2i pt = contour[i];
-                Point3f xyz = util::averageAroundPoint(*cluster,
+                Vec3f xyz = util::averageAroundPoint(*cluster,
                     pt - topLeftPt, params->xyzAverageSize);
 
                 float dist = util::euclideanDistance(xyz, hand->center_xyz);
@@ -479,8 +440,8 @@ namespace ark {
             //
             // Begin visualization
 #if defined(DEBUG) && defined(DEMO)
-            cv::putText(visual, "WRIST NOT FOUND", Point2i(10, 30), 0, 0.5, 255);
-            cv::imshow("[Debug]", visual);
+            //cv::putText(visual, "WRIST NOT FOUND", Point2i(10, 30), 0, 0.5, 255);
+            //cv::imshow("[Debug]", visual);
 #endif
             // End visualization //*/
 
@@ -499,7 +460,7 @@ namespace ark {
         float contactWidth = util::euclideanDistance(contactL_xyz, contactR_xyz);
 
         Point2i wristM_ij = (contour[wristL] + contour[wristR]) / 2;
-        Point3f wristM_xyz = util::averageAroundPoint(*cluster,
+        Vec3f wristM_xyz = util::averageAroundPoint(*cluster,
             wristM_ij - topLeftPt, params->xyzAverageSize);
 
         double wristAngle = util::angleBetween3DVec(wristL_xyz, wristR_xyz, wristM_xyz);
@@ -519,11 +480,11 @@ namespace ark {
             //
             // Begin visualization
 #if defined(DEBUG) && defined(DEMO)
-            cv::putText(visual, "ELIMINATED BY WRIST/CONTACT WIDTH", Point2i(10, 30), 0, 0.5, 255);
-            cv::putText(visual, "WW:" + std::to_string(wristWidth), Point2i(10, 55), 0, 0.5, 255);
-            cv::putText(visual, "CW: " + std::to_string(contactWidth), Point2i(10, 80), 0, 0.5, 255);
-            cv::putText(visual, "WA: " + std::to_string(wristAngle), Point2i(10, 105), 0, 0.5, 255);
-            cv::imshow("[Debug]", visual);
+            //cv::putText(visual, "ELIMINATED BY WRIST/CONTACT WIDTH", Point2i(10, 30), 0, 0.5, 255);
+            //cv::putText(visual, "WW:" + std::to_string(wristWidth), Point2i(10, 55), 0, 0.5, 255);
+            //cv::putText(visual, "CW: " + std::to_string(contactWidth), Point2i(10, 80), 0, 0.5, 255);
+            //cv::putText(visual, "WA: " + std::to_string(wristAngle), Point2i(10, 105), 0, 0.5, 255);
+            //cv::imshow("[Debug]", visual);
 #endif
             // End visualization //*/
 
@@ -541,7 +502,7 @@ namespace ark {
 
         /* stores end point of previous defect
            (for considering if current start point is far enough to be a separate finger) */
-        Point3f lastEnd;
+        Vec3f lastEnd;
 
         /* true if current defect is the first defect meeting
            the angle & distance criteria for defects*/
@@ -587,9 +548,9 @@ namespace ark {
                 !util::pointInImage(*cluster, end)) continue;
 
             // obtain xyz positions of points
-            Point3f far_xyz = util::averageAroundPoint(*cluster, farPt, params->xyzAverageSize);
-            Point3f start_xyz = util::averageAroundPoint(*cluster, start, params->xyzAverageSize);
-            Point3f end_xyz = util::averageAroundPoint(*cluster, end, params->xyzAverageSize);
+            Vec3f far_xyz = util::averageAroundPoint(*cluster, farPt, params->xyzAverageSize);
+            Vec3f start_xyz = util::averageAroundPoint(*cluster, start, params->xyzAverageSize);
+            Vec3f end_xyz = util::averageAroundPoint(*cluster, end, params->xyzAverageSize);
 
             // compute some distances used in heuristics
             double farCenterDist = util::euclideanDistance(far_xyz, hand->center_xyz);
@@ -677,11 +638,11 @@ namespace ark {
             //
             // Begin visualization
 #if defined(DEBUG) && defined(DEMO)
-            cv::putText(visual, "ELIMINATED BY WRIST/CONTACT WIDTH", Point2i(10, 30), 0, 0.5, 255);
-            cv::putText(visual, "WW:" + std::to_string(wristWidth), Point2i(10, 55), 0, 0.5, 255);
-            cv::putText(visual, "CW: " + std::to_string(contactWidth), Point2i(10, 80), 0, 0.5, 255);
-            cv::putText(visual, "WA: " + std::to_string(wristAngle), Point2i(10, 105), 0, 0.5, 255);
-            cv::imshow("[Debug]", visual);
+            //cv::putText(visual, "ELIMINATED BY WRIST/CONTACT WIDTH", Point2i(10, 30), 0, 0.5, 255);
+            //cv::putText(visual, "WW:" + std::to_string(wristWidth), Point2i(10, 55), 0, 0.5, 255);
+            //cv::putText(visual, "CW: " + std::to_string(contactWidth), Point2i(10, 80), 0, 0.5, 255);
+            //cv::putText(visual, "WA: " + std::to_string(wristAngle), Point2i(10, 105), 0, 0.5, 255);
+            //cv::imshow("[Debug]", visual);
 #endif
             // End visualization //*/
 
@@ -691,7 +652,7 @@ namespace ark {
 
         // select fingers from candidates
         std::vector<Point2i> fingerTipsIj, fingerDefectsIj;
-        std::vector<Point3f> fingerTipsXyz;
+        std::vector<Vec3f> fingerTipsXyz;
         std::vector<int> fingerTipsIdx, fingerDefectsIdx;
 
         for (unsigned i = 0; i < fingerTipCands.size(); ++i)
@@ -702,8 +663,8 @@ namespace ark {
             if (defect_ij.y < center.y + params->defectMaxYFromCenter &&
                 defect_ij.y + topLeftPt.y < fullMapSize.height - params->bottomEdgeThresh) {
 
-                Point3f finger_xyz = util::averageAroundPoint(*cluster, finger_ij, params->xyzAverageSize);
-                Point3f defect_xyz = util::averageAroundPoint(*cluster, defect_ij, params->xyzAverageSize);
+                Vec3f finger_xyz = util::averageAroundPoint(*cluster, finger_ij, params->xyzAverageSize);
+                Vec3f defect_xyz = util::averageAroundPoint(*cluster, defect_ij, params->xyzAverageSize);
 
                 // compute a number of features used to eliminate finger candidates
                 double finger_length = util::euclideanDistance(finger_xyz, defect_xyz);
@@ -802,7 +763,7 @@ namespace ark {
             fingerTipsIdxFiltered.push_back(fingerTipsIdx[i]);
 
             hand->defects_ij.push_back(fingerDefectsIj[i]);
-            Point3f defXyz = util::averageAroundPoint(*cluster, hand->defects_ij[i] - topLeftPt,
+            Vec3f defXyz = util::averageAroundPoint(*cluster, hand->defects_ij[i] - topLeftPt,
                 params->xyzAverageSize);
             hand->defects_xyz.push_back(defXyz);
             defects_idx_filtered.push_back(fingerDefectsIdx[i]);
@@ -830,7 +791,7 @@ namespace ark {
                     if (util::pointOnEdge(fullMapSize, convexPt, params->bottomEdgeThresh,
                         params->sideEdgeThresh)) continue;
 
-                    Point3f convexPt_xyz = util::averageAroundPoint(*cluster, convexPt - topLeftPt, 22);
+                    Vec3f convexPt_xyz = util::averageAroundPoint(*cluster, convexPt - topLeftPt, 22);
 
                     double dist = util::euclideanDistance(convexPt_xyz, hand->center_xyz);
                     double slope = (double)(hand->center_ij.y - convexPt.y) / abs(convexPt.x - hand->center_ij.x);
@@ -850,7 +811,7 @@ namespace ark {
 
             indexFinger_ij = util::nearestPointOnCluster(*cluster, indexFinger_ij - topLeftPt, 10000) + topLeftPt;
 
-            Point3f indexFinger_xyz =
+            Vec3f indexFinger_xyz =
                 util::averageAroundPoint(*cluster, indexFinger_ij - topLeftPt, 10);
 
             double angle = util::angleBetweenPoints(indexFinger_left, indexFinger_right, indexFinger_ij);
@@ -869,13 +830,13 @@ namespace ark {
 
                 double best = DBL_MAX;
                 Point2i bestDef;
-                Point3f bestXyz;
+                Vec3f bestXyz;
                 int bestIdx = -1;
 
                 for (int j = 0; j < goodDefects.size(); ++j) {
                     cv::Vec4i defect = defects[goodDefects[j]];
                     Point2i farPt = contour[defect[2]] - topLeftPt;
-                    Point3f far_xyz =
+                    Vec3f far_xyz =
                         util::averageAroundPoint(*cluster, farPt, params->xyzAverageSize);
 
                     farPt = util::nearestPointOnCluster(*cluster, farPt);
@@ -911,6 +872,7 @@ namespace ark {
                     hand->defects_ij.clear(); hand->defects_xyz.clear();
                 }
                 else {
+#ifndef PLANE_ENABLED
                     // filter by curvature
                     int curve_near_lo = std::max(2, points_to_defect / 20);
                     int curve_near_hi = curve_near_lo + 4;
@@ -956,6 +918,7 @@ namespace ark {
                         hand->defects_ij.clear(); hand->defects_xyz.clear();
                     }
                     else {
+#endif
                         double fingerLen = util::euclideanDistance(indexFinger_xyz, hand->defects_xyz[0]);
                         // too long or too short
                         if (fingerLen > params->singleFingerLenMax || fingerLen < params->singleFingerLenMin) {
@@ -963,7 +926,9 @@ namespace ark {
                             hand->defects_ij.clear(); hand->defects_xyz.clear();
                             fingerTipsIdxFiltered.clear(); defects_idx_filtered.clear();
                         }
+#ifndef PLANE_ENABLED
                     }
+#endif
                 }
             }
         }
@@ -981,6 +946,24 @@ namespace ark {
             return nullptr;
         }
 
+        // Final SVM check
+        if (params->handUseSVM && handClassifier.isTrained()) {
+            this->hasHand = true;
+            this->hand = hand;
+
+            std::vector<double> features =
+                classifier::features::extractHandFeatures(*this, *cluster, topLeftPt, 1.0,
+                                                          fullMapSize.width);
+
+            hand->svm_confidence = handClassifier.classify(features);
+            if (hand->svm_confidence < params->handSVMConfidenceThresh) {
+                // SVM confidence value below threshold, reverse decision & destroy the hand instance
+                this->hasHand = false;
+                delete hand;
+                this->hand = hand = nullptr;
+            }
+        }
+
         return hand;
     }
 
@@ -995,7 +978,7 @@ namespace ark {
         if (row >= 0 && row < xyzMap.rows) {
             for (col = 0; col < std::min(cols / 2 - topLeftPt.x, xyzMap.cols); ++col)
             {
-                if (xyzMap.at<Point3f>(row, col)[2] != 0)
+                if (xyzMap.at<Vec3f>(row, col)[2] != 0)
                 {
                     leftEdgeConnected = true;
                     break;
@@ -1010,7 +993,7 @@ namespace ark {
                 for (row = std::min(rows - 1 - topLeftPt.y, xyzMap.rows - 1);
                     row >= std::max(rows * params->handEdgeConnectMaxY - topLeftPt.y, 0.0); --row)
                 {
-                    if (xyzMap.at<Point3f>(row, col)[2] != 0)
+                    if (xyzMap.at<Vec3f>(row, col)[2] != 0)
                     {
                         leftEdgeConnected = true;
                         break;
@@ -1025,7 +1008,7 @@ namespace ark {
             for (col = cols / 2 - topLeftPt.x; col < cols - topLeftPt.x; ++col)
             {
                 if (col < 0 || col >= xyzMap.cols) continue;
-                if (xyzMap.at<Point3f>(row, col)[2] != 0)
+                if (xyzMap.at<Vec3f>(row, col)[2] != 0)
                 {
                     rightEdgeConnected = true;
                     break;
@@ -1041,7 +1024,7 @@ namespace ark {
                     row >= std::max(rows * params->handEdgeConnectMaxY - topLeftPt.y, 0.0); --row)
                 {
                     if (row < 0 || row >= xyzMap.rows) continue;
-                    if (xyzMap.at<Point3f>(row, col)[2] != 0)
+                    if (xyzMap.at<Vec3f>(row, col)[2] != 0)
                     {
                         rightEdgeConnected = true;
                         break;
@@ -1068,7 +1051,7 @@ namespace ark {
         return centerIj;
     }
 
-    Point3f Object3D::getCenter()
+    Vec3f Object3D::getCenter()
     {
         if (centerXyz[0] == FLT_MAX)
             centerXyz =
@@ -1101,31 +1084,14 @@ namespace ark {
         return cv::Rect(topLeftPt.x, topLeftPt.y, xyzMap.cols, xyzMap.rows);
     }
 
+
+
     std::vector<Point2i> Object3D::getContour()
     {
         if (points == nullptr) return std::vector<Point2i>();
 
         if (contour.size() == 0) {
-            computeGrayMap();
-
-            std::vector<std::vector<Point2i> > contours;
-            cv::findContours(grayMap, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, 2 * topLeftPt);
-
-            int maxId = -1;
-
-            for (int i = 0; i < (int)contours.size(); ++i)
-            {
-                if (maxId < 0 || contours[i].size() > contours[maxId].size())
-                {
-                    maxId = i;
-                }
-            }
-
-            if (maxId >= 0) cv::approxPolyDP(contours[maxId], contour, 0.002, true);
-            else contour.push_back(Point2i(0, 0));
-
-            for (int i = 0; i < (int)contour.size(); ++i)
-                contour[i] /= IMG_SCALE;
+            computeContour(xyzMap, points, points_xyz, topLeftPt, num_points);
         }
 
         return contour;
@@ -1158,6 +1124,7 @@ namespace ark {
         return fullXyzMap;
     }
 
+    // helper for performing morphological operations
     void Object3D::morph(int erode_sz, int dilate_sz, bool dilate_first, bool gray_map) {
         if (dilate_sz == -1) dilate_sz = erode_sz;
 
@@ -1175,9 +1142,38 @@ namespace ark {
             if (!dilate_first) cv::dilate(xyzMap, xyzMap, dKernel);
         }
     }
+    
+    void Object3D::computeContour(const cv::Mat & xyzMap, const std::vector<cv::Point> * points,
+        const std::vector<cv::Vec3f> * points_xyz,
+        cv::Point topLeftPt,
+        int num_points) {
+        computeGrayMap(xyzMap, points, points_xyz, topLeftPt, num_points);
 
-    void Object3D::computeGrayMap(int thresh) {
-        if (grayMap.cols != 0 || xyzMap.rows == 0 || xyzMap.cols == 0 || points == nullptr) return;
+        std::vector<std::vector<Point2i> > contours;
+        cv::findContours(grayMap, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, 2 * topLeftPt);
+
+        int maxId = -1;
+
+        for (int i = 0; i < (int)contours.size(); ++i)
+        {
+            if (maxId < 0 || contours[i].size() > contours[maxId].size())
+            {
+                maxId = i;
+            }
+        }
+
+        if (maxId >= 0) cv::approxPolyDP(contours[maxId], contour, 0.002, true);
+        else contour.push_back(Point2i(0, 0));
+
+        for (int i = 0; i < (int)contour.size(); ++i)
+            contour[i] /= IMG_SCALE;
+    }
+
+    void Object3D::computeGrayMap(const cv::Mat & xyzMap, const std::vector<cv::Point> * points, 
+        const std::vector<cv::Vec3f> * points_xyz,
+        cv::Point topLeftPt, int num_points, int thresh) {
+
+        if (xyzMap.rows == 0 || xyzMap.cols == 0 || points == nullptr) return;
 
         grayMap = cv::Mat::zeros(xyzMap.size(), CV_8U);
 

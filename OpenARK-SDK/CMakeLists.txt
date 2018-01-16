@@ -19,9 +19,8 @@ MACRO(ADD_MSVC_PRECOMPILED_HEADER PrecompiledHeader PrecompiledSource SourcesVar
 ENDMACRO(ADD_MSVC_PRECOMPILED_HEADER)
 
 ## start setting
-SET (this_target OpenARKSDK)
+SET (this_target OpenARK-SDK)
 PROJECT(${this_target})
-
 
 
 ## section: include directory
@@ -32,48 +31,48 @@ INCLUDE_DIRECTORIES(
 ## section: source files
 # Add your source files here (one file per line), please SORT in alphabetical order for future maintenance
 SET (${this_target}_SOURCE_FILES
-    ..\Clustering.cpp
-	..\DepthSensor.cpp
-	..\main.cpp
-	..\PMDSensor.cpp
-	..\RGBSensor.cpp
-	..\Visualizer.cpp
-	..\Sensor.cpp
-	..\Webcam.cpp
+    ../Clustering.cpp
+	../DepthSensor.cpp
+	../main.cpp
+	../PMDSensor.cpp
+	../RGBSensor.cpp
+	../Visualizer.cpp
+	../Sensor.cpp
+	../Webcam.cpp
     )
 
 ## section: header files
 # Add your header files here(one file per line), please SORT in alphabetical order for future maintenance!
 SET(${this_target}_HEADER_FILES
-    ..\Clustering.h
-	..\DepthSensor.h
-	..\Hand.h
-	..\PMDSensor.h
-	..\RGBSensor.h
-	..\Sensor.h
-	..\Visualizer.h
-	..\Webcam.h
+    ../Clustering.h
+	../DepthSensor.h
+	../Hand.h
+	../PMDSensor.h
+	../RGBSensor.h
+	../Sensor.h
+	../Visualizer.h
+	../Webcam.h
     )
 
 SOURCE_GROUP("Source Files" FILES
-	..\main.cpp
-	..\Sensor.cpp
-	..\DepthSensor.cpp
-	..\PMDSensor.cpp
-	..\Visualizer.cpp
-	..\RGBSensor.cpp
-	..\Webcam.cpp
-	..\Clustering.cpp
+	../main.cpp
+	../Sensor.cpp
+	../DepthSensor.cpp
+	../PMDSensor.cpp
+	../Visualizer.cpp
+	../RGBSensor.cpp
+	../Webcam.cpp
+	../Clustering.cpp
 	)
 SOURCE_GROUP("Header Files" FILES
-	..\Sensor.h
-	..\DepthSensor.h
-	..\PMDSensor.h
-	..\Visualizer.h
-	..\RGBSensor.h
-	..\Webcam.h
-	..\Clustering.h
-	..\Hand.h
+	../Sensor.h
+	../DepthSensor.h
+	../PMDSensor.h
+	../Visualizer.h
+	../RGBSensor.h
+	../Webcam.h
+	../Clustering.h
+	../Hand.h
 	)
 SOURCE_GROUP("Resource Files" FILES
 

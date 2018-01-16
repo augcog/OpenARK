@@ -10,8 +10,8 @@ namespace ark {
     Hand::Hand() {
     }
 
-    Hand::Hand(Point3f centroid_xyz, Point2i centroid_ij, std::vector<Point3f> fingers_xyz,
-        std::vector<Point2i> fingers_ij, std::vector<Point3f> defects_xyz, std::vector<Point2i> defects_ij,
+    Hand::Hand(Vec3f centroid_xyz, Point2i centroid_ij, std::vector<Vec3f> fingers_xyz,
+        std::vector<Point2i> fingers_ij, std::vector<Vec3f> defects_xyz, std::vector<Point2i> defects_ij,
         double svm_confidence)
     {
         this->center_xyz = centroid_xyz;

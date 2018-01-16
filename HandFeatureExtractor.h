@@ -17,7 +17,7 @@ namespace ark {
             * @param [out] avg_depth average depth
             * @param [out] var_dist variance of depth
             */
-            void computeMeanAndVariance(const cv::Mat& xyz_map, Point3f center,
+            void computeMeanAndVariance(const cv::Mat& xyz_map, Vec3f center,
                 double& avg_dist, double& var_dist, double& avg_depth, double& var_depth);
 
             /** Extract finger tip and defect information from a given depth map of a hand.

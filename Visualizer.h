@@ -15,7 +15,7 @@ namespace ark {
         * @param [in] xyzMap input point cloud matrix
         * @return a CV_8UC3 representation of the xyzMap
         */
-        static cv::Mat visualizeXYZMap(cv::Mat &xyzMap);
+        static cv::Mat visualizeXYZMap(const cv::Mat &xyzMap);
 
         /**
         * Visualization for hand object.
@@ -62,12 +62,12 @@ namespace ark {
         */
         static cv::Mat visualizeDepthMap(cv::Mat &depthMap);
 
+    private:
         /**
          * Initializes & opens the PCL visualizer
          * @returns true on success, false if visualizer already open
          */
         static bool initPCLViewer();
-    private:
 
         /**
         * Visualization for a generic matrix.

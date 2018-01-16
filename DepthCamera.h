@@ -212,32 +212,13 @@ namespace ark {
         void initializeImages();
 
         /**
-         * Performs floodfill starting from seed point (x,y).
-         * @param seed_x x-coordinate of the seed point
-         * @param seed_y y-coordinate of the seed point
-         * @param [in] zMap the xyzMap point cloud
-         * @param max_distance the maximum euclidean distance allowed between neighbors
-         * @param output_ij_points optionally, pointer to a vector for storing ij coords of
-                  the points in the component. This vector should be AT LEAST the size of the xyz map
-         * @param output_xyz_points optionally, pointer to a vector for storing xyz coords of
-                  the points in the component. This vector should be AT LEAST the size of the xyz map
-         * @param [out] mask optionally, output image containing points visited by the floodfill
-         * @returns number of points in component
-         */
-        static int floodFill(int seed_x, int seed_y, cv::Mat& zMap,
-            std::vector <Point2i> * output_ij_points = nullptr,
-            std::vector <Point3f> * output_xyz_points = nullptr,
-            double max_distance = 0.004,
-            cv::Mat& mask = cv::Mat());
-
-        /**
          * Construct an instance of Object3D with the specified parameters and push it into output_objects.
          * @param[out] output_objects output vector
          */
         static void construct3DObject(
             std::vector<Object3D> * output_objects,
             std::vector<Point2i> * points_ij,
-            std::vector<Point3f> * points_xyz, cv::Mat * depth_map,
+            std::vector<Vec3f> * points_xyz, cv::Mat * depth_map,
             const ObjectParams * params);
 
         /**
