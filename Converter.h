@@ -1,6 +1,7 @@
 #pragma once
 
 #include "stdafx.h"
+#include "version.h"
 
 //Intel RealSense 3D SDK libraries
 #include "RealSense/SampleReader.h"

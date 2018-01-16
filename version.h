@@ -1,9 +1,9 @@
 #pragma once
 
-@RSSDK@#define RSSDK_ENABLED
-@RSSDK@#define OPENARK_CAMERA_TYPE "sr300"
-@PMDSDK@#define PMDSDK_ENABLED
-@PMDSDK@#define OPENARK_CAMERA_TYPE "pmd" 
+#define RSSDK_ENABLED
+#define OPENARK_CAMERA_TYPE "sr300"
+//#define PMDSDK_ENABLED
+//#define OPENARK_CAMERA_TYPE "pmd" 
 
 // Remove to disable visualizations (if building as library)
 #define DEMO

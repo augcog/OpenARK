@@ -1,5 +1,6 @@
 #pragma once
 
+#include "version.h"
 // OpenARK headers
 #include "Hand.h"
 

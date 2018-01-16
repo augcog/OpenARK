@@ -1,5 +1,7 @@
 #pragma once
 
+#include "version.h"
+
 // OpenCV Libraries
 #include <opencv2/objdetect/objdetect.hpp>
 #include <opencv2/features2d/features2d.hpp>

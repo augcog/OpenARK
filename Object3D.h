@@ -1,6 +1,7 @@
 #pragma once
 
 #include "stdafx.h" 
+#include "version.h"
 
 // OpenARK headers
 #include "version.h"

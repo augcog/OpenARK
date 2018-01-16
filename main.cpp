@@ -42,6 +42,7 @@ static inline void drawHand(cv::Mat & image, Object3D & obj, float confidence = 
 }
 
 int main() {
+    printf("Welcome to OpenARK v %s\n", ark::VERSION);
     DepthCamera * camera;
 
 #ifdef PMDSDK_ENABLED

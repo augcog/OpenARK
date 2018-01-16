@@ -1,6 +1,7 @@
 #pragma once
 
 #include "stdafx.h"
+#include "version.h"
 #include "Object3D.h"
 #include "Util.h"
 

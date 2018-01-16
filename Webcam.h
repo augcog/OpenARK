@@ -1,4 +1,6 @@
 #pragma once
+
+#include "version.h"
 // OpenARK Libraries
 #include "RGBCamera.h"
 
