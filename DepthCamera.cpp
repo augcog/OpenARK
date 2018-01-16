@@ -200,7 +200,7 @@ namespace ark {
     ***/
     void DepthCamera::removeNoise()
     {
-        int nonZero = 0;
+        //int nonZero = 0;
         for (int r = 0; r < xyzMap.rows; ++r)
         {
             Vec3f * ptr = xyzMap.ptr<Vec3f>(r);
@@ -209,7 +209,7 @@ namespace ark {
             for (int c = 0; c < xyzMap.cols; ++c)
             {
                 if (ptr[c][2] > 0.0f) {
-                    ++nonZero;
+                    //++nonZero;
                     if (ptr[c][2] > 0.9f && (ampMap.data == nullptr || ampptr[c] < CONFIDENCE_THRESHHOLD)) {
                         ptr[c][0] = ptr[c][1] = ptr[c][2] = 0.0f;
                     }
@@ -217,7 +217,7 @@ namespace ark {
             }
         }
 
-        _badInput = (static_cast<float>(nonZero) / (xyzMap.rows*xyzMap.cols) > 0.9);
+        //_badInput = (static_cast<float>(nonZero) / (xyzMap.rows*xyzMap.cols) > 0.99);
     }
 
     int DepthCamera::getWidth() const
