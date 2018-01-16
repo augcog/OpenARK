@@ -9,7 +9,7 @@ namespace ark {
 
     Plane::Plane(std::vector<cv::Point> * points, std::vector<cv::Vec3f> * points_xyz, int num_points)
     {
-        if (num_points == -1) num_points = points->size();
+        if (num_points == -1) num_points = (int)points->size();
         if (num_points < CLOUD_SIZE_THRESHOLD) return;
 
         this->num_points = num_points;
@@ -18,11 +18,11 @@ namespace ark {
         this->points_xyz = points_xyz;
 
         // Initialize Variables
-        cloud = new pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud <pcl::PointXYZ>);
-        normals = new pcl::PointCloud <pcl::Normal>::Ptr(new pcl::PointCloud <pcl::Normal>);
-        down_cloud = new pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
-        down_normals = new pcl::PointCloud<pcl::Normal>::Ptr(new pcl::PointCloud<pcl::Normal>);
-        upsampled_colored_cloud = new pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+        cloud = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud <pcl::PointXYZ>);
+        normals = pcl::PointCloud <pcl::Normal>::Ptr(new pcl::PointCloud <pcl::Normal>);
+        down_cloud = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
+        down_normals = pcl::PointCloud<pcl::Normal>::Ptr(new pcl::PointCloud<pcl::Normal>);
+        //upsampled_colored_cloud = new pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
         initializeCloud();
 
         compute();
@@ -76,10 +76,10 @@ namespace ark {
         for (auto i = 0; i < ind.indices.size(); i++)
         {
             auto index = ind.indices[i];
-            A(i, 0) = down_cloud->get()->points[index].x;
-            A(i, 1) = down_cloud->get()->points[index].y;
+            A(i, 0) = down_cloud.get()->points[index].x;
+            A(i, 1) = down_cloud.get()->points[index].y;
             A(i, 2) = 1;
-            b(i, 0) = down_cloud->get()->points[index].z;
+            b(i, 0) = down_cloud.get()->points[index].z;
         }
 
         Eigen::MatrixXd mul = A.transpose() * A;
@@ -103,12 +103,12 @@ namespace ark {
         {
             auto index = ind.indices[i];
             A(i, 0) = 1;
-            A(i, 1) = down_cloud->get()->points[index].x;
-            A(i, 2) = down_cloud->get()->points[index].y;
-            A(i, 3) = down_cloud->get()->points[index].z;
-            b(i, 0) = down_cloud->get()->points[index].x * down_cloud->get()->points[index].x +
-                down_cloud->get()->points[index].y * down_cloud->get()->points[index].y +
-                down_cloud->get()->points[index].z * down_cloud->get()->points[index].z;
+            A(i, 1) = down_cloud.get()->points[index].x;
+            A(i, 2) = down_cloud.get()->points[index].y;
+            A(i, 3) = down_cloud.get()->points[index].z;
+            b(i, 0) = down_cloud.get()->points[index].x * down_cloud.get()->points[index].x +
+                down_cloud.get()->points[index].y * down_cloud.get()->points[index].y +
+                down_cloud.get()->points[index].z * down_cloud.get()->points[index].z;
         }
 
         Eigen::MatrixXd mul = A.transpose() * A;
@@ -192,7 +192,7 @@ namespace ark {
 
     void Plane::regionGrow(pcl::RegionGrowing<pcl::PointXYZ, pcl::Normal> &reg, pcl::search::Search<pcl::PointXYZ>::Ptr tree)
     {
-        if (down_cloud->get()->width < 100 && down_normals->get()->width < 100)
+        if (down_cloud.get()->width < 100 && down_normals.get()->width < 100)
         {
             return;
         }
@@ -201,8 +201,8 @@ namespace ark {
         reg.setMaxClusterSize(1000000);
         reg.setSearchMethod(tree);
         reg.setNumberOfNeighbours(30);
-        reg.setInputCloud(*down_cloud);
-        reg.setInputNormals(*down_normals);
+        reg.setInputCloud(down_cloud);
+        reg.setInputNormals(down_normals);
         reg.setSmoothnessThreshold(3.0 / 180.0 * M_PI);
         reg.setCurvatureThreshold(2.5);
         reg.extract(clusters);
@@ -212,13 +212,13 @@ namespace ark {
     {
         pcl::PCLPointCloud2::Ptr temp_cloud(new pcl::PCLPointCloud2());
         pcl::PCLPointCloud2::Ptr cloud_filtered(new pcl::PCLPointCloud2());
-        pcl::toPCLPointCloud2(*cloud->get(), *temp_cloud);
+        pcl::toPCLPointCloud2(*cloud.get(), *temp_cloud);
 
         pcl::VoxelGrid<pcl::PCLPointCloud2> sor;
         sor.setInputCloud(temp_cloud);
         sor.setLeafSize(0.01f, 0.01f, 0.01f);
         sor.filter(*cloud_filtered);
-        pcl::fromPCLPointCloud2(*cloud_filtered, *down_cloud->get());
+        pcl::fromPCLPointCloud2(*cloud_filtered, *down_cloud.get());
     }
 
     void Plane::calculateNormals(pcl::NormalEstimationOMP<pcl::PointXYZ, pcl::Normal> normal_estimator,
@@ -226,34 +226,34 @@ namespace ark {
     {
         normal_estimator.setNumberOfThreads(NUM_CORES);
         normal_estimator.setSearchMethod(tree);
-        normal_estimator.setInputCloud(*down_cloud);
+        normal_estimator.setInputCloud(down_cloud);
         normal_estimator.setKSearch(50);
-        normal_estimator.compute(*down_normals->get());
+        normal_estimator.compute(*down_normals.get());
     }
 
     void Plane::initializeCloud()
     {
-        cloud->get()->width = num_points;
-        cloud->get()->height = 1;
-        cloud->get()->points.resize(cloud->get()->width * cloud->get()->height);
+        cloud.get()->width = num_points;
+        cloud.get()->height = 1;
+        cloud.get()->points.resize(cloud.get()->width * cloud.get()->height);
 
         int index = -1;
         for (int i=0; i<num_points; ++i)
         {
-            cloud->get()->points[++index].x = (*points_xyz)[i][0];
-            cloud->get()->points[index].y = (*points_xyz)[i][1];
-            cloud->get()->points[index].z = (*points_xyz)[i][2];
+            cloud.get()->points[++index].x = (*points_xyz)[i][0];
+            cloud.get()->points[index].y = (*points_xyz)[i][1];
+            cloud.get()->points[index].z = (*points_xyz)[i][2];
         }
     }
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr Plane::getCloud() const
     {
-        return *cloud;
+        return cloud;
     }
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr Plane::getDownCloud() const
     {
-        return *down_cloud;
+        return down_cloud;
     }
 
     std::vector<double> Plane::getPlaneEquation() const

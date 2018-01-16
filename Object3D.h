@@ -82,13 +82,13 @@ namespace ark {
         * Gets instance of hand object if a hand is found.
         * @return instance of hand object
         */
-        Hand getHand() const;
+        const Hand & getHand() const;
 
         /**
         * Gets instance of plane object is plane is found.
         * @return instance of plane object
         */
-        Plane getPlane() const;
+        const Plane & getPlane() const;
 
         /**
         * Gets instance of shape object.
@@ -194,12 +194,12 @@ namespace ark {
         /**
          * Pointer to the hand instance.
          */
-        Hand *hand = nullptr;
+        boost::shared_ptr<Hand> hand = nullptr;
 
         /**
          * Pointer to the plane instance.
          */
-        Plane *plane = nullptr;
+        boost::shared_ptr<Plane> plane = nullptr;
 
         /**
          * The shape instance.
@@ -249,7 +249,7 @@ namespace ark {
         * @param num_points number of points
         * @param params parameters for hand detection (defaults to this->params)
         */
-        Hand * checkForHand(const cv::Mat * cluster = nullptr,
+        boost::shared_ptr<Hand> checkForHand(const cv::Mat * cluster = nullptr,
             const std::vector<Point2i> * points = nullptr,
             const std::vector<Vec3f> * points_xyz = nullptr,
             cv::Point topLeftPt = cv::Point(INT_MAX, 0),

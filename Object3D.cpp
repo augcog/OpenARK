@@ -225,8 +225,8 @@ namespace ark {
             if (!params->handRequireEdgeConnected || leftEdgeConnected || rightEdgeConnected) {
                
                 // Step 2: determine whether cluster is a hand
-                hand = checkForHand();
-                if (hand) {
+                this->hand = checkForHand();
+                if (this->hand) {
                     hasHand = true;
                     return;
                 }
@@ -234,7 +234,7 @@ namespace ark {
         }
 
 #ifdef PLANE_ENABLED
-        plane = new Plane(points, points_xyz, num_points);
+        plane = boost::make_shared<Plane>(points, points_xyz, num_points);
 
         std::vector<cv::Point> plane_points = plane->getPlaneIndicies();
 
@@ -282,7 +282,7 @@ namespace ark {
         hasShape = true;
     }
 
-    Hand * Object3D::checkForHand(const cv::Mat * cluster,
+    boost::shared_ptr<Hand> Object3D::checkForHand(const cv::Mat * cluster,
         const std::vector<Point2i> * points,
         const std::vector<Vec3f> * points_xyz,
         Point topLeftPt,
@@ -312,7 +312,7 @@ namespace ark {
         convexHull.clear(); getConvexHull();
 
         // Create empty hand instance
-        Hand * hand = new Hand();
+        boost::shared_ptr<Hand> hand = boost::make_shared<Hand>();
 
         // Begin by computing defects
         std::vector<cv::Vec4i> defects;
@@ -444,8 +444,6 @@ namespace ark {
             //cv::imshow("[Debug]", visual);
 #endif
             // End visualization //*/
-
-            delete hand;
             return nullptr;
         }
 
@@ -487,8 +485,6 @@ namespace ark {
             //cv::imshow("[Debug]", visual);
 #endif
             // End visualization //*/
-
-            delete hand;
             return nullptr;
         }
 
@@ -645,8 +641,6 @@ namespace ark {
             //cv::imshow("[Debug]", visual);
 #endif
             // End visualization //*/
-
-            delete hand;
             return nullptr;
         }
 
@@ -942,7 +936,6 @@ namespace ark {
 
         // report not hand if there are too few/many fingers
         if (hand->fingers_ij.size() > 6 || hand->fingers_ij.size() < 1) {
-            delete hand;
             return nullptr;
         }
 
@@ -959,8 +952,8 @@ namespace ark {
             if (hand->svm_confidence < params->handSVMConfidenceThresh) {
                 // SVM confidence value below threshold, reverse decision & destroy the hand instance
                 this->hasHand = false;
-                delete hand;
-                this->hand = hand = nullptr;
+                this->hand = nullptr;
+                hand = nullptr;
             }
         }
 
@@ -1034,12 +1027,12 @@ namespace ark {
         }
     }
 
-    Hand Object3D::getHand() const
+    const Hand & Object3D::getHand() const
     {
         return *hand;
     }
 
-    Plane Object3D::getPlane() const
+    const Plane & Object3D::getPlane() const
     {
         return *plane;
     }
