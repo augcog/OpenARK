@@ -253,9 +253,10 @@ namespace ark {
             std::vector<cv::Point> hand_points (num_points);
             std::vector<cv::Vec3f> hand_points_xyz (num_points);
 
-            centerIj.x = INT_MAX;
-            getCenterIj();
+            centerIj = util::findCentroid(xyzMap);
             if (centerIj.x < 0 || centerIj.y < 0) return;
+
+            centerIj = util::nearestPointOnCluster(xyzMap, centerIj) + topLeftPt;
 
             //determining the pixels that are similar to center and connected to it
             int num_hand_pts = util::floodFill(centerIj.x - topLeftPt.x, centerIj.y - topLeftPt.y,
