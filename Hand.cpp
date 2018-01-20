@@ -25,11 +25,11 @@ namespace ark {
 
     Hand::~Hand() { }
 
-    int Hand::numFingers() {
+    int Hand::numFingers() const {
         return (int)fingers_xyz.size();
     }
 
-    bool Hand::touchObject(std::vector<double> &equation, const double threshold)
+    bool Hand::touchObject(std::vector<double> &equation, const double threshold) const
     {
         if (equation.size() == 0)
         {

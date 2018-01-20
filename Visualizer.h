@@ -24,7 +24,7 @@ namespace ark {
         * @param [in] hand the hand object
         * @return a CV_8UC3 matrix with the hand drawn on it
         */
-        static cv::Mat visualizeHand(cv::Mat xyzMap, const Hand hand);
+        static cv::Mat visualizeHand(cv::Mat xyzMap, const Hand & hand);
 
         /**
         * Visualization for PCL point cloud.
@@ -57,16 +57,16 @@ namespace ark {
         static void visualizePlanePoints(cv::Mat &input_mat, std::vector<Point2i> indicies);
 
         /**
-        * Visualize a depth map
+        * Visualize a (single channel) depth map
         * @param depthMap the depth map
-        * @returns visualization
+        * @return visualization
         */
         static cv::Mat visualizeDepthMap(cv::Mat &depthMap);
 
     private:
         /**
          * Initializes & opens the PCL visualizer
-         * @returns true on success, false if visualizer already open
+         * @return true on success, false if visualizer already open
          */
         static bool initPCLViewer();
 

@@ -23,7 +23,7 @@ namespace ark {
 
             /** Extract finger tip and defect information from a given depth map of a hand.
              *  @param [in] depth the depth map
-             *  @returns vector of features
+             *  @return vector of features
              */
             std::vector<double> extractHandInfo(const cv::Mat & depth);
 
@@ -32,7 +32,7 @@ namespace ark {
              *  @param test_case_name name of the test case
              *  @param data_dir path to the data directory
              *  @param depth_path optionally, a path to the depth image directory (inferred from data directory by default)
-             *  @returns vector of features
+             *  @return vector of features
              */
             std::vector<double> extractHandInfo(std::string test_case_name, std::string data_dir,
                 std::string depth_path = "depth/");
@@ -43,14 +43,14 @@ namespace ark {
              *  @param top_left optionally, top left point represented in depth map (x, y coordinates to translate by)
              *  @param img_scale optionally, amount the depth map has been scaled by
              *  @param full_wid optionally, size of full depth map. By default, uses width of depth_map
-             *  @returns vector of features
+             *  @return vector of features
              */
             std::vector<double> extractHandFeatures(Object3D & obj, const cv::Mat & depth_map,
                 Point2i top_left = Point2i(0, 0), double img_scale = 2.0, int full_wid = -1);
 
             /** Extract hand-specific features from a given depth map of a hand.
              *  @param [in] depth_map the depth map
-             *  @returns vector of features
+             *  @return vector of features
              */
             std::vector<double> extractHandFeatures(const cv::Mat & depth_map);
 
@@ -59,7 +59,7 @@ namespace ark {
              *  @param test_case_name name of the test case
              *  @param data_dir path to the data directory
              *  @param depth_path optionally, a path to the depth image directory (inferred from data directory by default)
-             *  @returns vector of features
+             *  @return vector of features
              */
             std::vector<double> extractHandFeatures(std::string test_case_name, std::string data_dir, std::string depth_path = "depth/");
         }

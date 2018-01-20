@@ -258,7 +258,7 @@ namespace ark {
 
             centerIj = util::nearestPointOnCluster(xyzMap, centerIj) + topLeftPt;
 
-            //determining the pixels that are similar to center and connected to it
+            // determining the pixels that are similar to center and connected to it
             int num_hand_pts = util::floodFill(centerIj.x - topLeftPt.x, centerIj.y - topLeftPt.y,
                                                 xyzMap, &hand_points, &hand_points_xyz, 
                                                 params->clusterMaxDistance, &hand_cluster);
@@ -291,14 +291,11 @@ namespace ark {
         const ObjectParams * params) 
     {
     
-        // Begin visualization
-
         if (num_points < 0) num_points = this->num_points;
 
 #if defined(DEBUG) && defined(DEMO)
         cv::Mat visual = cv::Mat::zeros(fullMapSize.height, fullMapSize.width, CV_8UC3);
 #endif
-        // End visualization
 
         // Default values
         if (cluster == nullptr) cluster = &this->xyzMap;
@@ -438,13 +435,10 @@ namespace ark {
         }
 
         if (wristL < 0 || wristR < 0) {
-            //
-            // Begin visualization
 #if defined(DEBUG) && defined(DEMO)
-            //cv::putText(visual, "WRIST NOT FOUND", Point2i(10, 30), 0, 0.5, 255);
-            //cv::imshow("[Debug]", visual);
+            cv::putText(visual, "WRIST NOT FOUND", Point2i(10, 30), 0, 0.5, 255);
+            cv::imshow("[Debug]", visual);
 #endif
-            // End visualization //*/
             return nullptr;
         }
 
@@ -476,16 +470,13 @@ namespace ark {
             contactWidth > params->contactWidthMax ||
             wristAngle > params->wristAngleMax ||
             wristAngle < params->wristAngleMin) {
-            //
-            // Begin visualization
 #if defined(DEBUG) && defined(DEMO)
-            //cv::putText(visual, "ELIMINATED BY WRIST/CONTACT WIDTH", Point2i(10, 30), 0, 0.5, 255);
-            //cv::putText(visual, "WW:" + std::to_string(wristWidth), Point2i(10, 55), 0, 0.5, 255);
-            //cv::putText(visual, "CW: " + std::to_string(contactWidth), Point2i(10, 80), 0, 0.5, 255);
-            //cv::putText(visual, "WA: " + std::to_string(wristAngle), Point2i(10, 105), 0, 0.5, 255);
-            //cv::imshow("[Debug]", visual);
+            cv::putText(visual, "ELIMINATED BY WRIST/CONTACT WIDTH", Point2i(10, 30), 0, 0.5, 255);
+            cv::putText(visual, "WW:" + std::to_string(wristWidth), Point2i(10, 55), 0, 0.5, 255);
+            cv::putText(visual, "CW: " + std::to_string(contactWidth), Point2i(10, 80), 0, 0.5, 255);
+            cv::putText(visual, "WA: " + std::to_string(wristAngle), Point2i(10, 105), 0, 0.5, 255);
+            cv::imshow("[Debug]", visual);
 #endif
-            // End visualization //*/
             return nullptr;
         }
 
@@ -583,8 +574,6 @@ namespace ark {
             }
         }
 
-        // <- Add a * between the two slashes to comment out whole visualization block
-        // Begin visualization
 #if defined(DEBUG) && defined(DEMO)
         cv::polylines(visual, contour, true, cv::Scalar(0, 200, 0));
 
@@ -626,22 +615,20 @@ namespace ark {
         cv::putText(visual, std::to_string(contactWidth),
             contactL_ij + Point2i(10, 0), 0, 0.5, cv::Scalar(255, 255, 255));
 #endif
-        // End visualization //*/
 
         // Eliminate by wrist & contact width
         if (wristWidth < params->wristWidthMin || wristWidth > params->wristWidthMax ||
             contactWidth < params->contactWidthMin ||
             contactWidth > params->contactWidthMax) {
-            //
-            // Begin visualization
+
 #if defined(DEBUG) && defined(DEMO)
-            //cv::putText(visual, "ELIMINATED BY WRIST/CONTACT WIDTH", Point2i(10, 30), 0, 0.5, 255);
-            //cv::putText(visual, "WW:" + std::to_string(wristWidth), Point2i(10, 55), 0, 0.5, 255);
-            //cv::putText(visual, "CW: " + std::to_string(contactWidth), Point2i(10, 80), 0, 0.5, 255);
-            //cv::putText(visual, "WA: " + std::to_string(wristAngle), Point2i(10, 105), 0, 0.5, 255);
-            //cv::imshow("[Debug]", visual);
+            cv::putText(visual, "ELIMINATED BY WRIST/CONTACT WIDTH", Point2i(10, 30), 0, 0.5, 255);
+            cv::putText(visual, "WW:" + std::to_string(wristWidth), Point2i(10, 55), 0, 0.5, 255);
+            cv::putText(visual, "CW: " + std::to_string(contactWidth), Point2i(10, 80), 0, 0.5, 255);
+            cv::putText(visual, "WA: " + std::to_string(wristAngle), Point2i(10, 105), 0, 0.5, 255);
+            cv::imshow("[Debug]", visual);
 #endif
-            // End visualization //*/
+
             return nullptr;
         }
 
@@ -693,8 +680,7 @@ namespace ark {
                     curve_far_lo, curve_far_hi);
 
                 curve_far = std::min(curve_mid, curve_far);
-                //
-                // Begin visualization
+
 #if defined(DEBUG) && defined(DEMO)
                 cv::Scalar txtColor = cv::Scalar(255, 255, 255);
                 if (!(curve_near >= params->fingerCurveNearMin &&
@@ -712,7 +698,6 @@ namespace ark {
                     std::to_string(curve_near), finger_ij + topLeftPt + Point2i(0, -10),
                     0, 0.5, txtColor, 1);
 #endif
-                // End visualization //*/
 
                 if (finger_length < params->fingerLenMax && finger_length > params->fingerLenMin &&
                     finger_defect_slope > params->fingerDefectSlopeMin &&
@@ -885,7 +870,6 @@ namespace ark {
 
                     curve_far = std::min(curve_mid, curve_far);
 
-                    // Begin visualization
 #if defined(DEBUG) && defined(DEMO)
                     cv::Scalar txtColor = cv::Scalar(0, 255, 255);
                     if (!(curve_near >= params->fingerCurveNearMin &&
@@ -903,7 +887,6 @@ namespace ark {
                         std::to_string(curve_near), indexFinger_ij + Point2i(0, -10),
                         0, 0.5, txtColor, 1);
 #endif
-                    // End visualization //*/
 
                     if (!(curve_near >= params->fingerCurveNearMin &&
                         curve_near <= params->fingerCurveNearMax &&
@@ -928,12 +911,9 @@ namespace ark {
             }
         }
 
-        //
-        // Begin visualization
 #if defined(DEBUG) && defined(DEMO)
         cv::imshow("[Debug]", visual);
 #endif
-        // End visualization //*/
 
         // report not hand if there are too few/many fingers
         if (hand->fingers_ij.size() > 6 || hand->fingers_ij.size() < 1) {

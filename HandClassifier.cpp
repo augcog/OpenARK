@@ -236,8 +236,6 @@ namespace ark {
         double SVMHandClassifier::classify(const std::vector<double> features) {
             if (!trained) throw ClassifierNotTrainedException();
 
-            //int nFeats = features::getNumFeatures();
-
             // if no fingers, predict not hand
             if (features.size() == 0) return 0.0;
 

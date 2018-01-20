@@ -86,7 +86,7 @@ namespace ark {
         /**
         * Find the average depth of a depth image
         * @param xyz_map depth image
-        * @returns average depth in meters
+        * @return average depth in meters
         */
         double averageDepth(cv::Mat xyz_map);
 
@@ -108,7 +108,7 @@ namespace ark {
          * @param output_xyz_points optionally, pointer to a vector for storing xyz coords of
                   the points in the component. This vector should be AT LEAST the size of the xyz map
          * @param [out] mask optionally, output image containing points visited by the floodfill
-         * @returns number of points in component
+         * @return number of points in component
          */
         int floodFill(int seed_x, int seed_y, cv::Mat& depthMap,
             std::vector <Point2i> * output_ij_points = nullptr,
@@ -119,7 +119,7 @@ namespace ark {
         /**
         * Compute the angle in radians 'pointij' is at from the origin, going clockwise starting from the bottom
         * @param pointij input point in ij coordinates
-        * @returns angle from origin, CW from bottom
+        * @return angle from origin, CW from bottom
         */
         double pointToAngle(Point2i pointij);
 
@@ -129,7 +129,7 @@ namespace ark {
         * This function returns x/y if pointij is in the 3rd quadrant, FLT_MAX/2 - x/y if in 2nd quadrant,
                              FLT_MAX/2 + x/y if in 1st quadrant, and FLT_MAX - x/y if in 4th quadrant.
         * @param pointij input point in ij coordinates
-        * @returns
+        * @return slope value of point
         */
         double pointToSlope(Point2i pointij);
 
@@ -138,14 +138,14 @@ namespace ark {
         * @param a first point in ij oordinates
         * @param b second point in ij coordinates
         * @param center optional center point (angle goes from a - center - b)
-        * @returns angle between points
+        * @return angle between points
         */
         double angleBetweenPoints(Point2i a, Point2i b, Point2i center = Point2i(0, 0));
 
         /**
          * Compute the magnitude of a point.
          * @param pt input point
-         * @returns magnitude of point
+         * @return magnitude of point
          */
         template <class T>
         double magnitude(cv::Point_<T> pt);
@@ -153,7 +153,7 @@ namespace ark {
         /**
          * Compute the magnitude of a point.
          * @param pt input point
-         * @returns magnitude of point
+         * @return magnitude of point
          */
         template <class T>
         double magnitude(cv::Point3_<T> pt);
@@ -161,7 +161,7 @@ namespace ark {
         /**
          * Compute the magnitude of a point.
          * @param pt input point
-         * @returns magnitude of point
+         * @return magnitude of point
          */
         template <class T, int n>
         double magnitude(cv::Vec<T, n> pt);
@@ -171,7 +171,7 @@ namespace ark {
          * @param a vector 1
          * @param b vector 2
          * @param center optionally, vector to subtract both a and b by before computing angle
-         * @returns angle between vectors
+         * @return angle between vectors
          */
         double angleBetween3DVec(Vec3f a, Vec3f b, Vec3f center = Vec3f(0, 0, 0));
 
@@ -218,21 +218,21 @@ namespace ark {
          * @param a first vertex
          * @param b second vertex
          * @param c third vertex
-         * @returns area of triangle, in real meters squared
+         * @return area of triangle, in real meters squared
          */
         float triangleArea(Vec3f a, Vec3f b, Vec3f c = Vec3f(0, 0, 0));
 
         /**
          * Computes the area of the quadrangle defined by four vertices
          * @param pts the vertices of the quadrangle
-         * @returns area of quadrangle, in real meters squared
+         * @return area of quadrangle, in real meters squared
          */
         float quadrangleArea(Vec3f pts[4]);
 
         /**
          * Computes the approximate surface area of all visible clusters on a depth map.
          * @param [in] depthMap the input depth map. All points with 0 z-coordinate will be excluded.
-         * @returns surface area, in meters squared
+         * @return surface area, in meters squared
          */
         double surfaceArea(cv::Mat & depthMap);
 
@@ -243,7 +243,7 @@ namespace ark {
          * @param [in] points_xyz xyz coords of points in the cluster. (warning: may be reordered)
          * @param [in] sorted if true, assumes that 'cluster' is sorted and does not sort it again
          * @param [in] cluster_size number of points in this cluster. By default, uses all points in the 'cluster' vector.
-         * @returns surface area, in meters squared
+         * @return surface area, in meters squared
          */
         double surfaceArea(const cv::Mat & depth_map,
             std::vector<Point2i> & points_ij,
@@ -254,7 +254,7 @@ namespace ark {
           * Approximates the surface area of a depth map cluster, using circles
           * of the smallest possible radius among adjacent points.
           * @param shape the depth map input
-          * @returns surface area, meters squared
+          * @return surface area, meters squared
           */
         double surfaceAreaCircle(cv::Mat shape);
 
@@ -262,7 +262,7 @@ namespace ark {
           * Approximates the surface area of a depth map cluster by triangulation
           * among adjacent points
           * @param shape the depth map input
-          * @returns surface area, meters squared
+          * @return surface area, meters squared
           */
         double surfaceAreaTriangulate(cv::Mat shape);
 
@@ -287,7 +287,7 @@ namespace ark {
          * @param starting_point startin point of search
          * @param max_attempts maximum number of points to look at before cutting off the
                             search and simply returning the starting point
-         * @returns first nonzero point on 'cluster' close to 'starting_point' encountered by travelling in a spiral
+         * @return first nonzero point on 'cluster' close to 'starting_point' encountered by travelling in a spiral
          */
         Point2i nearestPointOnCluster(const cv::Mat cluster, Point2i starting_point, int max_attempts = 500);
 
@@ -300,7 +300,7 @@ namespace ark {
          * @param top_dist_thresh maximum distance between the center of the circle and the top point in the cluster
          * @param[out] radius output pointer for the radius of circle
          * @param step step while iterating through cluster of points
-         * @returns the center of the circle
+         * @return the center of the circle
          */
          Point2f largestInscribedCircle(const std::vector<Point2i> & contour,
             const std::vector<Point2i> & cluster,
@@ -316,7 +316,7 @@ namespace ark {
          * @param index the index of the target point within the contour
          * @param start the distance from the target point to begin averaging curvature
          * @param end the distance from the target point to stop averaging curvature
-         * @returns curvature in radians at the point
+         * @return curvature in radians at the point
          */
         double contourCurvature(const std::vector<Point2i> & contour, int index,
             int start = 2, int end = 5);

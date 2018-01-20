@@ -67,7 +67,7 @@ namespace ark {
 
         // assume no other planes exist
         if (data.planes[1] != nullptr) throw; // not implemented
-                                              // suppose that no sub pixel padding needed
+                                              // assume that no sub pixel padding needed
         if (data.pitches[0] % cvDataWidth != 0) throw; // not implemented
 
         outImg->create(imgInfo.height, data.pitches[0] / cvDataWidth, cvDataType);

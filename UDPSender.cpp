@@ -6,7 +6,7 @@
 namespace ark {
     UDPSender::UDPSender()
     {
-        //Initialise winsock
+        // initialise winsock
         printf("\nInitialising Winsock...");
         if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
         {
@@ -15,14 +15,14 @@ namespace ark {
         }
         printf("Initialised.\n");
 
-        //create socket
+        // create socket
         if ((s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == SOCKET_ERROR)
         {
             printf("socket() failed with error code : %d", WSAGetLastError());
             exit(EXIT_FAILURE);
         }
 
-        //setup address structure
+        // setup address structure
         memset(reinterpret_cast<char *>(&si_other), 0, sizeof(si_other));
         si_other.sin_family = AF_INET;
         si_other.sin_port = htons(PORT);

@@ -27,27 +27,27 @@ namespace ark {
             /**
              * Import the classifier model from a file
              * @param path path to import from
-             * @returns true on success, false on error.
+             * @return true on success, false on error.
              */
             virtual bool loadFile(std::string path) = 0;
 
             /**
              * Export the classifier model to a file.
              * @param path path to export to
-             * @returns true if success, false on error.
+             * @return true if success, false on error.
              */
             virtual bool exportFile(std::string path) = 0;
 
             /**
              * Start training this classifier with data from the specified path.
              * @param dataPath path to the training data directory
-             * @returns true on success, false on error. If already trained, returns true.
+             * @return true on success, false on error. If already trained, returns true.
              */
             virtual bool train(std::string dataPath) = 0;
 
             /**
              * Returns true if this classifier has finished training
-             * @returns true if classifier is trained
+             * @return true if classifier is trained
              */
             virtual bool isTrained();
 
@@ -55,7 +55,7 @@ namespace ark {
              * Use this classifier to classify a features vector representing an object.
              * If the classifier has yet to be trained, throws ClassifierNotTrainedException.
              * @param vector of features
-             * @returns double value indicating category the object belongs to
+             * @return double value indicating category the object belongs to
              */
             virtual double classify(const std::vector<double> features) = 0;
 
@@ -103,21 +103,21 @@ namespace ark {
             /**
              * Load the SVM models from disk
              * @param path directory to load models from.
-             * @returns true on success, false on error.
+             * @return true on success, false on error.
              */
             bool loadFile(std::string path);
 
             /**
              * Write the SVM models to disk.
              * @param path directory to export models to.
-             * @returns true if success, false on error.
+             * @return true if success, false on error.
              */
             bool exportFile(std::string path);
 
             /**
              * Start training this classifier with data from the specified path.
              * @param dataPath path to the training data directory
-             * @returns true on success, false on error. If already trained, returns true.
+             * @return true on success, false on error. If already trained, returns true.
              */
             virtual bool train(std::string dataPath);
 
@@ -127,7 +127,7 @@ namespace ark {
              * '1' indicates that we are fully confident that the object is a hand, and vice versa.
              *  If the classifier has yet to be trained, throws ClassifierNotTrainedException.
              *  @param features vector of features (index 0 should be number of fingers)
-             *  @returns Confidence that object is a hand (double value between 0 and 1)
+             *  @return Confidence that object is a hand (double value between 0 and 1)
              */
             double classify(const std::vector<double> features);
 
@@ -137,7 +137,7 @@ namespace ark {
             * Note: 1 SVM is used for each number of visible fingers, i.e. 1 for hands with 1 visible finger,
             * 1 for hands with 2 visible fingers, etc.
             * @param features vector of features (index 0 should be number of fingers)
-            * @returns index of SVM used
+            * @return index of SVM used
             */
             static inline int getSVMIdx(const std::vector<double> features);
 

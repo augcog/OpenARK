@@ -23,13 +23,7 @@ namespace ark {
         clusters.clear();
         clusterAreas.clear();
 
-        //const cv::Mat dKernel1 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(dilate_amount, dilate_amount));
-
         cv::Mat xyzMap = this->xyzMap.clone();
-
-        //cv::dilate(this->xyzMap, xyzMap, dKernel1);
-
-
         cv::Mat mask = cv::Mat::zeros(xyzMap.rows, xyzMap.cols, xyzMap.type());
 
         std::vector<Point2i> pts(xyzMap.rows * xyzMap.cols + 1);
@@ -158,49 +152,16 @@ namespace ark {
         return hands;
     }
 
-    bool DepthCamera::operator()(bool removeNoise)
-    {
-        return nextFrame(removeNoise);
-    }
-
-    bool DepthCamera::operator >> (cv::Mat & img)
-    {
-        if (!nextFrame()) return false;
-
-        if (img.rows == 0 || img.type() == CV_32FC3) {
-            img = getXYZMap();
-            return true;
-        }
-        else if (img.channels() == 1 && hasIRImage()) {
-            img = getIRImage();
-            return true;
-        }
-        else if (hasRGBImage()) {
-            img = getRGBImage();
-            return true;
-        }
-
-        return false;
-    }
-
-    bool DepthCamera::operator >> (std::vector<Object3D> & objs)
-    {
-        if (!nextFrame()) return false;
-        objs = queryObjects();
-        return true;
-    }
-
     bool DepthCamera::badInput()
     {
         return _badInput;
     }
 
-    /***
+    /**
     Remove noise on zMap and xyzMap based on INVALID_FLAG_VALUE and CONFIDENCE_THRESHOLD
-    ***/
+    */
     void DepthCamera::removeNoise()
     {
-        //int nonZero = 0;
         for (int r = 0; r < xyzMap.rows; ++r)
         {
             Vec3f * ptr = xyzMap.ptr<Vec3f>(r);
@@ -209,15 +170,12 @@ namespace ark {
             for (int c = 0; c < xyzMap.cols; ++c)
             {
                 if (ptr[c][2] > 0.0f) {
-                    //++nonZero;
                     if (ptr[c][2] > 0.9f && (ampMap.data == nullptr || ampptr[c] < CONFIDENCE_THRESHHOLD)) {
                         ptr[c][0] = ptr[c][1] = ptr[c][2] = 0.0f;
                     }
                 }
             }
         }
-
-        //_badInput = (static_cast<float>(nonZero) / (xyzMap.rows*xyzMap.cols) > 0.99);
     }
 
     int DepthCamera::getWidth() const
@@ -269,9 +227,9 @@ namespace ark {
         clusters.clear();
     }
 
-    /***
+    /**
     write a frame into file located at "destination"
-    ***/
+    */
     bool DepthCamera::writeImage(std::string destination) const
     {
         cv::FileStorage fs(destination, cv::FileStorage::WRITE);
@@ -284,9 +242,9 @@ namespace ark {
         return true;
     }
 
-    /***
+    /**
     Reads a frame from file located at "source"
-    ***/
+    */
     bool DepthCamera::readImage(std::string source)
     {
         cv::FileStorage fs;
@@ -317,7 +275,7 @@ namespace ark {
 
     bool DepthCamera::hasIRImage() const
     {
-        // Assume not available
+        // Assume no IR image, unless overridden
         return false;
     }
 

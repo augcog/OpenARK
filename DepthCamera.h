@@ -69,12 +69,6 @@ namespace ark {
          */
         void removeNoise();
 
-        ///**
-        // * Removes all points defined by the coordinates in the points vector from the XYZMap.
-        // * @param [in] points the list of coordinates where data from the XYZMap should be removed
-        // */
-        //void removePoints(std::vector<Point2i> points);
-
         /**
          * Returns the current XYZMap.
          */
@@ -164,34 +158,8 @@ namespace ark {
         std::vector<Object3D> & queryHands(const ObjectParams * params = nullptr);
 
         /**
-         * Retrieve the next frame from the depth camera
-         * @param removeNoise if true, performs noise removal on the depth image after retrieving it
-         * @return true on success, false on bad input
-         */
-        bool operator()(bool removeNoise = true);
-
-        /**
-         * Retrieves the next frame from from the depth camera and outputs the resulting depth/rgb/ir image to 'img'
-         * depending on the type of 'img'
-         * 'img' must either be an empty image or have 1 or 3 channels
-         * Outputs the IR image if 'img' has 1 channel, the XYZ map if it has format CV_32FC3 or is empty,
-         * and the RGB image otherwise
-         * image if type of image is CV_32FC3
-         * @param [in] img output image
-         * @return true on success, false on bad input or failure
-         */
-        bool operator >> (cv::Mat & img);
-
-        /**
-         * Retrieves the next frame from from the depth camera and outputs a list of visible objects to 'objs'
-         * @param [in] objs empty vector of Object3D instances
-         * @return true on success, false on bad input
-         */
-        bool operator >> (std::vector<Object3D> & objs);
-
-        /**
          * Check if the camera input is invalid.
-         * @returns true on bad input.
+         * @return true on bad input.
          */
         virtual bool badInput();
 
@@ -290,7 +258,6 @@ namespace ark {
          * The image width resolution (pixels) that the depth sensor produces.
          */
         int X_DIMENSION = 321;
-
 
         /**
          * The image height resolution (pixels) that the depth sensor produces.

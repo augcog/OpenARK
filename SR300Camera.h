@@ -36,11 +36,13 @@ namespace ark {
 
         /**
          * Returns true if an RGB image is available from this camera.
+         * @return true if an RGB image is available from this camera.
          */
         bool hasRGBImage() const;
 
         /**
          * Returns true if an infrared (IR) image is available from this camera.
+         * @return true if an infrared (IR) image is available from this camera.
          */
         bool hasIRImage() const;
 

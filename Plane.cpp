@@ -22,7 +22,6 @@ namespace ark {
         normals = pcl::PointCloud <pcl::Normal>::Ptr(new pcl::PointCloud <pcl::Normal>);
         down_cloud = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
         down_normals = pcl::PointCloud<pcl::Normal>::Ptr(new pcl::PointCloud<pcl::Normal>);
-        //upsampled_colored_cloud = new pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
         initializeCloud();
 
         compute();
@@ -183,11 +182,6 @@ namespace ark {
         }
 
         return pointsDetected;
-    }
-
-    int Plane::drawSphereRegressionPoints(cv::Mat& output_mat, cv::Mat& input_mat, std::vector<double>& equation, const int rowSize, const int colSize, const double threshold, bool clicked)
-    {
-        return 0;
     }
 
     void Plane::regionGrow(pcl::RegionGrowing<pcl::PointXYZ, pcl::Normal> &reg, pcl::search::Search<pcl::PointXYZ>::Ptr tree)

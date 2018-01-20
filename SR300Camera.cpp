@@ -191,7 +191,7 @@ namespace ark {
     * True if has RGB image
     */
     bool SR300Camera::hasRGBImage() const {
-        // disabled for now
+        // not used
         return false;
     }
 

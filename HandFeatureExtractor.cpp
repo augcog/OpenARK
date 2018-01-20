@@ -11,15 +11,15 @@ using namespace boost::filesystem;
 namespace ark {
     namespace classifier {
         namespace features {
-            // default image extension
-            static const std::string IMG_EXT = ".tsi";
+            // default image extension ('dm' stores floating point 3D depth map data)
+            static const std::string IMG_EXT = ".dm";
 
             template <class T>
             static inline void readBinary(std::ifstream & ifs, T * val) {
                 ifs.read(reinterpret_cast<char *>(val), sizeof(*val));
             }
 
-            static void readTSI(cv::Mat & m, std::string path) {
+            static void readDM(cv::Mat & m, std::string path) {
                 std::ifstream ifs(path, std::ios::binary | std::ios::in);
 
                 ushort wid, hi;
@@ -267,8 +267,6 @@ namespace ark {
                         double minDistDefect = depth_map.cols, minDistFinger = depth_map.cols;
                         double maxDistDefect = 0, maxDistFinger = 0;
 
-                        //double minSp = depth_map.cols, maxSp = 0;
-
                         if (nFingers > 1) {
                             for (int jj = 0; jj < nFingers; ++jj) {
                                 if (j == jj) continue;
@@ -276,24 +274,16 @@ namespace ark {
                                 double distDefect = util::euclideanDistance(defect, hand.defects_xyz[jj]),
                                     distFinger = util::euclideanDistance(finger, hand.fingers_xyz[jj]);
 
-                                //double spFinger = Util::clusterShortestPath(depth_map, 
-                                //                               fingerij / img_scale - top_left,
-                                //                               hand.fingers_ij[jj] / img_scale - top_left);
-
                                 if (distDefect < minDistDefect) minDistDefect = distDefect;
                                 if (distDefect > maxDistDefect) maxDistDefect = distDefect;
                                 if (distFinger < minDistFinger) minDistFinger = distFinger;
                                 if (distFinger > maxDistFinger) maxDistFinger = distFinger;
-                                //if (spFinger > minSp) minSp = spFinger;
-                                //if (spFinger > maxSp) maxSp = spFinger;
                             }
 
                             result.push_back(minDistFinger * 5.0);
                             result.push_back(maxDistFinger * 5.0);
                             result.push_back(minDistDefect * 5.0);
                             result.push_back(maxDistDefect * 5.0);
-                            //result.push_back(minSp * 5.0);
-                            //result.push_back(maxSp * 5.0);
                         }
                     }
 
@@ -336,10 +326,11 @@ namespace ark {
 
                 // read depth map
                 cv::Mat depth;
-                if (IMG_EXT == ".tsi")
-                    readTSI(depth, dataDir + depthPath + testCaseName + IMG_EXT);
+                if (IMG_EXT == ".dm")
+                    readDM(depth, dataDir + depthPath + testCaseName + IMG_EXT);
                 else
                     depth = cv::imread(dataDir + depthPath + testCaseName + IMG_EXT);
+
                 return extractFunc(depth);
             }
 

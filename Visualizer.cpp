@@ -34,7 +34,7 @@ namespace ark {
         return visualizeDepthMap(channels[2]);
     }
 
-    cv::Mat Visualizer::visualizeHand(cv::Mat xyzMap, const Hand hand)
+    cv::Mat Visualizer::visualizeHand(cv::Mat xyzMap, const Hand & hand)
     {
         cv::Mat displayImg;
 
@@ -56,8 +56,6 @@ namespace ark {
             cv::Scalar(255, 255, 0), unitWid * 1.5);
         cv::rectangle(displayImg, hand.wrist_ij[1] - box, hand.wrist_ij[1] + box,
             cv::Scalar(255, 255, 0), unitWid * 1.5);
-
-        //cv::line(displayImg, hand.wrist_ij[0], hand.wrist_ij[1], cv::Scalar(255, 255, 0), roundf(unitWid * 2));
 
         cv::circle(displayImg, hand.center_ij, hand.circle_radius,
             cv::Scalar(100, 100, 100), 1);
@@ -82,10 +80,6 @@ namespace ark {
             cv::putText(displayImg,
                 sstr.str(),
                 (hand.defects_ij[i] + hand.center_ij) / 2 - Point2i(15, 0), 0, 0.4 * unitWid, cv::Scalar(0, 255, 255), 1);
-
-            //cv::putText(displayImg,
-            //    std::to_string(hand.fingers_ij.size() - i),
-            //    hand.fingers_ij[i] + Point2i(-6, -18), 0, 0.7 * unitWid, cv::Scalar(255, 0, 255), 1);
         }
 
         return displayImg;

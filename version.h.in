@@ -8,13 +8,13 @@
 // Remove to disable visualizations (if building as library)
 #define DEMO
 
-// Remove to disable debug code
-#define DEBUG
+// Uncomment to enable debug code
+// #define DEBUG
 
-// Remove to disable plane detection
-#define PLANE_ENABLED
+// Uncomment to enable plane detection (warning: disables some hand constraints)
+// #define PLANE_ENABLED
 
 namespace ark {
     // OpenARK version number
-    static const char * VERSION = "0.8.1";
+    static const char * VERSION = "0.9.0";
 }

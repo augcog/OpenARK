@@ -35,9 +35,8 @@ static inline void drawHand(cv::Mat & image, Object3D & obj, float confidence = 
 
     std::stringstream disp;
     disp << std::setprecision(3) << std::fixed << confidence;
-
-    Point2i center = obj.getCenterIj();
-    Point2i dispPt = Point2i(center.x - (int)disp.str().size() * 8, center.y);
+    Point2i center = obj.getCenterIj(), 
+            dispPt = center - Point2i((int)disp.str().size() * 8, 0);
     cv::putText(image, disp.str(), dispPt, 0, 0.8, cv::Scalar(255, 255, 255), 1);
 }
 
@@ -61,52 +60,35 @@ int main() {
         return -1;
     }
 #endif
-    srand(time(NULL))
+    // seed rng
+    srand(time(NULL));
 
-    //RGBCamera *cam = new Webcam(1);
+    // store frame & FPS information
     int frame = 0;
-
-    //Calibration::XYZToUnity(*pmd, 4, 4, 3);
-
-    cv::FileStorage fs;
-    fs.open("RT_Transform.txt", cv::FileStorage::READ);
-
-    cv::Mat r, t;
-    fs["R"] >> r;
-    fs["T"] >> t;
-
-    fs.release();
-    UDPSender u = UDPSender();
-
-    StreamingAverager handAverager = StreamingAverager(4, 0.15), pAverager = StreamingAverager(6, 0.05);
     clock_t cycleStartTime = 0;
-
-    // store FPS information
     const int FPS_FRAMES = 5;
     float currFps = 0;
 
+    // main loop
     while (true)
     {
+        // go to next frame
         camera->nextFrame();
 
         #ifdef DEMO
+            // show depth image
             if (camera->getXYZMap().rows > 0) {
                 cv::imshow("OpenARK Depth Image", camera->getXYZMap());
                 if (camera->hasRGBImage()) {
                     cv::imshow("OpenARK Color Image", camera->getRGBImage());
                 }
-                //if (camera->hasIRImage() && camera->getIRImage().rows > 0) {
-                //    cv::Mat colorMat;
-                //    camera->getIRImage().convertTo(colorMat, CV_8U);
-                //    cv::imshow("OpenARK Infrared Image", colorMat);
-                //}
             }
         #endif
 
-        // Classifying objects in the scene
+        // classify objects in the scene
         std::vector<Object3D> objects = camera->queryObjects();
 
-        // visualization of hand objects
+        // create visualization of hand objects
         cv::Mat handVisual;
 
 #ifdef DEMO
@@ -134,8 +116,6 @@ int main() {
 
             if (obj.hasPlane) {
                 planeObjectIndex = i;
-                //cv::polylines(handVisual, obj.getContour(), true, 
-                    //cv::Scalar(255, 0, 255));
             }
 
             if (obj.hasHand) {
@@ -205,95 +185,10 @@ int main() {
         cv::namedWindow("OpenARK Hand Detection");
         cv::imshow("OpenARK Hand Detection", handVisual);
 
-        // Interpret the relationship between the objects
-        bool clicked = false, paletteFound = false;
-
-        Object3D handObject, planeObject;
-        Point paletteCenter(-1. - 1);
-        cv::Mat mask = cv::Mat::zeros(camera->getXYZMap().rows, camera->getXYZMap().cols, CV_8UC1);
-
-        if (planeObjectIndex != -1 && handObjectIndex != -1) {
-            //planeObject = objects[planeObjectIndex];
-            //handObject = objects[handObjectIndex];
-
-            //clicked = handObject.getHand().touchObject(planeObject.getPlane().getPlaneEquation(), planeObject.getPlane().R_SQUARED_DISTANCE_THRESHOLD * 5);
-            ////auto scene = Visualizer::visualizePlaneRegression(camera->getXYZMap(), planeObject.getPlane().getPlaneEquation(), planeObject.getPlane().R_SQUARED_DISTANCE_THRESHOLD, clicked);
-            ////scene = Visualizer::visualizeHand(scene, handObject.getHand());
-            //if (planeObject.leftEdgeConnected) {
-            //    Visualizer::visualizePlanePoints(mask, planeObject.getPlane().getPlaneIndicies());
-            //    auto m = moments(mask, false);
-            //    paletteCenter = Point(m.m10 / m.m00, m.m01 / m.m00);
-            //    //circle(scene, paletteCenter, 2, Scalar(0, 0, 255), 2);
-            //    paletteFound = true;
-            //}
-            //namedWindow("Results", CV_WINDOW_AUTOSIZE);
-            //imshow("Results", scene);
-        }
-        else if (handObjectIndex != -1) {
-            handObject = objects[handObjectIndex];
-            //cv::imshow("Results", Visualizer::visualizeHand(pmd->getXYZMap(), handObject.getHand()));
-        }
-        else if (planeObjectIndex != -1) {
-            planeObject = objects[planeObjectIndex];
-            //auto scene = Visualizer::visualizePlaneRegression(camera->getXYZMap(), planeObject.getPlane().getPlaneEquation(), planeObject.getPlane().R_SQUARED_DISTANCE_THRESHOLD, clicked);
-            if (planeObject.leftEdgeConnected) {
-                Visualizer::visualizePlanePoints(mask, planeObject.getPlane().getPlaneIndicies());
-                auto m = moments(mask, false);
-                paletteCenter = Point2i(m.m10 / m.m00, m.m01 / m.m00);
-                //circle(scene, paletteCenter, 2, Scalar(0, 0, 255), 2);
-                paletteFound = true;
-            }
-            //namedWindow("Results", CV_WINDOW_AUTOSIZE);
-            //imshow("Results", scene);
-        }
-
-        // Organize the data and send to game engine
-        std::string handX = "-", handY = "-", handZ = "-";
-        std::string paletteX = "-", paletteY = "-", paletteZ = "-";
-        std::string clickStatus = "2";
-        std::string num_fingers = "0";
-        if (handObjectIndex != -1 && !objects[handObjectIndex].getHand().fingers_xyz.empty()) {
-            auto handPos = handAverager.addDataPoint(objects[handObjectIndex].getHand().fingers_xyz[0]);
-            //float hand_pt[3] = { objects[handObjectIndex].getHand().pointer_finger_xyz[0], objects[handObjectIndex].getHand().pointer_finger_xyz[1], objects[handObjectIndex].getHand().pointer_finger_xyz[2]};
-            double hand_pt[3] = { handPos[0], handPos[1], handPos[2] };
-            auto hand_mat = cv::Mat(3, 1, CV_32FC1, &hand_pt);
-            //hand_mat = r*hand_mat + t;
-            handX = std::to_string(hand_mat.at<float>(0, 0));
-            handY = std::to_string(hand_mat.at<float>(1, 0));
-            handZ = std::to_string(hand_mat.at<float>(2, 0));
-            num_fingers = std::to_string(objects[handObjectIndex].getHand().fingers_xyz.size());
-        }
-        else {
-            handAverager.addEmptyPoint();
-        }
-        if (paletteFound) {
-            auto pt = pAverager.addDataPoint(camera->getXYZMap().at<Vec3f>(paletteCenter.y, paletteCenter.x));
-            float palette_pt[3] = { pt[0], pt[1], pt[2] };
-            auto palette_mat = cv::Mat(3, 1, CV_32FC1, &palette_pt);
-            //palette_mat = r*palette_mat + t;
-            paletteX = std::to_string(palette_mat.at<float>(0, 0));
-            paletteY = std::to_string(palette_mat.at<float>(1, 0));
-            paletteZ = std::to_string(palette_mat.at<float>(2, 0));
-        }
-        else {
-            pAverager.addEmptyPoint();
-        }
-        if (clicked) {
-            clickStatus = "1";
-        }
-
-        std::string tempS = "";
-        tempS = handX + "%" + handY + "%" + handZ + "%" + paletteX + "%" + paletteY + "%" + paletteZ + "%" + clickStatus + "%" + num_fingers;
-        u.send(tempS);
-
-        /**** Start: Write Frames to File ****/
-        //std::string filename = "img" + std::to_string(frame) + ".yml";
-        //pmd->writeImage(filename);
-        //std::cout << filename << std::endl;
-        /**** End: Write Frames to File ****/
-
         /**** Start: Loop Break Condition ****/
         int c = cv::waitKey(1);
+
+        // 27 is ESC
         if (c == 'q' || c == 'Q' || c == 27) {
             break;
         }

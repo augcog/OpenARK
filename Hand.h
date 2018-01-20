@@ -7,8 +7,8 @@ namespace ark {
     {
     public:
 
-
         // Public constructors
+
         /**
         * Default constructor for a hand object
         */
@@ -83,7 +83,12 @@ namespace ark {
         */
         double svm_confidence;
 
-        // Public functions
+        // Public methods
+
+        /**
+        * Get the number of fingers on this hand
+        */
+        int numFingers() const;
 
         /**
         * Determine whether one of the fingers is in contact with a tracked object.
@@ -91,12 +96,7 @@ namespace ark {
         * @param threshold Thickness of the plane modeled by the regression equation
         * @return TRUE if hand is contacting a tracked object. FALSE otherwise
         */
-        bool touchObject(std::vector<double> &equation, const double threshold);
-
-        /**
-        * Get the number of fingers on this hand
-        */
-        int numFingers();
+        bool touchObject(std::vector<double> &equation, const double threshold) const ;
 
     };
 }

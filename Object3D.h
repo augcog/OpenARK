@@ -117,25 +117,25 @@ namespace ark {
 
         /**
         * Gets the average depth of the object
-        * @returns average z-coordinate of the object in meters
+        * @return average z-coordinate of the object in meters
         */
         float getDepth();
 
         /**
         * Gets the visible surface area of the object
-        * @returns surface area in meters squared
+        * @return surface area in meters squared
         */
         double getSurfArea();
 
         /**
          * Get the depth map of the visible portion of this object
-         * @returns depth map of visible object
+         * @return depth map of visible object
          */
         const cv::Mat & getDepthMap();
 
         /**
          * Find the largest 2D contour within this cluster
-         * @returns vector of points representing the largest 2D contour within this cluster
+         * @return vector of points representing the largest 2D contour within this cluster
          */
         std::vector<Point2i> getContour();
 
@@ -265,7 +265,7 @@ namespace ark {
         /**
         * Find the center of mass of an object
         * @param contour contour of the object
-        * @returns point representing center of mass
+        * @return point representing center of mass
         */
         static inline Point2i Object3D::findCenter(std::vector<Point2i> contour);
 
@@ -273,7 +273,7 @@ namespace ark {
         * Simplify a convex hull by clustering points within distance 'threshold'
         * @param convex_hull the convex hull
         * @param threshold maximum distance between points in a cluster
-        * @returns simplified convex hull
+        * @return simplified convex hull
         */
         static std::vector<Point2i> Object3D::clusterConvexHull(std::vector<Point2i> convex_hull, int threshold);
 

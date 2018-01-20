@@ -126,16 +126,11 @@ namespace ark {
         */
         int computeSphereIndices();
 
-        static int drawSphereRegressionPoints(cv::Mat &output_mat, cv::Mat &input_mat, std::vector<double> &equation,
-            const int rowSize, const int colSize, const double threshold, bool clicked);
-
         // Private Variables
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud;
         pcl::PointCloud <pcl::Normal>::Ptr normals;
         pcl::PointCloud<pcl::PointXYZ>::Ptr down_cloud;
         pcl::PointCloud<pcl::Normal>::Ptr down_normals;
-        //pcl::PointCloud <pcl::PointXYZRGB>::Ptr colored_cloud;
-        //pcl::PointCloud <pcl::PointXYZRGB>::Ptr upsampled_colored_cloud;
         std::vector<pcl::PointIndices> clusters;
         std::vector<double> plane_equation;
         std::vector<double> sphere_equation;
@@ -147,6 +142,7 @@ namespace ark {
 
         // input ij points
         std::vector<cv::Point> * points;
+
         // input xyz points
         std::vector<cv::Vec3f> * points_xyz;
 

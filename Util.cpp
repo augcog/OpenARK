@@ -312,15 +312,12 @@ namespace ark {
             return total;
         }
 
-        // By Justin W Yang
         double surfaceAreaCircle(cv::Mat shape) {
             cv::Size size = shape.size();
             cv::Rect rect(0, 0, size.width, size.height);
 
             int dr[8] = { 1, 0, -1, 0, 1, -1, 1, -1 };
             int dc[8] = { 0, 1, 0, -1, 1, 1, -1, -1 };
-
-            // printf("%d %d\n", size.width, size.height);
 
             double surfArea = 0;
             for (int r = 0; r < size.height; r++)
@@ -343,7 +340,6 @@ namespace ark {
                         }
 
                         Vec3f adjPoint = shape.at<Vec3f>(nr, nc);
-                        // printf("%d %d %f %f %f\n", nr, nc, adjPoint[0], adjPoint[1], adjPoint[2]);
                         if (adjPoint[2] == 0) {
                             continue;
                         }
@@ -361,15 +357,12 @@ namespace ark {
             return surfArea;
         }
 
-        // By Justin W Yang
         double surfaceAreaTriangulate(cv::Mat shape) {
             cv::Size size = shape.size();
             cv::Rect rect(0, 0, size.width, size.height);
 
             int dr[4] = { 0, 1, 0, -1 };
             int dc[4] = { -1, 0, 1, 0 };
-
-            // printf("%d %d\n", size.width, size.height);
 
             double surfArea = 0;
             for (int r = 0; r < size.height; r++)
@@ -392,7 +385,6 @@ namespace ark {
                         }
 
                         Vec3f adjPoint = shape.at<Vec3f>(nr, nc);
-                        // printf("%d %d %f %f %f\n", nr, nc, adjPoint[0], adjPoint[1], adjPoint[2]);
                         if (adjPoint[2] == 0) {
                             continue;
                         }
@@ -406,7 +398,6 @@ namespace ark {
                         double dist2 = euclideanDistance(point, adj[1]);
                         double dist3 = euclideanDistance(adj[0], adj[1]);
                         double s = (dist1 + dist2 + dist3) / 2;
-                        // printf("%f %f %f %f\n", s, dist1, dist2, dist3);
                         surfArea += sqrt(abs(s * (s - dist1) * (s - dist2) * (s - dist3)));
                     }
 
@@ -415,7 +406,6 @@ namespace ark {
                         double dist2 = euclideanDistance(point, adj[3]);
                         double dist3 = euclideanDistance(adj[2], adj[3]);
                         double s = (dist1 + dist2 + dist3) / 2;
-                        // printf("%f %f %f %f\n", s, dist1, dist2, dist3);
                         surfArea += sqrt(abs(s * (s - dist1) * (s - dist2) * (s - dist3)));
                     }
                 }
