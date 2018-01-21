@@ -1,3 +1,0 @@
-SOURCE_GROUP("[% flter %]" FILES
-	[% files %]
-	)

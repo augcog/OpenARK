@@ -17,48 +17,46 @@ namespace ark {
         /**
          * number of pixels around a point on a depth image to average when
          * converting ij (image) coordinates to xyz (world) coordinates
-         * default: 5
+         * default: 9
          */
-        int xyzAverageSize = 5;
+        int xyzAverageSize = 9;
 
         /**
          * pixels from the bottom edge of the depth map where a point is
-         * considered to be connected to the edge
-         * default: 30
+         * considered to be connected to the edge (fingertips on edge are ignored)
+         * default: 10
          */
-        int bottomEdgeThresh = 30;
+        int bottomEdgeThresh = 10;
 
         /**
          * pixels from the left/right edges of the depth map where a point is
-         * considered to be connected to the edge
-         * default: 30
+         * considered to be connected to the edge (fingertips on edge are ignored)
+         * default: 10
          */
-        int sideEdgeThresh = 30;
+        int sideEdgeThresh = 10;
 
-        // ** Clustering parameters ** 
+        // ** Hand detection parameters ** 
 
         /**
          * maximum distance in meters between points in the same cluster
-         * (used in flood fill)
-         * default: 0.005
+         * (used in hand detection flood fill)
+         * default: 0.004
          */
-        double clusterMaxDistance = 0.005;
+        float handClusterMaxDistance = 0.004;
 
         /**
-         * minimum number of points in a cluster for it to be considered as a 3D object
-         * set to 0 to ignore, or -1 to set to NUM_POINTS / 30
-         * default: -1
+         * minimum fraction of the points in a cluster over the total number of points visible
+         * for the cluster to be considered as a hand candidate.
+         * set to 0 to ignore.
+         * default: 0.0167
          */
-        int clusterMinPoints = -1;
+        float handClusterMinPoints = 0.0167;
 
         /**
-         * number of pixels between consecutive seed points when initiating the flood fill
+         * number of pixels between consecutive seed points when initiating the hand detection flood fill
          * default: 10
          */
-        int clusterInterval = 10;
-
-
-        // ** Hand detection parameters ** 
+        int handClusterInterval = 10;
 
         /**
          * minimum surface area (square meters) of hand
@@ -75,9 +73,9 @@ namespace ark {
         /**
          * if true, hand objects must touch the bottom/bottom-left/bottom-right
          * edge of the visible region
-         * default: true
+         * default: false
          */
-        bool handRequireEdgeConnected = true;
+        bool handRequireEdgeConnected = false;
 
         /**
          * max y-coordinate on the left and right sides (as fraction of image height)
@@ -103,15 +101,15 @@ namespace ark {
          * @see handSVMConfidenceThresh
          * minimum SVM confidence value ([0...1]) for additional hand objects
          * (only applied in queryHands)
-         * default: 0.61
+         * default: 0.59
          */
-        double handSVMHighConfidenceThresh = 0.61;
+        double handSVMHighConfidenceThresh = 0.59;
 
         /**
          * maximum distance between the center of the hand and the top point in the hand cluster (m)
          * used when detecting the hand's center
          */
-        float centerMaxDistFromTop = 0.150;
+        float centerMaxDistFromTop = 0.155;
 
         /**
          * pixels from the bottom edge of the depth map at which contour points are considered to be on the edge
@@ -128,18 +126,6 @@ namespace ark {
         int contactSideEdgeThresh = 25;
 
         /**
-         * minimum width of region contacting edge (m)
-         * default: 0.037
-         */
-        float contactWidthMin = 0.037;
-
-        /**
-         * maximum width of region contacting edge (m)
-         * default: 0.150
-         */
-        float contactWidthMax = 0.150;
-
-        /**
          * minimum wrist width (m)
          * default: 0.030
          */
@@ -150,18 +136,6 @@ namespace ark {
          * default: 0.085
          */
         float wristWidthMax = 0.085;
-
-        /**
-         * minimum wrist angle (rad)
-         * default: 1.00
-         */
-        double wristAngleMin = 1.00;
-
-        /**
-         * maximum wrist angle (rad)
-         * default: PI (disabled)
-         */
-        double wristAngleMax = PI; // disable
 
         /**
          * maximum distance from the wrist to the center of the hand
@@ -177,15 +151,15 @@ namespace ark {
 
         /**
          * maximum finger length
-         * default: 0.12
+         * default: 0.125
          */
-        double fingerLenMax = 0.12;
+        double fingerLenMax = 0.125;
 
         /**
          * minimum distance between two finger tips
-         * default: 0.015
+         * default: 0.01
          */
-        double fingerDistMin = 0.015;
+        double fingerDistMin = 0.01;
 
         /**
          * minimum value of (finger_y - defect_y)/abs(finger_x - defect_x) for any finger.
@@ -203,9 +177,9 @@ namespace ark {
 
         /**
          * minimum curvature of the cluster's contour next to a finger tip
-         * default: 1.30
+         * default: 0.95
          */
-        double fingerCurveNearMin = 1.30;
+        double fingerCurveNearMin = 0.95;
 
         /**
          * maximum curvature of the cluster's contour next to a finger tip
@@ -221,9 +195,9 @@ namespace ark {
 
         /**
          * maximum curvature of the cluster's contour at a significant distance from the finger tip
-         * default: 1.10
+         * default: 1.20
          */
-        double fingerCurveFarMax = 1.10;
+        double fingerCurveFarMax = 1.20;
 
         /*
          * minimum finger length used when only one finger is detected
@@ -285,5 +259,90 @@ namespace ark {
          * default: 0.40 * PI
          */
         double centroidDefectFingerAngleMin = 0.40 * PI;
+
+        /**
+         * minimum norm (distance squared; in m^2) between a hand and a plane.
+         * points closer to the plane are not considered during hand detection
+         * so that the hand is isolated from the planar surfaces are removed.
+         * default: 0.000075
+         */
+        double handPlaneMinNorm = 0.000075;
+
+        // ** Plane detection parameters ** 
+
+        /**
+         * resolution of normal map used in plane detection
+         * default: 3
+         */
+        int normalResolution = 3;
+
+        /**
+         * maximum difference between the surface normal vectors of two adjacent points
+         * to consider them as being on the same plane
+         * (used in flood fill during plane detection)
+         * default: 0.06
+         */
+        float planeFloodFillThreshold = 0.06;
+
+        /**
+         * fraction of outlier points to remove from the plane before performing regression
+         * default: 0.5f
+         */
+        float planeOutlierRemovalThreshold = 0.5f;
+
+        /**
+         * minimum (# points / # total points on screen / normal resolution^2)
+         * on a combined plane.
+         * smaller planes are discarded.
+         * default: 0.0650
+         */
+        float planeMinPoints = 0.0650;
+
+        /**
+         * minimum surface area (m^2) of a combined plane
+         * default: 0.0300
+         */
+        double planeMinArea = 0.0300;
+
+        /**
+         * minimum (# equation inliers / # total points on screen * normal resolution^2)
+         * on a combined plane
+         * planes not meeting this criterion are discarded.
+         * default: 0.0550
+         */
+        float planeEquationMinInliers = 0.0550;
+
+        /**
+         * minimum (# points / # total points on screen * normal resolution^2)
+         * in a component of a greater plane
+         * default: 0.0100
+         */
+        float subplaneMinPoints = 0.0100;
+
+        /**
+         * minimum surface area (m^2) of a component of a greater plane
+         * default: 0.009
+         */
+        double subplaneMinArea = 0.009;
+
+        /**
+         * minimum (# points / # total points on screen * normal resolution^2)
+         * for a plane to be considered a 'dominant' plane and thus removed 
+         * prior to hand detection.
+         * default: 0.200
+         */
+        double dominantPlaneMinPoints = 0.200;
+
+        /**
+         * minimum norm (r^2) between the equations of two 'subplanes'
+         * to consider them separate planes.
+         * if norm is lower, the two are combined into one larger plane object.
+         * default: 0.0025
+         */
+        double planeCombineThreshold = 0.0025;
+
+
+        /** Instance of ObjectParams initialized with default parameters */
+        static const ObjectParams DEFAULT;
     };
 }

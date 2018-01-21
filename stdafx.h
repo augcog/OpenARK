@@ -36,17 +36,22 @@
 // Boost
 #include <boost/filesystem.hpp>
 #include <boost/function.hpp>
+#include <boost/smart_ptr.hpp>
 #include <boost/bind.hpp>
+#include <boost/polygon/voronoi.hpp>
+#include <boost/polygon/point_data.hpp>
+#include <boost/polygon/segment_data.hpp>
 
 // OpenCV Libraries
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
-#include "opencv2/calib3d/calib3d.hpp"
-#include "opencv2/highgui/highgui.hpp"
+#include <opencv2/calib3d/calib3d.hpp>
+#include <opencv2/highgui/highgui.hpp>
 #include <opencv2/video/tracking.hpp>
-#include "opencv2/imgproc/imgproc.hpp"
+#include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/objdetect/objdetect.hpp>
-#include "opencv2/features2d/features2d.hpp"
+#include <opencv2/features2d.hpp>
+#include <opencv2/ml.hpp>
 
 // PCL Libaries
 #include <pcl/filters/voxel_grid.h>
@@ -77,9 +82,6 @@
 // Flann
 #include <flann/util/serialization.h>
 
-// LibSVM
-#include "libSVM/svm.h"
-
 // OpenARK namespace
 namespace ark {
     typedef cv::Point Point;
@@ -90,4 +92,13 @@ namespace ark {
     typedef cv::Vec3f Vec3f;
     typedef cv::Vec3d Vec3d;
     typedef cv::Vec3i Vec3i;
+
+    // smart pointer shorthands
+    typedef boost::shared_ptr<cv::Mat> MatPtr;
+    typedef boost::shared_ptr<std::vector<Point2i> > VecP2iPtr;
+    typedef boost::shared_ptr<std::vector<Vec3f> > VecV3fPtr;
+
+    // _ means pointer
+    typedef std::vector<VecP2iPtr> Vec_VecP2i;
+    typedef std::vector<VecV3fPtr> Vec_VecV3f;
 }

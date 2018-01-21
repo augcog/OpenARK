@@ -24,12 +24,12 @@ namespace ark {
         {
             cornersAmp.clear();
             cornersXYZ.clear();
-            auto found1 = false;
+            bool found1 = false;
             depth_cam.nextFrame();
-            auto xyzMap = depth_cam.getXYZMap();
+            const MatPtr xyzMap = depth_cam.getXYZMap();
 
             cv::Mat ampGray;
-            cv::normalize(depth_cam.getAmpMap(), ampGray, 0, 255, cv::NORM_MINMAX, CV_8UC1);
+            cv::normalize(*depth_cam.getAmpMap(), ampGray, 0, 255, cv::NORM_MINMAX, CV_8UC1);
             cv::equalizeHist(ampGray, ampGray);
             cv::resize(ampGray, ampGray, cv::Size(ampGray.cols * 4, ampGray.rows * 4));
 
@@ -56,7 +56,7 @@ namespace ark {
 
                 for (auto i = 0; i < cornersAmp.size(); i++)
                 {
-                    auto xyz = util::averageAroundPoint(xyzMap, cv::Point2i(cornersAmp[i].x, cornersAmp[i].y), 5);
+                    auto xyz = util::averageAroundPoint(*xyzMap, cv::Point2i(cornersAmp[i].x, cornersAmp[i].y), 5);
                     cv::Point3f pt;
                     pt.x = xyz[0]; pt.y = xyz[1], pt.z = xyz[2];
                     if (pt.z == 0) {

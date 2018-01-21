@@ -5,109 +5,71 @@
 
 // OpenARK headers
 #include "version.h"
-#include "Hand.h"
-#include "Plane.h"
 #include "ObjectParams.h"
 
-// SVM integration
-#include "HandClassifier.h"
-
 namespace ark {
-    class Object3D
+    /** Class representing a 3D object observed in a single frame */
+    class FrameObject
     {
     public:
         /**
-        * Whether the object is attached to the left edge of the frame.
-        * Edge connected implies that object is likely connected to the user's body (hand, arm, etc)
+        * Constructs an empty FrameObject instance.
         */
-        bool leftEdgeConnected = false;
+        FrameObject();
 
         /**
-        * Whether the object is attached to the right edge of the frame.
-        * Edge connected implies that object is likely connected to the user's body (hand, arm, etc)
-        */
-        bool rightEdgeConnected = false;
-
-        /**
-        * Constructs an empty Object3D instance.
-        */
-        Object3D();
-
-        /**
-        * Constructs an Object3D instance based on an isolated point cloud.
+        * Constructs an FrameObject instance based on an isolated point cloud.
         * Note: points not on the cluster must have 0 z-coordinate in the point cloud.
         * @param cluster_depth_map point cloud containing the object
         * @param params parameters for object/hand detection (if not specified, uses default params)
         */
-        explicit Object3D::Object3D(cv::Mat cluster_depth_map,
+        explicit FrameObject(const cv::Mat & cluster_depth_map,
             const ObjectParams * params = nullptr);
 
         /**
-        * Construct an Object3D instance from a vector of points.
+        * Construct an FrameObject instance from a vector of points.
         * @param [in] points vector of all points (in screen coordinates) belonging to the object
         * @param [in] depth_map the reference point cloud. (CAN contain points outside this object)
         * @param params parameters for object/hand detection (if not specified, uses default params)
         * @param sorted if true, assumes that 'points' is already ordered and skips sorting to save time.
         * @param points_to_use optionally, the number of points in 'points' to use for the object. By default, uses all points.
         */
-        Object3D::Object3D(std::vector<Point2i> & points_ij,
-            std::vector<Vec3f> & points_xyz,
-            cv::Mat & depth_map,
+        FrameObject(boost::shared_ptr<std::vector<Point2i>> points_ij,
+            boost::shared_ptr<std::vector<Vec3f>> points_xyz,
+            const cv::Mat & depth_map,
             const ObjectParams * params = nullptr,
             bool sorted = false,
             int points_to_use = -1
         );
 
         /**
-        * Destructs an Object3D instance.
+        * Destructs an FrameObject instance.
         */
-        ~Object3D();
+        ~FrameObject();
 
         /**
-        * Whether the object contains a hand.
+        * Gets a list of points in this object, in screen coordinates
+        * @return list of points
         */
-        bool hasHand = false;
+        const std::vector<Point2i> & getPointsIJ() const;
 
         /**
-        * Whether the object contains a plane.
+        * Gets a list of points in this object, in screen coordinates
+        * @return list of points
         */
-        bool hasPlane = false;
-
-        /**
-        * Whether the object contains a shape.
-        * A shape is defined by anything that is not a plane or a hand
-        */
-        bool hasShape = false;
-
-        /**
-        * Gets instance of hand object if a hand is found.
-        * @return instance of hand object
-        */
-        const Hand & getHand() const;
-
-        /**
-        * Gets instance of plane object is plane is found.
-        * @return instance of plane object
-        */
-        const Plane & getPlane() const;
-
-        /**
-        * Gets instance of shape object.
-        * @return instance of shape object
-        */
-        cv::Mat getShape() const;
+        const std::vector<Vec3f> & getPoints() const;
 
         /**
         * Gets approximate center of mass of object in screen coordinates
         * @return center of object in screen coordinates
         */
-        Point2i getCenterIj();
+        const Point2i & getCenterIJ();
 
         /**
         * Gets approximate center of mass of object in real coordinates
         * @return center of object in real (xyz) coordinates
         */
-        Vec3f getCenter();
+        const Vec3f & getCenter();
 
         /**
         * Gets bounding box of object in screen coordinates
@@ -137,24 +99,24 @@ namespace ark {
          * Find the largest 2D contour within this cluster
          * @return vector of points representing the largest 2D contour within this cluster
          */
-        std::vector<Point2i> getContour();
+        const std::vector<Point2i> & getContour();
 
         /**
         * Gets the 2D convex hull of this object
         * @return the 2D convex hull of this object, stored as a vector of points
         */
-        std::vector<Point2i> getConvexHull();
+        const std::vector<Point2i> & getConvexHull();
 
-    private:
+    protected:
         /**
          * Stores ij coordinates of points in this cluster
          */
-        std::vector<Point2i> * points = nullptr;
+        boost::shared_ptr<std::vector<Point2i>> points = nullptr;
 
         /**
          * Stores xyz coordinates of points in this cluster
          */
-        std::vector<Vec3f> * points_xyz = nullptr;
+        boost::shared_ptr<std::vector<Vec3f>> points_xyz = nullptr;
 
         /**
          * Stores number of points in 'points' used in the cluster
@@ -193,21 +155,6 @@ namespace ark {
         double surfaceArea = -1;
 
         /**
-         * Pointer to the hand instance.
-         */
-        boost::shared_ptr<Hand> hand = nullptr;
-
-        /**
-         * Pointer to the plane instance.
-         */
-        boost::shared_ptr<Plane> plane = nullptr;
-
-        /**
-         * The shape instance.
-         */
-        cv::Mat shape;
-
-        /**
          * Largest contour in object
          */
         std::vector<Point2i> contour;
@@ -237,37 +184,21 @@ namespace ark {
          */
         double avgDepth = -1.0;
 
-        /**
-         * Determine whether the object is connected to an edge.
+        /** 
+         * Amount the gray map is scaled by for contour finding.
+         * Must be a power of 2, at least 1.
+         * May be overridden in derived classes. The higher the scale, the
+         * more time-consuming the contour detection process but the smoother the contour.
+         * Default is 1 (no scaling).
          */
-        void checkEdgeConnected();
-
-        /**
-        * Check whether the object is a hand
-        * @param cluster input cluster (defaults to &this->xyzMap)
-        * @param points vector of points in cluster (defaults to this->points_xyz)
-        * @param points_xyz vector of xyz coords of points in cluster (defaults to this->points_xyz)
-        * @param num_points number of points
-        * @param params parameters for hand detection (defaults to this->params)
-        */
-        boost::shared_ptr<Hand> checkForHand(const cv::Mat * cluster = nullptr,
-            const std::vector<Point2i> * points = nullptr,
-            const std::vector<Vec3f> * points_xyz = nullptr,
-            cv::Point topLeftPt = cv::Point(INT_MAX, 0),
-            int num_points = -1,
-            const ObjectParams * params = nullptr);
-
-        /**
-        * Subroutine for computing the largest contour, convex hull, etc. for this 3D object.
-        */
-        void initializeObject();
+        virtual int getContourScalingFactor() const;
 
         /**
         * Find the center of mass of an object
         * @param contour contour of the object
         * @return point representing center of mass
         */
-        static inline Point2i Object3D::findCenter(std::vector<Point2i> contour);
+        static Point2i FrameObject::findCenter(std::vector<Point2i> contour);
 
         /**
         * Simplify a convex hull by clustering points within distance 'threshold'
@@ -275,7 +206,7 @@ namespace ark {
         * @param threshold maximum distance between points in a cluster
         * @return simplified convex hull
         */
-        static std::vector<Point2i> Object3D::clusterConvexHull(std::vector<Point2i> convex_hull, int threshold);
+        static std::vector<Point2i> FrameObject::clusterConvexHull(std::vector<Point2i> convex_hull, int threshold);
 
         /**
           * Perform erode-dilate morphological operations on the cluster's depth image
@@ -295,7 +226,8 @@ namespace ark {
          * @param num_points number of points in cluster
          * @param thresh the minimum z-coordinate of a point on the depth image below which the pixel will be zeroed out
          */
-        void Object3D::computeContour(const cv::Mat & xyzMap, const std::vector<cv::Point> * points, 
+        void FrameObject::computeContour(const cv::Mat & xyzMap, 
+            const std::vector<cv::Point> * points, 
             const std::vector<cv::Vec3f> * points_xyz,
             cv::Point topLeftPt, int num_points);
 
@@ -308,17 +240,25 @@ namespace ark {
          * @param num_points number of points in cluster
          * @param thresh the minimum z-coordinate of a point on the depth image below which the pixel will be zeroed out
          */
-        void computeGrayMap(const cv::Mat & xyzMap, const std::vector<cv::Point> * points, 
-            const std::vector<cv::Vec3f> * points_xyz, cv::Point topLeftPt, int num_points,  int thresh = 0);
+        void computeGrayMap(const cv::Mat & xyzMap, 
+            const std::vector<cv::Point> * points, 
+            const std::vector<cv::Vec3f> * points_xyz,
+            cv::Point topLeftPt, int num_points,  int thresh = 0);
 
         /*
          * Parameters for object/hand detection
          */
         const ObjectParams * params = nullptr;
 
-        /**
-        * SVM Hand classifier instance
-        */
-        static classifier::HandClassifier & handClassifier;
+    private:
+        /** Constructor helper */
+        void initializeFrameObject(boost::shared_ptr<std::vector<Point2i>> points_ij,
+            boost::shared_ptr<std::vector<Vec3f>> points_xyz,
+            const cv::Mat & depth_map,
+            const ObjectParams * params = nullptr,
+            bool sorted = false,
+            int points_to_use = -1
+        );
+
     };
 }

@@ -71,8 +71,6 @@ namespace ark {
         if (data.pitches[0] % cvDataWidth != 0) throw; // not implemented
 
         outImg->create(imgInfo.height, data.pitches[0] / cvDataWidth, cvDataType);
-
-        //memcpy(outImg->data, data.planes[0], imgInfo.height*imgInfo.width*cvDataWidth * sizeof(pxcBYTE));
         memcpy(outImg->data, data.planes[0], imgInfo.height * imgInfo.width * cvDataWidth);
     }
 }

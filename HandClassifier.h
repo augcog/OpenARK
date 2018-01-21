@@ -27,47 +27,67 @@ namespace ark {
             /**
              * Import the classifier model from a file
              * @param path path to import from
-             * @return true on success, false on error.
+             * @returns true on success, false on error.
              */
             virtual bool loadFile(std::string path) = 0;
 
             /**
              * Export the classifier model to a file.
              * @param path path to export to
-             * @return true if success, false on error.
+             * @returns true if success, false on error.
              */
-            virtual bool exportFile(std::string path) = 0;
+            virtual bool exportFile(std::string path) const = 0;
 
             /**
              * Start training this classifier with data from the specified path.
              * @param dataPath path to the training data directory
-             * @return true on success, false on error. If already trained, returns true.
+             * @param hyperparams hyperparameter array
+             * @returns true on success, false on error. If already trained, returns true.
              */
-            virtual bool train(std::string dataPath) = 0;
+            virtual bool train(std::string dataPath, const double hyperparams[]) = 0;
 
             /**
              * Returns true if this classifier has finished training
-             * @return true if classifier is trained
+             * @returns true if classifier is trained
              */
-            virtual bool isTrained();
+            virtual bool isTrained() const;
 
             /**
              * Use this classifier to classify a features vector representing an object.
              * If the classifier has yet to be trained, throws ClassifierNotTrainedException.
-             * @param vector of features
-             * @return double value indicating category the object belongs to
+             * @param [in] vector of features
+             * @returns double value indicating category the object belongs to
              */
-            virtual double classify(const std::vector<double> features) = 0;
+            virtual double classify(const std::vector<double> & features) const = 0;
+
+            /** Extract hand-specific features from a given Hand object and depth map
+             *  @param [in] hand Hand instance
+             *  @param [in] depth_map depth map (note: must be CV_32FC3)
+             *  @param top_left optionally, top left point represented in depth map (x, y coordinates to translate by)
+             *  @param img_scale optionally, amount the depth map has been scaled by
+             *  @param full_wid optionally, size of full depth map. By default, uses width of depth_map
+             *  @returns vector of features
+             */
+            static std::vector<double> extractHandFeatures(ark::FrameObject & obj, const cv::Mat & depth_map,
+                cv::Point top_left = cv::Point(0, 0), double img_scale = 2.0, int full_wid = -1);
 
         protected:
             /**
             * True if the classifer has been trained.
             */
             bool trained = false;
+
+            /** Helper for computing contour diameter */
+            static double diameter(const std::vector<cv::Point> & cont,
+                int & a, int & b);
+
+            /** Helper for computing mean and variance */
+            static void computeMeanAndVariance(const std::vector<ark::Vec3f> & points, cv::Vec3f center,
+                double & avg_dist, double & var_dist, double & avg_depth, double & var_depth);
         };
 
         /**
-         * SVM-based hand classifier
+         * (OpenCV) SVM-based hand classifier
          */
         class SVMHandClassifier : public HandClassifier {
         public:
@@ -76,7 +96,7 @@ namespace ark {
              * 1 SVM is used for each number of visible fingers, i.e. 1 for hands with 1 visible finger,
              * 1 for hands with 2 visible fingers, etc.
              */
-            static const int NUM_SVMS = 5;
+            static const int NUM_SVMS = 4;
 
             /**
             * Default SVM hyperparameters
@@ -85,15 +105,20 @@ namespace ark {
 
             /**
              * Create a new, untrained SVM hand classifier
-             * @param hyperparams array of hyperparameters (defaults to DEFAULT_HYPERPARAMS)
              */
-            SVMHandClassifier(const double hyperparams[5 * NUM_SVMS] = DEFAULT_HYPERPARAMS);
+            SVMHandClassifier();
 
             /** Construct a SVM hand classifier by
              *  loading the classifier models from disk.
              *  @param path path to directory with model files
              */
-            explicit SVMHandClassifier(std::string path);
+            explicit SVMHandClassifier(const char * path);
+
+            /** Construct a SVM hand classifier by
+             *  loading the classifier models from disk. Attempts multiple locations.
+             *  @param paths paths to attempt to load the model files from
+             */
+            explicit SVMHandClassifier(const char * paths[]);
 
             /**
              * Destroy this SVM hand classifier
@@ -103,33 +128,35 @@ namespace ark {
             /**
              * Load the SVM models from disk
              * @param path directory to load models from.
-             * @return true on success, false on error.
+             * @returns true on success, false on error.
              */
-            bool loadFile(std::string path);
+            bool loadFile(std::string path) override;
 
             /**
              * Write the SVM models to disk.
              * @param path directory to export models to.
-             * @return true if success, false on error.
+             * @returns true if success, false on error.
              */
-            bool exportFile(std::string path);
+            bool exportFile(std::string path) const override;
 
             /**
              * Start training this classifier with data from the specified path.
              * @param dataPath path to the training data directory
-             * @return true on success, false on error. If already trained, returns true.
+             * @param hyperparams hyperparameter array
+             * @returns true on success, false on error. If already trained, returns true.
              */
-            virtual bool train(std::string dataPath);
+            virtual bool train(std::string dataPath,
+                const double hyperparams[5 * NUM_SVMS] = DEFAULT_HYPERPARAMS) override;
 
             /**
              *  Use this classifier to classify a feature vector representing an object.
              *  Returns a double between 0 and 1.
              * '1' indicates that we are fully confident that the object is a hand, and vice versa.
              *  If the classifier has yet to be trained, throws ClassifierNotTrainedException.
-             *  @param features vector of features (index 0 should be number of fingers)
-             *  @return Confidence that object is a hand (double value between 0 and 1)
+             *  @param [in] features vector of features (index 0 should be number of fingers)
+             *  @returns Confidence that object is a hand (double value between 0 and 1)
              */
-            double classify(const std::vector<double> features);
+            double classify(const std::vector<double> & features) const override;
 
             /**
             * Get the index of the SVM this classifier would use for a certain feature vector.
@@ -137,24 +164,31 @@ namespace ark {
             * Note: 1 SVM is used for each number of visible fingers, i.e. 1 for hands with 1 visible finger,
             * 1 for hands with 2 visible fingers, etc.
             * @param features vector of features (index 0 should be number of fingers)
-            * @return index of SVM used
+            * @returns index of SVM used
             */
-            static inline int getSVMIdx(const std::vector<double> features);
+            static int getSVMIdx(const std::vector<double> & features);
+
+            /**
+            * Get the index of the SVM this classifier would use for the given number of fingers
+            * Useful for checking which SVM is working well and which is not
+            * Note: 1 SVM is used for each number of visible fingers, i.e. 1 for hands with 1 visible finger,
+            * 1 for hands with 2 visible fingers, etc.
+            * @param features vector of features (index 0 should be number of fingers)
+            * @returns index of SVM used
+            */
+            static int getSVMIdx(int num_fingers);
 
         private:
             /**
              * Maximum number of features. Any additonal features will be cut off.
              */
-            static const int MAX_FEATURES = 54;
+            static const int MAX_FEATURES = 57;
 
             // SVM storage
-            libsvm::svm_model * model[NUM_SVMS];
-            libsvm::svm_problem prob[NUM_SVMS];
-            libsvm::svm_node * xstore[NUM_SVMS];
-            libsvm::svm_parameter * param[NUM_SVMS];
+            cv::Ptr<cv::ml::SVM> svm[NUM_SVMS];
 
             /**
-            * Initialize classifiers
+            * Helper for initializing classifiers
             */
             void initSVMs(const double hyperparams[5 * NUM_SVMS] = DEFAULT_HYPERPARAMS);
         };

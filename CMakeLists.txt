@@ -2,8 +2,20 @@ cmake_minimum_required(VERSION 2.8)
 
 project( OpenARK )
 
+set(OpenARK_VERSION_MAJOR 0)
+set(OpenARK_VERSION_MINOR 9)
+set(OpenARK_VERSION_PATCH 1)
+
+set(SVM_PATHS "\"svm/\", \"../svm/\", \"\"")
+
 set(CMAKE_CXX_STACK_SIZE "10000000")
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake_modules")
+
+set(DEMO_NAME "OpenARK_demo")
+set(TEST_NAME "OpenARK_test")
+set(LIB_NAME "OpenARK")
+
+option(BUILD_LIB "BUILD_LIB" ON)
 option(BUILD_TESTS "BUILD_TESTS" OFF)
 option(USE_PMD "USE_PMD" OFF) 
 
@@ -62,8 +74,8 @@ endforeach()
 
 set(
   SOURCES 
-  Object3D.cpp 
-  Hand.cpp Plane.cpp 
+  FrameObject.cpp 
+  Hand.cpp FramePlane.cpp 
   Webcam.cpp 
   DepthCamera.cpp 
   RGBCamera.cpp
@@ -73,16 +85,14 @@ set(
   Util.cpp	
   Visualizer.cpp	
   Converter.cpp
-  HandFeatureExtractor.cpp
   HandClassifier.cpp
-  libSVM/svm.cpp
 )
 
 set(
   HEADERS 
-  Object3D.h
+  FrameObject.h
   ObjectParams.h
-  Hand.h Plane.h
+  Hand.h FramePlane.h
   Webcam.h
   DepthCamera.h 
   RGBCamera.h
@@ -93,9 +103,7 @@ set(
   Visualizer.h	
   Converter.h
   stdafx.h
-  HandFeatureExtractor.h
   HandClassifier.h
-  libSVM/svm.h
 )
 
 if(NOT RSSDK_FOUND)
@@ -116,6 +124,8 @@ endif(NOT PMDSDK_FOUND)
 
 configure_file(Version.h.in ${PROJECT_SOURCE_DIR}/version.h)
 set(HEADERS ${HEADERS} version.h)
+
+source_group("Header Files" *.h)
 
 macro(add_msvc_pch PrecompiledHeader PrecompiledSource SourcesVar)
   if(MSVC)
@@ -142,12 +152,20 @@ if (MSVC)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 endif(MSVC)
 
-source_group("Header Files" *.h)
+add_executable( ${DEMO_NAME} main.cpp ${SOURCES} ${HEADERS})
 
-add_executable( OpenARK main.cpp ${SOURCES} ${HEADERS})
-target_link_libraries( OpenARK ${DEPENDENCIES} )
-set_target_properties( OpenARK PROPERTIES
-  COMPILE_FLAGS ${TARGET_COMPILE_FLAGS})
+if(${BUILD_LIB})
+    add_library(${LIB_NAME} STATIC core.h ${SOURCES} ${HEADERS})
+    set_target_properties( ${LIB_NAME} PROPERTIES OUTPUT_NAME 
+            "openark_${OpenARK_VERSION_MAJOR}_${OpenARK_VERSION_MINOR}_${OpenARK_VERSION_PATCH}")
+    set_target_properties(${LIB_NAME} PROPERTIES COMPILE_FLAGS "/MDd")
+    set_property(TARGET ${LIB_NAME} PROPERTY DBG_POSTFIX d)
+    target_link_libraries( ${LIB_NAME} ${DEPENDENCIES} )
+endif(${BUILD_LIB})
+
+target_link_libraries( ${DEMO_NAME} ${DEPENDENCIES} )
+set_target_properties( ${DEMO_NAME} PROPERTIES OUTPUT_NAME "OpenARK")
+set_target_properties( ${DEMO_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS})
 
 if(${BUILD_TESTS})
   if(NOT EXISTS ${PROJECT_SOURCE_DIR}/OpenARK_test)
@@ -168,12 +186,8 @@ if(${BUILD_TESTS})
 
   add_msvc_pch("../stdafx.h" "" TEST_SOURCES)
 
-  add_executable( OpenARK_test OpenARK_test/test.cpp 
-    OpenARK_test/TestCamera.cpp ${SOURCES} OpenARK_test/TestCamera.h ${HEADERS})
-  target_link_libraries( OpenARK_test ${DEPENDENCIES} )
-  set_target_properties( OpenARK_test PROPERTIES
+  add_executable( ${TEST_NAME} ${TEST_SOURCES} ${SOURCES} OpenARK_test/TestCamera.h ${HEADERS})
+  target_link_libraries( ${TEST_NAME} ${DEPENDENCIES} )
+  set_target_properties( ${TEST_NAME} PROPERTIES
     COMPILE_FLAGS ${TARGET_COMPILE_FLAGS})
 endif(${BUILD_TESTS})
-
-
-

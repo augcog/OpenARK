@@ -24,32 +24,44 @@ namespace ark {
         explicit SR300Camera(bool use_live_sensor = true);
 
         /**
-        * Deconstructor for the SR300 Camera.
+        * Destructor for the SR300 Camera.
         */
-        ~SR300Camera();
+        ~SR300Camera() override;
 
         /**
-        * Gets new frame from sensor.
-        * Updates xyzMap, ampMap, and flagMap. Resets clusters.
-        */
-        void update() override;
+         * Get the camera's model name.
+         */
+        const std::string getModelName() const override;
+
+        /** 
+         * Returns the width of the SR300 camera frame 
+         */
+        int getWidth() const override;
+
+        /** 
+         * Returns the height of the SR300 camera frame 
+         */
+        int getHeight() const override;
 
         /**
          * Returns true if an RGB image is available from this camera.
          * @return true if an RGB image is available from this camera.
          */
-        bool hasRGBImage() const;
+        bool hasRGBMap() const override;
 
         /**
          * Returns true if an infrared (IR) image is available from this camera.
          * @return true if an infrared (IR) image is available from this camera.
          */
-        bool hasIRImage() const;
+        bool hasIRMap() const override;
 
+    protected:
         /**
-        * Gracefully closes the SR300 camera.
+        * Gets the new frame from the sensor (implements functionality).
+        * Updates xyzMap and ir_map.
         */
-        void destroyInstance();
+        void update(MatPtr & xyz_map, MatPtr & rgb_map, MatPtr & ir_map, 
+                            MatPtr & amp_map, MatPtr & flag_map) override;
 
     private:
         /**
@@ -77,21 +89,11 @@ namespace ark {
         float getZ(int i, int j) const;
 
         /**
-        * Update the z-coordinates of the xyzMap.
-        */
-        void fillInZCoords();
-
-        /**
-        * Update the values in the ampMap.
-        */
-        void fillInAmps();
-
-        /**
-         * Initializat the camera
+         * Initialize the camera, opening channels and resetting to initial configurations
          */
         void initCamera();
 
-        //Private Variables
+        // Private Variables
         float* dists;
         float* amps;
         cv::Mat frame;
@@ -105,5 +107,10 @@ namespace ark {
         Intel::RealSense::Device *device;
         Intel::RealSense::CaptureManager *cm;
 
+        // actual width of the SR300 camera depth frame
+        static const int REAL_WID = 640;
+
+        // actual height of the SR300 camera depth frame
+        static const int REAL_HI = 480;
     };
 }

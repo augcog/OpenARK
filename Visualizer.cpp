@@ -9,80 +9,152 @@ namespace ark {
     /***
     Maps matrix values to [0, 255] for viewing
     ***/
-    cv::Mat Visualizer::visualizeMatrix(cv::Mat &input)
+    void Visualizer::visualizeMatrix(const cv::Mat & input, cv::Mat & output)
     {
-        cv::Mat img;
-        cv::normalize(input, img, 0, 255, cv::NORM_MINMAX, CV_8UC3);
-        return img;
+        if (output.rows == 0) output.create(input.size(), CV_8UC3);
+        cv::normalize(input, output, 0, 255, cv::NORM_MINMAX, CV_8UC3);
     }
 
     /***
     RGB depth map visualization
     ***/
-    cv::Mat Visualizer::visualizeDepthMap(cv::Mat &depthMap)
+    void Visualizer::visualizeDepthMap(const cv::Mat & depth_map, cv::Mat & output)
     {
-        cv::Mat img;
-        cv::normalize(depthMap, img, 0, 255, cv::NORM_MINMAX, CV_8UC1);
-        cv::applyColorMap(img, img, cv::COLORMAP_HOT);
-        return img;
+        if (output.rows == 0) output.create(depth_map.size(), CV_8UC3);
+        cv::normalize(depth_map, output, 0, 255, cv::NORM_MINMAX, CV_8UC1);
+        cv::applyColorMap(output, output, cv::COLORMAP_HOT);
     }
 
-    cv::Mat Visualizer::visualizeXYZMap(const cv::Mat &xyzMap)
+    void Visualizer::visualizeXYZMap(const cv::Mat & xyzMap, cv::Mat & output)
     {
         cv::Mat channels[3];
         cv::split(xyzMap, channels);
-        return visualizeDepthMap(channels[2]);
+        visualizeDepthMap(channels[2], output);
     }
 
-    cv::Mat Visualizer::visualizeHand(cv::Mat xyzMap, const Hand & hand)
+    void Visualizer::visualizeNormalMap(const cv::Mat & normal_map, cv::Mat & output, 
+                                        int resolution)
     {
-        cv::Mat displayImg;
+        if (output.rows == 0) output.create(normal_map.size() / resolution, CV_8UC3);
 
-        if (xyzMap.type() == CV_32FC3)
-        {
-            displayImg = Visualizer::visualizeXYZMap(xyzMap);
+        for (int i = 0; i < output.rows; ++i) {
+            const Vec3f * inPtr = normal_map.ptr<Vec3f>(i * resolution);
+            Vec3b * outPtr = output.ptr<Vec3b>(i);
+
+            for (int j = 0; j < output.cols; ++j) {
+                int jj = j * resolution;
+
+                if (inPtr[jj] == Vec3f(0, 0, 0)) {
+                    outPtr[j] = Vec3b(0, 0, 0);
+                }
+                else {
+                    outPtr[j][2] = (uchar)((inPtr[jj][0] + 1.0) * 127.5);
+                    outPtr[j][1] = (uchar)((inPtr[jj][1] + 1.0) * 127.5);
+                    outPtr[j][0] = (uchar)(-inPtr[jj][2] * 127.5 + 127.5);
+                }
+            }
         }
-        else
+
+        cv::resize(output, output, normal_map.size(), (double)resolution,
+            (double)resolution, cv::INTER_LINEAR);
+    }
+
+    void Visualizer::visualizeHand(const cv::Mat & background, cv::Mat & output,
+                Hand * hand, double display,
+                const std::vector<boost::shared_ptr<FramePlane> > * touch_planes)
+    {
+        if (background.type() == CV_32FC3)
         {
-            displayImg = xyzMap;
+            Visualizer::visualizeXYZMap(background, output);
+        }
+        else if (output.rows == 0)
+        {
+            output = background.clone();
         }
 
-        float unitWid = (float)xyzMap.cols / 640;
+        float unitWid = (float)background.cols / 640;
 
-        cv::circle(displayImg, hand.center_ij, (int)(unitWid * 10), cv::Scalar(255, 0, 0));
+        // draw contour
+        if (hand->getContour().size() > 2) {
+            cv::polylines(output, hand->getContour(), true, cv::Scalar(0, 255, 0), 1);
+        }
 
+        Point2i center = hand->getPalmCenterIJ();
+        Vec3f centerXYZ = hand->getPalmCenter();
+
+        // draw circle at center of hand
+        cv::circle(output, center, std::round(unitWid * 10), cv::Scalar(255, 0, 0));
+
+        // draw wrist
         Point2i box = Point2i(unitWid * 6, unitWid * 6);
-        cv::rectangle(displayImg, hand.wrist_ij[0] - box, hand.wrist_ij[0] + box,
+        const std::vector<Point2i> & wrists = hand->getWristIJ();
+        cv::rectangle(output, wrists[0] - box, wrists[0] + box,
             cv::Scalar(255, 255, 0), unitWid * 1.5);
-        cv::rectangle(displayImg, hand.wrist_ij[1] - box, hand.wrist_ij[1] + box,
+        cv::rectangle(output, wrists[1] - box, wrists[1] + box,
             cv::Scalar(255, 255, 0), unitWid * 1.5);
 
-        cv::circle(displayImg, hand.center_ij, hand.circle_radius,
-            cv::Scalar(100, 100, 100), 1);
+        // faint outline of largest inscribed circle
+        cv::circle(output, center, hand->getCircleRadius(), cv::Scalar(100, 100, 100), 1);
+        
+        const std::vector<Point2i> & fingers = hand->getFingersIJ();
+        const std::vector<Point2i> & defects = hand->getDefectsIJ();
+        const std::vector<Vec3f> & fingersXYZ = hand->getFingers();
+        const std::vector<Vec3f> & defectsXYZ = hand->getDefects();
 
-        for (int i = 0; i < std::min(hand.fingers_ij.size(), hand.defects_ij.size()); ++i)
+        // detect touches
+        if (touch_planes != nullptr) {
+            std::vector<std::pair<int, std::vector<int> > > fingerTouching;
+            cv::Scalar touchColor(200, 255, 0);
+            cv::Size touchSz(roundf(22 * unitWid), roundf(22 * unitWid));
+            Point2i offset = (Point2i)(cv::Point2f(-11, -11) * unitWid);
+            int wid = roundf(3 * unitWid);
+
+            if (hand->touchingPlanes(*touch_planes, fingerTouching)) {
+                for (auto p : fingerTouching) {
+                    cv::rectangle(output, 
+                        cv::Rect(fingers[p.first] + offset, touchSz), touchColor, wid);
+
+                    for (int i : p.second) {
+                        (*touch_planes)[i]->getCenterIJ();
+                    }
+                }
+            }
+        }
+
+        for (int i = 0; i < hand->getNumFingers(); ++i)
         {
-            cv::line(displayImg, hand.defects_ij[i], hand.fingers_ij[i], cv::Scalar(0, 150, 255), roundf(unitWid * 2));
-            cv::circle(displayImg, hand.fingers_ij[i], (int)(unitWid * 7), cv::Scalar(0, 0, 255), -1);
+            // draw fingers
+            cv::line(output, defects[i], fingers[i], cv::Scalar(0, 150, 255), roundf(unitWid * 2));
+            cv::circle(output, fingers[i], roundf(unitWid * 7), cv::Scalar(0, 0, 255), -1);
 
             std::stringstream sstr;
-            sstr << setprecision(1) << std::fixed << util::euclideanDistance(hand.defects_xyz[i], hand.fingers_xyz[i]) * 100;
-            cv::putText(displayImg,
-                sstr.str(),
-                (hand.defects_ij[i] + hand.fingers_ij[i]) / 2 - Point2i(15, 0), 0, 0.7 * unitWid, cv::Scalar(0, 255, 255), 1);
+            // defect-fingertip distances
+            sstr << setprecision(1) << std::fixed <<
+                util::euclideanDistance(defectsXYZ[i], fingersXYZ[i]) * 100;
 
-            cv::circle(displayImg, hand.defects_ij[i], (int)(unitWid * 5), cv::Scalar(255, 0, 200), -1);
-            cv::line(displayImg, hand.defects_ij[i], hand.center_ij, cv::Scalar(255, 0, 200), roundf(unitWid * 2));
+            cv::putText(output,
+                sstr.str(), (defects[i] + fingers[i]) / 2 - Point2i(15, 0), 0,
+                0.7 * unitWid, cv::Scalar(0, 255, 255), 1);
 
+            cv::circle(output, defects[i], roundf(unitWid * 5), cv::Scalar(255, 0, 200), -1);
+            cv::line(output, defects[i], center, cv::Scalar(255, 0, 200), roundf(unitWid * 2));
+
+            // defect-center distances
             sstr.str("");
-            sstr << util::euclideanDistance(hand.defects_xyz[i], hand.center_xyz) * 100;
-
-            cv::putText(displayImg,
+            sstr << util::euclideanDistance(defectsXYZ[i], centerXYZ) * 100;
+            cv::putText(output,
                 sstr.str(),
-                (hand.defects_ij[i] + hand.center_ij) / 2 - Point2i(15, 0), 0, 0.4 * unitWid, cv::Scalar(0, 255, 255), 1);
-        }
+                (defects[i] + center) / 2 - Point2i(15, 0), 0,
+                0.4 * unitWid, cv::Scalar(0, 255, 255), 1);
 
-        return displayImg;
+            if (display < FLT_MAX) {
+                // provided display text
+                sstr.str("");
+                sstr << std::setprecision(3) << std::fixed << display;
+                Point2i dispPt = center - Point2i((int)sstr.str().size() * 8, 0);
+                cv::putText(output, sstr.str(), dispPt, 0, 0.8, cv::Scalar(255, 255, 255), 1);
+            }
+        }
     }
 
     void Visualizer::visualizeCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)
@@ -96,69 +168,45 @@ namespace ark {
         viewer->spinOnce();
     }
 
-    cv::Mat Visualizer::visualizePlaneRegression(cv::Mat &input_mat, std::vector<double> &equation, const double threshold, bool clicked)
+    void Visualizer::visualizePlaneRegression(const cv::Mat & input_mat, cv::Mat & output, std::vector<double> &equation, const double threshold, bool clicked)
     {
-        cv::Mat output_mat;
-
         if (input_mat.type() == CV_32FC3)
         {
-            output_mat = Visualizer::visualizeXYZMap(input_mat);
+            Visualizer::visualizeXYZMap(input_mat, output);
         }
 
         else
         {
-            output_mat = input_mat;
+            output = input_mat;
         }
 
-        if (equation.size() < 3)
+        if (equation.size() < 3) return;
+
+        cv::Scalar color = cv::Scalar(255 * clicked, 255, 0);
+        int pointsDetected = 0;
+
+        for (int r = 0; r < input_mat.rows; r++)
         {
-            return output_mat;
-        }
+            const Vec3f * ptr = input_mat.ptr<Vec3f>(r);
 
-        auto rowSize = input_mat.rows;
-        auto colSize = input_mat.cols;
-        cv::Scalar color;
-
-        if (clicked)
-        {
-            color = cv::Scalar(255, 255, 0);
-        }
-
-        else
-        {
-            color = cv::Scalar(0, 255, 0);
-        }
-
-        auto pointsDetected = 0;
-
-        for (auto r = 0; r < rowSize; r++)
-        {
-
-            for (auto c = 0; c < colSize; c++)
+            for (int c = 0; c < input_mat.cols; c++)
             {
+                const Vec3f & v = ptr[c];
 
-                double x = input_mat.at<Vec3f>(r, c)[0];
-                double y = input_mat.at<Vec3f>(r, c)[1];
-                double z = input_mat.at<Vec3f>(r, c)[2];
+                if (v[2] == 0) continue;
 
-                if (z == 0)
-                {
-                    continue;
-                }
-
-                auto z_hat = equation[0] * x + equation[1] * y + equation[2];
-                auto r_squared = (z - z_hat) * (z - z_hat);
+                double r_squared =
+                    util::pointPlaneDistance((Vec3d)v, equation[0], equation[1], equation[2]);
 
                 if (r_squared < threshold)
                 {
-                    cv::circle(output_mat, Point2i(c, r), 1, color, -1);
-                    pointsDetected++;
+                    cv::circle(output, Point2i(c, r), 1, color, -1);
+                    ++ pointsDetected;
                 }
 
             }
 
         }
-        return output_mat;
     }
 
     void Visualizer::visualizePlanePoints(cv::Mat &input_mat, std::vector<Point2i> indicies)

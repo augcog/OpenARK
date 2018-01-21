@@ -5,16 +5,17 @@
 //#define PMDSDK_ENABLED
 //#define OPENARK_CAMERA_TYPE "pmd" 
 
-// Remove to disable visualizations (if building as library)
-#define DEMO
+#define OPENARK_VERSION_MAJOR 0
+#define OPENARK_VERSION_MINOR 9
+#define OPENARK_VERSION_PATCH 1
 
 // Uncomment to enable debug code
 // #define DEBUG
 
-// Uncomment to enable plane detection (warning: disables some hand constraints)
-// #define PLANE_ENABLED
-
 namespace ark {
-    // OpenARK version number
-    static const char * VERSION = "0.9.0";
+    // OpenARK version number (modify in CMakeLists.txt)
+    static const char * VERSION = "0.9.1";
+
+    // Paths to possible SVM model file locations (terminated by "\n")
+    static const char * SVM_PATHS[] = {"svm/", "../svm/", "", "\n"};
 }
