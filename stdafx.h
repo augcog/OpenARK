@@ -93,11 +93,7 @@ namespace ark {
     typedef cv::Vec3d Vec3d;
     typedef cv::Vec3i Vec3i;
 
-    // smart pointer shorthands
+    // generic smart pointer shorthands
     typedef boost::shared_ptr<std::vector<Point2i> > VecP2iPtr;
     typedef boost::shared_ptr<std::vector<Vec3f> > VecV3fPtr;
-
-    // _ means pointer
-    typedef std::vector<VecP2iPtr> Vec_VecP2i;
-    typedef std::vector<VecV3fPtr> Vec_VecV3f;
 }

@@ -334,7 +334,7 @@ namespace ark {
          * @param[in] params plane detection parameters
          */
         void detectPlaneHelper(const cv::Mat & xyz_map,  std::vector<Vec3f> & output_equations,
-            Vec_VecP2i & output_points, Vec_VecV3f & output_points_xyz,
+            std::vector<VecP2iPtr> & output_points, std::vector<VecV3fPtr> & output_points_xyz,
             const ObjectParams * params = nullptr, const cv::Mat * normal_map = nullptr, 
             const cv::Mat * fill_mask = nullptr, uchar fill_color = 0);
 

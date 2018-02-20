@@ -137,8 +137,8 @@ namespace ark {
                 uchar maskColor = 255 - k;
 
                 std::vector<Vec3f> equations;
-                Vec_VecP2i points;
-                Vec_VecV3f pointsXYZ;
+                std::vector<VecP2iPtr> points;
+                std::vector<VecV3fPtr> pointsXYZ;
 
                 detectPlaneHelper(xyzMap, equations, points, pointsXYZ, params, nullptr,
                     &pendingClusters, maskColor);
@@ -174,8 +174,8 @@ namespace ark {
         cv::Mat xyzMap = getXYZMap();
 
         std::vector<Vec3f> equations;
-        Vec_VecP2i points;
-        Vec_VecV3f pointsXYZ;
+        std::vector<VecP2iPtr> points;
+        std::vector<VecV3fPtr> pointsXYZ;
 
         detectPlaneHelper(xyzMap, equations, points, pointsXYZ, params);
 
@@ -504,7 +504,7 @@ namespace ark {
 
     void DepthCamera::detectPlaneHelper(const cv::Mat & xyz_map,
         std::vector<Vec3f> & output_equations, 
-        Vec_VecP2i & output_points, Vec_VecV3f & output_points_xyz, 
+        std::vector<VecP2iPtr> & output_points, std::vector<VecV3fPtr> & output_points_xyz, 
         const ObjectParams * params, const cv::Mat * normal_map, const cv::Mat * fill_mask, 
         uchar fill_color)
     { 
