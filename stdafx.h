@@ -9,15 +9,18 @@
 #endif
 
 // C++ Libraries
-#include <cstdio>
-#include <cstdlib>
 #include <cctype>
-#include <cstring>
+#include <cfloat>
 #include <climits>
 #include <clocale>
-#include <cfloat>
 #include <cstdarg>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 #include <cmath>
+#include <algorithm>
+#include <deque>
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -25,13 +28,10 @@
 #include <vector>
 #include <map>
 #include <set>
-#include <deque>
 #include <stack>
-#include <thread>
 #include <utility>
-#include <algorithm>
-#include <ctime>
-#include <string>
+#include <thread>
+#include <mutex>
 
 // Boost
 #include <boost/filesystem.hpp>
@@ -94,7 +94,6 @@ namespace ark {
     typedef cv::Vec3i Vec3i;
 
     // smart pointer shorthands
-    typedef boost::shared_ptr<cv::Mat> MatPtr;
     typedef boost::shared_ptr<std::vector<Point2i> > VecP2iPtr;
     typedef boost::shared_ptr<std::vector<Vec3f> > VecV3fPtr;
 

@@ -71,8 +71,8 @@ namespace ark {
     * @param [out] amp_map amplitude map. CV_32FC1 (NOT USED)
     * @param [out] flag_map flag map. CV_8UC1 (NOT USED)
     */
-    void SR300Camera::update(MatPtr & xyz_map, MatPtr & rgb_map, MatPtr & ir_map, 
-                            MatPtr & amp_map, MatPtr & flag_map) 
+    void SR300Camera::update(cv::Mat & xyz_map, cv::Mat & rgb_map, cv::Mat & ir_map, 
+                             cv::Mat & amp_map, cv::Mat & flag_map) 
     {
         Status sts = sm->AcquireFrame(true);
 
@@ -131,7 +131,7 @@ namespace ark {
         // convert IR image
         cv::Mat irTmp;
         Converter::ConvertPXCImageToOpenCVMat(irSource, irMap, &irTmp);
-        *ir_map = irTmp(cv::Rect(0, 0, getWidth(), getHeight()));
+        ir_map = irTmp(cv::Rect(0, 0, getWidth(), getHeight()));
 
         // release access
         depthSource->ReleaseAccess(&depthImage);
@@ -141,7 +141,7 @@ namespace ark {
         int pixels_per_row = num_pixels / getHeight(), k = 0, wid = getWidth();
         for (int r = 0; r < getHeight(); ++r)
         {
-            Vec3f * ptr = xyz_map->ptr<Vec3f>(r);
+            Vec3f * ptr = xyz_map.ptr<Vec3f>(r);
             for (int c = 0; c < pixels_per_row; ++c) {
                 if (c < wid) {
                     ptr[c] = Vec3f(pos3D[k].x , pos3D[k].y, pos3D[k].z) / 1000.0f;
@@ -193,6 +193,4 @@ namespace ark {
         sts = sm->Init();
         device = cm->QueryDevice();
     }
-
-
 };

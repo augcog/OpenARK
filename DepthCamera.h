@@ -9,15 +9,6 @@
 #include "ObjectParams.h"
 
 namespace ark {
-
-    // typedefs to save typing
-    typedef boost::shared_ptr<FramePlane> FramePlanePtr;
-    typedef boost::shared_ptr<Hand> HandPtr;
-    typedef boost::shared_ptr<FrameObject> FrameObjectPtr;
-    typedef std::vector<FramePlanePtr> Vec_FramePlane;
-    typedef std::vector<HandPtr> Vec_Hand;
-    typedef std::vector<FrameObjectPtr> Vec_FrameObject;
-
     /**
      * Abstract class defining general behavior of a depth camera.
      * Any depth camera should be able to generate a XYZMap, AmpMap (confidence), and FlagMap.
@@ -56,15 +47,15 @@ namespace ark {
          * Directly modify the images passed to this function in the update method to update the camera's images.
          * The images needed will already be initialized to getHeight() * getWidth().
          * WARNING: if has***Map() is false for the camera class, then the ***_map is not guarenteed to be initialized.
-         *          so if you plan to enable the RGB map, please override hasRGBMap() to return true.
+         *          so for ex. if you plan to enable the RGB map, please override hasRGBMap() to return true, etc.
          * @param [out] xyz_map XYZ map (projection point cloud). CV_32FC3
          * @param [out] rgb_map RGB image. CV_8UC3
          * @param [out] ir_map IR image. CV_8UC1
          * @param [out] amp_map amplitude map. CV_32FC1
          * @param [out] flag_map flag map. CV_8UC1
          */
-        virtual void update(MatPtr & xyz_map, MatPtr & rgb_map, MatPtr & ir_map, 
-                            MatPtr & amp_map, MatPtr & flag_map) = 0;
+        virtual void update(cv::Mat & xyz_map, cv::Mat & rgb_map, cv::Mat & ir_map, 
+                            cv::Mat & amp_map, cv::Mat & flag_map) = 0;
 
     public:
         // Section B: Stuff that may be overridden but don't need to be 
@@ -109,16 +100,20 @@ namespace ark {
 
         /**
          * Retrieve the next frame from the depth camera.
-         * Calls the update() function of the derived camera class and resets stored information.
+         * Calls the update() function of the derived camera class and resets stored information for the frame.
          * @param removeNoise if true, performs noise removal on the depth image after retrieving it
          * @return true on success, false on bad input
          */
         bool nextFrame(bool remove_noise = true);
 
         /**
-         * Begin capturing frames continuously at a certain FPS
-         * from this camera on a parallel thread.
+         * Begin capturing frames continuously from this camera on a parallel thread, 
+         * capped at a certain maximum FPS.
+         * WARNING: throws an error if capture already started.
+         * @param fps_cap maximum FPS of capture.
+         * @param removeNoise if true, performs noise removal on the depth image after retrieving it
          * @see endCapture
+         * @see isCapturing
          */
         void beginCapture(int fps_cap = 60, bool remove_noise = true);
 
@@ -127,8 +122,16 @@ namespace ark {
          * You may use beginCapture() to start capturing again afterwards.
          * Note: this is performed automatically when this instance is destroyed.
          * @see beginCapture
+         * @see isCapturing
          */
         void endCapture();
+
+        /**
+         * Returns true if the camera is currently capturing, false otherwise.
+         * @see beginCapture
+         * @see endCapture
+         */
+        bool isCapturing();
         
         /**
          * Returns the size of the camera's frame (getWidth() * getHeight).
@@ -143,7 +146,7 @@ namespace ark {
          * @param elim_planes if true, finds and eliminates planes in the scene
          * @return vector of shared pointers to visible hands
          */
-        Vec_Hand & getFrameHands(const ObjectParams * params = nullptr, bool elim_planes = true);
+        std::vector<HandPtr> & getFrameHands(const ObjectParams * params = nullptr, bool elim_planes = true);
  
         /*
          * Retrieve a list of planes visible in the current frame
@@ -152,7 +155,7 @@ namespace ark {
          * @param params parameters for object/plane/hand detection
          * @return vector of shared pointers to visible planes
          */
-        Vec_FramePlane & getFramePlanes(const ObjectParams * params = nullptr);
+        std::vector<FramePlanePtr> & getFramePlanes(const ObjectParams * params = nullptr);
 
         /*
          * Retrieve a list of objects visible in the current frame
@@ -161,44 +164,45 @@ namespace ark {
          * @param params parameters for object/plane/hand detection
          * @return vector of shared pointers to visible objects
          */
-        Vec_FrameObject & getFrameObjects(const ObjectParams * params = nullptr);
+        std::vector<FrameObjectPtr> & getFrameObjects(const ObjectParams * params = nullptr);
 
         /**
-         * Returns the current XYZMap. Any depth camera must by definition have a depth map.
+         * Returns the current XYZ map (ordered point cloud) of the camera. 
+         * Contains the XYZ position (in meters) of each pixel on the screen.
          * Type: CV_32FC3
          */
-        const MatPtr getXYZMap() const;
+        const cv::Mat getXYZMap() const;
 
         /**
          * Returns the current normal map (surface normal vectors at each point).
-         * This is computed automatically from the depth map if required.
+         * If not already cached, this is computed automatically from the depth map when requested.
          * Type: CV_32FC3
          */
-        const MatPtr getNormalMap();
+        const cv::Mat getNormalMap();
 
         /**
          * Get the RGB Image from this camera, if available. Else, throws an error.
          * Type: CV_8UC3
          */
-        const MatPtr getRGBMap() const;
+        const cv::Mat getRGBMap() const;
 
         /**
          * Get the infrared (IR) Image from this camera, if available. Else, throws an error.
          * Type: CV_8UC1
          */
-        const MatPtr getIRMap() const;
+        const cv::Mat getIRMap() const;
 
         /**
          * Returns the current AmpMap
          * Type: CV_32FC1
          */
-        const MatPtr getAmpMap() const;
+        const cv::Mat getAmpMap() const;
 
         /**
          * Returns the current FlagMap.
          * Type: CV_8UC1
          */
-        const MatPtr getFlagMap() const;
+        const cv::Mat getFlagMap() const;
 
         /**
          * Reads a sample frame from file.
@@ -214,57 +218,57 @@ namespace ark {
 
     protected:
         /**
-         * Pointer to matrix storing the (x,y,z) data of every point in the observable world.
+         * Matrix storing the (x,y,z) data of every point in the observable world.
          * Matrix type CV_32FC3
          */
-        MatPtr xyzMap = nullptr;
+        cv::Mat xyzMap;
 
         /**
-         * Pointer to matrix storing the surface normal vectors (facing viewer) at each point in the observable world.
+         * Matrix storing the surface normal vectors (facing viewer) at each point in the observable world.
          * This is computed automatically from the depth map if required.
          * Implementers of subclasses do not need to deal with this at all.
          * Matrix type CV_32FC3
          */
-        MatPtr normalMap = nullptr;
+        cv::Mat normalMap;
 
         /**
-         * Pointer to matrix of confidence values of each corresponding point in the world.
+         * Matrix of confidence values of each corresponding point in the world.
          * Matrix type CV_32FC1
          */
-        MatPtr ampMap = nullptr;
+        cv::Mat ampMap;
 
         /**
-         * Pointer to matrix representing additional information about the points in the world.
+         * Matrix representing additional information about the points in the world.
          * Matrix type CV_8UC1
          */
-        MatPtr flagMap = nullptr;
+        cv::Mat flagMap;
 
         /**
-         * Pointer to the RGB image from this camera, if available
+         * The RGB image from this camera, if available
          * Matrix type CV_8UC3
          */
-        MatPtr rgbMap = nullptr;
+        cv::Mat rgbMap;
 
         /**
-         * Pointer to the infrared image from this camera, if available
+         * The infrared image from this camera, if available
          * Matrix type CV_8UC1
          */
-        MatPtr irMap = nullptr;
+        cv::Mat irMap;
 
         /**
          * Stores pointers to all objects visible to the camera in the current frame
          */
-        Vec_FrameObject frameObjects;
+        std::vector<FrameObjectPtr> frameObjects;
 
         /**
          * Stores pointers to planes visible to the camera in the current frame
          */
-        Vec_FramePlane framePlanes;
+        std::vector<FramePlanePtr> framePlanes;
 
         /**
          * Stores pointers to hands visible to the camera in the current frame
          */
-        Vec_Hand hands;
+        std::vector<HandPtr> hands;
 
         /**
          * True if input is invalid
@@ -283,10 +287,14 @@ namespace ark {
         void initializeImages();
 
         /**
-         * Helper for swapping a single back buffers to the foreground.
+         * Helper for swapping a single back buffer to the foreground.
          * If the image is not available, creates a dummy mat with null value.
+         * @param check_func member function pointer to function that, if true on call, buffers are swapped
+         *                   if false, a dummy mat is created
+         * @param img pointer to foreground image
+         * @param buf pointer to back buffer
          */
-        void swapBuffer(bool (DepthCamera::* check_func)() const, MatPtr & img, MatPtr & buf);
+        void swapBuffer(bool (DepthCamera::* check_func)() const, cv::Mat & img, cv::Mat & buf);
 
         /**
          * Helper for swapping all back buffers to the foreground. 
@@ -311,7 +319,8 @@ namespace ark {
          * @param interrupt pointer to the interrupt (when true, thread stops)
          * @param remove_noise if true, automatically removes noise
          */
-        void captureThreadingHelper(int fps_cap = 60, volatile bool * interrupt = nullptr, bool remove_noise = true);
+        void captureThreadingHelper(int fps_cap = 60, volatile bool * interrupt = nullptr,
+                                    bool remove_noise = true);
 
         /**
          * helper function for the equations of all planes in a frame given its xyz and normal map s.
@@ -345,19 +354,19 @@ namespace ark {
          * @return shared pointer to current best Hand instance.
          */
         boost::shared_ptr<Hand> detectHandHelper(const cv::Mat & xyz_map,
-            Vec_Hand & output_hands,
+            std::vector<HandPtr> & output_hands,
             const ObjectParams * params = nullptr, float * best_hand_dist = nullptr,
             cv::Mat * pending_mask = nullptr, uchar * pending_count = nullptr,
             const cv::Mat * fill_mask = nullptr, uchar fill_color = 0);
 
         /** interrupt for immediately terminating the capturing thread */
-        bool captureInterrupt;
+        bool captureInterrupt = true;
 
         /** Flag for recording if objects, hands, etc.
           * have already been computed in this frame */
         uint isCached = 0;
 
-        /** Binary bit values for use with the 'updated' flag */
+        /** Binary bit values for use with the 'isCached' flag */
         static const uint FLAG_FRM_OBJS = 1, FLAG_FRM_HANDS = 2, FLAG_FRM_PLANES = 4, FLAG_NORMALS = 256;
 
         /**
@@ -372,11 +381,16 @@ namespace ark {
          */
         static const float NOISE_FILTER_HIGH;
 
-        /** Back buffers */
-        MatPtr xyzMapBuf = nullptr;
-        MatPtr rgbMapBuf = nullptr;
-        MatPtr irMapBuf = nullptr;
-        MatPtr ampMapBuf = nullptr;
-        MatPtr flagMapBuf = nullptr;
+        /** Back buffers for various images */
+        cv::Mat xyzMapBuf;
+        cv::Mat rgbMapBuf;
+        cv::Mat irMapBuf;
+        cv::Mat ampMapBuf;
+        cv::Mat flagMapBuf;
+
+        /** Mutexes to ensure thread safety while updating images 
+         *  (mutable = modificable even to const methods)
+         */
+        mutable std::mutex frontMutex, backMutex, cacheMutex;
     };
 }

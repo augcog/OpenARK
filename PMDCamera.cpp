@@ -77,16 +77,26 @@ namespace ark {
         return 120;
     }
 
-    float PMDCamera::getConfidenceThreshold() const {
+    float PMDCamera::flagMapConfidenceThreshold() const {
         return (60.0f / 255.0f*500.0f);
     }
 
-    int PMDCamera::getInvalidFlagValue() const {
+    int PMDCamera::ampMapInvalidFlagValue() const {
         return PMD_FLAG_INVALID;
     }
 
+    bool PMDCamera::hasAmpMap() const
+    {
+        return true;
+    }
+
+    bool PMDCamera::hasFlagMap() const
+    {
+        return true;
+    }
+
     /***
-    Public deconstructor for he PMD depth sensor
+    Public deconstructor for the PMD depth sensor
     ***/
     PMDCamera::~PMDCamera()
     {
@@ -98,12 +108,36 @@ namespace ark {
     /***
     Create xyzMap, zMap, ampMap, and flagMap from sensor input
     ***/
-    void PMDCamera::update()
+    void PMDCamera::update(cv::Mat & xyz_map, cv::Mat & rgb_map, cv::Mat & ir_map, 
+                             cv::Mat & amp_map, cv::Mat & flag_map) 
     {
-        initializeImages();
+        // fill in amp map
+        auto res = pmdGetAmplitudes(hnd, amps, numPixels * sizeof(float));
+        //float * dataPtr = amps;
 
-        fillInAmps();
-        fillInZCoords();
+        if (res != PMD_OK)
+        {
+            pmdGetLastError(hnd, err, 128);
+            fprintf(stderr, "Couldn't get amplitudes: %s\n", err);
+            pmdClose(hnd);
+            return;
+        }
+
+        amp_map.data = reinterpret_cast<uchar *>(amps);
+
+        // fill in Z coordinates
+        auto res = pmdGet3DCoordinates(hnd, dists, 3 * numPixels * sizeof(float)); //store x,y,z coordinates dists (type: float*)
+        //float * zCoords = new float[1]; //store z-Coordinates of dists in zCoords
+
+        if (res != PMD_OK)
+        {
+            pmdGetLastError(hnd, err, 128);
+            fprintf(stderr, "Couldn't get 3D coordinates: %s\n", err);
+            pmdClose(hnd);
+            return;
+        }
+
+        xyz_map = cv::Mat(xyzMap.size(), xyzMap.type(), dists);
 
         // Flags. Helps with denoising.
         auto flags = new unsigned[ampMap.cols*ampMap.rows];
@@ -117,7 +151,7 @@ namespace ark {
             return;
         }
 
-        flagMap.data = reinterpret_cast<uchar *>(flags);
+        flag_map.data = reinterpret_cast<uchar *>(flags);
 
         res = pmdUpdate(hnd);
         if (res != PMD_OK)
@@ -127,48 +161,10 @@ namespace ark {
             pmdClose(hnd);
             return;
         }
-        delete(flags);
 
+        delete flags;
     }
 
-    /***
-    Reads the depth data from the sensor and fills in the matrix
-    ***/
-    void PMDCamera::fillInZCoords()
-    {
-        auto res = pmdGet3DCoordinates(hnd, dists, 3 * numPixels * sizeof(float)); //store x,y,z coordinates dists (type: float*)
-        //float * zCoords = new float[1]; //store z-Coordinates of dists in zCoords
-
-        if (res != PMD_OK)
-        {
-            pmdGetLastError(hnd, err, 128);
-            fprintf(stderr, "Couldn't get 3D coordinates: %s\n", err);
-            pmdClose(hnd);
-            return;
-        }
-
-        xyzMap = cv::Mat(xyzMap.size(), xyzMap.type(), dists);
-
-    }
-
-    /***
-    Reads the amplitude data from the sensor and fills in the matrix
-    ***/
-    void PMDCamera::fillInAmps()
-    {
-        auto res = pmdGetAmplitudes(hnd, amps, numPixels * sizeof(float));
-        //float * dataPtr = amps;
-
-        if (res != PMD_OK)
-        {
-            pmdGetLastError(hnd, err, 128);
-            fprintf(stderr, "Couldn't get amplitudes: %s\n", err);
-            pmdClose(hnd);
-            return;
-        }
-
-        ampMap.data = reinterpret_cast<uchar *>(amps);
-    }
 
     /***
     Returns the X value at (i, j)

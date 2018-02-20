@@ -24,8 +24,9 @@ namespace ark {
 
     void DepthCamera::beginCapture(int fps_cap, bool remove_noise)
     {
+        assert(captureInterrupt == true);
         captureInterrupt = false;
-        boost::thread thd(&DepthCamera::captureThreadingHelper, this, fps_cap,
+        std::thread thd(&DepthCamera::captureThreadingHelper, this, fps_cap,
             &captureInterrupt, remove_noise);
         thd.detach();
     }
@@ -37,47 +38,63 @@ namespace ark {
 
     bool DepthCamera::nextFrame(bool removeNoise)
     {
-        // initialize back buffers
-        initializeImages();
+        {
+            // lock back buffers
+            std::lock_guard<std::mutex> backLockI(backMutex);
 
-        // call update with back buffer images (to allow continued operation on front end)
-        update(xyzMapBuf, rgbMapBuf, irMapBuf, ampMapBuf, flagMapBuf);
+            // initialize back buffers
+            initializeImages();
+
+            // call update with back buffer images (to allow continued operation on front end)
+            update(xyzMapBuf, rgbMapBuf, irMapBuf, ampMapBuf, flagMapBuf);
+
+            if (!badInput() && xyzMapBuf.data) {
+                if (removeNoise) {
+                    this->removeNoise(xyzMapBuf, ampMapBuf, flagMapConfidenceThreshold());
+                }
+            }
+        }
+
+        // lock all buffers while swapping
+        std::lock(frontMutex, backMutex, cacheMutex);
+        std::lock_guard<std::mutex> frontLock(frontMutex, std::adopt_lock), 
+            backLock(backMutex, std::adopt_lock), cacheLock(cacheMutex, std::adopt_lock);
 
         // when update is done, swap buffers to front
         swapBuffers();
 
-        if (!badInput() && xyzMap) {
-            if (removeNoise) {
-                this->removeNoise(*xyzMap, *ampMap, flagMapConfidenceThreshold());
-            }
-        }
-
         // clear cache flag
         isCached = 0;
-
         return !badInput();
     }
 
     void DepthCamera::computeNormalMap(const ObjectParams * params) {
         if (params == nullptr) params = &ObjectParams::DEFAULT;
 
-        if (normalMap == nullptr) {
-            normalMap = boost::make_shared<cv::Mat>();
+        const cv::Mat xyzMap = getXYZMap();
+
+        {
+            std::lock_guard<std::mutex> frontLock(frontMutex);
+            util::computeNormalMap(xyzMap, normalMap, 4, params->normalResolution, false);
         }
 
-        util::computeNormalMap(*getXYZMap(), *normalMap, 4, params->normalResolution, false);
+        std::lock_guard<std::mutex> cacheLock(cacheMutex);
         isCached |= FLAG_NORMALS;
     }
 
-    Vec_Hand & DepthCamera::getFrameHands(const ObjectParams * params, bool elim_planes)
+    std::vector<HandPtr> & DepthCamera::getFrameHands(const ObjectParams * params, bool elim_planes)
     {
-        if (!this->xyzMap || (isCached & FLAG_FRM_HANDS)) return hands;
+        {
+            std::lock_guard<std::mutex> cacheLockI(cacheMutex);
+            if (!this->xyzMap.data || (isCached & FLAG_FRM_HANDS)) return hands;
+        }
+
         hands.clear();
 
         // 1. initialize
         if (params == nullptr) params = &ObjectParams::DEFAULT;
 
-        cv::Mat xyzMap = getXYZMap()->clone();
+        cv::Mat xyzMap = getXYZMap();
         const int R = xyzMap.rows, C = xyzMap.cols;
 
         /* records clusters pending reconsideration on the second pass (plane removal).
@@ -93,7 +110,7 @@ namespace ark {
                                         (params->normalResolution * params->normalResolution);
 
         if (elim_planes){
-            Vec_FramePlane planes = getFramePlanes(params);
+            std::vector<FramePlanePtr> planes = getFramePlanes(params);
             if (planes.size()) {
                 for (auto plane : planes) {
                     if (plane->getPointsIJ().size() > DOMINANT_PLANE_MIN_POINTS) {
@@ -141,16 +158,20 @@ namespace ark {
             hands.push_back(bestHandObject);
         }
 
+        std::lock_guard<std::mutex> cacheLock(cacheMutex);
         isCached |= FLAG_FRM_HANDS;
         return hands;
     }
 
-    Vec_FramePlane & DepthCamera::getFramePlanes(const ObjectParams * params)
+    std::vector<FramePlanePtr> & DepthCamera::getFramePlanes(const ObjectParams * params)
     {
-        if (!this->xyzMap || (isCached & FLAG_FRM_PLANES)) return framePlanes;
-        framePlanes.clear();
+        {
+            std::lock_guard<std::mutex> cacheLockI(cacheMutex);
+            if (!this->xyzMap.data || (isCached & FLAG_FRM_PLANES)) return framePlanes;
+        }
 
-        cv::Mat xyzMap = getXYZMap()->clone();
+        framePlanes.clear();
+        cv::Mat xyzMap = getXYZMap();
 
         std::vector<Vec3f> equations;
         Vec_VecP2i points;
@@ -194,13 +215,17 @@ namespace ark {
 #endif
 
         // cache planes for current frame
+        std::lock_guard<std::mutex> cacheLock(cacheMutex);
         isCached |= FLAG_FRM_PLANES;
         return framePlanes;
     }
 
-    Vec_FrameObject & DepthCamera::getFrameObjects(const ObjectParams * params)
+    std::vector<FrameObjectPtr> & DepthCamera::getFrameObjects(const ObjectParams * params)
     {        
-        if (!this->xyzMap || (isCached & FLAG_FRM_OBJS)) return frameObjects;
+        {
+            std::lock_guard<std::mutex> cacheLockI(cacheMutex);
+            if (!this->xyzMap.data || (isCached & FLAG_FRM_OBJS)) return frameObjects;
+        }
         frameObjects.clear();
 
         // default parameters
@@ -214,6 +239,7 @@ namespace ark {
         for (auto hand : hands) frameObjects.push_back(hand);
 
         // cache for current frame
+        std::lock_guard<std::mutex> cacheLock(cacheMutex);
         isCached |= FLAG_FRM_OBJS;
         return frameObjects;
     }
@@ -221,11 +247,6 @@ namespace ark {
     bool DepthCamera::badInput()
     {
         return badInputFlag;
-    }
-
-    bool DepthCamera::hasFlagMap() const
-    {
-        return false;
     }
 
     /**
@@ -254,6 +275,11 @@ namespace ark {
         }
     }
 
+    bool DepthCamera::isCapturing()
+    {
+        return !captureInterrupt;
+    }
+
     cv::Size DepthCamera::getImageSize() const
     {
         return cv::Size(getWidth(), getHeight());
@@ -264,66 +290,42 @@ namespace ark {
         return "DepthCamera";
     }
 
-    const MatPtr DepthCamera::getXYZMap() const
-    {
-        if (xyzMap == nullptr) return boost::make_shared<cv::Mat>(getHeight(), getWidth(), CV_32FC3);
-        return xyzMap;
-    }
-
-    const MatPtr DepthCamera::getNormalMap()
-    {
-        if ((!(isCached & FLAG_NORMALS) || normalMap == nullptr) && xyzMap) {
-            computeNormalMap();
-        }
-
-        return normalMap;
-    }
-
-    const MatPtr DepthCamera::getAmpMap() const
-    {
-        return ampMap;
-    }
-
-    const MatPtr DepthCamera::getFlagMap() const
-    {
-        return flagMap;
-    }
-
     void DepthCamera::initializeImages()
     {
         cv::Size sz = getImageSize();
 
         // initialize back buffers, if necessary
-        if (xyzMapBuf == nullptr) 
-            xyzMapBuf = boost::make_shared<cv::Mat>(sz, CV_32FC3);
+        if (xyzMapBuf.data == nullptr) 
+            xyzMapBuf = cv::Mat::zeros(sz, CV_32FC3);
 
-        if (rgbMapBuf == nullptr && hasRGBMap()) 
-            rgbMapBuf = boost::make_shared<cv::Mat>(sz, CV_8UC3);
+        if (rgbMapBuf.data == nullptr && hasRGBMap()) 
+            rgbMapBuf = cv::Mat::zeros(sz, CV_8UC3);
 
-        if (irMapBuf == nullptr && hasIRMap()) 
-            irMapBuf = boost::make_shared<cv::Mat>(sz, CV_8U);
+        if (irMapBuf.data == nullptr && hasIRMap()) 
+            irMapBuf = cv::Mat::zeros(sz, CV_8U);
 
-        if (ampMapBuf == nullptr && hasAmpMap()) 
-            ampMapBuf = boost::make_shared<cv::Mat>(sz, CV_32F);
+        if (ampMapBuf.data == nullptr && hasAmpMap()) 
+            ampMapBuf = cv::Mat::zeros(sz, CV_32F);
 
-        if (flagMapBuf == nullptr && hasFlagMap()) 
-            flagMapBuf = boost::make_shared<cv::Mat>(sz, CV_8U);
+        if (flagMapBuf.data == nullptr && hasFlagMap()) 
+            flagMapBuf = cv::Mat::zeros(sz, CV_8U);
     }
 
-    void DepthCamera::swapBuffer(bool (DepthCamera::* check_func)() const, MatPtr & img, MatPtr & buf)
+    /** swap a single buffer */
+    void DepthCamera::swapBuffer(bool (DepthCamera::* check_func)() const, cv::Mat & img, cv::Mat & buf)
     {
         if ((this->*check_func)()) {
-            img.swap(buf);
+            cv::swap(img, buf);
         }
         else {
-            img = boost::make_shared<cv::Mat>();
-            img->data = nullptr;
+            img.data = nullptr;
         }
     }
 
+    /** swap all buffers */
     void DepthCamera::swapBuffers()
     {
-        xyzMap.swap(xyzMapBuf);
+        cv::swap(xyzMap, xyzMapBuf);
         swapBuffer(&DepthCamera::hasRGBMap, rgbMap, rgbMapBuf);
         swapBuffer(&DepthCamera::hasIRMap, irMap, irMapBuf);
         swapBuffer(&DepthCamera::hasAmpMap, ampMap, ampMapBuf);
@@ -336,12 +338,13 @@ namespace ark {
     bool DepthCamera::writeImage(std::string destination) const
     {
         cv::FileStorage fs(destination, cv::FileStorage::WRITE);
+        std::lock_guard<std::mutex> frontLock(frontMutex);
 
-        fs << "xyzMap" <<*xyzMap;
-        fs << "ampMap" << *ampMap;
-        fs << "flagMap" << *flagMap;
-        fs << "rgbMap" << *rgbMap;
-        fs << "irMap" << *irMap;
+        fs << "xyzMap" << xyzMap;
+        fs << "ampMap" << ampMap;
+        fs << "flagMap" << flagMap;
+        fs << "rgbMap" << rgbMap;
+        fs << "irMap" << irMap;
 
         fs.release();
         return true;
@@ -355,18 +358,24 @@ namespace ark {
         cv::FileStorage fs;
         fs.open(source, cv::FileStorage::READ);
 
+        std::lock(frontMutex, backMutex, cacheMutex);
+        std::lock_guard<std::mutex> frontLock(frontMutex, std::adopt_lock),
+            backLock(backMutex, std::adopt_lock), cacheLock(cacheMutex, std::adopt_lock);
         initializeImages();
 
-        xyzMapBuf = boost::make_shared<cv::Mat>(getHeight(), getWidth(), CV_32FC3);
+        xyzMapBuf = cv::Mat(getHeight(), getWidth(), CV_32FC3);
 
-        fs["xyzMap"] >> *xyzMapBuf;
-        fs["ampMap"] >> *ampMapBuf;
-        fs["flagMap"] >> *flagMapBuf;
-        fs["rgbMap"] >> *rgbMapBuf;
-        fs["irMap"] >> *irMapBuf;
+        fs["xyzMap"] >> xyzMapBuf;
+        fs["ampMap"] >> ampMapBuf;
+        fs["flagMap"] >> flagMapBuf;
+        fs["rgbMap"] >> rgbMapBuf;
+        fs["irMap"] >> irMapBuf;
         fs.release();
 
-        if (xyzMap->rows == 0 || ampMap->rows == 0 || flagMap->rows == 0)
+        swapBuffers();
+        isCached = 0;
+
+        if (xyzMap.rows == 0 || ampMap.rows == 0 || flagMap.rows == 0)
         {
             return false;
         }
@@ -374,8 +383,75 @@ namespace ark {
         return true;
     }
 
+    const cv::Mat DepthCamera::getXYZMap() const
+    {
+        std::lock_guard<std::mutex> frontLock(frontMutex);
+        if (xyzMap.data == nullptr) return cv::Mat::zeros(getHeight(), getWidth(), CV_32FC3);
+        return xyzMap.clone();
+    }
+
+    const cv::Mat DepthCamera::getAmpMap() const
+    {
+        if (!hasAmpMap()) throw;
+
+        std::lock_guard<std::mutex> frontLock(frontMutex);
+        if (ampMap.data == nullptr) return cv::Mat::zeros(getHeight(), getWidth(), CV_32F);
+        return ampMap.clone();
+    }
+
+    const cv::Mat DepthCamera::getFlagMap() const
+    {
+        if (!hasFlagMap()) throw;
+
+        std::lock_guard<std::mutex> frontLock(frontMutex);
+        if (flagMap.data == nullptr) return cv::Mat::zeros(getHeight(), getWidth(), CV_8U);
+        return flagMap.clone();
+    }
+
+    const cv::Mat DepthCamera::getRGBMap() const {
+        if (!hasRGBMap()) throw;
+
+        std::lock_guard<std::mutex> frontLock(frontMutex);
+        if (rgbMap.data == nullptr) return cv::Mat::zeros(getHeight(), getWidth(), CV_8UC3);
+        return rgbMap.clone();
+    }
+
+    const cv::Mat DepthCamera::getIRMap() const
+    {
+        if (!hasIRMap()) throw;
+
+        std::lock_guard<std::mutex> frontLock(frontMutex);
+        if (irMap.data == nullptr) return cv::Mat::zeros(getImageSize(), CV_8U);
+        return irMap.clone();
+    }
+
+    const cv::Mat DepthCamera::getNormalMap()
+    {
+        bool recompute = false;
+        {
+            // detect if we need to recompute
+            std::lock_guard<std::mutex> cacheLock(cacheMutex);
+            recompute = ( !(isCached & FLAG_NORMALS) || normalMap.data == nullptr) &&
+                            xyzMap.data != nullptr;
+        }
+
+        if (recompute) {
+            computeNormalMap();
+        }
+
+        std::lock_guard<std::mutex> frontLock(frontMutex);
+        return normalMap.clone();
+    }
+
     bool DepthCamera::hasAmpMap() const
     {
+        // Assume no amp map, unless overridden
+        return false;
+    }
+
+    bool DepthCamera::hasFlagMap() const
+    {
+        // Assume no flag map, unless overridden
         return false;
     }
 
@@ -384,25 +460,13 @@ namespace ark {
         return false;
     }
 
-    const MatPtr DepthCamera::getRGBMap() const {
-        if (!hasRGBMap()) throw;
-        if (rgbMap == nullptr) 
-            return boost::make_shared<cv::Mat>(getHeight(), getWidth(), CV_8UC3);
-        return rgbMap;
-    }
-
     bool DepthCamera::hasIRMap() const
     {
         // Assume no IR image, unless overridden
         return false;
     }
 
-    const MatPtr DepthCamera::getIRMap() const
-    {
-        if (!hasIRMap()) throw;
-        if (irMap == nullptr) return boost::make_shared<cv::Mat>(getImageSize(), CV_8U);
-        return irMap;
-    }
+    // note: depth camera must have XYZ map
 
     int DepthCamera::ampMapInvalidFlagValue() const{
         return -1;
@@ -452,7 +516,7 @@ namespace ark {
         cv::Mat floodFillMap; 
 
         if (normal_map == nullptr) {
-            floodFillMap = getNormalMap()->clone();
+            floodFillMap = getNormalMap();
         }
         else {
             floodFillMap = *normal_map;
@@ -485,8 +549,8 @@ namespace ark {
             params->planeEquationMinInliers * allIndices.size() /
             (params->normalResolution * params->normalResolution);
 
-        for (int i = 0; i < normalMap->rows; i += params->normalResolution) {
-            for (int j = 0; j < normalMap->cols; j += params->normalResolution) {
+        for (int i = 0; i < normalMap.rows; i += params->normalResolution) {
+            for (int j = 0; j < normalMap.cols; j += params->normalResolution) {
                 Point2i pt(j, i);
 
                 if (floodFillMap.at<Vec3f>(pt)[2] == 0) continue;
@@ -584,8 +648,8 @@ namespace ark {
         }
     }
 
-    boost::shared_ptr<Hand> ark::DepthCamera::detectHandHelper(const cv::Mat & xyz_map,
-        Vec_Hand & output_hands, const ObjectParams * params, float * best_hand_dist,
+    boost::shared_ptr<Hand> DepthCamera::detectHandHelper(const cv::Mat & xyz_map,
+        std::vector<HandPtr> & output_hands, const ObjectParams * params, float * best_hand_dist,
         cv::Mat * pending_mask, uchar * pending_count, const cv::Mat * fill_mask, 
         uchar fill_color)
     {

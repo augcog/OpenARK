@@ -268,4 +268,7 @@ namespace ark {
 
 
     };
+
+    /* Shared pointer for Hand **/
+    typedef boost::shared_ptr<Hand> HandPtr;
 }

@@ -74,13 +74,13 @@ int main() {
     while (true)
     {
         // get latest images from the camera
-        cv::Mat xyzMap = camera->getXYZMap()->clone();
+        cv::Mat xyzMap = camera->getXYZMap();
 
         // query objects in the current frame
         ObjectParams params; // default parameters
 
-        ark::Vec_Hand hands;
-        ark::Vec_FramePlane planes;
+        std::vector<ark::HandPtr> hands;
+        std::vector<ark::FramePlanePtr> planes;
         
         if (handLayer || planeLayer) {
             planes = camera->getFramePlanes(&params);
@@ -96,7 +96,8 @@ int main() {
         // background of visualization
         if (backgroundStyle == 1 && camera->hasIRMap()) {
             // IR background
-            cv::cvtColor(*camera->getIRMap(), handVisual, cv::COLOR_GRAY2BGR, 3);
+            cv::cvtColor(camera->getIRMap(), handVisual, cv::COLOR_GRAY2BGR, 3);
+            cv::imshow("IR",camera->getIRMap());
         }
 
         else if (backgroundStyle == 2) {
@@ -106,7 +107,7 @@ int main() {
 
         else if (backgroundStyle == 3) {
             // normal map background
-            cv::Mat normalMap = camera->getNormalMap()->clone();
+            cv::Mat normalMap = camera->getNormalMap();
             Visualizer::visualizeNormalMap(normalMap, handVisual, params.normalResolution);
         }
 

@@ -1,14 +1,9 @@
 #pragma once
-// C++ Libraries
-#include <iostream>
+
+#include <stdafx.h>
 
 // PMD Libraries
 #include <pmdsdk2.h>
-
-// OpenCV Libraries
-#include <opencv2/video/tracking.hpp>
-#include "opencv2/imgproc/imgproc.hpp"
-
 
 // OpenARK Libraries
 #include "DepthCamera.h"
@@ -37,20 +32,33 @@ namespace ark {
         * Gets new frame from sensor.
         * Updates xyzMap, ampMap, and flagMap. Resets clusters.
         */
-        void update() override;
+        void update(cv::Mat & xyz_map, cv::Mat & rgb_map, cv::Mat & ir_map, 
+                             cv::Mat & amp_map, cv::Mat & flag_map) override;
 
         /**
          * Get the camera's model name.
          */
         const std::string getModelName() const override;
 
+        /** get camera frame width */
         int getWidth() const override;
 
+        /** get camera frame height */
         int getHeight() const override;
 
-        float getConfidenceThreshold() const override;
+        float flagMapConfidenceThreshold() const override;
 
-        int getInvalidFlagValue() const override;
+        int ampMapInvalidFlagValue() const override;
+
+        /**
+         * Returns true if a flag map is available from this camera.
+         */
+        bool hasAmpMap() const override;
+
+        /**
+         * Returns true if a flag map is available from this camera.
+         */
+        bool hasFlagMap() const override;
 
     private:
         /**
@@ -77,17 +85,7 @@ namespace ark {
         */
         float getZ(int i, int j) const;
 
-        /**
-        * Update the z-coordinates of the xyzMap.
-        */
-        void fillInZCoords();
-
-        /**
-        * Update the values in the ampMap.
-        */
-        void fillInAmps();
-
-        //Private Variables
+        // Private Variables
         const char* SOURCE_PLUGIN = "camboardpico";
         const char* SOURCE_PARAM = "";
         const char* PROC_PLUGIN = "camboardpicoproc";

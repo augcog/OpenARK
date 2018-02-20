@@ -449,8 +449,15 @@ namespace ark {
 
             double result = svm[svmIdx]->predict(samples);
 
-            // range [0, 1]
-            result = std::max(std::min(1.0, result), 0.0);
+            if (svmIdx == 0) {
+                // temporarily relax threshold for SVM 0 by 20% (too discriminatory)
+                // range [0, 1]
+                result = std::max(std::min(1.0, result + 0.2), 0.0);
+            }
+            else {
+                // range [0, 1]
+                result = std::max(std::min(1.0, result), 0.0);
+            }
 
             return result;
         }

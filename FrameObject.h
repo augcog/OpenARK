@@ -259,6 +259,8 @@ namespace ark {
             bool sorted = false,
             int points_to_use = -1
         );
-
     };
+
+    /* Shared pointer for FrameObject **/
+    typedef boost::shared_ptr<FrameObject> FrameObjectPtr;
 }

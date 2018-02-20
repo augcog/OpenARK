@@ -99,4 +99,7 @@ namespace ark {
         void cutFromXYZMap(cv::Mat & xyz_map, float threshold = 0.000075,
                            cv::Mat * mask = nullptr, uchar mask_color = 0);
     };
+
+    /* Shared pointer for FramePlane **/
+    typedef boost::shared_ptr<FramePlane> FramePlanePtr;
 }

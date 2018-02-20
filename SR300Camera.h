@@ -60,8 +60,8 @@ namespace ark {
         * Gets the new frame from the sensor (implements functionality).
         * Updates xyzMap and ir_map.
         */
-        void update(MatPtr & xyz_map, MatPtr & rgb_map, MatPtr & ir_map, 
-                            MatPtr & amp_map, MatPtr & flag_map) override;
+        void update(cv::Mat & xyz_map, cv::Mat & rgb_map, cv::Mat & ir_map, 
+                            cv::Mat & amp_map, cv::Mat & flag_map) override;
 
     private:
         /**
