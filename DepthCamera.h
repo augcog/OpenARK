@@ -391,6 +391,6 @@ namespace ark {
         /** Mutexes to ensure thread safety while updating images 
          *  (mutable = modificable even to const methods)
          */
-        mutable std::mutex frontMutex, backMutex, cacheMutex;
+        mutable std::mutex imageMutex;
     };
 }

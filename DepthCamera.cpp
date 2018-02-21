@@ -38,27 +38,20 @@ namespace ark {
 
     bool DepthCamera::nextFrame(bool removeNoise)
     {
-        {
-            // lock back buffers
-            std::lock_guard<std::mutex> backLockI(backMutex);
+        // initialize back buffers
+        initializeImages();
 
-            // initialize back buffers
-            initializeImages();
+        // call update with back buffer images (to allow continued operation on front end)
+        update(xyzMapBuf, rgbMapBuf, irMapBuf, ampMapBuf, flagMapBuf);
 
-            // call update with back buffer images (to allow continued operation on front end)
-            update(xyzMapBuf, rgbMapBuf, irMapBuf, ampMapBuf, flagMapBuf);
-
-            if (!badInput() && xyzMapBuf.data) {
-                if (removeNoise) {
-                    this->removeNoise(xyzMapBuf, ampMapBuf, flagMapConfidenceThreshold());
-                }
+        if (!badInput() && xyzMapBuf.data) {
+            if (removeNoise) {
+                this->removeNoise(xyzMapBuf, ampMapBuf, flagMapConfidenceThreshold());
             }
         }
 
         // lock all buffers while swapping
-        std::lock(frontMutex, backMutex, cacheMutex);
-        std::lock_guard<std::mutex> frontLock(frontMutex, std::adopt_lock), 
-            backLock(backMutex, std::adopt_lock), cacheLock(cacheMutex, std::adopt_lock);
+        std::lock_guard<std::mutex> lock(imageMutex);
 
         // when update is done, swap buffers to front
         swapBuffers();
@@ -73,21 +66,15 @@ namespace ark {
 
         const cv::Mat xyzMap = getXYZMap();
 
-        {
-            std::lock_guard<std::mutex> frontLock(frontMutex);
-            util::computeNormalMap(xyzMap, normalMap, 4, params->normalResolution, false);
-        }
+        std::lock_guard<std::mutex> lock(imageMutex);
+        util::computeNormalMap(xyzMap, normalMap, 4, params->normalResolution, false);
 
-        std::lock_guard<std::mutex> cacheLock(cacheMutex);
         isCached |= FLAG_NORMALS;
     }
 
     std::vector<HandPtr> & DepthCamera::getFrameHands(const ObjectParams * params, bool elim_planes)
     {
-        {
-            std::lock_guard<std::mutex> cacheLockI(cacheMutex);
-            if (!this->xyzMap.data || (isCached & FLAG_FRM_HANDS)) return hands;
-        }
+        if (!this->xyzMap.data || (isCached & FLAG_FRM_HANDS)) return hands;
 
         hands.clear();
 
@@ -158,17 +145,13 @@ namespace ark {
             hands.push_back(bestHandObject);
         }
 
-        std::lock_guard<std::mutex> cacheLock(cacheMutex);
         isCached |= FLAG_FRM_HANDS;
         return hands;
     }
 
     std::vector<FramePlanePtr> & DepthCamera::getFramePlanes(const ObjectParams * params)
     {
-        {
-            std::lock_guard<std::mutex> cacheLockI(cacheMutex);
-            if (!this->xyzMap.data || (isCached & FLAG_FRM_PLANES)) return framePlanes;
-        }
+        if (!this->xyzMap.data || (isCached & FLAG_FRM_PLANES)) return framePlanes;
 
         framePlanes.clear();
         cv::Mat xyzMap = getXYZMap();
@@ -215,17 +198,13 @@ namespace ark {
 #endif
 
         // cache planes for current frame
-        std::lock_guard<std::mutex> cacheLock(cacheMutex);
         isCached |= FLAG_FRM_PLANES;
         return framePlanes;
     }
 
     std::vector<FrameObjectPtr> & DepthCamera::getFrameObjects(const ObjectParams * params)
     {        
-        {
-            std::lock_guard<std::mutex> cacheLockI(cacheMutex);
-            if (!this->xyzMap.data || (isCached & FLAG_FRM_OBJS)) return frameObjects;
-        }
+        if (!this->xyzMap.data || (isCached & FLAG_FRM_OBJS)) return frameObjects;
         frameObjects.clear();
 
         // default parameters
@@ -239,7 +218,6 @@ namespace ark {
         for (auto hand : hands) frameObjects.push_back(hand);
 
         // cache for current frame
-        std::lock_guard<std::mutex> cacheLock(cacheMutex);
         isCached |= FLAG_FRM_OBJS;
         return frameObjects;
     }
@@ -338,7 +316,7 @@ namespace ark {
     bool DepthCamera::writeImage(std::string destination) const
     {
         cv::FileStorage fs(destination, cv::FileStorage::WRITE);
-        std::lock_guard<std::mutex> frontLock(frontMutex);
+        std::lock_guard<std::mutex> lock(imageMutex);
 
         fs << "xyzMap" << xyzMap;
         fs << "ampMap" << ampMap;
@@ -358,21 +336,15 @@ namespace ark {
         cv::FileStorage fs;
         fs.open(source, cv::FileStorage::READ);
 
-        std::lock(frontMutex, backMutex, cacheMutex);
-        std::lock_guard<std::mutex> frontLock(frontMutex, std::adopt_lock),
-            backLock(backMutex, std::adopt_lock), cacheLock(cacheMutex, std::adopt_lock);
-        initializeImages();
+        std::lock_guard<std::mutex> lock(imageMutex);
 
-        xyzMapBuf = cv::Mat(getHeight(), getWidth(), CV_32FC3);
-
-        fs["xyzMap"] >> xyzMapBuf;
-        fs["ampMap"] >> ampMapBuf;
-        fs["flagMap"] >> flagMapBuf;
-        fs["rgbMap"] >> rgbMapBuf;
-        fs["irMap"] >> irMapBuf;
+        fs["xyzMap"] >> xyzMap;
+        fs["ampMap"] >> ampMap;
+        fs["flagMap"] >> flagMap;
+        fs["rgbMap"] >> rgbMap;
+        fs["irMap"] >> irMap;
         fs.release();
 
-        swapBuffers();
         isCached = 0;
 
         if (xyzMap.rows == 0 || ampMap.rows == 0 || flagMap.rows == 0)
@@ -385,7 +357,7 @@ namespace ark {
 
     const cv::Mat DepthCamera::getXYZMap() const
     {
-        std::lock_guard<std::mutex> frontLock(frontMutex);
+        std::lock_guard<std::mutex> lock(imageMutex);
         if (xyzMap.data == nullptr) return cv::Mat::zeros(getHeight(), getWidth(), CV_32FC3);
         return xyzMap.clone();
     }
@@ -394,7 +366,7 @@ namespace ark {
     {
         if (!hasAmpMap()) throw;
 
-        std::lock_guard<std::mutex> frontLock(frontMutex);
+        std::lock_guard<std::mutex> lock(imageMutex);
         if (ampMap.data == nullptr) return cv::Mat::zeros(getHeight(), getWidth(), CV_32F);
         return ampMap.clone();
     }
@@ -403,7 +375,7 @@ namespace ark {
     {
         if (!hasFlagMap()) throw;
 
-        std::lock_guard<std::mutex> frontLock(frontMutex);
+        std::lock_guard<std::mutex> lock(imageMutex);
         if (flagMap.data == nullptr) return cv::Mat::zeros(getHeight(), getWidth(), CV_8U);
         return flagMap.clone();
     }
@@ -411,7 +383,7 @@ namespace ark {
     const cv::Mat DepthCamera::getRGBMap() const {
         if (!hasRGBMap()) throw;
 
-        std::lock_guard<std::mutex> frontLock(frontMutex);
+        std::lock_guard<std::mutex> lock(imageMutex);
         if (rgbMap.data == nullptr) return cv::Mat::zeros(getHeight(), getWidth(), CV_8UC3);
         return rgbMap.clone();
     }
@@ -420,26 +392,19 @@ namespace ark {
     {
         if (!hasIRMap()) throw;
 
-        std::lock_guard<std::mutex> frontLock(frontMutex);
+        std::lock_guard<std::mutex> lock(imageMutex);
         if (irMap.data == nullptr) return cv::Mat::zeros(getImageSize(), CV_8U);
         return irMap.clone();
     }
 
     const cv::Mat DepthCamera::getNormalMap()
     {
-        bool recompute = false;
-        {
-            // detect if we need to recompute
-            std::lock_guard<std::mutex> cacheLock(cacheMutex);
-            recompute = ( !(isCached & FLAG_NORMALS) || normalMap.data == nullptr) &&
-                            xyzMap.data != nullptr;
-        }
-
-        if (recompute) {
+        if ((!(isCached & FLAG_NORMALS) || normalMap.data == nullptr) &&
+                            xyzMap.data != nullptr){
             computeNormalMap();
         }
 
-        std::lock_guard<std::mutex> frontLock(frontMutex);
+        std::lock_guard<std::mutex> lock(imageMutex);
         return normalMap.clone();
     }
 
