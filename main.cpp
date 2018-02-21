@@ -97,7 +97,6 @@ int main() {
         if (backgroundStyle == 1 && camera->hasIRMap()) {
             // IR background
             cv::cvtColor(camera->getIRMap(), handVisual, cv::COLOR_GRAY2BGR, 3);
-            cv::imshow("IR",camera->getIRMap());
         }
 
         else if (backgroundStyle == 2) {
@@ -151,7 +150,7 @@ int main() {
 
         // draw hands
         if (handLayer) {
-            for (auto hand : hands) {
+            for (ark::HandPtr hand : hands) {
                 Visualizer::visualizeHand(handVisual, handVisual, hand.get(),
                                           hand->getSVMConfidence(), &planes);
             }
