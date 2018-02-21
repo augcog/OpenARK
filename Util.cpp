@@ -910,6 +910,13 @@ namespace ark {
             return fmod(atan2(pt.x, -pt.y) + PI, 2 * PI);
         }
 
+        // convert angle to ij point with unit magnitude
+        Point2f angleToPoint(double angle)
+        {
+            angle += 2.5 * PI;
+            return cv::normalize(cv::Vec2f(cos(angle), sin(angle)));
+        }
+
         // get angle between two points through a central point
         double angleBetweenPoints(const Point2f & a, const Point2f & b, const Point2f & center) {
             double angle = abs(pointToAngle(a - center) - pointToAngle(b - center));
@@ -1222,6 +1229,31 @@ namespace ark {
             }
 
             return result / (end - start + 1);
+        }
+
+        float radiusInDirection(const cv::Mat & xyz_map, const Point2i & center,
+            double angle, double angle_offset)
+        {
+            Point2f cen(center), dir = angleToPoint(angle + angle_offset);
+
+            float curr = 
+                ceilf(sqrtf(0.25f * xyz_map.rows * xyz_map.rows + 0.25f * xyz_map.cols * xyz_map.cols));
+
+            // find outermost farthest set pixel by linear scan
+
+            Point2i checkPt;
+            for (; curr >= 0.0f; --curr) {
+                cv::Point2f pos = cen + curr * dir;
+                float xm = fmodf(pos.x, 1.0), ym = fmodf(pos.y, 1.0);
+
+                checkPt = Point2i(floorf(pos.x), floorf(pos.y));
+
+                if (pointInImage(xyz_map, checkPt) && xyz_map.at<Vec3f>(checkPt)[2] > 0) {
+                    return curr;
+                }
+            }
+
+            return 0;
         }
 
         bool PointComparer<Point2i>::operator()(Point2i a, Point2i b) {

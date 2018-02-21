@@ -1,5 +1,5 @@
 #pragma once
-#include "stdafx.h"
+#include <opencv2/core.hpp>
 #include "version.h"
 
 namespace ark {

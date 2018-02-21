@@ -1,6 +1,5 @@
 #pragma once
 
-#include "stdafx.h"
 #include "version.h"
 
 namespace ark {
@@ -42,7 +41,7 @@ namespace ark {
          * (used in hand detection flood fill)
          * default: 0.004
          */
-        float handClusterMaxDistance = 0.004;
+        float handClusterMaxDistance = 0.004f;
 
         /**
          * minimum fraction of the points in a cluster over the total number of points visible
@@ -50,7 +49,7 @@ namespace ark {
          * set to 0 to ignore.
          * default: 0.0167
          */
-        float handClusterMinPoints = 0.0167;
+        float handClusterMinPoints = 0.0167f;
 
         /**
          * number of pixels between consecutive seed points when initiating the hand detection flood fill
@@ -78,11 +77,11 @@ namespace ark {
         bool handRequireEdgeConnected = false;
 
         /**
-         * max y-coordinate on the left and right sides (as fraction of image height)
+         * min y-coordinate on the left and right sides (as fraction of image height)
          * to consider a cluster to be connected to the edge
-         * default: 0.50
+         * default: 0.66
          */
-        double handEdgeConnectMaxY = 0.50;
+        double handEdgeConnectMaxY = 0.66;
 
         /**
          * if set to false, disables the SVM used to eliminate objects unlikely to be hands.
@@ -95,21 +94,21 @@ namespace ark {
          * minimum SVM confidence value ([0...1]) for first hand object
          * default: 0.45
          */
-        double handSVMConfidenceThresh = 0.45;
+        float handSVMConfidenceThresh = 0.45f;
 
         /**
          * @see handSVMConfidenceThresh
          * minimum SVM confidence value ([0...1]) for additional hand objects
          * (only applied in queryHands)
-         * default: 0.59
+         * default: 0.55
          */
-        double handSVMHighConfidenceThresh = 0.59;
+        double handSVMHighConfidenceThresh = 0.55f;
 
         /**
          * maximum distance between the center of the hand and the top point in the hand cluster (m)
          * used when detecting the hand's center
          */
-        float centerMaxDistFromTop = 0.155;
+        float centerMaxDistFromTop = 0.155f;
 
         /**
          * pixels from the bottom edge of the depth map at which contour points are considered to be on the edge
@@ -129,13 +128,13 @@ namespace ark {
          * minimum wrist width (m)
          * default: 0.030
          */
-        float wristWidthMin = 0.030;
+        float wristWidthMin = 0.030f;
 
         /**
          * maximum wrist width (m)
          * default: 0.085
          */
-        float wristWidthMax = 0.085;
+        float wristWidthMax = 0.085f;
 
         /**
          * maximum distance from the wrist to the center of the hand
@@ -282,7 +281,7 @@ namespace ark {
          * (used in flood fill during plane detection)
          * default: 0.06
          */
-        float planeFloodFillThreshold = 0.06;
+        float planeFloodFillThreshold = 0.06f;
 
         /**
          * fraction of outlier points to remove from the plane before performing regression
@@ -294,9 +293,9 @@ namespace ark {
          * minimum (# points / # total points on screen / normal resolution^2)
          * on a combined plane.
          * smaller planes are discarded.
-         * default: 0.0650
+         * default: 0.0350
          */
-        float planeMinPoints = 0.0650;
+        float planeMinPoints = 0.0350f;
 
         /**
          * minimum surface area (m^2) of a combined plane
@@ -310,14 +309,14 @@ namespace ark {
          * planes not meeting this criterion are discarded.
          * default: 0.0550
          */
-        float planeEquationMinInliers = 0.0550;
+        float planeEquationMinInliers = 0.0350f;
 
         /**
          * minimum (# points / # total points on screen * normal resolution^2)
          * in a component of a greater plane
          * default: 0.0100
          */
-        float subplaneMinPoints = 0.0100;
+        float subplaneMinPoints = 0.0100f;
 
         /**
          * minimum surface area (m^2) of a component of a greater plane
@@ -329,9 +328,9 @@ namespace ark {
          * minimum (# points / # total points on screen * normal resolution^2)
          * for a plane to be considered a 'dominant' plane and thus removed 
          * prior to hand detection.
-         * default: 0.200
+         * default: 0.0030
          */
-        double dominantPlaneMinPoints = 0.200;
+        double dominantPlaneMinPoints = 0.0030;
 
         /**
          * minimum norm (r^2) between the equations of two 'subplanes'

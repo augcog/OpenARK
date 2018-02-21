@@ -1,5 +1,7 @@
 #pragma once
-#include "stdafx.h"
+#include <opencv2/core.hpp>
+#include <vector>
+#include <string>
 #include "version.h"
 
 namespace ark {
@@ -247,14 +249,21 @@ namespace ark {
             cv::Mat * not_visited = nullptr);
 
         /**
-        * Compute the angle in radians 'pointij' is at from the origin, going clockwise starting from (0, 1)
+        * Compute the angle in radians 'pointij' is at from the origin, going CCW starting from (0, 1), if y-axis is facing up.
         * @param pointij input point in ij coordinates
-        * @return angle from origin, CW from (0, 1)
+        * @return angle from origin, CCW from (0, 1)
         */
         double pointToAngle(const Point2f & pointij);
 
         /**
-        * Converts a point into a value representing the direction it is at from the origin, going clockwise starting from (0, 1).
+        * Compute the point with unit magnitude 'angle' radians CCW from (0, 1), if y-axis is facing up
+        * @param angle input angle
+        * @return point with unit magnitude 'angle' radians CCW from (0, 1)
+        */
+        Point2f angleToPoint(double angle);
+
+        /**
+        * Converts a point into a value representing the direction it is at from the origin, going CCW starting from (0, 1), if y-axis is facing up.
         * Note: the value returned is not necessarily the slope. However, points ordered by this quantity are guarenteed to be in order of angle.
         * This function returns x/y if pointij is in the 3rd quadrant, FLT_MAX/2 - x/y if in 2nd quadrant,
                              FLT_MAX/2 + x/y if in 1st quadrant, and FLT_MAX - x/y if in 4th quadrant.
@@ -486,6 +495,16 @@ namespace ark {
          */
         double contourCurvature(const std::vector<Point2i> & contour, int index,
             int start = 2, int end = 5);
+
+        /** find the 2D distance, in pixels, between a given point and the farthest point in a given direction
+          * that has a nonzero value on an xyz map.
+          * @param xyz_map the XYZ map (point cloud)
+          * @param center the center point
+          * @param angle the direction, specified by an angle CCW from (0, 1), if y-axis is facing up
+          * @param angle_offset the offset angle to be added to angle (default 0.0)
+          */
+        float radiusInDirection(const cv::Mat & xyz_map, const Point2i & center,
+                             double angle, double angle_offset = 0.0);
 
         /**
          * Compares two points (Point, Point2f, Vec3i or Vec3f),

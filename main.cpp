@@ -26,7 +26,9 @@ using namespace ark;
 int main() {
     printf("Welcome to OpenARK v %s Demo\n\n", ark::VERSION);
     printf("CONTROLS:\nQ or ESC to quit, P to show/hide planes, H to show/hide hands, SPACE to play/pause\n\n");
-    printf("VIEWER BACKGROUNDS:\n1 = IR Image, 2 = Depth Image, 3 = Normal Map, 0 = None\n");
+    printf("VIEWER BACKGROUNDS:\n1 = IR Image, 2 = Depth Image, 3 = Normal Map, 0 = None\n\n");
+    printf("HAND DETECTION OPTIONS:\nS = Enable/Disable SVM, C = Enforce/Unenforce Edge Connected Criterion\n\n");
+    printf("MISCELLANEOUS:\nA = Measure Surface Area (Of Hands and Planes)\n");
     boost::shared_ptr<DepthCamera> camera;
 
 #ifdef PMDSDK_ENABLED
@@ -61,6 +63,11 @@ int main() {
     // image layer flags
     bool handLayer = true, planeLayer = false;
 
+    // hand detection option flags
+    bool svmEnabled = true, reqEdgeConnected = false;
+
+    bool measureSurfArea = false;
+
     // background style: 0=none, 1=ir, 2=depth, 3=normal
     int backgroundStyle = 1;
 
@@ -71,24 +78,36 @@ int main() {
     camera->beginCapture(120, false);
 
     // main demo loop
+
     while (true)
     {
         // get latest images from the camera
         cv::Mat xyzMap = camera->getXYZMap();
 
+        /**** Start: Hand/plane detection ****/
+
         // query objects in the current frame
         ObjectParams params; // default parameters
+
+        params.handUseSVM = svmEnabled;
+        params.handRequireEdgeConnected = reqEdgeConnected;
 
         std::vector<ark::HandPtr> hands;
         std::vector<ark::FramePlanePtr> planes;
         
-        if (handLayer || planeLayer) {
+        if (planeLayer || handLayer) {
+            // even if only hand layer is enabled, 
+            // planes need to be detected for finding contact points
             planes = camera->getFramePlanes(&params);
 
             if (handLayer) {
                 hands = camera->getFrameHands(&params);
             }
         }
+
+        /**** End: Hand/plane detection ****/
+
+        /**** Start: Visualization ****/
 
         // construct visualizations
         cv::Mat handVisual;
@@ -145,14 +164,30 @@ int main() {
                 cv::Vec3f normal = planes[i]->getNormalVector();
                 Point2i arrowPt(drawPt.x + normal[0] * 100, drawPt.y - normal[1] * 100);
                 cv::arrowedLine(handVisual, drawPt, arrowPt, WHITE, 4, cv::LINE_AA, 0, 0.2);
+
+                if (measureSurfArea) {
+                    double area = planes[i]->getSurfArea();
+                    cv::putText(handVisual, std::to_string(area), drawPt + Point(10, 10),
+                        0, 0.6, cv::Scalar(255, 255, 255));
+                }
             }
         }
 
         // draw hands
         if (handLayer) {
             for (ark::HandPtr hand : hands) {
+                double dispVal;
+                if (measureSurfArea) {
+                    dispVal = hand->getSurfArea();
+                }
+                else if (svmEnabled) {
+                    dispVal = hand->getSVMConfidence();
+                }
+                else {
+                    dispVal = FLT_MAX;
+                }
                 Visualizer::visualizeHand(handVisual, handVisual, hand.get(),
-                                          hand->getSVMConfidence(), &planes);
+                                          dispVal, &planes);
             }
         }
 
@@ -219,35 +254,39 @@ int main() {
         // show visualizations
         cv::imshow(camera->getModelName() + " Depth Map", xyzMap);
         cv::imshow("Demo Output - OpenARK v" + std::string(ark::VERSION), handVisual);
+        /**** End: Visualization ****/
 
-        // END HAND DETECTION
-
-        /**** Start: Loop Break Condition ****/
+        /**** Start: Controls ****/
         int c = cv::waitKey(wait);
 
+        // make case insensitive
+        if (c >= 'a' && c <= 'z') c &= 0xdf;
+
         // 27 is ESC
-        if (c == 'q' || c == 'Q' || c == 27) {
+        if (c == 'Q' || c == 27) {
+            /*** Loop Break Condition ***/
             break;
         }
-
-        else if (c == 'p' || c == 'P') {
-            planeLayer = !planeLayer;
-        }
-
-        else if (c == 'h' || c == 'H') {
-            handLayer = !handLayer;
-        }
-
         else if (c >= '0' && c <= '3') {
             backgroundStyle = c - '0';
         }
 
-        else if (c == ' ') {
-            // paused, any key to go to next frame (space to play)
-            playing = !playing;
+        switch (c) {
+        case 'P':
+            planeLayer ^= 1; break;
+        case 'H':
+            handLayer ^= 1; break;
+        case 'S':
+            svmEnabled ^= 1; break;
+        case 'C':
+            reqEdgeConnected ^= 1; break;
+        case 'A':
+            measureSurfArea ^= 1; break;
+        case ' ':
+            playing ^= 1; break;
         }
 
-        /**** End: Loop Break Condition ****/
+        /**** End: Controls ****/
         ++frame;
     }
 

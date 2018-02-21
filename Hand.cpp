@@ -1,9 +1,9 @@
-#include "stdafx.h"
 #include "version.h"
 
 #include "Util.h"
 #include "Hand.h"
 #include "Visualizer.h"
+#include "HandClassifier.h"
 
 // limited to file scope
 namespace {
@@ -54,8 +54,8 @@ namespace {
 
 namespace ark {
 
-    // Initialize the SVM hand classifier
-    classifier::HandClassifier & Hand::handClassifier = classifier::SVMHandClassifier(SVM_PATHS);
+    // Initialize the SVM hand validator
+    static classifier::SVMHandValidator & handValidator = classifier::SVMHandValidator(SVM_PATHS);
 
     Hand::Hand() : FrameObject() { }
 
@@ -93,29 +93,17 @@ namespace ark {
         }  
     }
 
-    bool Hand::checkForHand() 
+    bool Hand::checkForHand()
     {
 #ifdef DEBUG
         cv::Mat visual = cv::Mat::zeros(fullMapSize.height, fullMapSize.width, CV_8UC3);
+        cv::Mat defectVisual = cv::Mat::zeros(fullMapSize.height, fullMapSize.width, CV_8UC3);
 #endif
         if (points->size() == 0 || num_points == 0) {
             return false;
         }
 
         computeContour(xyzMap, points.get(), points_xyz.get(), topLeftPt, num_points);
-
-        // recompute convex hull based on new contour
-        convexHull.clear(); getConvexHull();
-
-        // Begin by computing defects
-        std::vector<cv::Vec4i> defects;
-
-        if (indexHull.size() > 3)
-        {
-            std::vector<int> tmpHull;
-
-            cv::convexityDefects(contour, indexHull, defects);
-        }
 
         // ** Find center of contour **
         Point2i centroid = findCenter(contour) - topLeftPt;
@@ -125,7 +113,7 @@ namespace ark {
 
         // Find radius and center point of largest inscribed circle above center
         Vec3f topPt = util::averageAroundPoint(xyzMap, (*points)[0] - topLeftPt,
-                                                 params->xyzAverageSize);
+            params->xyzAverageSize);
 
         // radius of largest inscribed circle
         double cirrad;
@@ -243,6 +231,10 @@ namespace ark {
             return false;
         }
 
+        if (contour[wristL].x > contour[wristR].x) {
+            std::swap(wristL, wristR);
+        }
+
         wristL_ij = contour[wristL];
         wristR_ij = contour[wristR];
         wristL_xyz = util::averageAroundPoint(xyzMap,
@@ -268,7 +260,54 @@ namespace ark {
             return false;
         }
 
+        // (finished detecting wrist)
+
+        // ** Remove everything below wrist **
+
+        std::vector<Point2i> aboveWristPointsIJ;
+        std::vector<Vec3f> aboveWristPointsXYZ;
+
+        if (wristR_ij.x != wristL_ij.x) {
+            double slope = (double)(wristR_ij.y - wristL_ij.y) / (wristR_ij.x - wristL_ij.x);
+
+            for (int i = 0; i < num_points; ++i) {
+                const Point2i & pt = (*points)[i];
+                double y_hat = wristL_ij.y + (pt.x - wristL_ij.x) * slope;
+
+                Vec3f & vec = xyzMap.at<Vec3f>(pt - topLeftPt);
+
+                if (pt.y > y_hat) {
+                   vec = 0;
+                }
+                else {
+                    aboveWristPointsIJ.push_back(pt);
+                    aboveWristPointsXYZ.push_back(vec);
+                }
+            }
+        }
+
+        num_points = (int)aboveWristPointsIJ.size();
+        points->swap(aboveWristPointsIJ);
+        points_xyz->swap(aboveWristPointsXYZ);
+
+        // recompute contour
+        computeContour(xyzMap, points.get(), points_xyz.get(), topLeftPt, num_points);
+
         // ** Detect fingers **
+
+        // recompute convex hull based on new contour
+        convexHull.clear(); getConvexHull();
+
+        // compute defects
+        std::vector<cv::Vec4i> defects;
+
+        if (indexHull.size() > 3)
+        {
+            std::vector<int> tmpHull;
+
+            cv::convexityDefects(contour, indexHull, defects);
+        }
+
         // sort all defects found by angle
         DefectComparer comparer(contour, defects, this->palmCenterIJ);
         std::sort(defects.begin(), defects.end(), comparer);
@@ -290,19 +329,11 @@ namespace ark {
             // contains info about the defect
             cv::Vec4i defect = defects[i];
 
-            // skip if defect is under wrist
-            if (direction == -1) {
-                if (wristL <= wristR) {
-                    if (defect[2] >= wristL && defect[2] <= wristR) continue;
-                }
-                else if (defect[2] <= wristR || defect[2] >= wristL) continue;
-            }
-            else {
-                if (wristL <= wristR) {
-                    if (defect[2] <= wristL || defect[2] >= wristR) continue;
-                }
-                else if (defect[2] >= wristR && defect[2] <= wristL) continue;
-            }
+#ifdef DEBUG
+            cv::line(defectVisual, contour[defects[i][0]], contour[defects[i][2]], cv::Scalar(0, 255, 0));
+            cv::line(defectVisual, contour[defects[i][1]], contour[defects[i][2]], cv::Scalar(0, 0, 255));
+            cv::circle(defectVisual, contour[defects[i][2]], 5, cv::Scalar(255,255,255), 2);
+#endif
 
             // point on convex hull where defect begins. fingertip candidate
             Point2i start = contour[defect[0]] - topLeftPt;
@@ -397,6 +428,8 @@ namespace ark {
             cv::Scalar(0, 255, 255), 2);
         cv::rectangle(visual, wristL_ij - Point2i(10, 10), wristL_ij + Point2i(10, 10),
             cv::Scalar(0, 255, 255), 2);
+
+        cv::imshow("[Hand Defects Debug]", defectVisual);
 #endif
 
         // select fingers from candidates
@@ -684,20 +717,28 @@ namespace ark {
         cv::imshow("[Hand Debug]", visual);
 #endif
 
+        size_t nFin = this->fingersIJ.size();
+
         // report not hand if there are too few/many fingers
-        if (this->fingersIJ.size() > 6 || this->fingersIJ.size() < 1) {
+        if (nFin > 6 || nFin < 1) {
             return false;
+        }
+        
+        // find dominant direction
+
+        if (nFin > 0) {
+            Point2f fingCen = this->fingersIJ[nFin / 2];
+            if (nFin % 2 == 0) {
+                fingCen += Point2f(this->fingersIJ[nFin / 2 - 1]);
+                fingCen /= 2.0f;
+            }
+
+            this->dominantDir = fingCen - Point2f(this->palmCenterIJ);
         }
 
         // Final SVM check
-        if (params->handUseSVM && handClassifier.isTrained()) {
-            this->isHand = true;
-
-            std::vector<double> features =
-                classifier::HandClassifier::extractHandFeatures(*this, xyzMap, topLeftPt, 1.0,
-                                                          fullMapSize.width);
-
-            this->svmConfidence = handClassifier.classify(features);
+        if (params->handUseSVM && handValidator.isTrained()) {
+            this->svmConfidence = handValidator.classify(*this, xyzMap, 32, 5, topLeftPt, fullMapSize.width);
             if (this->svmConfidence < params->handSVMConfidenceThresh) {
                 // SVM confidence value below threshold, reverse decision & destroy the hand instance
                 return false;
@@ -868,7 +909,12 @@ namespace ark {
         return circleRadius;
     }
 
-    double Hand::getSVMConfidence() const 
+    Point2f Hand::getDominantDirection() const
+    {
+        return dominantDir;
+    }
+
+    float Hand::getSVMConfidence() const
     {
         return svmConfidence;
     }

@@ -94,8 +94,15 @@ namespace ark {
             cv::Scalar(255, 255, 0), unitWid * 1.5);
 
         // faint outline of largest inscribed circle
-        cv::circle(output, center, hand->getCircleRadius(), cv::Scalar(100, 100, 100), 1);
-        
+        cv::circle(output, center, hand->getCircleRadius(), cv::Scalar(100, 100, 100), 
+            std::round(unitWid));
+
+        // draw dominant direction faintly
+        Point2f dir = hand->getDominantDirection();
+        cv::line(output, Point2f(center), Point2f(center) + dir * 100,
+            cv::Scalar(100, 100, 100), std::round(unitWid));
+
+
         const std::vector<Point2i> & fingers = hand->getFingersIJ();
         const std::vector<Point2i> & defects = hand->getDefectsIJ();
         const std::vector<Vec3f> & fingersXYZ = hand->getFingers();

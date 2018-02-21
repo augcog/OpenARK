@@ -388,7 +388,7 @@ namespace ark {
         cv::Mat ampMapBuf;
         cv::Mat flagMapBuf;
 
-        /** Mutexes to ensure thread safety while updating images 
+        /** Mutex to ensure thread safety while updating images 
          *  (mutable = modificable even to const methods)
          */
         mutable std::mutex imageMutex;

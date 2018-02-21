@@ -89,11 +89,15 @@ namespace ark {
         cv::Mat pendingClusters;
         if (elim_planes) pendingClusters = cv::Mat::zeros(R, C, CV_8U);
 
+        // number of 'pending' clusters
+        uchar pendingClusterCount = 0;
+
         float bestHandDist = FLT_MAX;
 
         // 2. eliminate large planes
 
-        const int DOMINANT_PLANE_MIN_POINTS = params->dominantPlaneMinPoints * R * C /
+        // compute exact constant
+        static const int DOMINANT_PLANE_MIN_POINTS = params->dominantPlaneMinPoints * R * C /
                                         (params->normalResolution * params->normalResolution);
 
         if (elim_planes){
@@ -107,41 +111,14 @@ namespace ark {
             }
         }
 
-        // 3. first pass: try to detect hands directly
-        // number of 'pending' clusters
-        uchar pendingClusterCount = 0;
+        // 3. detect hands directly
         boost::shared_ptr<Hand> bestHandObject =
-            detectHandHelper(xyzMap, hands, params, &bestHandDist, &pendingClusters, 
-                &pendingClusterCount);
-
-        // 4. second pass: eliminate planes and try again
-        if (elim_planes) {
-            cv::Vec3b color;
-
-            for (uchar k = 0; k < pendingClusterCount; ++k) {
-                color = util::paletteColor(k);
-
-                uchar maskColor = 255 - k;
-
-                std::vector<Vec3f> equations;
-                std::vector<VecP2iPtr> points;
-                std::vector<VecV3fPtr> pointsXYZ;
-
-                detectPlaneHelper(xyzMap, equations, points, pointsXYZ, params, nullptr,
-                    &pendingClusters, maskColor);
-
-                if (equations.size()) {
-                    for (uint i = 0; i < equations.size(); ++i) {
-                        util::removePlane(xyzMap, equations[i], params->handPlaneMinNorm);
-                    }
-
-                    bestHandObject = detectHandHelper(xyzMap, hands, params, 
-                        &bestHandDist, nullptr, nullptr, &pendingClusters, maskColor);
-                }
-            }
-        }
+            detectHandHelper(xyzMap, hands, params, &bestHandDist, 
+                elim_planes ? &pendingClusters : nullptr,
+                elim_planes ? &pendingClusterCount : nullptr);
 
         if (bestHandObject != nullptr) {
+            // if no hands surpass 'high confidence threshold', at least add one hand
             hands.push_back(bestHandObject);
         }
 
@@ -629,8 +606,8 @@ namespace ark {
         if (best_hand_dist) closestHandDist = *best_hand_dist;
 
         // 2. try to directly cluster objects using flood fill
-        std::vector<Point2i> allIjPoints(R * C + 1);
-        std::vector<Vec3f> allXyzPoints(R * C + 1);
+        std::vector<Point2i> allIjPoints(R * C);
+        std::vector<Vec3f> allXyzPoints(R * C);
 
         // compute the minimum number of points in a cluster according to params
         const int CLUSTER_MIN_POINTS = (int) (params->handClusterMinPoints * R * C);

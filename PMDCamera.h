@@ -1,9 +1,9 @@
 #pragma once
 
-#include <stdafx.h>
-
 // PMD Libraries
 #include <pmdsdk2.h>
+
+#include <opencv2/core.hpp>
 
 // OpenARK Libraries
 #include "DepthCamera.h"

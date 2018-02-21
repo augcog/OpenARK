@@ -1,7 +1,9 @@
 #pragma once
 
-#include "stdafx.h" 
 #include "version.h"
+
+#include <opencv2/core.hpp>
+#include <vector>
 
 // OpenARK headers
 #include "version.h"

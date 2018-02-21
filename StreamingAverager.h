@@ -1,5 +1,5 @@
 #pragma once
-#include "stdafx.h"
+#include <deque>
 #include "version.h"
 
 namespace ark {

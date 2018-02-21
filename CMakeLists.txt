@@ -4,7 +4,7 @@ project( OpenARK )
 
 set(OpenARK_VERSION_MAJOR 0)
 set(OpenARK_VERSION_MINOR 9)
-set(OpenARK_VERSION_PATCH 1)
+set(OpenARK_VERSION_PATCH 2)
 
 set(SVM_PATHS "\"svm/\", \"../svm/\", \"\"")
 

@@ -1,8 +1,7 @@
 #pragma once
-#include "stdafx.h"
+
 #include "FrameObject.h"
 #include "FramePlane.h"
-#include "HandClassifier.h"
 #include "version.h"
 
 namespace ark {
@@ -113,9 +112,15 @@ namespace ark {
         double getCircleRadius() const;
 
         /**
+        * Get a unit vector pointing towards the "dominant" direction of the hand
+        * i.e. from the center towards the fingers
+        */
+        Point2f getDominantDirection() const;
+
+        /**
         * Get the SVM confidence rating of this object, [0.0, 1.0] (higher = more likely to be hand)
         */
-        double getSVMConfidence() const;
+        float getSVMConfidence() const;
 
         /**
         * True if hand cluster touches the bottom edge
@@ -171,11 +176,6 @@ namespace ark {
         * True if this object is a valid hand (queryFrameObjects/queryFrameHands will only return valid hands).
         */
         bool isValidHand() const;
-
-        /**
-        * SVM Hand classifier instance
-        */
-        static classifier::HandClassifier & handClassifier;
 
     protected:
         /**
@@ -244,10 +244,15 @@ namespace ark {
         double circleRadius;
 
         /**
+         * stores the dominant direction of hand
+         */
+        Point2f dominantDir;
+
+        /**
         * The confidence value (in [0, 1]) assigned to this hand by the SVM classifier,
         * higher = more likely to be hand
         */
-        double svmConfidence;
+        float svmConfidence;
 
         /**
         * Whether the hand object is actually valid
@@ -265,7 +270,6 @@ namespace ark {
         * Edge connected implies that object is likely connected to the user's body (hand, arm, etc)
         */
         bool rightEdgeConnected = false;
-
 
     };
 
