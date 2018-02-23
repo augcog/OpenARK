@@ -1,7 +1,7 @@
 #pragma once
 
-#include "stdafx.h"
 #include "version.h"
+#include <vector>
 #include "FrameObject.h"
 
 namespace ark {
@@ -24,7 +24,7 @@ namespace ark {
          * @param v vector of plane parameters
          * @see FrameObject
          */
-        FramePlane(const Vec3f & v, const cv::Mat & cluster_depth_map, const ObjectParams * params = nullptr);
+        FramePlane(const Vec3f & v, const cv::Mat & cluster_depth_map, DetectionParams::Ptr params = nullptr);
 
         /** 
          * Construct a plane with the given parameter vector and the given 3D object information
@@ -37,9 +37,9 @@ namespace ark {
          * @param sorted if true, assumes that 'points' is already ordered and skips sorting to save time.
          * @param points_to_use optionally, the number of points in 'points' to use for the object. By default, uses all points.
          */
-        FramePlane(Vec3f v, boost::shared_ptr<std::vector<Point2i>> points_ij, 
-                boost::shared_ptr<std::vector<Vec3f>> points_xyz, const cv::Mat & depth_map,
-                const ObjectParams * params = nullptr, bool sorted = false, int points_to_use = -1);
+        FramePlane(Vec3f v, VecP2iPtr points_ij, VecV3fPtr points_xyz,
+            const cv::Mat & depth_map, DetectionParams::Ptr params = nullptr,
+            bool sorted = false, int points_to_use = -1);
 
         /**
          * Contains the coefficients of the plane equation
@@ -86,20 +86,7 @@ namespace ark {
          */
         float distanceToPoint(const Vec3f & point) const;
 
-        /**
-         * Remove all points fitting a plane's equation from the given point cloud
-         * @see util::removePlane
-         * @param [in, out] xyz_map the input point cloud
-         * @param threshold the thickness of the plane, 
-         *        i.e. the maximum distance from the plane to a removed point
-         * @param mask, mask_color optional mask matrix whose value must equal 'mask_color'
-         *                         at the correspoinding index
-         *                         for a point to be removed from the point cloud
-         */
-        void cutFromXYZMap(cv::Mat & xyz_map, float threshold = 0.000075,
-                           cv::Mat * mask = nullptr, uchar mask_color = 0);
+        /** Shared pointer to a FramePlane */
+        typedef std::shared_ptr<FramePlane> Ptr;
     };
-
-    /* Shared pointer for FramePlane **/
-    typedef boost::shared_ptr<FramePlane> FramePlanePtr;
 }

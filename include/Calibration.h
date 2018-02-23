@@ -1,7 +1,10 @@
 #pragma once
 
-#include "stdafx.h"
 #include "version.h"
+
+#include <vector>
+#include <string>
+#include <opencv2/core.hpp>
 
 // OpenARK Libraries
 #include "Visualizer.h"

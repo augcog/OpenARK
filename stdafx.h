@@ -45,7 +45,7 @@
 #include <opencv2/features2d.hpp>
 #include <opencv2/ml.hpp>
 
-// PCL Libaries
+// PCL Libraries
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/point_types.h>
 #include <pcl/features/normal_3d.h>

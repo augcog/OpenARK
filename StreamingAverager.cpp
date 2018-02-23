@@ -4,57 +4,41 @@
 #include "Util.h"
 
 namespace ark {
-    StreamingAverager::StreamingAverager(int frequency, double rejectionDistance)
+    StreamingAverager::StreamingAverager(int frequency, float rejectionDistance) :
+        sampleFrequency(frequency), rejectionThreshold(rejectionDistance * rejectionDistance)
     {
-        sampleFrequency = frequency;
-        rejectionThreshold = rejectionDistance;
-        dataPoints = std::deque<Vec3f>();
+        ASSERT(frequency > 0, "Sampling frequency must be at least 1");
     }
 
     Vec3f StreamingAverager::addDataPoint(Vec3f pt)
     {
-        if (dataPoints.size() > 0 && util::euclideanDistance(pt, getCurrentAverage()) > rejectionThreshold)
+        if (util::norm(pt - getCurrentAverage()) > rejectionThreshold)
         {
             addEmptyPoint();
-            return getCurrentAverage();
         }
+        else {
+            if (dataPoints.size() >= sampleFrequency)
+            {
+                currentValue -= dataPoints.front();
+                dataPoints.pop_front();
+            }
 
-        if (dataPoints.size() >= sampleFrequency)
-        {
-            auto extra = dataPoints.front();
-            dataPoints.pop_front();
-            currentValue -= extra;
+            dataPoints.push_back(pt);
+            currentValue += pt;
         }
-        dataPoints.push_back(pt);
-        currentValue += pt;
 
         return getCurrentAverage();
     }
 
     void StreamingAverager::addEmptyPoint()
     {
-        if (dataPoints.size() > 0)
-        {
-            Vec3f extra = dataPoints.front();
-            dataPoints.pop_front();
-            currentValue = currentValue - extra;
-        }
+        if (dataPoints.empty()) return;
+        currentValue -= dataPoints.front();;
+        dataPoints.pop_front();
     }
 
     Vec3f StreamingAverager::getCurrentAverage()
     {
-        Vec3f average;
-        if (dataPoints.size() != 0)
-        {
-            average[0] = currentValue[0] / dataPoints.size();
-            average[1] = currentValue[1] / dataPoints.size();
-            average[2] = currentValue[2] / dataPoints.size();
-        }
-        return average;
-    }
-
-    StreamingAverager::~StreamingAverager()
-    {
-
+        return dataPoints.empty() ? 0 : currentValue / (int)dataPoints.size();
     }
 }

@@ -24,7 +24,7 @@ namespace ark {
 
     void DepthCamera::beginCapture(int fps_cap, bool remove_noise)
     {
-        assert(captureInterrupt == true);
+        ASSERT(captureInterrupt == true, "beginCapture: already capturing from this camera");
         captureInterrupt = false;
         std::thread thd(&DepthCamera::captureThreadingHelper, this, fps_cap,
             &captureInterrupt, remove_noise);
@@ -56,147 +56,12 @@ namespace ark {
         // when update is done, swap buffers to front
         swapBuffers();
 
-        // clear cache flag
-        isCached = 0;
+        // call callbacks
+        for (auto callback : updateCallbacks) {
+            callback.second(*this);
+        }
+
         return !badInput();
-    }
-
-    void DepthCamera::computeNormalMap(const ObjectParams * params) {
-        if (params == nullptr) params = &ObjectParams::DEFAULT;
-
-        const cv::Mat xyzMap = getXYZMap();
-
-        std::lock_guard<std::mutex> lock(imageMutex);
-        util::computeNormalMap(xyzMap, normalMap, 4, params->normalResolution, false);
-
-        isCached |= FLAG_NORMALS;
-    }
-
-    std::vector<HandPtr> & DepthCamera::getFrameHands(const ObjectParams * params, bool elim_planes)
-    {
-        if (!this->xyzMap.data || (isCached & FLAG_FRM_HANDS)) return hands;
-
-        hands.clear();
-
-        // 1. initialize
-        if (params == nullptr) params = &ObjectParams::DEFAULT;
-
-        cv::Mat xyzMap = getXYZMap();
-        const int R = xyzMap.rows, C = xyzMap.cols;
-
-        /* records clusters pending reconsideration on the second pass (plane removal).
-           each cluster's points are recorded in a different color. (only used if elim_planes enabled) */
-        cv::Mat pendingClusters;
-        if (elim_planes) pendingClusters = cv::Mat::zeros(R, C, CV_8U);
-
-        // number of 'pending' clusters
-        uchar pendingClusterCount = 0;
-
-        float bestHandDist = FLT_MAX;
-
-        // 2. eliminate large planes
-
-        // compute exact constant
-        static const int DOMINANT_PLANE_MIN_POINTS = params->dominantPlaneMinPoints * R * C /
-                                        (params->normalResolution * params->normalResolution);
-
-        if (elim_planes){
-            std::vector<FramePlanePtr> planes = getFramePlanes(params);
-            if (planes.size()) {
-                for (auto plane : planes) {
-                    if (plane->getPointsIJ().size() > DOMINANT_PLANE_MIN_POINTS) {
-                        plane->cutFromXYZMap(xyzMap, params->handPlaneMinNorm);
-                    }
-                }
-            }
-        }
-
-        // 3. detect hands directly
-        boost::shared_ptr<Hand> bestHandObject =
-            detectHandHelper(xyzMap, hands, params, &bestHandDist, 
-                elim_planes ? &pendingClusters : nullptr,
-                elim_planes ? &pendingClusterCount : nullptr);
-
-        if (bestHandObject != nullptr) {
-            // if no hands surpass 'high confidence threshold', at least add one hand
-            hands.push_back(bestHandObject);
-        }
-
-        isCached |= FLAG_FRM_HANDS;
-        return hands;
-    }
-
-    std::vector<FramePlanePtr> & DepthCamera::getFramePlanes(const ObjectParams * params)
-    {
-        if (!this->xyzMap.data || (isCached & FLAG_FRM_PLANES)) return framePlanes;
-
-        framePlanes.clear();
-        cv::Mat xyzMap = getXYZMap();
-
-        std::vector<Vec3f> equations;
-        std::vector<VecP2iPtr> points;
-        std::vector<VecV3fPtr> pointsXYZ;
-
-        detectPlaneHelper(xyzMap, equations, points, pointsXYZ, params);
-
-        for (uint i = 0; i < equations.size(); ++i) {
-            auto planePtr = boost::make_shared<FramePlane>
-                (equations[i], points[i], pointsXYZ[i], xyzMap, params);
-
-            if (planePtr->getSurfArea() > params->planeMinArea) {
-                framePlanes.emplace_back(planePtr);
-            }
-        }
-
-        if (params == nullptr) params = &ObjectParams::DEFAULT;
-
-#ifdef DEBUG
-        cv::Mat planeDebugVisual =
-            cv::Mat::zeros(xyzMap.size() / params->normalResolution, CV_8UC3);
-
-        for (int i = 0; i < framePlanes.size(); ++i) {
-            Vec3b color = util::paletteColor(i);
-            const std::vector<Point2i> & points = framePlanes[i]->getPointsIJ();
-
-            for (uint j = 0; j < points.size(); ++j) {
-                planeDebugVisual.at<Vec3b>(points[j] / params->normalResolution) = color;
-            }
-        }
-
-        cv::resize(planeDebugVisual, planeDebugVisual, planeDebugVisual.size() * params->normalResolution,
-            0, 0, cv::INTER_NEAREST);
-
-
-        for (int i = 0; i < framePlanes.size(); ++i) {
-            cv::putText(planeDebugVisual, std::to_string(framePlanes[i]->getSurfArea()), framePlanes[i]->getCenterIJ(), 0, 0.5, cv::Scalar(255, 255, 255));
-        }
-
-        cv::imshow("[Plane Debug]", planeDebugVisual);
-#endif
-
-        // cache planes for current frame
-        isCached |= FLAG_FRM_PLANES;
-        return framePlanes;
-    }
-
-    std::vector<FrameObjectPtr> & DepthCamera::getFrameObjects(const ObjectParams * params)
-    {        
-        if (!this->xyzMap.data || (isCached & FLAG_FRM_OBJS)) return frameObjects;
-        frameObjects.clear();
-
-        // default parameters
-        if (params == nullptr) params = &ObjectParams::DEFAULT;
-
-        // get planes and hands
-        getFramePlanes(params); getFrameHands(params);
-
-        // push resulting objects
-        for (auto plane : framePlanes) frameObjects.push_back(plane);
-        for (auto hand : hands) frameObjects.push_back(hand);
-
-        // cache for current frame
-        isCached |= FLAG_FRM_OBJS;
-        return frameObjects;
     }
 
     bool DepthCamera::badInput()
@@ -235,6 +100,25 @@ namespace ark {
         return !captureInterrupt;
     }
 
+    int DepthCamera::addUpdateCallback(std::function<void(DepthCamera&)> func)
+    {
+        int id;
+        if (updateCallbacks.empty()) {
+            id = 0;
+        }
+        else {
+            id = updateCallbacks.rbegin()->first + 1;
+        }
+
+        updateCallbacks[id] = func;
+        return id;
+    }
+
+    void DepthCamera::removeUpdateCallback(int id)
+    {
+        updateCallbacks.erase(id);
+    }
+
     cv::Size DepthCamera::getImageSize() const
     {
         return cv::Size(getWidth(), getHeight());
@@ -250,20 +134,28 @@ namespace ark {
         cv::Size sz = getImageSize();
 
         // initialize back buffers, if necessary
-        if (xyzMapBuf.data == nullptr) 
-            xyzMapBuf = cv::Mat::zeros(sz, CV_32FC3);
+        xyzMapBuf.release();
+        xyzMapBuf.create(sz, CV_32FC3);
 
-        if (rgbMapBuf.data == nullptr && hasRGBMap()) 
-            rgbMapBuf = cv::Mat::zeros(sz, CV_8UC3);
+        if (hasRGBMap()) {
+            rgbMapBuf.release();
+            rgbMapBuf.create(sz, CV_8UC3);
+        }
 
-        if (irMapBuf.data == nullptr && hasIRMap()) 
-            irMapBuf = cv::Mat::zeros(sz, CV_8U);
+        if (hasIRMap()) {
+            irMapBuf.release();
+            irMapBuf.create(sz, CV_8U);
+        }
 
-        if (ampMapBuf.data == nullptr && hasAmpMap()) 
-            ampMapBuf = cv::Mat::zeros(sz, CV_32F);
+        if (hasAmpMap()) {
+            ampMapBuf.release();
+            ampMapBuf.create(sz, CV_32F);
+        }
 
-        if (flagMapBuf.data == nullptr && hasFlagMap()) 
-            flagMapBuf = cv::Mat::zeros(sz, CV_8U);
+        if (hasFlagMap()) {
+            flagMapBuf.release();
+            flagMapBuf.create(sz, CV_8U);
+        }
     }
 
     /** swap a single buffer */
@@ -322,21 +214,19 @@ namespace ark {
         fs["irMap"] >> irMap;
         fs.release();
 
-        isCached = 0;
-
-        if (xyzMap.rows == 0 || ampMap.rows == 0 || flagMap.rows == 0)
-        {
-            return false;
+        // call callbacks
+        for (auto callback : updateCallbacks) {
+            callback.second(*this);
         }
 
-        return true;
+        return !(xyzMap.rows == 0 || ampMap.rows == 0 || flagMap.rows == 0);
     }
 
     const cv::Mat DepthCamera::getXYZMap() const
     {
         std::lock_guard<std::mutex> lock(imageMutex);
         if (xyzMap.data == nullptr) return cv::Mat::zeros(getHeight(), getWidth(), CV_32FC3);
-        return xyzMap.clone();
+        return xyzMap;
     }
 
     const cv::Mat DepthCamera::getAmpMap() const
@@ -345,7 +235,7 @@ namespace ark {
 
         std::lock_guard<std::mutex> lock(imageMutex);
         if (ampMap.data == nullptr) return cv::Mat::zeros(getHeight(), getWidth(), CV_32F);
-        return ampMap.clone();
+        return ampMap;
     }
 
     const cv::Mat DepthCamera::getFlagMap() const
@@ -354,7 +244,7 @@ namespace ark {
 
         std::lock_guard<std::mutex> lock(imageMutex);
         if (flagMap.data == nullptr) return cv::Mat::zeros(getHeight(), getWidth(), CV_8U);
-        return flagMap.clone();
+        return flagMap;
     }
 
     const cv::Mat DepthCamera::getRGBMap() const {
@@ -362,7 +252,7 @@ namespace ark {
 
         std::lock_guard<std::mutex> lock(imageMutex);
         if (rgbMap.data == nullptr) return cv::Mat::zeros(getHeight(), getWidth(), CV_8UC3);
-        return rgbMap.clone();
+        return rgbMap;
     }
 
     const cv::Mat DepthCamera::getIRMap() const
@@ -371,18 +261,7 @@ namespace ark {
 
         std::lock_guard<std::mutex> lock(imageMutex);
         if (irMap.data == nullptr) return cv::Mat::zeros(getImageSize(), CV_8U);
-        return irMap.clone();
-    }
-
-    const cv::Mat DepthCamera::getNormalMap()
-    {
-        if ((!(isCached & FLAG_NORMALS) || normalMap.data == nullptr) &&
-                            xyzMap.data != nullptr){
-            computeNormalMap();
-        }
-
-        std::lock_guard<std::mutex> lock(imageMutex);
-        return normalMap.clone();
+        return irMap;
     }
 
     bool DepthCamera::hasAmpMap() const
@@ -420,264 +299,29 @@ namespace ark {
 
     void DepthCamera::captureThreadingHelper(int fps_cap, volatile bool * interrupt, bool remove_noise)
     {
-        unsigned long long lastTime =
-            boost::chrono::system_clock::now().time_since_epoch() / boost::chrono::milliseconds(1);
-        unsigned long long curTime;
-        unsigned long long timePerFrame = 1000 / fps_cap;
+        using namespace std::chrono;
+        steady_clock::time_point lastTime;
+        steady_clock::time_point currTime;
+        float timePerFrame;
+        if (fps_cap > 0) {
+            timePerFrame = 1e9f / fps_cap;
+            lastTime = steady_clock::now();
+        }
 
         while (interrupt == nullptr || !(*interrupt)) {
             this->nextFrame(remove_noise);
-            boost::this_thread::sleep_for(boost::chrono::milliseconds(50));
 
             // cap FPS
-            curTime =
-                boost::chrono::system_clock::now().time_since_epoch() / boost::chrono::milliseconds(1);
+            if (fps_cap > 0) {
+                currTime = steady_clock::now();
+                steady_clock::duration delta = duration_cast<microseconds>(currTime - lastTime);
 
-            unsigned long long delta = curTime - lastTime;
-
-            if (delta < timePerFrame) {
-                long long ms = (long long)((timePerFrame - delta) * 00000);
-                boost::this_thread::sleep_for(boost::chrono::milliseconds(ms));
-            }
-
-            lastTime = curTime;
-        }
-    }
-
-    void DepthCamera::detectPlaneHelper(const cv::Mat & xyz_map,
-        std::vector<Vec3f> & output_equations, 
-        std::vector<VecP2iPtr> & output_points, std::vector<VecV3fPtr> & output_points_xyz, 
-        const ObjectParams * params, const cv::Mat * normal_map, const cv::Mat * fill_mask, 
-        uchar fill_color)
-    { 
-        if (params == nullptr) params = &ObjectParams::DEFAULT;
-
-        // 1. initialize
-        cv::Mat tmpMap;
-
-        cv::Mat floodFillMap; 
-
-        if (normal_map == nullptr) {
-            floodFillMap = getNormalMap();
-        }
-        else {
-            floodFillMap = *normal_map;
-        }
-
-        int compId = -1;
-
-        std::vector<Point2i> allIndices(xyz_map.rows * xyz_map.cols);
-
-        // 2. find 'subplanes' i.e. all flat objects visible in frame and combine similar ones
-        // stores points on each plane
-        std::vector<boost::shared_ptr<std::vector<Point2i> > > planes;
-
-        // stores points (in 3D coords) on each plane
-        std::vector<boost::shared_ptr<std::vector<Vec3f> > > planesXyz;
-
-        // equations of the planes: ax + by - z + c = 0
-        std::vector<Vec3f> planeEquation;
-
-        // compute constants
-        const int SUBPLANE_MIN_POINTS =
-            params->subplaneMinPoints * allIndices.size() /
-            (params->normalResolution * params->normalResolution);
-
-        const int PLANE_MIN_POINTS =
-            params->planeMinPoints * allIndices.size() /
-            (params->normalResolution * params->normalResolution);
-
-        const int PLANE_MIN_INLIERS =
-            params->planeEquationMinInliers * allIndices.size() /
-            (params->normalResolution * params->normalResolution);
-
-        for (int i = 0; i < normalMap.rows; i += params->normalResolution) {
-            for (int j = 0; j < normalMap.cols; j += params->normalResolution) {
-                Point2i pt(j, i);
-
-                if (floodFillMap.at<Vec3f>(pt)[2] == 0) continue;
-
-                // flood fill normals
-                int numPts = util::floodFill(floodFillMap, pt, params->planeFloodFillThreshold,
-                                             &allIndices, nullptr, nullptr,
-                                             params->normalResolution, 0,
-                                             fill_mask, fill_color, &floodFillMap);
-
-                if (numPts >= SUBPLANE_MIN_POINTS) {
-                    // filter out outliers & find plane equation
-                    std::vector<Vec3f> allXyzPoints(numPts);
-
-                    for (int k = 0; k < numPts; ++k) {
-                        allXyzPoints[k] = xyz_map.at<Vec3f>(allIndices[k]);;
-                    }
-
-                    util::radixSortPoints(allIndices, floodFillMap.cols, floodFillMap.rows,
-                        numPts, &allXyzPoints);
-                    double surfArea = util::surfaceArea(floodFillMap.size(), allIndices,
-                        allXyzPoints, numPts);
-
-                    if (surfArea < params->subplaneMinArea) {
-                        continue;
-                    }
-
-                    Vec3f eqn = util::linearRegression(allXyzPoints, numPts);
-
-                    // combine close planes
-                    uint i;
-
-                    for (i = 0; i < planeEquation.size(); ++i) {
-                        if (util::norm(planeEquation[i] - eqn) < params->planeCombineThreshold) {
-                            // found similar plane
-                            break;
-                        }
-                    }
-
-                    boost::shared_ptr<std::vector<Point2i>> pointStore;
-                    boost::shared_ptr<std::vector<Vec3f>> pointStoreXyz;
-
-                    if (i >= planeEquation.size()) {
-                        // no similar plane found
-                        planeEquation.push_back(eqn);
-                        planes.emplace_back(boost::make_shared<std::vector<Point2i> >());
-                        planesXyz.emplace_back(boost::make_shared<std::vector<Vec3f> >());
-                        pointStore = *planes.rbegin();
-                        pointStoreXyz = *planesXyz.rbegin();
-                    }
-                    else {
-                        // similar plane found
-                        pointStore = planes[i];
-                        pointStoreXyz = planesXyz[i];
-                    }
-
-                    // save plane points to store
-                    int start = (int)pointStore->size();
-                    pointStore->resize(start + numPts);
-                    pointStoreXyz->resize(start + numPts);
-
-                    for (int i = 0; i < numPts; ++i) {
-                        (*pointStore)[start + i] = allIndices[i];
-                        (*pointStoreXyz)[start + i] = allXyzPoints[i];
-                    }
+                if (delta.count() < timePerFrame) {
+                    long long ms = (long long)(timePerFrame - delta.count()) / 1e6f;
+                    std::this_thread::sleep_for(std::chrono::milliseconds(ms));
                 }
+                lastTime = currTime;
             }
         }
-
-        // 3. find equations of the combined planes and construct Plane objects with the data
-        for (uint i = 0; i < planeEquation.size(); ++i) {
-            int SZ = (int)planes[i]->size();
-            if (SZ < PLANE_MIN_POINTS) continue;
-
-            std::vector<Vec3f> pointsXYZ;
-            util::removeOutliers(*planesXyz[i], pointsXYZ, params->planeOutlierRemovalThreshold);
-
-            planeEquation[i] = util::linearRegression(pointsXYZ);
-
-            int goodPts = 0;
-
-            for (uint j = 0; j < SZ; ++j) {
-                float norm = util::pointPlaneNorm((*planesXyz[i])[j], planeEquation[i]);
-                if (norm < params->handPlaneMinNorm) {
-                    ++goodPts;
-                }
-            }
-
-            if (goodPts < PLANE_MIN_INLIERS) continue;
-
-            // push to output
-            output_points.push_back(planes[i]);
-            output_points_xyz.push_back(planesXyz[i]);
-            output_equations.push_back(planeEquation[i]);
-        }
-    }
-
-    boost::shared_ptr<Hand> DepthCamera::detectHandHelper(const cv::Mat & xyz_map,
-        std::vector<HandPtr> & output_hands, const ObjectParams * params, float * best_hand_dist,
-        cv::Mat * pending_mask, uchar * pending_count, const cv::Mat * fill_mask, 
-        uchar fill_color)
-    {
-
-        // 1. initialize
-        uchar pendingClusterCount = 0;
-        cv::Mat floodFillMap = xyz_map.clone();
-
-        const int R = xyz_map.rows, C = xyz_map.cols;
-
-        float closestHandDist = FLT_MAX;
-        if (best_hand_dist) closestHandDist = *best_hand_dist;
-
-        // 2. try to directly cluster objects using flood fill
-        std::vector<Point2i> allIjPoints(R * C);
-        std::vector<Vec3f> allXyzPoints(R * C);
-
-        // compute the minimum number of points in a cluster according to params
-        const int CLUSTER_MIN_POINTS = (int) (params->handClusterMinPoints * R * C);
-
-        float bestHandDist = FLT_MAX;
-        boost::shared_ptr<Hand> bestHandObject;
-
-        for (int r = 0; r < floodFillMap.rows; r += params->handClusterInterval)
-        {
-            Vec3f * ptr = floodFillMap.ptr<Vec3f>(r);
-            const uchar * maskPtr;
-            if (fill_mask) maskPtr = fill_mask->ptr<uchar>(r);
-
-            for (int c = 0; c < floodFillMap.cols; c += params->handClusterInterval)
-            {
-                if ((!fill_mask || maskPtr[c] == fill_color) && ptr[c][2] > 0)
-                {
-                    int points_in_comp = util::floodFill(floodFillMap, Point2i(c, r),
-                        params->handClusterMaxDistance,
-                        &allIjPoints, &allXyzPoints, nullptr, 1, 6, nullptr, 0, &floodFillMap);
-
-                    if (points_in_comp >= CLUSTER_MIN_POINTS)
-                    {
-                        auto ijPoints = boost::make_shared<std::vector<Point2i> >
-                            (allIjPoints.begin(), allIjPoints.begin() + points_in_comp);
-                        auto xyzPoints = boost::make_shared<std::vector<Vec3f> >
-                            (allXyzPoints.begin(), allXyzPoints.begin() + points_in_comp);
-
-                        // if matching required conditions, construct 3D object
-                        auto handPtr = boost::make_shared<Hand>(ijPoints, xyzPoints, xyz_map,
-                                params, false, points_in_comp);
-
-                        if (handPtr->isValidHand()) {
-                            float distance = handPtr->getDepth();
-
-                            if (distance < closestHandDist) {
-                                bestHandObject = handPtr;
-                                closestHandDist = distance;
-                            }
-
-                            if (handPtr->getSVMConfidence() >
-                                params->handSVMHighConfidenceThresh ||
-                                !params->handUseSVM) {
-                                 // avoid duplicate hand
-                                if (bestHandObject == handPtr) bestHandObject = nullptr;
-                                output_hands.push_back(handPtr);
-                            }
-                        }
-
-                        else if (pending_mask && pendingClusterCount < 254) {
-                            // in the second pass (plane elimination), reconsider this cluster
-                            for (int i = 0; i < ijPoints->size(); ++i) {
-                                pending_mask->at<uchar>(ijPoints->at(i)) =
-                                    255-pendingClusterCount;
-                            }
-                            ++pendingClusterCount;
-                        }
-                    }
-                }
-            }
-        }
-
-        if (pending_count) {
-            *pending_count = pendingClusterCount;
-        }
-
-        if (best_hand_dist) {
-            *best_hand_dist = closestHandDist;
-        }
-
-        return bestHandObject;
     }
 }

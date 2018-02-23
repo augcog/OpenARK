@@ -465,10 +465,9 @@ namespace ark {
         }
 
         // SVMHandValidator implementation
-
         const double SVMHandValidator::DEFAULT_HYPERPARAMS[5] = {
             // gamma       coef0       C       eps     p
-            1.5068,     0.5000,     0.6301, 1.5e-16,  0.0548,
+            0.6849,     0.5000,     0.5048, 1.5e-16,  0.0548,
         };
 
         void SVMHandValidator::initSVMs(const double hyperparams[5]) {
@@ -611,7 +610,7 @@ namespace ark {
             ifsLabels.close(); ifsFeats.close();
 
             for (int j = 0; j < data.rows; ++j) {
-                cv::Mat feats = data(cv::Rect(0, j, data.cols, 1));
+                cv::Mat feats = data.row(j);
                 int label = labels.at<int>(0, j);
 
                 double res = classify(feats);
@@ -637,26 +636,45 @@ namespace ark {
             return std::max(std::min(1.0f, result), 0.0f);
         }
 
-        float SVMHandValidator::classify(ark::Hand & hand, const cv::Mat & depth_map, int num_features, int avg_size, cv::Point top_left, int full_wid) const
+        float SVMHandValidator::classify(ark::Hand & hand, 
+            const cv::Mat & depth_map, cv::Point top_left, int full_wid, 
+            int num_features, int avg_size) const
         {
-            cv::Mat features = extractFeatures( hand, depth_map, num_features, avg_size, top_left, full_wid);
+            cv::Mat features = extractFeatures(hand, depth_map, top_left, full_wid, num_features, avg_size);
             return classify(features);
         }
 
         cv::Mat SVMHandValidator::extractFeatures(ark::Hand & hand, 
-            const cv::Mat & depth_map, int num_features, int avg_size, cv::Point top_left, int full_wid)
+            const cv::Mat & depth_map, cv::Point top_left, int full_wid,
+            int num_features, int avg_size)
         {
             Point2f center = hand.getPalmCenterIJ() - top_left;
             Vec3f centerXYZ = hand.getPalmCenter();
 
             double wristDir = util::pointToAngle(-hand.getDominantDirection());
 
-            cv::Mat result(1, num_features, CV_32F);
-
-            double step = PI / num_features * 2.0;
-
+            cv::Mat result(1, num_features + 4, CV_32F);
             float * ptr = result.ptr<float>(0);
 
+            std::vector<cv::Point2i> cont = hand.getContour();
+            double contArea = cv::contourArea(cont);
+            double boxArea = hand.getBoundingBox().area();
+
+            ptr[num_features] = contArea / boxArea;
+
+            int da, db;
+            util::diameter(cont, da, db);
+            Vec3f vda = util::averageAroundPoint(depth_map, cont[da] - top_left);
+            Vec3f vdb = util::averageAroundPoint(depth_map, cont[db] - top_left);
+            ptr[num_features + 1] = util::euclideanDistance(vda, vdb) * 10.0f;
+
+            double avgDist, varDist, avgDepth, varDepth;
+            computeMeanAndVariance(hand.getPoints(), hand.getPalmCenter(), avgDist, varDist, avgDepth, varDepth);
+
+            ptr[num_features + 2] = sqrtf(varDist) * 25.0f;
+            ptr[num_features + 3] = sqrtf(varDepth) * 25.0f;
+            
+            double step = PI / num_features * 2.0;
 #ifdef DEBUG
             cv::Mat visual = hand.getDepthMap().clone();
 #endif

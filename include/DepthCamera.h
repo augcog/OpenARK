@@ -2,11 +2,13 @@
 
 #include "version.h"
 
+#include <mutex>
+
 #include "Util.h"
 #include "FrameObject.h"
 #include "Hand.h"
 #include "FramePlane.h"
-#include "ObjectParams.h"
+#include "DetectionParams.h"
 
 namespace ark {
     /**
@@ -110,12 +112,12 @@ namespace ark {
          * Begin capturing frames continuously from this camera on a parallel thread, 
          * capped at a certain maximum FPS.
          * WARNING: throws an error if capture already started.
-         * @param fps_cap maximum FPS of capture.
+         * @param fps_cap maximum FPS of capture (-1 to disable)
          * @param removeNoise if true, performs noise removal on the depth image after retrieving it
          * @see endCapture
          * @see isCapturing
          */
-        void beginCapture(int fps_cap = 60, bool remove_noise = true);
+        void beginCapture(int fps_cap = -1, bool remove_noise = true);
 
         /**
          * Stop capturing from this camera.
@@ -132,39 +134,26 @@ namespace ark {
          * @see endCapture
          */
         bool isCapturing();
+
+        /**
+         * Add a callback function to be called after each frame update.
+         * WARNING: may be called from a different thread than the one where the callback is added.
+         * @param func the function. Must take exactly one argument--a reference to the updated DepthCamera instance
+         * @see removeUpdateCallBack
+         * @return unique ID for this callback function, needed for removeUpdateCallback.
+         */
+        int addUpdateCallback(std::function<void(DepthCamera &)> func);
+
+        /** Remove the update callback function with the specified unique ID. 
+         *  (The ID may be obtained from by addUpdateCallback when the callback is added)
+         * @see addUpdateCallBack
+         */
+        void removeUpdateCallback(int id);
         
         /**
          * Returns the size of the camera's frame (getWidth() * getHeight).
          */
         cv::Size getImageSize() const;
-
-        /*
-         * Retrieve a list of hands visible in the current frame
-         * @see getFramePlanes
-         * @see getFrameObjects
-         * @param params parameters for object/plane/hand detection
-         * @param elim_planes if true, finds and eliminates planes in the scene
-         * @return vector of shared pointers to visible hands
-         */
-        std::vector<HandPtr> & getFrameHands(const ObjectParams * params = nullptr, bool elim_planes = true);
- 
-        /*
-         * Retrieve a list of planes visible in the current frame
-         * @see getFrameHands
-         * @see getFrameObjects
-         * @param params parameters for object/plane/hand detection
-         * @return vector of shared pointers to visible planes
-         */
-        std::vector<FramePlanePtr> & getFramePlanes(const ObjectParams * params = nullptr);
-
-        /*
-         * Retrieve a list of objects visible in the current frame
-         * @see getFrameHands
-         * @see getFramePlanes
-         * @param params parameters for object/plane/hand detection
-         * @return vector of shared pointers to visible objects
-         */
-        std::vector<FrameObjectPtr> & getFrameObjects(const ObjectParams * params = nullptr);
 
         /**
          * Returns the current XYZ map (ordered point cloud) of the camera. 
@@ -172,13 +161,6 @@ namespace ark {
          * Type: CV_32FC3
          */
         const cv::Mat getXYZMap() const;
-
-        /**
-         * Returns the current normal map (surface normal vectors at each point).
-         * If not already cached, this is computed automatically from the depth map when requested.
-         * Type: CV_32FC3
-         */
-        const cv::Mat getNormalMap();
 
         /**
          * Get the RGB Image from this camera, if available. Else, throws an error.
@@ -216,20 +198,15 @@ namespace ark {
          */
         bool writeImage(std::string destination) const;
 
+        /** Shared pointer to depth camera instance */
+        typedef std::shared_ptr<DepthCamera> Ptr;
+
     protected:
         /**
          * Matrix storing the (x,y,z) data of every point in the observable world.
          * Matrix type CV_32FC3
          */
         cv::Mat xyzMap;
-
-        /**
-         * Matrix storing the surface normal vectors (facing viewer) at each point in the observable world.
-         * This is computed automatically from the depth map if required.
-         * Implementers of subclasses do not need to deal with this at all.
-         * Matrix type CV_32FC3
-         */
-        cv::Mat normalMap;
 
         /**
          * Matrix of confidence values of each corresponding point in the world.
@@ -256,19 +233,14 @@ namespace ark {
         cv::Mat irMap;
 
         /**
-         * Stores pointers to all objects visible to the camera in the current frame
-         */
-        std::vector<FrameObjectPtr> frameObjects;
-
-        /**
          * Stores pointers to planes visible to the camera in the current frame
          */
-        std::vector<FramePlanePtr> framePlanes;
+        std::vector<FramePlane::Ptr> framePlanes;
 
         /**
          * Stores pointers to hands visible to the camera in the current frame
          */
-        std::vector<HandPtr> hands;
+        std::vector<Hand::Ptr> hands;
 
         /**
          * True if input is invalid
@@ -302,16 +274,13 @@ namespace ark {
          */
         void swapBuffers();
 
-        /** 
-         * helper function for computing the normal map of the current depth image
-         * @param params parameters
-         */
-        void computeNormalMap(const ObjectParams * params = nullptr);
-
         /**
          * Removes noise from an XYZMap based on confidence provided in the AmpMap and FlagMap.
          */
         static void removeNoise(cv::Mat & xyzMap, cv::Mat & ampMap, float confidence_thresh);
+
+        /** stores the callbacks functions to call after each update (ID, function) */
+        std::map<int, std::function<void(DepthCamera &)> > updateCallbacks;
 
         /** 
          * helper function supporting the default capturing behavior 
@@ -322,52 +291,8 @@ namespace ark {
         void captureThreadingHelper(int fps_cap = 60, volatile bool * interrupt = nullptr,
                                     bool remove_noise = true);
 
-        /**
-         * helper function for the equations of all planes in a frame given its xyz and normal map s.
-         * @param[in] xyz_map the frame's xyz map
-         * @param[out] output_equations vector to be filled with equations of planes (in the form ax + by - z + c = 0)
-         * @param[out] output_points vector to be filled with vectors of ij coordinate points on planes
-         * @param[out] output_points_xyz vector to be filled with vectors of xyz coordinate points on planes
-         * @param[in] normal_map the frame's normal map (by default, uses the camera's getNormalMap)
-         * @param[in] fill_mask optional mask for limiting which points may be used in plane detection
-         * @param[in] fill_color color on fill_mask to allow detection
-         * @param[in] params plane detection parameters
-         */
-        void detectPlaneHelper(const cv::Mat & xyz_map,  std::vector<Vec3f> & output_equations,
-            std::vector<VecP2iPtr> & output_points, std::vector<VecV3fPtr> & output_points_xyz,
-            const ObjectParams * params = nullptr, const cv::Mat * normal_map = nullptr, 
-            const cv::Mat * fill_mask = nullptr, uchar fill_color = 0);
-
-        /**
-         * helper function for the equations of all planes in a frame given its xyz and normal map s.
-         * @param[in] xyz_map the frame's xyz map
-         * @param[out] output_hands vector to push detected hands to
-         * @param[in] params hand detection parameters
-         * @param[in, out] best_hand_dist optional float value for storing the distance to the
-         *                                closest hand
-         * @param[out] pending_mask optional mask to record "pending" clusters 
-         *             (clusters that have not been eliminated but are not hands),
-         *             points in the first cluster are given value 255, second 254, etc.
-         * @param[out] pending_count optional output for the number of pending clusters
-         * @param[in] fill_mask optional mask for limiting which points may be used in hand detection
-         * @param[in] fill_color color on fill_mask to allow detection
-         * @return shared pointer to current best Hand instance.
-         */
-        boost::shared_ptr<Hand> detectHandHelper(const cv::Mat & xyz_map,
-            std::vector<HandPtr> & output_hands,
-            const ObjectParams * params = nullptr, float * best_hand_dist = nullptr,
-            cv::Mat * pending_mask = nullptr, uchar * pending_count = nullptr,
-            const cv::Mat * fill_mask = nullptr, uchar fill_color = 0);
-
         /** interrupt for immediately terminating the capturing thread */
         bool captureInterrupt = true;
-
-        /** Flag for recording if objects, hands, etc.
-          * have already been computed in this frame */
-        uint isCached = 0;
-
-        /** Binary bit values for use with the 'isCached' flag */
-        static const uint FLAG_FRM_OBJS = 1, FLAG_FRM_HANDS = 2, FLAG_FRM_PLANES = 4, FLAG_NORMALS = 256;
 
         /**
          * Minimum depth of points (in meters). Points under this depth are presumed to be noise. (0.0 to disable)

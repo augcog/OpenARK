@@ -11,15 +11,10 @@ namespace ark {
     public:
         /*
         * Constructs a new instance of the streaming averager.
-        * @param frequency how many previous points to use in the averaging computation
-        * @param rejectionDistance maximum jump distance allowed between current point and previous point
+        * @param frequency number of previous points to use in the averaging computation (must be at least 1)
+        * @param rejectionDistance maximum distance allowed between current point and previous point
         */
-        StreamingAverager(int frequency, double rejectionDistance);
-
-        /*
-        * Deconstructs an instance of the streaming averager.
-        */
-        ~StreamingAverager();
+        StreamingAverager(int frequency, float rejectionDistance);
 
         /*
         * Adds new data point to the streaming averager.
@@ -41,9 +36,9 @@ namespace ark {
         int sampleFrequency;
 
         /*
-        * Maximum jump distance allowed between current point and previous point
+        * Square of maximum jump distance allowed between current point and previous point
         */
-        double rejectionThreshold;
+        float rejectionThreshold;
 
         /*
         * The current average value

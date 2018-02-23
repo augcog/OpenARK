@@ -4,18 +4,19 @@ project( OpenARK )
 
 set(OpenARK_VERSION_MAJOR 0)
 set(OpenARK_VERSION_MINOR 9)
-set(OpenARK_VERSION_PATCH 2)
+set(OpenARK_VERSION_PATCH 3)
 
 set(SVM_PATHS "\"svm/\", \"../svm/\", \"\"")
+set(INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
 
 set(CMAKE_CXX_STACK_SIZE "10000000")
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake_modules")
 
+set(LIB_NAME "OpenARK")
 set(DEMO_NAME "OpenARK_demo")
 set(TEST_NAME "OpenARK_test")
-set(LIB_NAME "OpenARK")
 
-option(BUILD_LIB "BUILD_LIB" ON)
+option(BUILD_DEMO "BUILD_DEMO" ON)
 option(BUILD_TESTS "BUILD_TESTS" OFF)
 option(USE_PMD "USE_PMD" OFF) 
 
@@ -23,9 +24,9 @@ include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
 CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
 if(COMPILER_SUPPORTS_CXX11)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 /EHsc")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 elseif(COMPILER_SUPPORTS_CXX0X)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x /EHsc")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 else()
     message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
@@ -79,38 +80,43 @@ set(
   Webcam.cpp 
   DepthCamera.cpp 
   RGBCamera.cpp
-  UDPSender.cpp 
   StreamingAverager.cpp 
   Calibration.cpp 
   Util.cpp	
   Visualizer.cpp	
   Converter.cpp
   HandClassifier.cpp
+  Detector.cpp
+  HandDetector.cpp
+  PlaneDetector.cpp
 )
 
 set(
-  HEADERS 
-  FrameObject.h
-  ObjectParams.h
-  Hand.h FramePlane.h
-  Webcam.h
-  DepthCamera.h 
-  RGBCamera.h
-  UDPSender.h 
-  StreamingAverager.h 
-  Calibration.h 
-  Util.h	
-  Visualizer.h	
-  Converter.h
+  HEADERS
+  ${INCLUDE_DIR}/FrameObject.h
+  ${INCLUDE_DIR}/DetectionParams.h
+  ${INCLUDE_DIR}/Hand.h
+  ${INCLUDE_DIR}/FramePlane.h
+  ${INCLUDE_DIR}/Webcam.h
+  ${INCLUDE_DIR}/DepthCamera.h 
+  ${INCLUDE_DIR}/RGBCamera.h
+  ${INCLUDE_DIR}/StreamingAverager.h 
+  ${INCLUDE_DIR}/Calibration.h 
+  ${INCLUDE_DIR}/Util.h	
+  ${INCLUDE_DIR}/Visualizer.h	
+  ${INCLUDE_DIR}/Converter.h
+  ${INCLUDE_DIR}/HandClassifier.h
+  ${INCLUDE_DIR}/Detector.h
+  ${INCLUDE_DIR}/HandDetector.h
+  ${INCLUDE_DIR}/PlaneDetector.h
   stdafx.h
-  HandClassifier.h
 )
 
 if(NOT RSSDK_FOUND)
   SET(RSSDK "//")
 else()
   set(SOURCES ${SOURCES} SR300Camera.cpp)
-  set(HEADERS ${HEADERS} SR300Camera.h)
+  set(HEADERS ${HEADERS} ${INCLUDE_DIR}/SR300Camera.h)
 endif(NOT RSSDK_FOUND)
 
 if(NOT PMDSDK_FOUND)
@@ -118,14 +124,15 @@ if(NOT PMDSDK_FOUND)
 else()
   include_directories(${PMDSDK_INCLUDE_DIR})
   set(SOURCES ${SOURCES} PMDCamera.cpp)
-  set(HEADERS ${HEADERS} PMDCamera.h)
+  set(HEADERS ${HEADERS} ${INCLUDE_DIR}/PMDCamera.h)
   set(DEPENDENCIES ${DEPENDENCIES} ${PMDSDK_LIBRARIES})
 endif(NOT PMDSDK_FOUND)
 
-configure_file(Version.h.in ${PROJECT_SOURCE_DIR}/version.h)
-set(HEADERS ${HEADERS} version.h)
+configure_file(Version.h.in ${INCLUDE_DIR}/Version.h)
+set(HEADERS ${HEADERS} ${INCLUDE_DIR}/Version.h)
 
-source_group("Header Files" *.h)
+# create source group
+source_group("Header Files" REGULAR_EXPRESSION ".*\\.(h|hpp)")
 
 macro(add_msvc_pch PrecompiledHeader PrecompiledSource SourcesVar)
   if(MSVC)
@@ -150,32 +157,32 @@ endmacro(add_msvc_pch)
 if (MSVC)
     add_msvc_pch("stdafx.h" "stdafx.cpp" SOURCES)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /Ot")
+    set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
 endif(MSVC)
 
-add_executable( ${DEMO_NAME} main.cpp ${SOURCES} ${HEADERS})
+add_library(${LIB_NAME} STATIC "${INCLUDE_DIR}/Core.h" ${SOURCES} ${HEADERS})
+set_target_properties( ${LIB_NAME} PROPERTIES OUTPUT_NAME 
+        "openark_${OpenARK_VERSION_MAJOR}_${OpenARK_VERSION_MINOR}_${OpenARK_VERSION_PATCH}")
+set_target_properties(${LIB_NAME} PROPERTIES COMPILE_FLAGS "/MD")
+set_property(TARGET ${LIB_NAME} PROPERTY DBG_POSTFIX d)
+target_link_libraries( ${LIB_NAME} ${DEPENDENCIES} )
+target_include_directories(${LIB_NAME} PRIVATE ${INCLUDE_DIR})
 
-if(${BUILD_LIB})
-    add_library(${LIB_NAME} STATIC core.h ${SOURCES} ${HEADERS})
-    set_target_properties( ${LIB_NAME} PROPERTIES OUTPUT_NAME 
-            "openark_${OpenARK_VERSION_MAJOR}_${OpenARK_VERSION_MINOR}_${OpenARK_VERSION_PATCH}")
-    set_target_properties(${LIB_NAME} PROPERTIES COMPILE_FLAGS "/MDd")
-    set_property(TARGET ${LIB_NAME} PROPERTY DBG_POSTFIX d)
-    target_link_libraries( ${LIB_NAME} ${DEPENDENCIES} )
-endif(${BUILD_LIB})
-
-target_link_libraries( ${DEMO_NAME} ${DEPENDENCIES} )
-set_target_properties( ${DEMO_NAME} PROPERTIES OUTPUT_NAME "OpenARK")
-set_target_properties( ${DEMO_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS})
+if(${BUILD_DEMO})
+    add_executable( ${DEMO_NAME} main.cpp ${SOURCES} ${HEADERS})
+    target_include_directories(${DEMO_NAME} PRIVATE ${INCLUDE_DIR})
+    target_link_libraries( ${DEMO_NAME} ${DEPENDENCIES} )
+    set_target_properties( ${DEMO_NAME} PROPERTIES OUTPUT_NAME ${LIB_NAME})
+    set_target_properties( ${DEMO_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS})
+endif(${BUILD_DEMO})
 
 if(${BUILD_TESTS})
   if(NOT EXISTS ${PROJECT_SOURCE_DIR}/OpenARK_test)
     execute_process(
       COMMAND git clone https://github.com/augcog/OpenARK_test.git
       WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-  #else()
-  #  execute_process(
-  #  COMMAND git pull
-  #    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/OpenARK_test)
   endif(NOT EXISTS ${PROJECT_SOURCE_DIR}/OpenARK_test)
 
   set(
@@ -190,4 +197,6 @@ if(${BUILD_TESTS})
   target_link_libraries( ${TEST_NAME} ${DEPENDENCIES} )
   set_target_properties( ${TEST_NAME} PROPERTIES
     COMPILE_FLAGS ${TARGET_COMPILE_FLAGS})
+    
+  target_include_directories(${TEST_NAME} PRIVATE ${INCLUDE_DIR})
 endif(${BUILD_TESTS})

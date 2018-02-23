@@ -55,6 +55,9 @@ namespace ark {
          */
         bool hasIRMap() const override;
 
+        /** Shared pointer to SR300 camera instance */
+        typedef std::shared_ptr<SR300Camera> Ptr;
+
     protected:
         /**
         * Gets the new frame from the sensor (implements functionality).

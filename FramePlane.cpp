@@ -9,15 +9,14 @@ namespace ark {
     }
 
     FramePlane::FramePlane(const Vec3f & v, const cv::Mat & cluster_depth_map,
-        const ObjectParams * params) 
+        DetectionParams::Ptr params) 
         : equation(v), FrameObject(cluster_depth_map, params) 
     { 
         surfaceArea = util::surfaceArea(fullMapSize, *points, *points_xyz);
     }
 
-    FramePlane::FramePlane(Vec3f v, boost::shared_ptr<std::vector<Point2i>> points_ij,
-        boost::shared_ptr<std::vector<Vec3f>> points_xyz, const cv::Mat & depth_map, 
-        const ObjectParams * params, bool sorted, int points_to_use) 
+    FramePlane::FramePlane(Vec3f v, VecP2iPtr points_ij, VecV3fPtr points_xyz, 
+        const cv::Mat & depth_map, DetectionParams::Ptr params, bool sorted, int points_to_use) 
         :  equation(v), 
            FrameObject(points_ij, points_xyz, depth_map, params, sorted, points_to_use)
     {
@@ -50,11 +49,5 @@ namespace ark {
     float FramePlane::distanceToPoint(const Vec3f & point) const
     {
         return util::pointPlaneDistance(point, equation);
-    }
-
-    void FramePlane::cutFromXYZMap(cv::Mat & xyz_map, float threshold,
-        cv::Mat * mask, uchar mask_color)
-    {
-        util::removePlane(xyz_map, equation, threshold, mask, mask_color);
     }
 }

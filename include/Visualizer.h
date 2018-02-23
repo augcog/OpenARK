@@ -1,6 +1,9 @@
 #pragma once
 
 #include "version.h"
+#include <pcl/visualization/pcl_visualizer.h>
+#include <vector>
+#include <opencv2/core.hpp>
 
 // OpenARK headers
 #include "Hand.h"
@@ -50,7 +53,7 @@ namespace ark {
         */
         static void visualizeHand(const cv::Mat & background, cv::Mat & output, 
             Hand * hand, double display = FLT_MAX,
-            const std::vector<boost::shared_ptr<FramePlane> > * touch_planes = nullptr);
+            const std::vector<std::shared_ptr<FramePlane> > * touch_planes = nullptr);
 
         /**
         * Visualization for PCL point cloud.

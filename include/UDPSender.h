@@ -1,9 +1,9 @@
 #pragma once
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
-#include "stdafx.h"
 #include "version.h"
 
 #include <winsock2.h>
+#include <string>
 
 #pragma comment(lib,"ws2_32.lib") //Winsock Library
 

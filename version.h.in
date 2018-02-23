@@ -12,11 +12,6 @@
 // Uncomment to enable debug code
 //#define DEBUG
 
-// Necessary for typedefs
-#include <opencv2/core/types.hpp>
-#include <boost/smart_ptr/shared_ptr.hpp>
-#include <vector>
-
 // Constants
 #ifndef M_PI
     #define M_PI 3.14159265358979323846
@@ -24,6 +19,26 @@
 #ifndef PI
     #define PI 3.14159265358979323846
 #endif
+
+// Custom assertion statement that prints out a message
+#if !defined(NDEBUG) || defined(DEBUG)
+#   define ASSERT(condition, message) \
+    do { \
+        if (!(condition)) { \
+             std::cerr << "OpenARK assertion '" #condition "' failed in " << \
+              __FILE__ << " at line " << __LINE__ << ": " << message << "\n"; \
+            std::terminate(); \
+        } \
+    } while (false)
+#else
+// disable assert if not debugging
+#  define ASSERT(condition, message) do { } while (false)
+#endif
+
+// Necessary for typedefs
+#include <opencv2/core/types.hpp>
+#include <boost/smart_ptr/shared_ptr.hpp>
+#include <vector>
 
 // OpenARK namespace
 namespace ark {
@@ -47,6 +62,6 @@ namespace ark {
     typedef cv::Vec3i Vec3i;
 
     // generic smart pointer shorthands
-    typedef boost::shared_ptr<std::vector<Point2i> > VecP2iPtr;
-    typedef boost::shared_ptr<std::vector<Vec3f> > VecV3fPtr;
+    typedef std::shared_ptr<std::vector<Point2i> > VecP2iPtr;
+    typedef std::shared_ptr<std::vector<Vec3f> > VecV3fPtr;
 }

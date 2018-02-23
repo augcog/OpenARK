@@ -7,17 +7,15 @@
 #include "Util.h"
 
 namespace ark {
-    // Initialize default ObjectParams instance
-    const ObjectParams ObjectParams::DEFAULT = ObjectParams();
+    // Initialize default DetectionParams instance
+    DetectionParams::Ptr DetectionParams::DEFAULT = DetectionParams::create();
 
     // Constructors
     FrameObject::FrameObject() { }
 
-    FrameObject::FrameObject(const cv::Mat & depthMap, const ObjectParams * params) {
-        if (params == nullptr) params = &ObjectParams::DEFAULT;
-
-        auto points = boost::make_shared<std::vector<Point2i>>();
-        auto points_xyz = boost::make_shared<std::vector<Vec3f>>();
+    FrameObject::FrameObject(const cv::Mat & depthMap, DetectionParams::Ptr params) {
+        auto points = std::make_shared<std::vector<Point2i>>();
+        auto points_xyz = std::make_shared<std::vector<Vec3f>>();
 
         for (int r = 0; r < depthMap.rows; ++r) {
             const Vec3f * ptr = depthMap.ptr<Vec3f>(r);
@@ -32,11 +30,10 @@ namespace ark {
         initializeFrameObject(points, points_xyz, depthMap, params);
     }
 
-    FrameObject::FrameObject(boost::shared_ptr<std::vector<Point2i>> points_ij, 
-        boost::shared_ptr<std::vector<Vec3f>> points_xyz, const cv::Mat & depth_map,
-        const ObjectParams * params,
+    FrameObject::FrameObject(std::shared_ptr<std::vector<Point2i>> points_ij, 
+        std::shared_ptr<std::vector<Vec3f>> points_xyz, const cv::Mat & depth_map,
+        DetectionParams::Ptr params,
         bool sorted, int points_to_use) {
-
         initializeFrameObject(points_ij, points_xyz, depth_map, params, sorted, points_to_use);
     }
 
@@ -119,8 +116,7 @@ namespace ark {
 
     float FrameObject::getDepth()
     {
-        if (avgDepth == -1)
-            avgDepth = util::averageDepth(xyzMap);
+        if (avgDepth == -1) avgDepth = util::averageDepth(xyzMap);
         return avgDepth;
     }
 
@@ -173,23 +169,16 @@ namespace ark {
         return fullXyzMap;
     }
 
-    // helper for performing morphological operations
-    void FrameObject::morph(int erode_sz, int dilate_sz, bool dilate_first, bool gray_map) {
+    // helper for performing morphological operations on gray map
+    void FrameObject::morph(int erode_sz, int dilate_sz, bool dilate_first) {
         if (dilate_sz == -1) dilate_sz = erode_sz;
 
         cv::Mat eKernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(erode_sz, erode_sz)),
             dKernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(dilate_sz, dilate_sz));
 
-        if (gray_map) {
-            if (dilate_first) cv::dilate(grayMap, grayMap, dKernel);
-            cv::erode(grayMap, grayMap, eKernel);
-            if (!dilate_first) cv::dilate(grayMap, grayMap, dKernel);
-        }
-        else {
-            if (dilate_first) cv::dilate(xyzMap, xyzMap, dKernel);
-            cv::erode(xyzMap, xyzMap, eKernel);
-            if (!dilate_first) cv::dilate(xyzMap, xyzMap, dKernel);
-        }
+        if (dilate_first) cv::dilate(grayMap, grayMap, dKernel);
+        cv::erode(grayMap, grayMap, eKernel);
+        if (!dilate_first) cv::dilate(grayMap, grayMap, dKernel);
     }
     
     void FrameObject::computeContour(const cv::Mat & xyzMap, 
@@ -234,31 +223,33 @@ namespace ark {
 
         if (xyzMap.rows == 0 || xyzMap.cols == 0 || points == nullptr || points_xyz == nullptr) return;
 
-
         int points_to_use = num_points;
         if (points_to_use < 0) points_to_use = (int)points->size();
 
         if (points->size() < points_to_use || points_xyz->size() < points_to_use) return;
 
         grayMap = cv::Mat::zeros(xyzMap.size(), CV_8U);
-
+        
         for (int i = 0; i < points_to_use; ++i) {
             uchar val = (uchar)((*points_xyz)[i][2] * 256.0);
-            if (val >= thresh)
+            if (val >= thresh) {
                 grayMap.at<uchar>((*points)[i] - topLeftPt) = val;
+            }
         }
 
-        morph(2, 3, false, true);
+        morph(params->contourImageErodeAmount, params->contourImageDilateAmount, false);
 
         for (int i = 1; i < getContourScalingFactor(); i <<= 1) {
             cv::pyrUp(grayMap, grayMap);
         }
     }
 
-    void FrameObject::initializeFrameObject(boost::shared_ptr<std::vector<Point2i>> points_ij, boost::shared_ptr<std::vector<Vec3f>> points_xyz, const cv::Mat & depth_map, const ObjectParams * params, bool sorted, int points_to_use)
+    void FrameObject::initializeFrameObject(VecP2iPtr points_ij, 
+        VecV3fPtr points_xyz, const cv::Mat & depth_map, DetectionParams::Ptr params,
+        bool sorted, int points_to_use)
     {
         if (params == nullptr) {
-            params = &ObjectParams::DEFAULT;
+            params = DetectionParams::DEFAULT;
         }
 
         if (points_to_use < 0 || points_to_use >(int)points_ij->size())

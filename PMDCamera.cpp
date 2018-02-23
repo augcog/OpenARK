@@ -113,7 +113,6 @@ namespace ark {
     {
         // fill in amp map
         auto res = pmdGetAmplitudes(hnd, amps, numPixels * sizeof(float));
-        //float * dataPtr = amps;
 
         if (res != PMD_OK)
         {

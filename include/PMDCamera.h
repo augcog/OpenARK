@@ -60,6 +60,8 @@ namespace ark {
          */
         bool hasFlagMap() const override;
 
+        /** Shared pointer to PMD camera instance */
+        typedef std::shared_ptr<PMDCamera> Ptr;
     private:
         /**
         * Getter method for the x-coordinate at (i,j).

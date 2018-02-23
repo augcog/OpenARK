@@ -9,31 +9,28 @@
     #include "SR300Camera.h"
 #endif
 
-#include "Webcam.h"
+#include "Core.h"
 #include "Visualizer.h"
-#include "Hand.h"
-#include "FramePlane.h"
-#include "Calibration.h"
-#include "Util.h"
-#include "UDPSender.h"
-#include "FrameObject.h"
 #include "StreamingAverager.h"
-
-#include "HandClassifier.h"
 
 using namespace ark;
 
 int main() {
-    printf("Welcome to OpenARK v %s Demo\n\n", ark::VERSION);
+    printf("Welcome to OpenARK v %s Demo\n\n", VERSION);
     printf("CONTROLS:\nQ or ESC to quit, P to show/hide planes, H to show/hide hands, SPACE to play/pause\n\n");
     printf("VIEWER BACKGROUNDS:\n1 = IR Image, 2 = Depth Image, 3 = Normal Map, 0 = None\n\n");
     printf("HAND DETECTION OPTIONS:\nS = Enable/Disable SVM, C = Enforce/Unenforce Edge Connected Criterion\n\n");
     printf("MISCELLANEOUS:\nA = Measure Surface Area (Of Hands and Planes)\n");
-    boost::shared_ptr<DepthCamera> camera;
+
+    // seed the rng
+    srand(time(NULL));
+
+    // initialize the camera
+    DepthCamera::Ptr camera;
 
 #ifdef PMDSDK_ENABLED
     if (!strcmp(OPENARK_CAMERA_TYPE, "pmd")) {
-        camera = boost::make_shared<PMDCamera>();
+        camera = std::make_shared<PMDCamera>();
     }
     else {
         return -1;
@@ -41,67 +38,60 @@ int main() {
 #endif
 #ifdef RSSDK_ENABLED
     if (!strcmp(OPENARK_CAMERA_TYPE, "sr300")) {
-        camera = boost::make_shared<SR300Camera>();
+        camera = std::make_shared<SR300Camera>();
     }
     else {
         return -1;
     }
 #endif
+    // initialize parameters
+    DetectionParams::Ptr params = DetectionParams::create(); // default parameters
 
-    // seed rng
-    srand(time(NULL));
-
+    // initialize detectors
+    PlaneDetector::Ptr planeDetector = std::make_shared<PlaneDetector>();
+    HandDetector::Ptr handDetector = std::make_shared<HandDetector>(planeDetector);
+    
     // store frame & FPS information
-    int frame = 0;
-    clock_t cycleStartTime = 0;
+    const int FPS_CYCLE_FRAMES = 8; // number of frames to average FPS over (FPS 'cycle' length)
+    clock_t currCycleStartTime = 0; // start time of current cycle
+    float currFPS; // current FPS
 
-    const int FPS_FRAMES = 5;
-    float currFps = 0;
+    int currFrame = 0; // current frame number (since launch/last pause)
+    int backgroundStyle = 1; // background style: 0=none, 1=ir, 2=depth, 3=normal
 
-    unsigned long long minFrameTime = 1000 / 120; // 1000 / FPS CAP
-
-    // image layer flags
-    bool handLayer = true, planeLayer = false;
-
-    // hand detection option flags
-    bool svmEnabled = true, reqEdgeConnected = false;
-
-    bool measureSurfArea = false;
-
-    // background style: 0=none, 1=ir, 2=depth, 3=normal
-    int backgroundStyle = 1;
-
-    // if false, pauses picture
-    bool playing = true;
+    // option flags
+    bool showHands = true, showPlanes = false, useSVM = true, useEdgeConn = false, showArea = false, playing = true;
 
     // turn on the camera
-    camera->beginCapture(120, false);
+    camera->beginCapture();
 
     // main demo loop
-
     while (true)
     {
-        // get latest images from the camera
+        // get latest image from the camera
         cv::Mat xyzMap = camera->getXYZMap();
 
         /**** Start: Hand/plane detection ****/
 
         // query objects in the current frame
-        ObjectParams params; // default parameters
+        params->handUseSVM = useSVM;
+        params->handRequireEdgeConnected = useEdgeConn;
 
-        params.handUseSVM = svmEnabled;
-        params.handRequireEdgeConnected = reqEdgeConnected;
+        std::vector<Hand::Ptr> hands;
+        std::vector<FramePlane::Ptr> planes;
 
-        std::vector<ark::HandPtr> hands;
-        std::vector<ark::FramePlanePtr> planes;
+        planeDetector->setParams(params);
+        handDetector->setParams(params);
         
-        if (planeLayer || handLayer) {
-            // even if only hand layer is enabled, 
-            // planes need to be detected for finding contact points
-            planes = camera->getFramePlanes(&params);
+        if (showPlanes || showHands) {
+            /* even if only hand layer is enabled, 
+               planes need to be detected anyway for finding hand contact points */
+            planeDetector->update(*camera);
+            planes = planeDetector->getPlanes();
 
-            if (handLayer) {
-                hands = camera->getFrameHands(&params);
+            if (showHands) {
+                handDetector->update(*camera);
+                hands = handDetector->getHands();
             }
         }
 
@@ -125,8 +115,13 @@ int main() {
 
         else if (backgroundStyle == 3) {
             // normal map background
-            cv::Mat normalMap = camera->getNormalMap();
-            Visualizer::visualizeNormalMap(normalMap, handVisual, params.normalResolution);
+            cv::Mat normalMap = planeDetector->getNormalMap();
+            if (!normalMap.empty()) {
+                Visualizer::visualizeNormalMap(normalMap, handVisual, params->normalResolution);
+            }
+            else {
+                handVisual = cv::Mat::zeros(camera->getImageSize(), CV_8UC3);
+            }
         }
 
         else {
@@ -135,7 +130,7 @@ int main() {
 
         const cv::Scalar WHITE(255, 255, 255);
 
-        if (planeLayer) {
+        if (showPlanes) {
             // color all points on the screen close to a plane
             cv::Vec3s color;
 
@@ -152,7 +147,7 @@ int main() {
 
                         float norm = util::pointPlaneNorm(xyz, planes[i]->equation);
 
-                        float fact = std::max(0.0, 0.5f - norm / params.handPlaneMinNorm / 8.0f);
+                        float fact = std::max(0.0, 0.5f - norm / params->handPlaneMinNorm / 8.0f);
                         if (fact == 0.0f) continue;
 
                         outPtr[col] += (color - (cv::Vec3s)outPtr[col]) * fact;
@@ -165,7 +160,7 @@ int main() {
                 Point2i arrowPt(drawPt.x + normal[0] * 100, drawPt.y - normal[1] * 100);
                 cv::arrowedLine(handVisual, drawPt, arrowPt, WHITE, 4, cv::LINE_AA, 0, 0.2);
 
-                if (measureSurfArea) {
+                if (showArea) {
                     double area = planes[i]->getSurfArea();
                     cv::putText(handVisual, std::to_string(area), drawPt + Point(10, 10),
                         0, 0.6, cv::Scalar(255, 255, 255));
@@ -174,13 +169,13 @@ int main() {
         }
 
         // draw hands
-        if (handLayer) {
-            for (ark::HandPtr hand : hands) {
+        if (showHands) {
+            for (Hand::Ptr hand : hands) {
                 double dispVal;
-                if (measureSurfArea) {
+                if (showArea) {
                     dispVal = hand->getSurfArea();
                 }
-                else if (svmEnabled) {
+                else if (useSVM) {
                     dispVal = hand->getSVMConfidence();
                 }
                 else {
@@ -191,39 +186,37 @@ int main() {
             }
         }
 
-        if (handLayer && hands.size() > 0) {
+        if (showHands && hands.size() > 0) {
             // show "N Hands" on top left
             cv::putText(handVisual, std::to_string(hands.size()) +
                 util::pluralize(" Hand", hands.size()),
                 Point2i(10, 25), 0, 0.5, WHITE);
         }
 
-        if (planeLayer && planes.size() > 0) {
+        if (showPlanes && planes.size() > 0) {
             // show "N Planes" on top left
             cv::putText(handVisual, std::to_string(planes.size()) +
                 util::pluralize(" Plane", planes.size()),
-                Point2i(10, 55), 0, 0.5, WHITE);
+                Point2i(10, 50), 0, 0.5, WHITE);
         }
 
         // update FPS
-        if (cycleStartTime) {
-            if (frame % FPS_FRAMES == 0) {
-                currFps = (float)CLOCKS_PER_SEC  * (float)FPS_FRAMES / (clock() - cycleStartTime);
-                cycleStartTime = clock();
-            }
-
-            if (frame > FPS_FRAMES && !camera->badInput()) {
-                // show FPS on top right
-                std::stringstream fpsDisplay;
-                double fpsDisp = currFps;
-                static char chr[32];
-                sprintf(chr, "FPS: %02.3lf", fpsDisp);
-                Point2i pos(handVisual.cols - 120, 25);
-                cv::putText(handVisual, chr, pos, 0, 0.5, WHITE);
-            }
+        if (currFrame % FPS_CYCLE_FRAMES == 0) {
+            clock_t now = clock();
+            currFPS = (float) FPS_CYCLE_FRAMES * CLOCKS_PER_SEC / (now - currCycleStartTime);
+            currCycleStartTime = now;
         }
-        else {
-            cycleStartTime = clock();
+
+        if (currFrame > FPS_CYCLE_FRAMES && !camera->badInput()) {
+            // show FPS on top right
+            std::stringstream fpsDisplay;
+            static char chr[32];
+            sprintf(chr, "FPS: %02.3lf", currFPS);
+            cv::putText(handVisual, chr, Point2i(handVisual.cols - 120, 25), 0, 0.5, WHITE);
+#ifdef DEBUG
+            cv::putText(handVisual, "Frame: " + std::to_string(currFrame),
+                Point2i(handVisual.cols - 120, 50), 0, 0.5, WHITE);
+#endif
         }
 
         int wait = 1;
@@ -253,7 +246,7 @@ int main() {
 
         // show visualizations
         cv::imshow(camera->getModelName() + " Depth Map", xyzMap);
-        cv::imshow("Demo Output - OpenARK v" + std::string(ark::VERSION), handVisual);
+        cv::imshow("Demo Output - OpenARK v" + std::string(VERSION), handVisual);
         /**** End: Visualization ****/
 
         /**** Start: Controls ****/
@@ -273,21 +266,24 @@ int main() {
 
         switch (c) {
         case 'P':
-            planeLayer ^= 1; break;
+            showPlanes ^= 1; break;
         case 'H':
-            handLayer ^= 1; break;
+            showHands ^= 1; break;
         case 'S':
-            svmEnabled ^= 1; break;
+            useSVM ^= 1; break;
         case 'C':
-            reqEdgeConnected ^= 1; break;
+            useEdgeConn ^= 1; break;
         case 'A':
-            measureSurfArea ^= 1; break;
+            showArea ^= 1; break;
         case ' ':
-            playing ^= 1; break;
+            playing ^= 1; 
+            // reset frame number
+            if (playing) currFrame = -1;
+            break;
         }
 
         /**** End: Controls ****/
-        ++frame;
+        ++currFrame;
     }
 
     camera->endCapture();

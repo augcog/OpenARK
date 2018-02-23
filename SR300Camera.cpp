@@ -144,7 +144,9 @@ namespace ark {
             Vec3f * ptr = xyz_map.ptr<Vec3f>(r);
             for (int c = 0; c < pixels_per_row; ++c) {
                 if (c < wid) {
-                    ptr[c] = Vec3f(pos3D[k].x , pos3D[k].y, pos3D[k].z) / 1000.0f;
+                    ptr[c][0] = pos3D[k].x / 1000.0f;
+                    ptr[c][1] = pos3D[k].y / 1000.0f;
+                    ptr[c][2] = pos3D[k].z / 1000.0f;
                 }
                 ++k;
             }
