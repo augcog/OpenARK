@@ -36,15 +36,15 @@ Both the static library (with the headers) and the demo program are included. Fo
 
 The project has not currently been tested on operating systems other than windows, although compiling the C++ code using CMake should be possible with very few modifications.
 
-#### Configuration
+## Configuration
 Configure project properties (see /documentation/OpenARK_Setup.pdf)
 
 ## Usage
-To use OpenARK in a Visual Studio C++ project, add `openark_x_x_x.lib` to `Project > MyProjectProperties > Linker > Input > Additional Dependencies`
-Then add `OPENARK_DIR/include` to `C/C++ > General > Additional Include Directories`. Finally, make sure that under `C/C++ > Code Generation` make sure `Runtime Library` is set to `Multi-threaded DLL (/MD)`.
+To use OpenARK in a Visual Studio C++ project:
 
-Then #include OpenARK's core header and one of the cameras backend headers, e.g. `SR300Camera.h`. You would probably also want to include OpenCV's core header.
+After setting up all the dependencies (OpenCV, PCL, etc.) according the configuration instructions, add `openark_x_x_x.lib` to `Project > MyProjectProperties > Linker > Input > Additional Dependencies`. Then add `OPENARK_DIR/include` to `C/C++ > General > Additional Include Directories`. Finally, make sure that under `C/C++ > Code Generation`, `Runtime Library` is set to `Multi-threaded DLL (/MD)`.
 
+Now you can #include OpenARK's core header in any file and begin using OpenARK. You would probably also want to include one of the depth camera backend headers (e.g. `SR300Camera.h`).
 
 Here is the outline of a program for performing hand detection:
 ```cpp
