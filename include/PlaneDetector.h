@@ -16,7 +16,7 @@ namespace ark {
         /**
          * Obtain a list of planes in the current frame from this detector.
          */
-        std::vector<FramePlane::Ptr> getPlanes() const;
+        const std::vector<FramePlane::Ptr> & getPlanes() const;
 
         /** Shared pointer to PlaneDetector instance */
         typedef std::shared_ptr<PlaneDetector> Ptr;

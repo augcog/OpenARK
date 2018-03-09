@@ -1,4 +1,5 @@
-#include "version.h"
+#include "stdafx.h"
+#include "Version.h"
 #include "Visualizer.h"
 #include "Util.h"
 
@@ -19,7 +20,6 @@ namespace ark {
     ***/
     void Visualizer::visualizeDepthMap(const cv::Mat & depth_map, cv::Mat & output)
     {
-        if (output.rows == 0) output.create(depth_map.size(), CV_8UC3);
         cv::normalize(depth_map, output, 0, 255, cv::NORM_MINMAX, CV_8UC1);
         cv::applyColorMap(output, output, cv::COLORMAP_HOT);
     }
@@ -150,7 +150,7 @@ namespace ark {
         
         // draw dominant direction arrow
         Point2f dir = hand->getDominantDirection();
-        cv::arrowedLine(output, Point2f(center), Point2f(center) + dir * 0.2,
+        cv::arrowedLine(output, Point2f(center), Point2f(center) + dir * 50,
             cv::Scalar(200, 200, 120), std::round(unitWid * 3), 8, 0, 0.3);
             
         if (display < FLT_MAX) {

@@ -1,11 +1,11 @@
 #include "stdafx.h"
-#include "version.h"
+#include "Version.h"
 #include "Util.h"
 
 namespace ark {
 
     namespace util {
-        std::vector<std::string> split(char* string_in, char* delimeters) {
+        std::vector<std::string> split(char* string_in, char const * delimeters) {
             std::auto_ptr<char> buffer(new char[strlen(string_in) + 1]);
             strcpy(buffer.get(), string_in);
             char* token;
@@ -70,7 +70,7 @@ namespace ark {
         template<class T>
         float euclideanDistance(const cv::Point_<T> & pt1, const cv::Point_<T> & pt2)
         {
-            return sqrt((pt1.x - pt2.x) * (pt1.x - pt2.x) + (pt1.y - pt2.y) * (pt1.y - pt2.y));
+            return sqrtf((pt1.x - pt2.x) * (pt1.x - pt2.x) + (pt1.y - pt2.y) * (pt1.y - pt2.y));
         }
 
         template float euclideanDistance<int>(const cv::Point_<int> & pt1, const cv::Point_<int> & pt2);
@@ -80,7 +80,7 @@ namespace ark {
         template<class T>
         T euclideanDistance(const cv::Vec<T, 3> & pt1, const cv::Vec<T, 3> & pt2)
         {
-            return sqrt((pt1[0] - pt2[0]) * (pt1[0] - pt2[0]) +
+            return sqrtf((pt1[0] - pt2[0]) * (pt1[0] - pt2[0]) +
                 (pt1[1] - pt2[1]) * (pt1[1] - pt2[1]) +
                 (pt1[2] - pt2[2]) * (pt1[2] - pt2[2]));
         }
@@ -93,7 +93,7 @@ namespace ark {
         template<class T>
         T pointPlaneDistance(const cv::Vec<T, 3> & pt, T a, T b, T c)
         {
-            return abs(a*pt[0] + b*pt[1] - pt[2] + c) / sqrt(a*a + b*b + 1.0);
+            return fabs(a*pt[0] + b*pt[1] - pt[2] + c) / sqrt(a*a + b*b + 1.0);
         }
 
         template float pointPlaneDistance<float>(const cv::Vec<float, 3> & pt, float a, float b, float c);
@@ -102,7 +102,7 @@ namespace ark {
         template<class T>
         T pointPlaneDistance(const cv::Vec<T, 3> & pt, const cv::Vec<T, 3> & eqn)
         {
-            return abs(eqn[0] * pt[0] + eqn[1] * pt[1] - pt[2] + eqn[2]) /
+            return fabs(eqn[0] * pt[0] + eqn[1] * pt[1] - pt[2] + eqn[2]) /
                 sqrt(eqn[0] * eqn[0] + eqn[1] * eqn[1] + 1.0);
         }
 
@@ -356,9 +356,9 @@ namespace ark {
 
             // order by influence
             std::sort(influenceOrder.begin(), influenceOrder.end(),
-                [influence](int a, int b) {
-                return influence[a] < influence[b];
-            }
+                [& influence](int a, int b) {
+                    return influence[a] < influence[b];
+                }
             );
 
             output.resize(NUM_OUTPUT_PTS);
@@ -555,7 +555,7 @@ namespace ark {
                 }
             }
 
-            if (isnan(total)) return 0.0;
+            if (std::isnan(total)) return 0.0;
 
             return total;
         }
@@ -646,7 +646,7 @@ namespace ark {
                         double dist2 = euclideanDistance(point, adj[1]);
                         double dist3 = euclideanDistance(adj[0], adj[1]);
                         double s = (dist1 + dist2 + dist3) / 2;
-                        surfArea += sqrt(abs(s * (s - dist1) * (s - dist2) * (s - dist3)));
+                        surfArea += sqrtf(fabs(s * (s - dist1) * (s - dist2) * (s - dist3)));
                     }
 
                     if (validPoint[2] && validPoint[3]) {
@@ -654,7 +654,7 @@ namespace ark {
                         double dist2 = euclideanDistance(point, adj[3]);
                         double dist3 = euclideanDistance(adj[2], adj[3]);
                         double s = (dist1 + dist2 + dist3) / 2;
-                        surfArea += sqrt(abs(s * (s - dist1) * (s - dist2) * (s - dist3)));
+                        surfArea += sqrtf(fabs(s * (s - dist1) * (s - dist2) * (s - dist3)));
                     }
                 }
             }
@@ -742,12 +742,11 @@ namespace ark {
 
             // stack for storing the 2d points
             static std::vector<Point2i> stk;
-
             const int R = xyz_map.rows, C = xyz_map.cols;
 
             // permanently allocate memory for our stack
-            if (stk.size() < R * C * 2) {
-                stk.resize(R * C * 2);
+            if (stk.size() < R * C) {
+                stk.resize(R * C);
             }
 
             thresh *= thresh; // use square of distance to save computations
@@ -767,8 +766,16 @@ namespace ark {
             uchar * visPtr;
             bool sw;
 
-            if (output_ij_points) output_ij_points->clear();
-            if (output_xyz_points) output_xyz_points->clear();
+            if (output_ij_points) {
+                output_ij_points->clear();
+                output_ij_points->reserve(R * C);
+            }
+            if (output_xyz_points) {
+                output_xyz_points->clear();
+                output_xyz_points->reserve(R * C);
+            }
+
+            int origX;
 
             // begin DFS / scanline hybrid flood fill
             while (stkSize > 0) {
@@ -780,7 +787,7 @@ namespace ark {
                 visPtr = color->ptr<uchar>(pt.y);
                 if (output_mask) oPtr = output_mask->ptr<Vec3f>(pt.y);;
 
-                int origX = pt.x;
+                origX = pt.x;
                 sw = true;
 
                 const Vec3f * xyz;
@@ -801,12 +808,12 @@ namespace ark {
 
                     // make a list of adjacent points
                     nNext = -1;
-                    if (pt.y >= inv1) nextPts[++nNext] = Point2i(pt.x, pt.y - inv1);
-                    if (pt.y < R - inv1) nextPts[++nNext] = Point2i(pt.x, pt.y + inv1);
+                    if (pt.y >= inv1) nextPts[++nNext] = std::move(Point2i(pt.x, pt.y - inv1));
+                    if (pt.y < R - inv1) nextPts[++nNext] = std::move(Point2i(pt.x, pt.y + inv1));
 
                     if (inv2 > 0) {
-                        if (pt.y >= inv2) nextPts[++nNext] = Point2i(pt.x, pt.y - inv2);
-                        if (pt.y < R - inv2) nextPts[++nNext] = Point2i(pt.x, pt.y + inv2);
+                        if (pt.y >= inv2) nextPts[++nNext] = std::move(Point2i(pt.x, pt.y - inv2));
+                        if (pt.y < R - inv2) nextPts[++nNext] = std::move(Point2i(pt.x, pt.y + inv2));
                     }
 
                     // go to each adjacent point
@@ -873,9 +880,15 @@ namespace ark {
 
         // get angle between two points through a central point
         double angleBetweenPoints(const Point2f & a, const Point2f & b, const Point2f & center) {
-            double angle = abs(pointToAngle(a - center) - pointToAngle(b - center));
+            double angle = fabs(pointToAngle(a - center) - pointToAngle(b - center));
             if (angle > PI) return 2 * PI - angle;
             return angle;
+        }
+
+        Point2f normalize(const Point2f & pt)
+        {
+            if (pt.x == pt.y && pt.x == 0.0f) return pt;
+            return pt / sqrtf(pt.x * pt.x + pt.y * pt.y);
         }
 
         Vec3f normalize(const Vec3f & vec)
@@ -949,9 +962,9 @@ namespace ark {
             cv::Mat A(a), B(b);
             double dot = A.dot(B), mA = magnitude(a), mB = magnitude(b);
 
-            double res = abs(acos(dot / mA / mB));
+            double res = fabs(acos(dot / mA / mB));
 
-            if (isnan(res)) return PI;
+            if (std::isnan(res)) return PI;
             else return res;
         }
 
@@ -982,8 +995,6 @@ namespace ark {
             std::vector<Vec3f> * points_xyz) {
             if (num_pts < 0 || num_pts >(int)points.size())
                 num_pts = (int)points.size();
-
-            static boost::mutex mtx;
 
             static int * buckets = nullptr, *bucketSize = nullptr;
             static int lastWid, lastHi;
@@ -1110,7 +1121,7 @@ namespace ark {
             boost::polygon::construct_voronoi(xpoints.begin(), xpoints.end(), &vd);
 
             double maxr = 0.0;
-            cv::Point bestpt = 0;
+            cv::Point bestpt(0, 0);
 
             // step 2: go through vertices in the diagram and find the center 
             // of the largest circle (must be one of the vertices)
@@ -1160,7 +1171,7 @@ namespace ark {
 
             // find the point on the contour at 'radius' distance from the center point
             for (int i = 0; i < 2; ++i) {
-                int delta = (i << 1) - 1; // {0: -1; 1: +1}
+                int delta = i * 2 - 1; // {0: -1; 1: +1}
                 idx[i] = index;
 
                 int tries = 0;
@@ -1189,11 +1200,12 @@ namespace ark {
             float r2 = (idx[1] - idx[0]) / 2.0f; r2 *= r2;
             float dx = (points[1].x - points[0].x) / (idx[1] - idx[0]);
             float dy = (points[1].y - points[0].y) / (idx[1] - idx[0]);
-            float d2x = (points[1].x + points[0].x - 2 * center.x) / r2;
-            float d2y = (points[1].y + points[0].y - 2 * center.y) / r2;
+            float d2x = (points[1].x + points[0].x - 2.0f * center.x) / r2;
+            float d2y = (points[1].y + points[0].y - 2.0f * center.y) / r2;
             float norm = dx * dx + dy * dy;
+
             if (norm == 0.0f) return 0.0f;
-            return abs(dx * d2y - dy * d2x) / pow(norm, 1.5f);
+            return fabs(dx * d2y - dy * d2x) / powf(norm, 1.5f);
         }
 
         float contourLocalAngle(const std::vector<Point2i> & contour, int index,
@@ -1244,7 +1256,7 @@ namespace ark {
             return 0;
         }
 
-        bool PointComparer<Point2i>::operator()(Point2i a, Point2i b) {
+        template<> bool PointComparer<Point2i>::operator()(Point2i a, Point2i b) {
             if (compare_y_then_x) {
                 if (a.y == b.y) return reverse ^ (a.x < b.x);
                 return reverse ^ (a.y < b.y);
@@ -1255,7 +1267,7 @@ namespace ark {
             }
         }
 
-        bool PointComparer<Point2f>::operator()(Point2f a, Point2f b) {
+        template<> bool PointComparer<Point2f>::operator()(Point2f a, Point2f b) {
             if (compare_y_then_x) {
                 if (a.y == b.y) return reverse ^ (a.x < b.x);
                 return reverse ^ (a.y < b.y);
@@ -1266,7 +1278,7 @@ namespace ark {
             }
         }
 
-        bool PointComparer<Vec3f>::operator()(Vec3f a, Vec3f b) {
+        template<> bool PointComparer<Vec3f>::operator()(Vec3f a, Vec3f b) {
             for (int i = (compare_y_then_x ? 2 : 0);
                 (compare_y_then_x ? i >= 0 : i < 3);
                 (compare_y_then_x ? --i : ++i)) {
@@ -1277,7 +1289,7 @@ namespace ark {
             return false;
         }
 
-        bool PointComparer<cv::Vec3i>::operator()(cv::Vec3i a, cv::Vec3i b) {
+        template<> bool PointComparer<cv::Vec3i>::operator()(cv::Vec3i a, cv::Vec3i b) {
             for (int i = (compare_y_then_x ? 2 : 0);
                 (compare_y_then_x ? i >= 0 : i < 3);
                 (compare_y_then_x ? --i : ++i)) {

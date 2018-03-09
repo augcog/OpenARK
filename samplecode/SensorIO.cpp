@@ -3,39 +3,35 @@
 #include <iostream>
 #include <string>
 
-// OpenCV Libraries
-#include <opencv/cxcore.h>
+// OpenCV Libraries #include <opencv/cxcore.h>
 #include "opencv2/highgui/highgui.hpp"
 
 // OpenARK Libraries
-#include "PMDCamera.h"
+#include "Core.h"
+#include "SR300Camera.h"
 #include "Visualizer.h"
-#include "Util.h"
 
 int main() {
-	DepthCamera* pmd = new PMDCamera();
-	int frame = 0;
+    ark::DepthCamera::Ptr camera = std::make_shared<ark::SR300Camera>();
 
-	while (true)
-	{
-		// Update the current frame
-		pmd->update();
+    // turn on camera
+    camera->beginCapture();
 
-		// REmove the current frame
-		pmd->removeNoise();
+    int frame = 0;
+    while (true)
+    {
+        // Show image
+        cv::Mat xyzVisual; ark::Visualizer::visualizeXYZMap(camera->getXYZMap(), xyzVisual);
+        cv::imshow("XYZ Map", xyzVisual);
 
-		// Visualize the XYZ Map
-		cv::imshow("XYZ Map", Visualizer::visualizeXYZMap(pmd->getXYZMap()));
+        /**** Start: Loop Break Condition ****/
+        int c = cv::waitKey(1);
+        if (c == 'q' || c == 'Q' || c == 27) {
+            break;
+        }
+        /**** End: Loop Break Condition ****/
+        frame++;
+    }
 
-		/**** Start: Loop Break Condition ****/
-		int c = cvWaitKey(1);
-		if (c == 'q' || c == 'Q' || c == 27) {
-			break;
-		}
-		/**** End: Loop Break Condition ****/
-		frame++;
-	}
-
-	pmd->destroyInstance();
-	return 0;
+    return 0;
 }

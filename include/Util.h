@@ -2,7 +2,7 @@
 #include <opencv2/core.hpp>
 #include <vector>
 #include <string>
-#include "version.h"
+#include "Version.h"
 
 namespace ark {
     /**
@@ -16,7 +16,7 @@ namespace ark {
         * @param delimeters c_str of delimeters to split at
         * @return vector of string components
         */
-        std::vector<std::string> split(char * string_in, char* delimeters = " ");
+        std::vector<std::string> split(char * string_in, char const * delimeters = " ");
 
         /**
          * automatically pluralize a string (add 's') base on a given quantity.
@@ -139,7 +139,7 @@ namespace ark {
         * @param img base image to use
         * @param pt the point of interest
         * @param radius length of vectors to use for computing the cross product
-        * @return normalized surface normal vector (the one facing viewer) at the point of interest
+        * @return normalized normal vector (the one facing viewer) at the point of interest
         */
         Vec3f normalAtPoint(const cv::Mat & img, const Point2i & pt, int radius = 3);
 
@@ -267,6 +267,13 @@ namespace ark {
         double angleBetweenPoints(const Point2f & a, const Point2f & b, const Point2f & center = Point2f(0, 0));
 
         /**
+        * Normalize a point by dividing it by its magnitude
+        * @param pt input point
+        * @return normalized point (if pt is (0, 0), returns pt without modifying it)
+        */
+        Point2f normalize(const Point2f & pt);
+
+        /**
         * Normalize a vector and make sure it points towards the viewer (negative z)
         * @param vec input vector
         * @return normalized vector
@@ -298,7 +305,7 @@ namespace ark {
         double magnitude(cv::Vec<T, n> pt);
 
         /**
-         * Compute the norm of a point.
+         * Compute the L2 norm of a point.
          * @param pt input point
          * @return norm of point
          */
@@ -306,7 +313,7 @@ namespace ark {
         double norm(cv::Point_<T> pt);
 
         /**
-         * Compute the norm of a point.
+         * Compute the L2 norm of a point.
          * @param pt input point
          * @return norm of point
          */
@@ -314,7 +321,7 @@ namespace ark {
         double norm(cv::Point3_<T> pt);
 
         /**
-         * Compute the norm of a point.
+         * Compute the L2 norm of a vector.
          * @param pt input point
          * @return norm of point
          */

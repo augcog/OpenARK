@@ -3,13 +3,20 @@
 
 namespace ark {
     HandDetector::HandDetector(bool elim_planes, DetectionParams::Ptr params)
-        : Detector(params),
-          planeDetector(elim_planes ? std::make_shared<PlaneDetector>() : nullptr) { }
+        : Detector(params), externalPlaneDetector(false) {
+        if (elim_planes) {
+            planeDetector = std::make_shared<PlaneDetector>();
+        }
+        else {
+            planeDetector = nullptr;
+        }
+    }
 
     HandDetector::HandDetector(PlaneDetector::Ptr plane_detector, DetectionParams::Ptr params)
-            : Detector(params), planeDetector(plane_detector) { }
+            : Detector(params), planeDetector(plane_detector), externalPlaneDetector(true) {
+    }
 
-    std::vector<Hand::Ptr> HandDetector::getHands() const {
+    const std::vector<Hand::Ptr> & HandDetector::getHands() const {
         return hands;
     }
 
@@ -37,7 +44,8 @@ namespace ark {
         // 2. eliminate large planes
 
         if (planeDetector) {
-            std::vector<FramePlane::Ptr> planes = planeDetector->getPlanes();
+            if (!externalPlaneDetector) planeDetector->update(image);
+            const std::vector<FramePlane::Ptr> & planes = planeDetector->getPlanes();
             if (planes.size()) {
                 for (FramePlane::Ptr plane : planes) {
                     util::removePlane<uchar>(image, floodFillMap, plane->equation,

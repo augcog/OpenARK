@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <string>
+#include <memory>
 
 // OpenCV Libraries
 #include <opencv/cxcore.h>
@@ -15,11 +16,13 @@
 using namespace ark;
 
 int main() {
-    // change the SR300Camera to other type if needed
+    // initialize
     ark::DepthCamera::Ptr camera = std::make_shared<ark::SR300Camera>();
-
     ark::DetectionParams::Ptr params = ark::DetectionParams::create();
-    ark::HandDetector handDetector(false, params); // change first argument to true to remove planes in frame
+    ark::PlaneDetector planeDetector(params);
+
+    // use the plane detector to remove planes and detect contact points
+    ark::HandDetector handDetector(planeDetector, params);
 
     camera->beginCapture();
 
@@ -30,18 +33,21 @@ int main() {
         cv::Mat xyzVisual; ark::Visualizer::visualizeXYZMap(camera->getXYZMap(), xyzVisual);
         cv::imshow("XYZ Map", xyzVisual);
 
-        // Find hands
+        // Update detectors
+        planeDetector->update(*camera);
         handDetector->update(*camera);
+
+        // Detect objects in frame
+        auto planes = planeDetector->getPlanes();
         auto hands = handDetector->getHands();
 
-        if (!hands.empty()){
-            ark::Hand::Ptr hand = hands[0];
+        // Find the hand assigned the highest confidence
+        ark::Hand::Ptr primary_hand = hands[0];
 
-            // Show the hand
-            cv::Mat visual = camera->getXYZMap().clone();
-            ark::Visualizer::visualizeHand(visual, visual, hand.get(), hand->getSVMConfidence());
-            cv::imshow("Result", visual);
-        }
+        // Show the hand, along with the SVM confidence and contact points
+        cv::Mat visual = camera->getXYZMap().clone();
+        ark::Visualizer::visualizeHand(visual, visual, primary_hand.get(), primary_hand->getSVMConfidence(), &planes);
+        cv::imshow("Result", visual);
 
         /**** Start: Loop Break Condition ****/
         int c = cv::waitKey(1);
@@ -50,7 +56,8 @@ int main() {
         }
         /**** End: Loop Break Condition ****/
 
-        ++frame;
+        frame++;
     }
+
     return 0;
 }

@@ -283,6 +283,11 @@ pmdaccess2.dll
 OpenNI2.dll
 #main.cpp
 
+# CMake
+CMakeFiles/
+build/
+include/Version.h
+
 # Cake - Uncomment if you are using it
 # tools/**
 # !tools/packages.config

@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "version.h"
+#include "Version.h"
 #include "Webcam.h"
 
 namespace ark {

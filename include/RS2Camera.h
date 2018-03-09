@@ -2,32 +2,32 @@
 // OpenCV Libraries
 #include "Version.h"
 #include <opencv2/core.hpp>
+#include <librealsense2/rs.hpp>
 
 // OpenARK Libraries
 #include "DepthCamera.h"
-#include "Converter.h"
 
 namespace ark {
     /**
-    * Class defining the behavior of an SR300 Camera.
+    * Class defining the behavior of a generic Intel RealSense Camera using RSSDK2.
     * Example on how to read from sensor and visualize its output
     * @include SensorIO.cpp
     */
-    class SR300Camera : public DepthCamera
+    class RS2Camera : public DepthCamera
     {
     public:
 
         /**
-        * Public constructor initializing the SR300 Camera.
+        * Public constructor initializing the RealSense Camera.
         * @param use_rgb_stream if true, uses the RGB stream and disable the IR stream (which is on by default)
         *                       This results in a smaller field of view and has an appreciable performance cost.
         */
-        explicit SR300Camera(bool use_rgb_stream = false);
+        explicit RS2Camera(bool use_rgb_stream = false);
 
         /**
-        * Destructor for the SR300 Camera.
+        * Destructor for the RealSense Camera.
         */
-        ~SR300Camera() override;
+        ~RS2Camera() override;
 
         /**
          * Get the camera's model name.
@@ -57,7 +57,7 @@ namespace ark {
         bool hasIRMap() const override;
 
         /** Shared pointer to SR300 camera instance */
-        typedef std::shared_ptr<SR300Camera> Ptr;
+        typedef std::shared_ptr<RS2Camera> Ptr;
 
     protected:
         /**
@@ -67,55 +67,31 @@ namespace ark {
         void update(cv::Mat & xyz_map, cv::Mat & rgb_map, cv::Mat & ir_map, 
                             cv::Mat & amp_map, cv::Mat & flag_map) override;
 
-    private:
-        /**
-        * Getter method for the x-coordinate at (i,j).
-        * @param i ith row
-        * @param j jth column
-        * @return x-coodinate at (i,j)
-        */
-        float getX(int i, int j) const;
-
-        /**
-        * Getter method for the x-coordinate at (i,j).
-        * @param i ith row
-        * @param j jth column
-        * @return x-coodinate at (i,j)
-        */
-        float getY(int i, int j) const;
-
-        /**
-        * Getter method for the x-coordinate at (i,j).
-        * @param i ith row
-        * @param j jth column
-        * @return x-coodinate at (i,j)
-        */
-        float getZ(int i, int j) const;
-
         /**
          * Initialize the camera, opening channels and resetting to initial configurations
          */
         void initCamera();
 
-        // Private Variables
-        float* dists;
-        float* amps;
-        cv::Mat frame;
-        const int depth_fps = 30;
-        int depth_width;
-        int depth_height;
-        cv::Size bufferSize;
-        const Intel::RealSense::Sample *sample;
-        Intel::RealSense::SenseManager *sm = Intel::RealSense::SenseManager::CreateInstance();
-        Intel::RealSense::Session *session = sm->QuerySession();
-        Intel::RealSense::Device *device;
-        Intel::RealSense::CaptureManager *cm;
+        /** Converts an RS2 raw depth image to an ordered point cloud based on the current camera's intrinsics */
+        void project(const rs2::frame depth_frame, cv::Mat & xyz_map);
+
+        /** Query RealSense camera intrinsics */
+        void query_intrinsics();
+
+        // internal storage
+        std::shared_ptr<rs2::pipeline> pipe;
+        rs2::align align;
+        rs2::config config;
+
+        // pointer to depth sensor intrinsics (RealSense C API: rs_intrinsics)
+        void * depthIntrinsics = nullptr;
+        // pointer to RGB/IR sensor intrinsics (RealSense C API: rs_intrinsics)
+        void * rgbIntrinsics = nullptr;
+        // pointer to depth-to-RGB extrinsics (RealSense C API: rs_intrinsics)
+        void * d2rExtrinsics = nullptr;
+
+        double scale;
+        int width, height;
         bool useRGBStream;
-
-        // actual width of the SR300 camera depth frame
-        static const int REAL_WID = 640;
-
-        // actual height of the SR300 camera depth frame
-        static const int REAL_HI = 480;
     };
 }

@@ -1,12 +1,15 @@
 #include "stdafx.h"
 
 // OpenARK Libraries
-#include "version.h"
+#include "Version.h"
 #ifdef PMDSDK_ENABLED
     #include "PMDCamera.h"
 #endif
 #ifdef RSSDK_ENABLED
     #include "SR300Camera.h"
+#endif
+#ifdef RSSDK2_ENABLED
+    #include "RS2Camera.h"
 #endif
 
 #include "Core.h"
@@ -18,7 +21,7 @@ using namespace ark;
 int main() {
     printf("Welcome to OpenARK v %s Demo\n\n", VERSION);
     printf("CONTROLS:\nQ or ESC to quit, P to show/hide planes, H to show/hide hands, SPACE to play/pause\n\n");
-    printf("VIEWER BACKGROUNDS:\n1 = IR Image, 2 = Depth Image, 3 = Normal Map, 0 = None\n\n");
+    printf("VIEWER BACKGROUNDS:\n1 = RGB/IR Image, 2 = Depth Image, 3 = Normal Map, 0 = None\n\n");
     printf("HAND DETECTION OPTIONS:\nS = Enable/Disable SVM, C = Enforce/Unenforce Edge Connected Criterion\n\n");
     printf("MISCELLANEOUS:\nA = Measure Surface Area (Of Hands and Planes)\n");
 
@@ -28,22 +31,15 @@ int main() {
     // initialize the camera
     DepthCamera::Ptr camera;
 
-#ifdef PMDSDK_ENABLED
-    if (!strcmp(OPENARK_CAMERA_TYPE, "pmd")) {
-        camera = std::make_shared<PMDCamera>();
-    }
-    else {
-        return -1;
-    }
+#if defined(RSSDK2_ENABLED)
+    camera = std::make_shared<RS2Camera>();
+#elif defined(RSSDK_ENABLED)
+    ASSERT(strcmp(OPENARK_CAMERA_TYPE, "sr300") == 0, "Unsupported RealSense camera type.");
+    camera = std::make_shared<SR300Camera>();
+#elif defined(PMDSDK_ENABLED)
+    camera = std::make_shared<PMDCamera>();
 #endif
-#ifdef RSSDK_ENABLED
-    if (!strcmp(OPENARK_CAMERA_TYPE, "sr300")) {
-        camera = std::make_shared<SR300Camera>();
-    }
-    else {
-        return -1;
-    }
-#endif
+
     // initialize parameters
     DetectionParams::Ptr params = DetectionParams::create(); // default parameters
 
@@ -53,7 +49,12 @@ int main() {
     
     // store frame & FPS information
     const int FPS_CYCLE_FRAMES = 8; // number of frames to average FPS over (FPS 'cycle' length)
-    clock_t currCycleStartTime = 0; // start time of current cycle
+    using ms = std::chrono::duration<float, std::milli>;
+    using time_point = std::chrono::high_resolution_clock::time_point;
+
+    std::chrono::high_resolution_clock timer = std::chrono::high_resolution_clock();
+    time_point currCycleStartTime = timer.now(); // start time of current cycle
+
     float currFPS; // current FPS
 
     int currFrame = 0; // current frame number (since launch/last pause)
@@ -68,6 +69,8 @@ int main() {
     // main demo loop
     while (true)
     {
+        ++currFrame;
+
         // get latest image from the camera
         cv::Mat xyzMap = camera->getXYZMap();
 
@@ -103,9 +106,14 @@ int main() {
         cv::Mat handVisual;
 
         // background of visualization
-        if (backgroundStyle == 1 && camera->hasIRMap()) {
-            // IR background
-            cv::cvtColor(camera->getIRMap(), handVisual, cv::COLOR_GRAY2BGR, 3);
+        if (backgroundStyle == 1) {
+            if (camera->hasIRMap()) {
+                // IR background
+                cv::cvtColor(camera->getIRMap(), handVisual, cv::COLOR_GRAY2BGR, 3);
+            }
+            else if (camera->hasRGBMap()) {
+                handVisual = camera->getRGBMap().clone();
+            }
         }
 
         else if (backgroundStyle == 2) {
@@ -202,8 +210,8 @@ int main() {
 
         // update FPS
         if (currFrame % FPS_CYCLE_FRAMES == 0) {
-            clock_t now = clock();
-            currFPS = (float) FPS_CYCLE_FRAMES * CLOCKS_PER_SEC / (now - currCycleStartTime);
+            time_point now = timer.now();
+            currFPS = (float) FPS_CYCLE_FRAMES * 1000.0f / std::chrono::duration_cast<ms>(now - currCycleStartTime).count();
             currCycleStartTime = now;
         }
 
@@ -211,7 +219,7 @@ int main() {
             // show FPS on top right
             std::stringstream fpsDisplay;
             static char chr[32];
-            sprintf(chr, "FPS: %02.3lf", currFPS);
+            sprintf(chr, "FPS: %02.3f", currFPS);
             cv::putText(handVisual, chr, Point2i(handVisual.cols - 120, 25), 0, 0.5, WHITE);
 #ifdef DEBUG
             cv::putText(handVisual, "Frame: " + std::to_string(currFrame),
@@ -245,8 +253,10 @@ int main() {
         }
 
         // show visualizations
-        cv::imshow(camera->getModelName() + " Depth Map", xyzMap);
-        cv::imshow("Demo Output - OpenARK v" + std::string(VERSION), handVisual);
+        if (!xyzMap.empty()) {
+            cv::imshow(camera->getModelName() + " Depth Map", xyzMap);
+            cv::imshow("Demo Output - OpenARK v" + std::string(VERSION), handVisual);
+        }
         /**** End: Visualization ****/
 
         /**** Start: Controls ****/
@@ -283,7 +293,6 @@ int main() {
         }
 
         /**** End: Controls ****/
-        ++currFrame;
     }
 
     camera->endCapture();

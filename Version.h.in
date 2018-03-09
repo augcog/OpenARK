@@ -1,13 +1,15 @@
 #pragma once
 
-#define RSSDK_ENABLED
-#define OPENARK_CAMERA_TYPE "sr300"
-//#define PMDSDK_ENABLED
-//#define OPENARK_CAMERA_TYPE "pmd" 
+@RSSDK2@#define RSSDK2_ENABLED
+@RSSDK2@#define OPENARK_CAMERA_TYPE "realsense"
+@RSSDK@#define RSSDK_ENABLED
+@RSSDK@#define OPENARK_CAMERA_TYPE "sr300"
+@PMDSDK@#define PMDSDK_ENABLED
+@PMDSDK@#define OPENARK_CAMERA_TYPE "pmd" 
 
-#define OPENARK_VERSION_MAJOR 0
-#define OPENARK_VERSION_MINOR 9
-#define OPENARK_VERSION_PATCH 3
+#define OPENARK_VERSION_MAJOR @OpenARK_VERSION_MAJOR@
+#define OPENARK_VERSION_MINOR @OpenARK_VERSION_MINOR@
+#define OPENARK_VERSION_PATCH @OpenARK_VERSION_PATCH@
 
 // Uncomment to enable debug code
 //#define DEBUG
@@ -43,10 +45,10 @@
 // OpenARK namespace
 namespace ark {
     // OpenARK version number (modify in CMakeLists.txt)
-    static const char * VERSION = "0.9.3";
+    static const char * VERSION = "@OpenARK_VERSION_MAJOR@.@OpenARK_VERSION_MINOR@.@OpenARK_VERSION_PATCH@";
 
     // Paths to possible SVM model file locations (terminated by "\n")
-    static const char * SVM_PATHS[] = {"svm/", "../svm/", "", "\n"};
+    static const char * SVM_PATHS[] = {@SVM_PATHS@, "\n"};
 
     // Typedefs for common types
     typedef cv::Point Point;

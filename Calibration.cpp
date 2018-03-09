@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "version.h"
+#include "Version.h"
 #include "Calibration.h"
 #include "Util.h"
 
@@ -65,12 +65,12 @@ namespace ark {
                     cornersXYZ.push_back(pt);
                 }
 
-                auto c = cv::waitKey(1);
+                int c = cv::waitKey(1);
                 if (c == ' ')
                 {
                     success++;
                     XYZ_points.push_back(cornersXYZ);
-                    printf("%I64u points recorded!\n", cornersXYZ.size());
+                    printf("%u points recorded!\n", (unsigned) cornersXYZ.size());
                 }
             }
 

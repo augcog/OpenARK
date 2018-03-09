@@ -1,8 +1,9 @@
 #pragma once
 
-#include "version.h"
+#include "Version.h"
 
 #include <mutex>
+#include <map>
 
 #include "Util.h"
 #include "FrameObject.h"

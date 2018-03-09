@@ -1,4 +1,5 @@
-#include "version.h"
+#include "stdafx.h"
+#include "Version.h"
 
 #include "Util.h"
 #include "Hand.h"
@@ -55,7 +56,7 @@ namespace {
 namespace ark {
 
     // Initialize the SVM hand validator
-    static classifier::SVMHandValidator & handValidator = classifier::SVMHandValidator(SVM_PATHS);
+    static const classifier::SVMHandValidator & handValidator = classifier::SVMHandValidator(SVM_PATHS);
 
     Hand::Hand() : FrameObject() { }
 
@@ -82,6 +83,7 @@ namespace ark {
     bool Hand::checkForHand()
     {
         checkEdgeConnected();
+
         // if not connected, stop
         if (params->handRequireEdgeConnected && !leftEdgeConnected && !rightEdgeConnected) {
             return false;
@@ -279,6 +281,32 @@ namespace ark {
         points->swap(aboveWristPointsIJ);
         points_xyz->swap(aboveWristPointsXYZ);
 
+        // recompute contour
+        computeContour(xyzMap, points.get(), points_xyz.get(), topLeftPt, num_points);
+
+        // ** Find dominant direction **
+        float contourFar = -1.0; uint contourFarIdx = 0;
+        for (uint i = 0; i < contour.size(); ++i) {
+            float norm = util::norm(util::averageAroundPoint(xyzMap, contour[i] - topLeftPt, params->xyzAverageSize) -
+                                    this->palmCenterXYZ);
+            if (norm > contourFar) {
+                contourFar = norm;
+                contourFarIdx = i;
+            }
+        }
+
+        this->dominantDir = util::normalize(contour[contourFarIdx] - this->palmCenterIJ);
+
+        // ** SVM check **
+        if (params->handUseSVM && handValidator.isTrained()) {
+            this->svmConfidence = handValidator.classify(*this, xyzMap,
+                topLeftPt, fullMapSize.width);
+            if (this->svmConfidence < params->handSVMConfidenceThresh) {
+                // SVM confidence value below threshold, reverse decision & destroy the hand instance
+                return false;
+            }
+        }
+
         // if too small/large, stop
         surfaceArea = util::surfaceArea(fullMapSize, *points, *points_xyz, num_points);
         if (surfaceArea < params->handMinArea || surfaceArea > params->handMaxArea) {
@@ -287,9 +315,6 @@ namespace ark {
 #endif
             return false;
         }
-
-        // recompute contour
-        computeContour(xyzMap, points.get(), points_xyz.get(), topLeftPt, num_points);
 
         // ** Detect fingers **
 
@@ -622,8 +647,8 @@ namespace ark {
                 // filter by curvature
                 float finger_length_ij =
                     util::euclideanDistance(indexFinger_ij, bestDef + topLeftPt);
-                double curve_near = util::contourCurvature(contour, indexFinger_idx, finger_length_ij * 0.15);
-                double curve_far = util::contourCurvature(contour, indexFinger_idx, finger_length_ij * 0.45);
+                float curve_near = util::contourCurvature(contour, indexFinger_idx, finger_length_ij * 0.15f);
+                float curve_far = util::contourCurvature(contour, indexFinger_idx, finger_length_ij * 0.45f);
 
 #ifdef DEBUG
                 cv::Scalar txtColorNear = cv::Scalar(0, 255, 255);
@@ -669,7 +694,7 @@ namespace ark {
         cv::imshow("[Hand Debug]", visual);
 #endif
 
-        size_t nFin = this->fingersIJ.size();
+        int nFin = (int) this->fingersIJ.size();
 
         // report not hand if there are too few/many fingers
         if (nFin > 6 || nFin < 1) {
@@ -677,27 +702,6 @@ namespace ark {
             //std::cerr << "[Hand Debug]: OBJECT ELIMINATED BECAUSE NOT ENOUGH FINGERS (" << nFin << ")\n";
 #endif
             return false;
-        }
-
-        // find dominant direction
-        if (nFin > 0) {
-            Point2f fingCen = this->fingersIJ[nFin / 2];
-            if (nFin % 2 == 0) {
-                fingCen += Point2f(this->fingersIJ[nFin / 2 - 1]);
-                fingCen /= 2.0f;
-            }
-
-            this->dominantDir = fingCen - Point2f(this->palmCenterIJ);
-        }
-
-        // Final SVM check
-        if (params->handUseSVM && handValidator.isTrained()) {
-            this->svmConfidence = handValidator.classify(*this, xyzMap,
-                topLeftPt, fullMapSize.width);
-            if (this->svmConfidence < params->handSVMConfidenceThresh) {
-                // SVM confidence value below threshold, reverse decision & destroy the hand instance
-                return false;
-            }
         }
 
         return true;

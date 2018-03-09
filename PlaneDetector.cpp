@@ -32,11 +32,11 @@ namespace ark {
         // done detecting planes, show visualization if debug flag is on
 #ifdef DEBUG
         cv::Mat planeDebugVisual =
-            cv::Mat::zeros(xyzMap.size() / params->normalResolution, CV_8UC3);
+            cv::Mat::zeros(image.size() / params->normalResolution, CV_8UC3);
 
-        for (int i = 0; i < framePlanes.size(); ++i) {
+        for (int i = 0; i < planes.size(); ++i) {
             Vec3b color = util::paletteColor(i);
-            const std::vector<Point2i> & points = framePlanes[i]->getPointsIJ();
+            const std::vector<Point2i> & points = planes[i]->getPointsIJ();
 
             for (uint j = 0; j < points.size(); ++j) {
                 planeDebugVisual.at<Vec3b>(points[j] / params->normalResolution) = color;
@@ -47,8 +47,8 @@ namespace ark {
             0, 0, cv::INTER_NEAREST);
 
 
-        for (int i = 0; i < framePlanes.size(); ++i) {
-            cv::putText(planeDebugVisual, std::to_string(framePlanes[i]->getSurfArea()), framePlanes[i]->getCenterIJ(), 0, 0.5, cv::Scalar(255, 255, 255));
+        for (int i = 0; i < planes.size(); ++i) {
+            cv::putText(planeDebugVisual, std::to_string(planes[i]->getSurfArea()), planes[i]->getCenterIJ(), 0, 0.5, cv::Scalar(255, 255, 255));
         }
 
         cv::imshow("[Plane Debug]", planeDebugVisual);
@@ -113,13 +113,13 @@ namespace ark {
                                              params->normalResolution, 0, 0.0f, &floodFillMap);
 
                 if (numPts >= SUBPLANE_MIN_POINTS) {
-                    // filter out outliers & find plane equation
                     std::vector<Vec3f> allXyzPoints(numPts);
 
                     for (int k = 0; k < numPts; ++k) {
                         allXyzPoints[k] = xyz_map.at<Vec3f>(allIndices[k]);;
                     }
 
+                    // find surface area
                     util::radixSortPoints(allIndices, C, R, numPts, &allXyzPoints);
                     double surfArea = util::surfaceArea(normal_map.size(), allIndices,
                         allXyzPoints, numPts);
@@ -128,6 +128,7 @@ namespace ark {
                         continue;
                     }
 
+                    // find plane equation
                     Vec3f eqn = util::linearRegression(allXyzPoints, numPts);
 
                     // combine similar subplanes
@@ -171,7 +172,7 @@ namespace ark {
         }
 
         // 3. find equations of the combined planes and construct Plane objects with the data
-        for (uint i = 0; i < planeEquation.size(); ++i) {
+        for (unsigned i = 0; i < planeEquation.size(); ++i) {
             int SZ = (int)planePointsIJ[i]->size();
             if (SZ < PLANE_MIN_POINTS) continue;
 
@@ -198,7 +199,7 @@ namespace ark {
         }
     }
 
-    std::vector<FramePlane::Ptr> PlaneDetector::getPlanes() const {
+    const std::vector<FramePlane::Ptr> & PlaneDetector::getPlanes() const {
         return planes;
     }
 }

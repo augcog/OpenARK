@@ -1,4 +1,4 @@
-# - Try to find RSSDK headers and libraries.
+# - Try to find Windows RSSDK headers and libraries.
 #
 # Usage of this module as follows:
 #

@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "version.h"
+#include "Version.h"
 #include "Hand.h"
 #include "Util.h"
 #include "HandClassifier.h"
@@ -425,10 +425,10 @@ namespace ark {
                 result.push_back(ark::util::pointToAngle(fingerij - centerij));
                 result.push_back(ark::util::pointToAngle(defectij - centerij));
 
-                double minDistDefect = depth_map.cols, minDistFinger = depth_map.cols;
-                double maxDistDefect = 0, maxDistFinger = 0;
-
                 if (nFingers > 1) {
+                    double minDistDefect = depth_map.cols, minDistFinger = depth_map.cols;
+                    double maxDistDefect = 0, maxDistFinger = 0;
+
                     for (int jj = 0; jj < nFingers; ++jj) {
                         if (j == jj) continue;
 
@@ -449,7 +449,7 @@ namespace ark {
             }
 
             for (unsigned i = 0; i < result.size(); ++i) {
-                if (isnan(result[i])) {
+                if (std::isnan(result[i])) {
                     result[i] = 1.0;
                 }
                 else if (result[i] >= FLT_MAX) {
@@ -467,7 +467,7 @@ namespace ark {
         // SVMHandValidator implementation
         const double SVMHandValidator::DEFAULT_HYPERPARAMS[5] = {
             // gamma       coef0       C       eps     p
-            0.6849,     0.5000,     0.5048, 1.5e-16,  0.0548,
+            1.0959,     0.5000,     0.5048, 1.5e-16,  0.0548,
         };
 
         void SVMHandValidator::initSVMs(const double hyperparams[5]) {
@@ -510,11 +510,10 @@ namespace ark {
             using namespace boost::filesystem;
 
             const char * FILE_NAME = "svm.xml";
-            const char * ENV_VAR_NAME = "OPENARK_DIR";
 
             path loadPath(ipath / FILE_NAME);
             if (!boost::filesystem::exists(loadPath)) {
-                const char * env = std::getenv(ENV_VAR_NAME);
+                const char * env = std::getenv("OPENARK_DIR");
                 if (env) {
                     loadPath = path(env) / ipath / FILE_NAME;
                 }

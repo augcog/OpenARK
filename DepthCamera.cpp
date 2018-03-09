@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "version.h"
+#include "Version.h"
 #include "DepthCamera.h"
 #include "Hand.h"
 #include "FrameObject.h"

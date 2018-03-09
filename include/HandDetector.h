@@ -21,14 +21,17 @@ namespace ark {
          * Construct a new hand detector instance, using the provided plane detector to remove planes in each frame.
          * If planes and hands both need to be detected for your application,
          * this reduces redundancy as planes will only be detected once per frame.
+         * WARNING: assumes that the plane detector is also updated per frame
          * @param plane_detector pointer to the plane detector instance used for finding planes.
          */
         explicit HandDetector(PlaneDetector::Ptr plane_detector, DetectionParams::Ptr params = nullptr);
 
         /**
-         * Obtain a list of hands in the current frame from this detector.
+         * Obtain a list of hands in the current frame from this detector
+         * @return list of hands, sorted in descending order of SVM confidence.
+         *         If SVM confidence is not available, sorts in ascending order of depth.
          */
-        std::vector<Hand::Ptr> getHands() const;
+        const std::vector<Hand::Ptr> & getHands() const;
 
         /** Shared pointer to HandDetector instance */
         typedef std::shared_ptr<HandDetector> Ptr;
@@ -40,6 +43,9 @@ namespace ark {
     private:
         /** the plane detector instance */
         PlaneDetector::Ptr planeDetector;
+
+        /** whether the plane detector was passed in from the constructor */
+        bool externalPlaneDetector;
 
         /** stores currently detected hands */
         std::vector<Hand::Ptr> hands;

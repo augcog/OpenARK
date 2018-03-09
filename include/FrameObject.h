@@ -1,12 +1,12 @@
 #pragma once
 
-#include "version.h"
+#include "Version.h"
 
 #include <opencv2/core.hpp>
 #include <vector>
 
 // OpenARK headers
-#include "version.h"
+#include "Version.h"
 #include "DetectionParams.h"
 
 namespace ark {
@@ -203,15 +203,7 @@ namespace ark {
         * @param contour contour of the object
         * @return point representing center of mass
         */
-        static Point2i FrameObject::findCenter(std::vector<Point2i> contour);
-
-        /**
-        * Simplify a convex hull by clustering points within distance 'threshold'
-        * @param convex_hull the convex hull
-        * @param threshold maximum distance between points in a cluster
-        * @return simplified convex hull
-        */
-        static std::vector<Point2i> FrameObject::clusterConvexHull(std::vector<Point2i> convex_hull, int threshold);
+        static Point2i findCenter(std::vector<Point2i> contour);
 
         /**
           * Perform erode-dilate morphological operations on the cluster's gray map
@@ -230,7 +222,7 @@ namespace ark {
          * @param num_points number of points in cluster
          * @param thresh the minimum z-coordinate of a point on the depth image below which the pixel will be zeroed out
          */
-        void FrameObject::computeContour(const cv::Mat & xyzMap, 
+        void computeContour(const cv::Mat & xyzMap, 
             const std::vector<cv::Point> * points, 
             const std::vector<cv::Vec3f> * points_xyz,
             cv::Point topLeftPt, int num_points);

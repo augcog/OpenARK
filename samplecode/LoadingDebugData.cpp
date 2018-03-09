@@ -8,37 +8,35 @@
 #include "opencv2/highgui/highgui.hpp"
 
 // OpenARK Libraries
-#include "PMDCamera.h"
+#include "Core.h"
+#include "SR300Camera.h"
 #include "Visualizer.h"
-#include "Util.h"
 
 int main() {
-	DepthCamera* pmd = new PMDCamera(false); // Initiatize with use_live_sensor = false
-	int frame = 0;
+    ark::DepthCamera::Ptr camera = std::make_shared<ark::SR300Camera>();
+    camera->beginCapture();
 
-	while (true)
-	{
-		// Read in each individual frame from file
-		std::string filename = "..//OpenARK_Datasets//HandDataSet2//img" + std::to_string(frame) + ".yml";
-		if (!pmd->readImage(filename))
-			break;
+    int frame = 0;
+    while (true)
+    {
+        // Read in each individual frame from file
+        std::string filename = "..//OpenARK_Datasets//HandDataSet2//img" + std::to_string(frame) + ".yml";
+        if (!camera->readImage(filename))
+            break;
 
-		// Remove nosie from the frame
-		pmd->removeNoise();
+        // Display the resultant image
+        cv::Mat xyzVisual; ark::Visualizer::visualizeXYZMap(camera->getXYZMap(), xyzVisual);
+        cv::imshow("XYZ Map", xyzVisual);
 
-		// Display the resultant image
-		cv::imshow("XYZ Map", Visualizer::visualizeXYZMap(pmd->getXYZMap()));
+        /**** Start: Loop Break Condition ****/
+        int c = cv::waitKey(1);
+        if (c == 'q' || c == 'Q' || c == 27) {
+            break;
+        }
+        /**** End: Loop Break Condition ****/
 
-		/**** Start: Loop Break Condition ****/
-		int c = cvWaitKey(1);
-		if (c == 'q' || c == 'Q' || c == 27) {
-			break;
-		}
-		/**** End: Loop Break Condition ****/
+        frame++;
+    }
 
-		frame++;
-	}
-
-	pmd->destroyInstance();
-	return 0;
+    return 0;
 }
