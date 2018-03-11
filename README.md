@@ -22,8 +22,12 @@ Software
 ## Installation
 
 ### Building From Scratch
-Windows: [documentation/Windows-build-instructions.pdf](https://github.com/augcog/OpenARK/documentation/Windows-build-instructions.pdf)
-Linux: [documentation/Linux-build-instructions.md](https://github.com/augcog/OpenARK/documentation/Linux-build-instructions.md)
+
+Instructions are available in the following documents:
+
+- Windows: [documentation/Windows-build-instructions.pdf](https://github.com/augcog/OpenARK/blob/master/documentation/Windows-build-instructions.pdf)
+
+- Linux: [documentation/Linux-build-instructions.md](https://github.com/augcog/OpenARK/blob/master/documentation/Linux-build-instructions.md)
 
 ### Prebuilt Binaries (For Windows)
 Prebuilt binaries for 64-bit Windows are available [here](https://github.com/augcog/OpenARK/releases).
