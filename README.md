@@ -1,10 +1,10 @@
 # OpenARK
 
-OpenARK is an open-source wearable augmented reality (AR) system founded at UC Berkeley in 2016. The C++ based software offers innovative core functionalities to power a wide range of off-the-shelf AR components, including see-through glasses, depth cameras, and IMUs. The open-source platform includes fundamental tools such as AR-based camera calibration and SLAM, and it also includes higher-level modules to aid human-computer interaction, such as 3D gesture recognition, plane detection, and multi-user collaboration, all with real-time (30+ FPS) performance. Currently, it supports both PMD Pico Flexx and Intel RealSense SR300 cameras. OpenARK currently only supports Windows and we have tested our platform with Windows 10 and Visual Studio 2015 Community Edition.
+OpenARK is an open-source wearable augmented reality (AR) system founded at UC Berkeley in 2016. The C++ based software offers innovative core functionalities to power a wide range of off-the-shelf AR components, including see-through glasses, depth cameras, and IMUs. The open-source platform includes fundamental tools such as AR-based camera calibration and SLAM, and it also includes higher-level modules to aid human-computer interaction, such as 3D gesture recognition, plane detection, and multi-user collaboration, all with real-time (30+ FPS) performance. Currently, it supports both PMD Pico Flexx and Intel RealSense SR300 cameras. The project builds natively on both Windows and Linux.
 
 At a Glance
 
-  - **Technology stack**: C++, OpenCV, PCL, Boost, RealSense 3D SDK, PMD SDK
+  - **Technology stack**: C++, OpenCV, PCL, Boost, Intel RealSense SDK (1 or 2) / PMD SDK
   - **Status**:  Beta 0.9.3
   - **Application Demo**: [Vimeo](https://vimeo.com/251436256)
 
@@ -19,25 +19,16 @@ Software
 - PCL 1.8
 - Boost 1.6.4
 
-## Installation (Windows)
+## Installation
 
-### Prebuilt Binaries
+### Building From Scratch
+Windows: [documentation/Windows-build-instructions.pdf](https://github.com/augcog/OpenARK/documentation/Windows-build-instructions.pdf)
+Linux: [documentation/Linux-build-instructions.md](https://github.com/augcog/OpenARK/documentation/Linux-build-instructions.md)
+
+### Prebuilt Binaries (For Windows)
 Prebuilt binaries for 64-bit Windows are available [here](https://github.com/augcog/OpenARK/releases).
 Both the static library (with the headers) and the demo program are included. For the SVM to work properly, the `svm/` folder
  must be present in the current directory OR under the directory pointed to by the OPENARK_DIR environment variable.
- 
-### Building From Scratch
-1. Download and install all software depedencies (OpenCV, PCL, Boost, Intel RealSense).
-2. Clone repo to local machine: `git clone github.com/augcog/OpenARK`.
-3. Run `CMake .`
-   (Note that the toolchain must be set to Visual Studio 2015, since one of OpenCV's dependencies does not support VS 2017.)
-4. Open the Visual Studios solution (OpenARK.sln)
-5. If you want to test OpenARK's performance using OpenARK_test, follow the given instructions in its repository.
-
-The project has not currently been tested on operating systems other than windows, although compiling the C++ code using CMake should be possible with very few modifications.
-
-## Configuration
-Configure project properties (see /documentation/OpenARK_Setup.pdf)
 
 ## Usage
 To use OpenARK in a Visual Studio C++ project:
@@ -79,6 +70,8 @@ int main() {
     // automatically stops capture on exit
 }
 ```
+
+Additional sample code is available in `samplecode/`.
 
 ## Customization
 

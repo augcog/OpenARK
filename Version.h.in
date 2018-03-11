@@ -1,18 +1,18 @@
 #pragma once
 
-@RSSDK2@#define RSSDK2_ENABLED
-@RSSDK2@#define OPENARK_CAMERA_TYPE "realsense"
-@RSSDK@#define RSSDK_ENABLED
-@RSSDK@#define OPENARK_CAMERA_TYPE "sr300"
-@PMDSDK@#define PMDSDK_ENABLED
-@PMDSDK@#define OPENARK_CAMERA_TYPE "pmd" 
+@_RSSDK2_@#define RSSDK2_ENABLED
+@_RSSDK2_@#define OPENARK_CAMERA_TYPE "realsense"
+@_RSSDK_@#define RSSDK_ENABLED
+@_RSSDK_@#define OPENARK_CAMERA_TYPE "sr300"
+@_PMDSDK_@#define PMDSDK_ENABLED
+@_PMDSDK_@#define OPENARK_CAMERA_TYPE "pmd" 
 
 #define OPENARK_VERSION_MAJOR @OpenARK_VERSION_MAJOR@
 #define OPENARK_VERSION_MINOR @OpenARK_VERSION_MINOR@
 #define OPENARK_VERSION_PATCH @OpenARK_VERSION_PATCH@
 
 // Uncomment to enable debug code
-//#define DEBUG
+@_DEBUG_@#define DEBUG
 
 // Constants
 #ifndef M_PI
