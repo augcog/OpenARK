@@ -1,0 +1,7 @@
+syntax = "proto3";
+package protob;
+option csharp_namespace = "protob";
+
+message Image{
+	bytes image_string=1;
+}

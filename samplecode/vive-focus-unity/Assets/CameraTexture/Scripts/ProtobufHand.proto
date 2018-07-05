@@ -1,0 +1,29 @@
+syntax = "proto3";
+package protob;
+option csharp_namespace = "protob";
+
+message Hands{
+	repeated Hand hands=1;
+}
+
+message Hand{
+	repeated Point fingers=1;
+	repeated Point wrist=2;
+	Point palmCenter=3;
+}
+
+message Point{
+	PointXYZ pointXYZ=1;
+	PointIJ pointIJ=2;
+}
+
+message PointXYZ{
+	float  x=1;
+	float  y=2;
+	float  z=3;
+}
+
+message PointIJ{
+	int32 i=1;
+	int32 j=2;
+}

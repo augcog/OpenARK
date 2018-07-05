@@ -22,18 +22,17 @@ namespace ark {
 		r2dExtrinsics = new rs2_extrinsics();
 		const std::vector<rs2::stream_profile> & stream_profiles = profile.get_streams();
 
-		rs2::stream_profile rgbProfile;
-		if (useRGBStream) rgbProfile = profile.get_stream(RS2_STREAM_COLOR);
-		else rgbProfile = profile.get_stream(RS2_STREAM_INFRARED);
-
 		rs2::stream_profile depthProfile = profile.get_stream(RS2_STREAM_DEPTH);
-		*reinterpret_cast<rs2_intrinsics *>(rgbIntrinsics) =
-			rgbProfile.as<rs2::video_stream_profile>().get_intrinsics();
-		*reinterpret_cast<rs2_intrinsics *>(depthIntrinsics) =
-			depthProfile.as<rs2::video_stream_profile>().get_intrinsics();
-		*reinterpret_cast<rs2_extrinsics *>(d2rExtrinsics) = depthProfile.get_extrinsics_to(rgbProfile);
-		*reinterpret_cast<rs2_extrinsics *>(r2dExtrinsics) = rgbProfile.get_extrinsics_to(depthProfile);
+		
 		scale = profile.get_device().first<rs2::depth_sensor>().get_depth_scale();
+		rs2::stream_profile rgbProfile;
+		if (useRGBStream) {
+			rgbProfile = profile.get_stream(RS2_STREAM_COLOR);
+			rs2::align align(RS2_STREAM_COLOR);
+		}
+		else {
+			rgbProfile = profile.get_stream(RS2_STREAM_INFRARED);
+		}
 	}
 
 	RS2Camera::~RS2Camera() {
@@ -60,7 +59,7 @@ namespace ark {
 		return height;
 	}
 
-	const DetectionParams::Ptr & RS2Camera::getDefaultParams() const {
+	DetectionParams::Ptr RS2Camera::getDefaultParams() const {
 		if (!defaultParamsSet) {
 			defaultParamsSet = true;
 			defaultParams = std::make_shared<DetectionParams>();
@@ -92,19 +91,18 @@ namespace ark {
 
 	void RS2Camera::update(cv::Mat & xyz_map, cv::Mat & rgb_map, cv::Mat & ir_map,
 		cv::Mat & amp_map, cv::Mat & flag_map) {
-		rs2::frameset data;
-
+		rs2::frameset frameset = pipe->wait_for_frames();
 		try {
-			data = pipe->wait_for_frames();
-
-			rs2::frame depth = data.first(RS2_STREAM_DEPTH);
 			if (useRGBStream) {
-				rs2::frame color = data.first(RS2_STREAM_COLOR);
+				auto processed = align.process(frameset);
+				rs2::frame color = processed.first(RS2_STREAM_COLOR);
+				rs2::frame depth = processed.get_depth_frame();
 				memcpy(rgb_map.data, color.get_data(), 3 * width * height);
 				project(depth, color, xyz_map, rgb_map);
 			}
 			else {
-				rs2::frame ir = data.first(RS2_STREAM_INFRARED);
+				rs2::frame depth = frameset.first(RS2_STREAM_DEPTH);
+				rs2::frame ir = frameset.first(RS2_STREAM_INFRARED);
 				memcpy(ir_map.data, ir.get_data(), width * height);
 				project(depth, ir, xyz_map, ir_map);
 			}
@@ -120,76 +118,9 @@ namespace ark {
 			pipe->start(config);
 			badInputFlag = false;
 			return;
-		}
+		}		
 	}
 
-
-	/*
-	// project depth map to xyz coordinates relative to RGB/IR image
-	void RS2Camera::project(const rs2::frame & depth_frame, const rs2::frame & rgb_frame, cv::Mat & xyz_map, cv::Mat & rgb_map) {
-	const uint16_t * depth_data = (const uint16_t *)depth_frame.get_data();
-
-	if (!depthIntrinsics || !rgbIntrinsics || !d2rExtrinsics) return;
-	rs2_intrinsics * dIntrin = reinterpret_cast<rs2_intrinsics *>(depthIntrinsics);
-	rs2_intrinsics * rIntrin = reinterpret_cast<rs2_intrinsics *>(rgbIntrinsics);
-	rs2_extrinsics * drExtrin = reinterpret_cast<rs2_extrinsics *>(d2rExtrinsics);
-
-	const uint16_t * srcPtr;
-	cv::Vec3f * destPtr;
-	float srcPixel[2], srcPixelTL[2], srcPixelBR[2], tmp1[3], tmp2[3];
-	float destXYZ[3], tlIJ[2], brIJ[2];
-
-	memset(xyz_map.data, 0, 12 * width * height);
-
-	for (int r = 0; r < height; ++r)
-	{
-	srcPtr = depth_data + r * dIntrin->width;
-	srcPixel[1] = r;
-	srcPixelTL[1] = (float)r - 0.5f;
-	srcPixelBR[1] = (float)r + 0.5f;
-
-	for (int c = 0; c < width; ++c)
-	{
-	if (srcPtr[c] == 0) continue;
-
-	// find central coordinates in destination 3D space
-	srcPixel[0] = c;
-	rs2_deproject_pixel_to_point(destXYZ, dIntrin, srcPixel, srcPtr[c] * scale);
-
-	// find bounding box in destination 2D space
-	srcPixelTL[0] = (float)c - 0.5f;
-	srcPixelBR[0] = (float)c + 0.5f;
-	rs2_deproject_pixel_to_point(tmp1, dIntrin, srcPixelTL, srcPtr[c] * scale);
-	rs2_transform_point_to_point(tmp2, drExtrin, tmp1);
-	rs2_project_point_to_pixel(tlIJ, rIntrin, tmp2);
-	rs2_deproject_pixel_to_point(tmp1, dIntrin, srcPixelBR, srcPtr[c] * scale);
-	rs2_transform_point_to_point(tmp2, drExtrin, tmp1);
-	rs2_project_point_to_pixel(brIJ, rIntrin, tmp2);
-
-	int tlX = std::floor(tlIJ[0]), tlY = std::floor(tlIJ[1]);
-	int brX = std::ceil(brIJ[0]), brY = std::ceil(brIJ[1]);
-	for (int y = tlY; y < brY; ++y) {
-	if (y < 0 || y >= height) continue;
-	destPtr = xyz_map.ptr<cv::Vec3f>(y);
-	if (!destPtr) continue;
-	for (int x = tlX; x < brX; ++x) {
-	if (x < 0 || x >= width) continue;
-	cv::Vec3f & vec = destPtr[x];
-	if (vec[2] < 0.001) {
-	memcpy(&vec, destXYZ, 3 * sizeof(float));
-	}
-	else {
-	for (int i = 0; i < 3; ++i) {
-	vec[i] *= 0.5;
-	vec[i] += destXYZ[i] * 0.5;
-	}
-	}
-	}
-	}
-	}
-	}
-	}
-	*/
 	// project depth map to xyz coordinates directly (faster and minimizes distortion, but will not be aligned to RGB/IR)
 	void RS2Camera::project(const rs2::frame & depth_frame, const rs2::frame & rgb_frame, cv::Mat & xyz_map, cv::Mat & rgb_map) {
 		const uint16_t * depth_data = (const uint16_t *)depth_frame.get_data();

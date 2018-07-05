@@ -1,0 +1,11 @@
+# Unity generated #
+Temp/
+Library/
+
+# Visual Studio generated #
+obj/
+packages/
+*.csproj
+
+# Android generated #
+*.apk

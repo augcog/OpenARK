@@ -18,6 +18,7 @@ Software
 - OpenCV 3.2.0+
 - PCL 1.8
 - Boost 1.6.4
+- Protobuf 3.6.0
 
 ## Installation
 
@@ -28,11 +29,6 @@ Instructions are available in the following documents:
 - Windows: [documentation/Windows-build-instructions.pdf](https://github.com/augcog/OpenARK/blob/master/documentation/Windows-build-instructions.pdf)
 
 - Linux: [documentation/Linux-build-instructions.md](https://github.com/augcog/OpenARK/blob/master/documentation/Linux-build-instructions.md)
-
-### Prebuilt Binaries (For Windows)
-Prebuilt binaries for 64-bit Windows are available [here](https://github.com/augcog/OpenARK/releases).
-Both the static library (with the headers) and the demo program are included. For the SVM to work properly, the `svm/` folder
- must be present in the current directory OR under the directory pointed to by the OPENARK_DIR environment variable.
 
 ## Usage
 To use OpenARK in a Visual Studio C++ project:

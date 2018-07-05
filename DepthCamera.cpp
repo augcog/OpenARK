@@ -66,7 +66,7 @@ namespace ark {
 
 
     /** Returns default detection parameters for this depth camera class */
-    const DetectionParams::Ptr & DepthCamera::getDefaultParams() const {
+    DetectionParams::Ptr DepthCamera::getDefaultParams() const {
         return DetectionParams::DEFAULT;
     }
 

@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "Version.h"
@@ -52,7 +53,16 @@ namespace ark {
         * Visualization for PCL point cloud.
         * @param [in] cloud PCL point cloud to be visualized
         */
-        static void visualizeCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
+        template<class Point_T>
+        static void visualizeCloud(boost::shared_ptr<pcl::PointCloud<Point_T>> cloud,
+                                   const std::string & name = "ark_cloud", int viewport = 0)
+        {
+            initPCLViewer();
+            viewer->setBackgroundColor(0, 0, 0);
+            if (!viewer->updatePointCloud<Point_T>(cloud, name))
+                viewer->addPointCloud<Point_T>(cloud, name, viewport);
+            viewer->spinOnce();
+        }
 
         /**
         * Visualization for polygon mesh.
@@ -73,12 +83,22 @@ namespace ark {
         static void visualizePlaneRegression(const cv::Mat & input_mat, cv::Mat & output, 
                     std::vector<double> &equation, const double threshold, bool clicked = false);
 
+        /** Create a viewport within the given bounds (each coordinate should be within the range [0,1]).
+         * @return the ID of the viewport created
+         */
+        static int createPCLViewport(double xmin, double ymin, double xmax, double ymax);
+
         /**
         * Visualize points that lie on the plane.
         * @param input_mat the input point cloud
         * @param indicies (i,j) coordinates of the points belonging to the plane
         */
         static void visualizePlanePoints(cv::Mat &input_mat, std::vector<Point2i> indicies);
+
+		static void visualizeFaceLandmarks(cv::Mat &im, std::vector<cv::Point2f> &landmarks);
+
+        /** Get the internal PCL visualizer */
+        static pcl::visualization::PCLVisualizer::Ptr getPCLVisualizer();
 
     private:
         /**
@@ -95,17 +115,14 @@ namespace ark {
         */
         static void visualizeMatrix(const cv::Mat & input, cv::Mat & output);
 
-        /**
-        * Visualization for a depth map matrix (i,j,z).
-        * @param [in] depthMap matrix to be visualized
-        * @return a CV_8UC3 representation of the input matrix
-        */
-
+		static void drawPolyline(cv::Mat &im, const std::vector<cv::Point2f> &landmarks,
+            const int start, const int end, bool isClosed = false);
 
         /**
         * PCL point cloud viewer
         */
-        static pcl::visualization::PCLVisualizer * viewer;
+        static pcl::visualization::PCLVisualizer::Ptr viewer;
 
+		//static void drawPolyline(cv::Mat &im, const std::vector<cv::Point2f> &landmarks, const int start, const int end, bool isClosed = false);
     };
 }

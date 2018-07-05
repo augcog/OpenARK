@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "HandDetector.h"
+#define DEBUG
 
 namespace ark {
     HandDetector::HandDetector(bool elim_planes, DetectionParams::Ptr params)
@@ -84,8 +85,8 @@ namespace ark {
                 {
                     int points_in_comp = util::floodFill(image, Point2i(c, r),
                         params->handClusterMaxDistance,
-                        &allIJPoints, &allXYZPoints, nullptr, 1, 6,
-                        params->handClusterMaxDistance * 8, &floodFillMap);
+                        &allIJPoints, &allXYZPoints, nullptr, 1, 7,
+                        params->handClusterMaxDistance * 7, &floodFillMap, false, params->handMaxDepth);
 
                     if (points_in_comp >= CLUSTER_MIN_POINTS)
                     {
@@ -109,6 +110,7 @@ namespace ark {
                         if (handPtr->getWristIJ().size() >= 2) {
                             cv::circle(floodFillVis, handPtr->getWristIJ()[0], 5, cv::Scalar(100, 255, 255));
                             cv::circle(floodFillVis, handPtr->getWristIJ()[1], 5, cv::Scalar(100, 255, 255));
+                            cv::circle(floodFillVis, handPtr->getPalmCenterIJ(), handPtr->getCircleRadius(), cv::Scalar(100, 50, 255));
                         }
 #endif
 

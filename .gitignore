@@ -285,7 +285,6 @@ OpenNI2.dll
 
 # CMake
 CMakeFiles/
-cmake_modules/
 build/
 include/Version.h
 

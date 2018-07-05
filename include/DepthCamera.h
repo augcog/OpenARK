@@ -39,7 +39,7 @@ namespace ark {
         /**
          * Returns default detection parameters for this depth camera class
          */
-        virtual const DetectionParams::Ptr & getDefaultParams() const;
+        virtual DetectionParams::Ptr getDefaultParams() const;
 
         /**
          * Destructor for the DepthCamera class (automatically stops capturing)

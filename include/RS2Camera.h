@@ -47,7 +47,7 @@ namespace ark {
         /**
          * Returns default detection parameters for this depth camera class
          */
-        const DetectionParams::Ptr & getDefaultParams() const override;
+        DetectionParams::Ptr getDefaultParams() const override;
 
         /**
          * Returns true if an RGB image is available from this camera.
