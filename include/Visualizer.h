@@ -19,17 +19,19 @@ namespace ark {
         * Visualize a (single channel) depth map
         * @param depth_map the depth map
         * @param [out] output output image
+        * @param Max_Depth the max depth
         * @return visualization
         */
-        static void visualizeDepthMap(const cv::Mat & depth_map, cv::Mat & output);
+        static void visualizeDepthMap_MaxDepth(const cv::Mat & depth_map, cv::Mat & output, float Max_Depth = 10.0);
 
         /**
         * Visualization for xyz maps (per-pixel point clouds).
         * @param [in] xyz_map input point cloud matrix
         * @param [out] output output image
+        * @param Max_Depth the max depth
         * @return a CV_8UC3 representation of the xyz map
         */
-        static void visualizeXYZMap(const cv::Mat &xyz_map, cv::Mat & output);
+        static void visualizeXYZMap(const cv::Mat &xyz_map, cv::Mat & output, float Max_Depth = 10.0);
 
         /**
         * Visualization for normal maps (normalized surface normal vector at each point).

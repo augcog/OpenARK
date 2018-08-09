@@ -118,7 +118,7 @@ int main() {
 
         else if (backgroundStyle == 2) {
             // depth map background
-            Visualizer::visualizeXYZMap(xyzMap, handVisual);
+            Visualizer::visualizeXYZMap(xyzMap, handVisual, 10);
         }
 
         else if (backgroundStyle == 3) {
