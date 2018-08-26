@@ -67,11 +67,11 @@ namespace ark {
          * @param point the point's 3D coordinates
          * @param index the point's screen coordinates
          * @param norm_thresh maximum norm to consider the pland and the point to be "touching"
-         * @param check_bounds if true, checks that the point is within the bounds of the screen.
+         * @param check_bounds if true, checks that the point is within the bounds of the plane on the screen.
          */
         bool touching(const Vec3f & point, 
             const Point2i & index,
-            float norm_thresh = 0.000064, bool check_bounds = false) const;
+            float norm_thresh = 0.000064, bool check_bounds = true) const;
 
         /**
          * Find the euclidean norm from the plane to a given point
@@ -87,7 +87,20 @@ namespace ark {
          */
         float distanceToPoint(const Vec3f & point) const;
 
+        /** 
+         * Get vertices of rotated rectangle (2D) that bounds the relevant region of the plane
+         */
+        const std::vector<Point2f> & getPlaneBoundingRect() const;
+
         /** Shared pointer to a FramePlane */
         typedef std::shared_ptr<FramePlane> Ptr;
+
+    private:
+
+        /** Helper for computing surface area + bounding rectangle */
+        void initializePlane();
+
+        /** Vertices of bounding (rotated) rectangle */
+        std::vector<Point2f> boundingRect;
     };
 }

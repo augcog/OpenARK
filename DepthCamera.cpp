@@ -64,6 +64,13 @@ namespace ark {
         return !badInput();
     }
 
+
+    /** Returns default detection parameters for this depth camera class */
+    const DetectionParams::Ptr & DepthCamera::getDefaultParams() const {
+        return DetectionParams::DEFAULT;
+    }
+
+    /** Returns true on bad input */
     bool DepthCamera::badInput()
     {
         return badInputFlag;

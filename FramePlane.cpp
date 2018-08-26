@@ -12,7 +12,7 @@ namespace ark {
         DetectionParams::Ptr params) 
         : equation(v), FrameObject(cluster_depth_map, params) 
     { 
-        surfaceArea = util::surfaceArea(fullMapSize, *points, *points_xyz);
+        initializePlane();
     }
 
     FramePlane::FramePlane(Vec3f v, VecP2iPtr points_ij, VecV3fPtr points_xyz, 
@@ -20,7 +20,7 @@ namespace ark {
         :  equation(v), 
            FrameObject(points_ij, points_xyz, depth_map, params, sorted, points_to_use)
     {
-        surfaceArea = util::surfaceArea(fullMapSize, *points, *points_xyz);
+        initializePlane();
     }
 
     Vec3f FramePlane::getNormalVector()
@@ -38,7 +38,7 @@ namespace ark {
     {
         if (normToPoint(point) > norm_thresh) return false;
         else if (!check_bounds) return true;
-        return convexHull.size() && (cv::pointPolygonTest(convexHull, index + topLeftPt, false) > 0);
+        return cv::pointPolygonTest(boundingRect, index, false) >= 0;
     }
 
     float FramePlane::normToPoint(const Vec3f & point) const
@@ -49,5 +49,18 @@ namespace ark {
     float FramePlane::distanceToPoint(const Vec3f & point) const
     {
         return util::pointPlaneDistance(point, equation);
+    }
+    const std::vector<Point2f> & FramePlane::getPlaneBoundingRect() const
+    {
+        return boundingRect;
+    }
+
+    void FramePlane::initializePlane()
+    {
+        surfaceArea = util::surfaceArea(fullMapSize, *points, *points_xyz);
+        cv::RotatedRect boundingRect = cv::minAreaRect(*points);
+        Point2f pts[4];
+        boundingRect.points(pts);
+        this->boundingRect = std::vector<Point2f>(pts, pts + 4);
     }
 }

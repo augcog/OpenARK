@@ -30,7 +30,7 @@ extern "C" {
 #ifdef RSSDK_ENABLED
         camera = std::make_shared<ark::SR300Camera>();
 #endif
-        params = ark::DetectionParams::create();
+        params = camera->getDefaultParams();
         pd = std::make_shared<ark::PlaneDetector>(params);
         hd = std::make_shared<ark::HandDetector>(pd, params);
     }

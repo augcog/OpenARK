@@ -19,8 +19,8 @@ namespace {
         * @param defects list of defects
         * @param center center point from which slopes should be computed from
         */
-        DefectComparer(std::vector<ark::Point2i> contour,
-            std::vector<cv::Vec4i> defects, ark::Point2i center) {
+        DefectComparer(const std::vector<ark::Point2i> & contour,
+            const std::vector<cv::Vec4i> & defects, const ark::Point2i & center) {
             angle.resize(contour.size());
 
             for (unsigned i = 0; i < defects.size(); ++i) {
@@ -816,11 +816,6 @@ namespace ark {
         }
 
         return (int)output.size();
-    }
-
-    int Hand::getContourScalingFactor() const
-    {
-        return 2;
     }
 
     const Vec3f & Hand::getPalmCenter() const

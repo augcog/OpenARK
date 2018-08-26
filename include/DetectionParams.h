@@ -105,12 +105,17 @@ namespace ark {
         double handSVMHighConfidenceThresh = 0.56f;
 
         /**
-         * Amount toerodedilate the contour image by to remove small points
+         * maximum distance of hand from the camera.
+         */
+        int handMaxDepth = 1.6;
+
+        /**
+         * Amount to erode the contour image to remove small points
          */
         int contourImageErodeAmount = 1;
 
         /**
-         * Amount to dilate the contour image by to remove small gaps
+         * Amount to dilate the contour image to remove small gaps
          */
         int contourImageDilateAmount = 4;
 

@@ -41,7 +41,7 @@ int main() {
 #endif
 
     // initialize parameters
-    DetectionParams::Ptr params = DetectionParams::create(); // default parameters
+    DetectionParams::Ptr params = camera->getDefaultParams(); // default parameters for camera
 
     // initialize detectors
     PlaneDetector::Ptr planeDetector = std::make_shared<PlaneDetector>();
@@ -118,7 +118,7 @@ int main() {
 
         else if (backgroundStyle == 2) {
             // depth map background
-            Visualizer::visualizeXYZMap(xyzMap, handVisual, 10);
+            Visualizer::visualizeXYZMap(xyzMap, handVisual, 10.0f);
         }
 
         else if (backgroundStyle == 3) {
@@ -144,14 +144,20 @@ int main() {
 
             for (uint i = 0; i < planes.size(); ++i) {
                 color = util::paletteColor(i);
+                const std::vector<Point2f> & boundingRect = planes[i]->getPlaneBoundingRect();
 
                 for (int row = 0; row < xyzMap.rows; ++row) {
                     const Vec3f * ptr = xyzMap.ptr<Vec3f>(row);
                     Vec3b * outPtr = handVisual.ptr<Vec3b>(row);
+                    cv::Point2i index;
+                    index.y = row;
 
                     for (int col = 0; col < xyzMap.cols; ++col) {
                         const Vec3f & xyz = ptr[col];
                         if (xyz[2] == 0) continue;
+
+                        index.x = col;
+                        if (cv::pointPolygonTest(boundingRect, index, false) < 0) continue;
 
                         float norm = util::pointPlaneNorm(xyz, planes[i]->equation);
 
@@ -165,7 +171,7 @@ int main() {
                 // draw normal vector
                 Point2i drawPt = planes[i]->getCenterIJ();
                 cv::Vec3f normal = planes[i]->getNormalVector();
-                Point2i arrowPt(drawPt.x + normal[0] * 100, drawPt.y - normal[1] * 100);
+                Point2i arrowPt(drawPt.x + normal[0] * 100, drawPt.y + normal[1] * 100);
                 cv::arrowedLine(handVisual, drawPt, arrowPt, WHITE, 4, cv::LINE_AA, 0, 0.2);
 
                 if (showArea) {

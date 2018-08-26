@@ -45,6 +45,11 @@ namespace ark {
         int getHeight() const override;
 
         /**
+         * Returns default detection parameters for this depth camera class
+         */
+        const DetectionParams::Ptr & getDefaultParams() const override;
+
+        /**
          * Returns true if an RGB image is available from this camera.
          * @return true if an RGB image is available from this camera.
          */
@@ -55,6 +60,10 @@ namespace ark {
          * @return true if an infrared (IR) image is available from this camera.
          */
         bool hasIRMap() const override;
+
+
+        /** Preferred frame height */
+        const int PREFERRED_FRAME_H = 480;
 
         /** Shared pointer to SR300 camera instance */
         typedef std::shared_ptr<RS2Camera> Ptr;
@@ -73,7 +82,7 @@ namespace ark {
         void initCamera();
 
         /** Converts an RS2 raw depth image to an ordered point cloud based on the current camera's intrinsics */
-        void project(const rs2::frame depth_frame, cv::Mat & xyz_map);
+        void project(const rs2::frame & depth_frame, const rs2::frame & rgb_frame, cv::Mat & xyz_map, cv::Mat & rgb_map);
 
         /** Query RealSense camera intrinsics */
         void query_intrinsics();
@@ -87,11 +96,16 @@ namespace ark {
         void * depthIntrinsics = nullptr;
         // pointer to RGB/IR sensor intrinsics (RealSense C API: rs_intrinsics)
         void * rgbIntrinsics = nullptr;
-        // pointer to depth-to-RGB extrinsics (RealSense C API: rs_intrinsics)
+        // pointer to depth-to-RGB extrinsics (RealSense C API: rs_extrinsics)
         void * d2rExtrinsics = nullptr;
+        // pointer to RGB-to-depth extrinsics (RealSense C API: rs_extrinsics)
+        void * r2dExtrinsics = nullptr;
 
         double scale;
         int width, height;
         bool useRGBStream;
+
+        mutable bool defaultParamsSet = false;
+        mutable DetectionParams::Ptr defaultParams;
     };
 }

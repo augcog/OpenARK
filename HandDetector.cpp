@@ -48,8 +48,9 @@ namespace ark {
             const std::vector<FramePlane::Ptr> & planes = planeDetector->getPlanes();
             if (planes.size()) {
                 for (FramePlane::Ptr plane : planes) {
-                    util::removePlane<uchar>(image, floodFillMap, plane->equation,
-                        params->handPlaneMinNorm);
+                    if (plane->getDepth() < params->handMaxDepth)
+                        util::removePlane<uchar>(image, floodFillMap, plane->equation,
+                            params->handPlaneMinNorm);
                 }
             }
         }
@@ -79,7 +80,7 @@ namespace ark {
 
             for (int c = 0; c < C; c += params->handClusterInterval)
             {
-                if (visPtr[c] > 0 && ptr[c][2] > 0)
+                if (visPtr[c] > 0 && ptr[c][2] > 0 && ptr[c][2] <= params->handMaxDepth)
                 {
                     int points_in_comp = util::floodFill(image, Point2i(c, r),
                         params->handClusterMaxDistance,

@@ -32,7 +32,7 @@ namespace ark {
         * Gets new frame from sensor.
         * Updates xyzMap, ampMap, and flagMap. Resets clusters.
         */
-        void update(cv::Mat & xyz_map, cv::Mat & rgb_map, cv::Mat & ir_map, 
+        void update(cv::Mat & xyz_map, cv::Mat & rgb_map, cv::Mat & ir_map, cv::Mat & fisheye_map,
                              cv::Mat & amp_map, cv::Mat & flag_map) override;
 
         /**

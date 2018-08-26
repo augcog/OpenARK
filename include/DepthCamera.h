@@ -35,6 +35,11 @@ namespace ark {
          * Returns the height of the frame in pixels. 
          */
         virtual int getHeight() const = 0;
+        
+        /**
+         * Returns default detection parameters for this depth camera class
+         */
+        virtual const DetectionParams::Ptr & getDefaultParams() const;
 
         /**
          * Destructor for the DepthCamera class (automatically stops capturing)

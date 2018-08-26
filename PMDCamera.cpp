@@ -108,7 +108,7 @@ namespace ark {
     /***
     Create xyzMap, zMap, ampMap, and flagMap from sensor input
     ***/
-    void PMDCamera::update(cv::Mat & xyz_map, cv::Mat & rgb_map, cv::Mat & ir_map, 
+    void PMDCamera::update(cv::Mat & xyz_map, cv::Mat & rgb_map, cv::Mat & ir_map, cv::Mat & fisheye_map,
                              cv::Mat & amp_map, cv::Mat & flag_map) 
     {
         // fill in amp map

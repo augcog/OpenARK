@@ -152,7 +152,7 @@ namespace ark {
         */
         int touchingPlane(const FramePlane & plane, std::vector<int> & output, 
             double threshold = 0.0002,
-            bool extrapolate = true) const;
+            bool extrapolate = false) const;
 
         /**
         * Retrieve a list of fingers in contact with the planes.
@@ -169,7 +169,7 @@ namespace ark {
         int touchingPlanes(const std::vector<std::shared_ptr<FramePlane> > & planes,
             std::vector<std::pair<int, std::vector<int> > > & output, 
             double threshold = 0.0002,
-            bool extrapolate = true) const;
+            bool extrapolate = false) const;
 
         /**
         * True if this object is a valid hand (queryFrameObjects/queryFrameHands will only return valid hands).
@@ -178,16 +178,6 @@ namespace ark {
 
         /** Shared pointer to a Hand */
         typedef std::shared_ptr<Hand> Ptr;
-
-    protected:
-        /**
-         * Amount the gray map is scaled by for contour finding.
-         * Must be a power of 2, at least 1.
-         * The higher the scale, the more time-consuming the contour detection 
-         * process but the smoother the contour.
-         * Set to 2 for hand (up from 1 in other objects)
-         */
-        int getContourScalingFactor() const override;
 
     private:
         /**

@@ -16,15 +16,6 @@ namespace ark {
     {
     public:
         /**
-        * Visualize a (single channel) depth map
-        * @param depth_map the depth map
-        * @param [out] output output image
-        * @param Max_Depth the max depth
-        * @return visualization
-        */
-        static void visualizeDepthMap_MaxDepth(const cv::Mat & depth_map, cv::Mat & output, float Max_Depth = 10.0);
-
-        /**
         * Visualization for xyz maps (per-pixel point clouds).
         * @param [in] xyz_map input point cloud matrix
         * @param [out] output output image

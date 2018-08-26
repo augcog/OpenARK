@@ -18,18 +18,14 @@ namespace ark {
     /***
     RGB depth map visualization
     ***/
-    void Visualizer::visualizeDepthMap_MaxDepth(const cv::Mat & depth_map, cv::Mat & output, float Max_depth)
-    {
-        output = depth_map * 255 / Max_depth;
-        output.convertTo(output, CV_8UC1);
-        cv::applyColorMap(output, output, cv::COLORMAP_HOT);
-    }
-    
+   
     void Visualizer::visualizeXYZMap(const cv::Mat & xyzMap, cv::Mat & output, float Max_depth)
     {
         cv::Mat depth;
         cv::extractChannel(xyzMap, depth, 2);
-        visualizeDepthMap_MaxDepth(depth,output,Max_depth);
+        output = depth * 255 / Max_depth;
+        output.convertTo(output, CV_8UC1);
+        cv::applyColorMap(output, output, cv::COLORMAP_HOT);
     }
 
     void Visualizer::visualizeNormalMap(const cv::Mat & normal_map, cv::Mat & output, 
@@ -72,7 +68,7 @@ namespace ark {
             output = background.clone();
         }
 
-        float unitWid = (float)background.cols / 640;
+        float unitWid = std::min((float)background.cols / 640, 1.75f);
 
         // draw contour
         if (hand->getContour().size() > 2) {

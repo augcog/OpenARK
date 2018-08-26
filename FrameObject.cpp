@@ -2,7 +2,6 @@
 #include "Version.h"
 
 #include "FrameObject.h"
-#include "Hand.h"
 #include "Visualizer.h"
 #include "Util.h"
 
@@ -37,17 +36,13 @@ namespace ark {
         initializeFrameObject(points_ij, points_xyz, depth_map, params, sorted, points_to_use);
     }
 
-    Point2i FrameObject::findCenter(std::vector<Point2i> contour)
+    Point2i FrameObject::findCenter(const std::vector<Point2i> & contour)
     {
         //using image moments to find center of mass of the object
         //Cx=M10/M00 and Cy=M01/M00
         cv::Moments M = cv::moments(contour, false);
         Point2i center = Point2i(static_cast<int>(M.m10) / M.m00, static_cast<int>(M.m01) / M.m00);
         return center;
-    }
-
-    int FrameObject::getContourScalingFactor() const {
-        return 1;
     }
 
     const Point2i & FrameObject::getCenterIJ()
@@ -121,15 +116,11 @@ namespace ark {
     }
 
     // helper for performing morphological operations on gray map
-    void FrameObject::morph(int erode_sz, int dilate_sz, bool dilate_first) {
+    void FrameObject::morph(int erode_sz, int dilate_sz) {
         if (dilate_sz == -1) dilate_sz = erode_sz;
 
-        cv::Mat eKernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(erode_sz, erode_sz)),
-            dKernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(dilate_sz, dilate_sz));
-
-        if (dilate_first) cv::dilate(grayMap, grayMap, dKernel);
-        cv::erode(grayMap, grayMap, eKernel);
-        if (!dilate_first) cv::dilate(grayMap, grayMap, dKernel);
+        if (erode_sz) cv::erode(grayMap, grayMap, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(erode_sz, erode_sz)));
+        if (dilate_sz) cv::dilate(grayMap, grayMap, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(dilate_sz, dilate_sz)));
     }
     
     void FrameObject::computeContour(const cv::Mat & xyzMap, 
@@ -145,7 +136,7 @@ namespace ark {
         cv::Mat thresh;
         cv::threshold(grayMap, thresh, 25, 255, cv::THRESH_BINARY);
         cv::findContours(thresh, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE,
-            2 * topLeftPt);
+            topLeftPt);
 
         int maxId = -1;
 
@@ -159,11 +150,6 @@ namespace ark {
 
         if (maxId >= 0) cv::approxPolyDP(contours[maxId], contour, 0.002, true);
         else contour.push_back(Point2i(0, 0));
-
-        if (getContourScalingFactor() != 1.0f) {
-            for (int i = 0; i < (int)contour.size(); ++i)
-                contour[i] /= getContourScalingFactor();
-        }
     }
 
     void FrameObject::computeGrayMap(const cv::Mat & xyzMap,
@@ -188,11 +174,7 @@ namespace ark {
             }
         }
 
-        morph(params->contourImageErodeAmount, params->contourImageDilateAmount, false);
-
-        for (int i = 1; i < getContourScalingFactor(); i <<= 1) {
-            cv::pyrUp(grayMap, grayMap);
-        }
+        morph(params->contourImageErodeAmount, params->contourImageDilateAmount);
     }
 
     void FrameObject::initializeFrameObject(VecP2iPtr points_ij, 

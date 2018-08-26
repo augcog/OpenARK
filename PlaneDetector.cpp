@@ -29,6 +29,10 @@ namespace ark {
             }
         }
 
+        std::sort(planes.begin(), planes.end(), [](const FramePlane::Ptr & a, const FramePlane::Ptr & b) {
+            return a->getPoints().size() > b->getPoints().size();
+        });
+
         // done detecting planes, show visualization if debug flag is on
 #ifdef DEBUG
         cv::Mat planeDebugVisual =
@@ -41,11 +45,15 @@ namespace ark {
             for (uint j = 0; j < points.size(); ++j) {
                 planeDebugVisual.at<Vec3b>(points[j] / params->normalResolution) = color;
             }
+            const std::vector<Point2f> & rect = planes[i]->getPlaneBoundingRect();
+            for (int i = 0; i < 4; ++i) {
+                cv::line(planeDebugVisual, rect[i] / params->normalResolution,
+                    rect[(i + 1) & 3] / params->normalResolution, cv::Scalar(255, 0, 0));
+            }
         }
 
         cv::resize(planeDebugVisual, planeDebugVisual, planeDebugVisual.size() * params->normalResolution,
             0, 0, cv::INTER_NEAREST);
-
 
         for (int i = 0; i < planes.size(); ++i) {
             cv::putText(planeDebugVisual, std::to_string(planes[i]->getSurfArea()), planes[i]->getCenterIJ(), 0, 0.5, cv::Scalar(255, 255, 255));

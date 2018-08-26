@@ -189,21 +189,12 @@ namespace ark {
          */
         double avgDepth = -1.0;
 
-        /** 
-         * Amount the gray map is scaled by for contour finding.
-         * Must be a power of 2, at least 1.
-         * May be overridden in derived classes. The higher the scale, the
-         * more time-consuming the contour detection process but the smoother the contour.
-         * Default is 1 (no scaling).
-         */
-        virtual int getContourScalingFactor() const;
-
         /**
         * Find the center of mass of an object
         * @param contour contour of the object
         * @return point representing center of mass
         */
-        static Point2i findCenter(std::vector<Point2i> contour);
+        static Point2i findCenter(const std::vector<Point2i> & contour);
 
         /**
           * Perform erode-dilate morphological operations on the cluster's gray map
@@ -211,7 +202,7 @@ namespace ark {
           * @param dilate_sz size of dilate kernel (by default, takes same value as erodeAmt)
           * @param dilate_first if true, performs dilate before erode
           */
-        void morph(int erode_sz, int dilate_sz = -1, bool dilate_first = false);
+        void morph(int erode_sz, int dilate_sz = -1);
 
         /**
          * Compute the cluster's contour
