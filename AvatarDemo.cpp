@@ -11,10 +11,14 @@
 #ifdef RSSDK2_ENABLED
 #include "RS2Camera.h"
 #endif
+#ifdef MOCKCAMERA_ENABLED
+#include "MockCamera.h"
+#endif
 
 #include "Core.h"
 #include "Visualizer.h"
 #include "StreamingAverager.h"
+
 
 using namespace ark;
 
@@ -38,14 +42,13 @@ int main() {
 	camera = std::make_shared<SR300Camera>();
 #elif defined(PMDSDK_ENABLED)
 	camera = std::make_shared<PMDCamera>();
+#elif defined(MOCKCAMERA_ENABLED)
+	std::string path = "C:\\dev\\OpenARK_Dataset\\";
+	camera = std::make_shared<MockCamera>(path);
 #endif
 
 	// initialize parameters
 	DetectionParams::Ptr params = camera->getDefaultParams(); // default parameters for camera
-
-															  // initialize detectors
-	PlaneDetector::Ptr planeDetector = std::make_shared<PlaneDetector>();
-	HandDetector::Ptr handDetector = std::make_shared<HandDetector>(planeDetector);
 
 	// store frame & FPS information
 	const int FPS_CYCLE_FRAMES = 8; // number of frames to average FPS over (FPS 'cycle' length)
