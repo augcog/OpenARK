@@ -16,15 +16,17 @@ endif()
 
 set( LIB_NAME "OpenARK" )
 set( DEMO_NAME "OpenARK_hand_demo" )
+set( AVATAR_DEMO_NAME "OpenARK_avatar_demo")
 set( TEST_NAME "OpenARK_test" )
 set( UNITY_PLUGIN_NAME "UnityPlugin" )
 
 option( BUILD_DEMO "BUILD_DEMO" ON )
+option( BUILD_AVATAR_DEMO "BUILD_AVATAR_DEMO" ON)
 option( BUILD_TESTS "BUILD_TESTS" OFF )
 option( BUILD_UNITY_PLUGIN "BUILD_UNITY_PLUGIN" ON )
-option( USE_RSSDK2 "USE_RSSDK2" ON ) 
-option( USE_RSSDK "USE_RSSDK" OFF ) 
-option( USE_PMDSDK "USE_PMDSDK" OFF ) 
+option( USE_RSSDK2 "USE_RSSDK2" ON )
+option( USE_RSSDK "USE_RSSDK" OFF )
+option( USE_PMDSDK "USE_PMDSDK" OFF )
 
 include( CheckCXXCompilerFlag )
 CHECK_CXX_COMPILER_FLAG( "-std=c++11" COMPILER_SUPPORTS_CXX11 )
@@ -42,7 +44,7 @@ if ( CMAKE_COMPILER_IS_GNUCXX )
     set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated -Wno-deprecated-declarations -O3 -g" )
 endif ( CMAKE_COMPILER_IS_GNUCXX )
 
-set( Boost_USE_STATIC_LIBS ON ) 
+set( Boost_USE_STATIC_LIBS ON )
 set( Boost_USE_STATIC ON )
 
 find_package( PCL REQUIRED )
@@ -82,7 +84,7 @@ include_directories(
 )
 
 set(
-  DEPENDENCIES  
+  DEPENDENCIES
   ${OpenCV_LIBRARIES}
   ${PCL_LIBRARIES}
 )
@@ -95,20 +97,21 @@ foreach( DEFINITION ${PCL_DEFINITIONS} )
 endforeach()
 
 set(
-  SOURCES 
-  FrameObject.cpp 
-  Hand.cpp FramePlane.cpp 
-  Webcam.cpp 
-  DepthCamera.cpp 
+  SOURCES
+  FrameObject.cpp
+  Hand.cpp FramePlane.cpp
+  Webcam.cpp
+  DepthCamera.cpp
   RGBCamera.cpp
-  StreamingAverager.cpp 
-  Calibration.cpp 
-  Util.cpp	
-  Visualizer.cpp	
+  StreamingAverager.cpp
+  Calibration.cpp
+  Util.cpp
+  Visualizer.cpp
   HandClassifier.cpp
   Detector.cpp
   HandDetector.cpp
   PlaneDetector.cpp
+  MockCamera.cpp
 )
 
 set(
@@ -118,16 +121,17 @@ set(
   ${INCLUDE_DIR}/Hand.h
   ${INCLUDE_DIR}/FramePlane.h
   ${INCLUDE_DIR}/Webcam.h
-  ${INCLUDE_DIR}/DepthCamera.h 
+  ${INCLUDE_DIR}/DepthCamera.h
   ${INCLUDE_DIR}/RGBCamera.h
-  ${INCLUDE_DIR}/StreamingAverager.h 
-  ${INCLUDE_DIR}/Calibration.h 
-  ${INCLUDE_DIR}/Util.h	
-  ${INCLUDE_DIR}/Visualizer.h	
+  ${INCLUDE_DIR}/StreamingAverager.h
+  ${INCLUDE_DIR}/Calibration.h
+  ${INCLUDE_DIR}/Util.h
+  ${INCLUDE_DIR}/Visualizer.h
   ${INCLUDE_DIR}/HandClassifier.h
   ${INCLUDE_DIR}/Detector.h
   ${INCLUDE_DIR}/HandDetector.h
   ${INCLUDE_DIR}/PlaneDetector.h
+  ${INCLUDE_DIR}/MockCamera.h
   stdafx.h
 )
 
@@ -170,13 +174,13 @@ if ( MSVC )
     set( PRECOMPILED_BINARY "$(IntDir)/stdafx.pch" )
     set( PRECOMPILED_HEADER "stdafx.h" )
     set( PRECOMPILED_SOURCE "stdafx.cpp" )
-    
+
     set_source_files_properties( ${PRECOMPILED_SOURCE}
                                 PROPERTIES COMPILE_FLAGS "/Yc\"${PRECOMPILED_HEADER}\" /Fp\"${PRECOMPILED_BINARY}\""
                                            OBJECT_OUTPUTS "${PRECOMPILED_HEADER}" )
     set_source_files_properties( ${SOURCES}
                                 PROPERTIES COMPILE_FLAGS "/Yu\"${PRECOMPILED_HEADER}\" /FI\"${PRECOMPILED_HEADER}\" /Fp\"${PRECOMPILED_BINARY}\""
-                                           OBJECT_DEPENDS "${PRECOMPILED_HEADER}" )  
+                                           OBJECT_DEPENDS "${PRECOMPILED_HEADER}" )
     set( SOURCES ${SOURCES} ${PRECOMPILED_SOURCE} )
     add_definitions( -D_CRT_SECURE_NO_WARNINGS )
     set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /Ot" )
@@ -184,9 +188,9 @@ if ( MSVC )
     set( CMAKE_SHARED_LINKER_FLAGS  "${CMAKE_SHARED_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT" )
     set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD" )
 endif ( MSVC )
-    
+
 add_library( ${LIB_NAME} STATIC "${INCLUDE_DIR}/Core.h" ${SOURCES} ${HEADERS} )
-set_target_properties( ${LIB_NAME} PROPERTIES OUTPUT_NAME 
+set_target_properties( ${LIB_NAME} PROPERTIES OUTPUT_NAME
         "openark_${OpenARK_VERSION_MAJOR}_${OpenARK_VERSION_MINOR}_${OpenARK_VERSION_PATCH}" )
 
 set_property( TARGET ${LIB_NAME} PROPERTY DBG_POSTFIX d )
@@ -204,6 +208,14 @@ if( ${BUILD_DEMO} )
     set_target_properties( ${DEMO_NAME} PROPERTIES OUTPUT_NAME ${LIB_NAME} )
     set_target_properties( ${DEMO_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
 endif( ${BUILD_DEMO} )
+
+if( ${BUILD_AVATAR_DEMO} )
+    add_executable( ${AVATAR_DEMO_NAME} AvatarDemo.cpp )
+    target_include_directories( ${AVATAR_DEMO_NAME} PRIVATE ${INCLUDE_DIR} )
+    target_link_libraries( ${AVATAR_DEMO_NAME} ${DEPENDENCIES} ${LIB_NAME} )
+    set_target_properties( ${AVATAR_DEMO_NAME} PROPERTIES OUTPUT_NAME ${LIB_NAME} )
+    set_target_properties( ${AVATAR_DEMO_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
+endif( ${BUILD_AVATAR_DEMO} )
 
 # Unity plugin currently only supports Windows
 if( ${BUILD_UNITY_PLUGIN} AND MSVC )
@@ -227,11 +239,11 @@ if( ${BUILD_TESTS} )
 
   add_executable( ${TEST_NAME} "OpenARK_test/test.cpp" "OpenARK_test/TestCamera.cpp" "OpenARK_test/TestCamera.h" )
   set( HEADERS ${HEADERS} "OpenARK_test/TestCamera.h" )
-  
+
   target_link_libraries( ${TEST_NAME} ${DEPENDENCIES} ${LIB_NAME} )
   set_target_properties( ${TEST_NAME} PROPERTIES
     COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
-    
+
   target_include_directories( ${TEST_NAME} PRIVATE ${INCLUDE_DIR} )
 endif( ${BUILD_TESTS} )
 
