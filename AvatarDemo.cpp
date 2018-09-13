@@ -10,8 +10,6 @@
 #endif
 #ifdef RSSDK2_ENABLED
 #include "RS2Camera.h"
-#endif
-#ifdef MOCKCAMERA_ENABLED
 #include "MockCamera.h"
 #endif
 
@@ -21,6 +19,24 @@
 
 
 using namespace ark;
+
+void filter_by_depth(cv::Mat& xyz_map, double min_depth, double max_depth) {
+	for (int r = 0; r < xyz_map.rows; ++r)
+	{
+		Vec3f * ptr = xyz_map.ptr<Vec3f>(r);
+
+		for (int c = 0; c < xyz_map.cols; ++c)
+		{	
+			if (ptr[c][2] > max_depth || ptr[c][2] < min_depth) {
+				ptr[c][0] = ptr[c][1] = ptr[c][2] = 0.0f;
+			}
+		}
+	}
+}
+
+void filter_by_plane(cv::Mat& xyz_map) {
+
+}
 
 int main() {
 	printf("Welcome to OpenARK v %s Demo\n\n", VERSION);
@@ -36,19 +52,20 @@ int main() {
 	DepthCamera::Ptr camera;
 
 #if defined(RSSDK2_ENABLED)
-	camera = std::make_shared<RS2Camera>();
+	//camera = std::make_shared<RS2Camera>();
+	std::string path = "C:\\dev\\OpenARK_dataset\\human-basic2-D435\\";
+	camera = std::make_shared<MockCamera>(path);
 #elif defined(RSSDK_ENABLED)
 	ASSERT(strcmp(OPENARK_CAMERA_TYPE, "sr300") == 0, "Unsupported RealSense camera type.");
 	camera = std::make_shared<SR300Camera>();
 #elif defined(PMDSDK_ENABLED)
 	camera = std::make_shared<PMDCamera>();
-#elif defined(MOCKCAMERA_ENABLED)
-	std::string path = "C:\\dev\\OpenARK_Dataset\\";
-	camera = std::make_shared<MockCamera>(path);
 #endif
 
 	// initialize parameters
 	DetectionParams::Ptr params = camera->getDefaultParams(); // default parameters for camera
+
+	PlaneDetector::Ptr planeDetector = std::make_shared<PlaneDetector>();
 
 	// store frame & FPS information
 	const int FPS_CYCLE_FRAMES = 8; // number of frames to average FPS over (FPS 'cycle' length)
@@ -76,14 +93,34 @@ int main() {
 
 		// get latest image from the camera
 		cv::Mat xyzMap = camera->getXYZMap();
-		/*std::stringstream ss;
-		ss << "C:\\dev\\OpenARK_Dataset\\capture_" << currFrame << ".yml";
-		std::string curr_file_name = ss.str();
-		std::cout << curr_file_name << std::endl;
+		if (xyzMap.cols == 0) {
+			continue;
+		}
 
-		cv::FileStorage fs(curr_file_name, cv::FileStorage::WRITE);
-		fs << "xyz_map" << xyzMap;
-		fs.release();*/
+		cv::Mat floodFillMap = xyzMap.clone();
+
+		filter_by_depth(floodFillMap, 1, 3);
+
+		planeDetector->update(xyzMap);
+		const std::vector<FramePlane::Ptr> & planes = planeDetector->getPlanes();
+		if (planes.size()) {
+			for (FramePlane::Ptr plane : planes) {
+				util::removePlane<Vec3f>(floodFillMap, floodFillMap, plane->equation, 0.0015);
+			}
+
+			std::vector<Point2i> allIndices;
+			allIndices.reserve(xyzMap.cols * xyzMap.rows);
+
+			cv::Mat out(xyzMap.rows, xyzMap.cols, CV_32FC3);
+			//cv::Mat out = floodFillMap.clone();
+			int numPts = util::floodFill(floodFillMap, Point2i(410, 200), 2.0f,
+				&allIndices, nullptr, &out,
+				1, 0, 200.0f);
+
+			cv::circle(floodFillMap, Point(410, 200), 2, cv::Scalar(1, 1, 1), 2);
+			cv::imshow("Mid", floodFillMap);
+			cv::imshow("Fill", out);
+		}
 
 		// show visualizations
 		if (!xyzMap.empty()) {

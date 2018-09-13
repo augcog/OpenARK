@@ -276,7 +276,7 @@ namespace ark {
          * resolution of normal map used in plane detection
          * default: 3
          */
-        int normalResolution = 3;
+        int normalResolution = 10;
 
         /**
          * maximum difference between the surface normal vectors of two adjacent points
@@ -284,13 +284,13 @@ namespace ark {
          * (used in flood fill during plane detection)
          * default: 0.06
          */
-        float planeFloodFillThreshold = 0.06f;
+        float planeFloodFillThreshold = 0.60f;
 
         /**
          * fraction of outlier points to remove from the plane before performing regression
          * default: 0.2f
          */
-        float planeOutlierRemovalThreshold = 0.2f;
+        float planeOutlierRemovalThreshold = 0.02f;
 
         /**
          * minimum (# points / # total points on screen / normal resolution^2)

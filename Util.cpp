@@ -290,6 +290,7 @@ namespace ark {
                         continue;
                     }
 
+					//std::cout << (refPtr[col], plane_equation) << endl;
                     if (pointPlaneNorm(refPtr[col], plane_equation) < threshold) {
                         // found nearby plane, remove point (i.e. set to 0)
                         imgPtr[col] = 0;
