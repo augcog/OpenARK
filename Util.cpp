@@ -5,18 +5,57 @@
 namespace ark {
 
     namespace util {
-        std::vector<std::string> split(char* string_in, char const * delimeters) {
-            std::auto_ptr<char> buffer(new char[strlen(string_in) + 1]);
-            strcpy(buffer.get(), string_in);
-            char* token;
-            std::vector<std::string> strings_out;
-            token = strtok(buffer.get(), delimeters);
-            while (token != NULL)
+        std::vector<std::string> split(const std::string & string_in, char const * delimiters,
+            bool ignore_empty, bool trim) {
+            char * buffer = new char[string_in.size() + 1];
+            strcpy(buffer, string_in.c_str());
+            std::vector<std::string> output;
+            for (char * token = strtok(buffer, delimiters);
+                token != NULL; token = strtok(NULL, delimiters))
             {
-                strings_out.push_back(std::string(token));
-                token = strtok(NULL, delimeters);
+                output.emplace_back(token);
+                util::trim(*output.rbegin());
+                if (ignore_empty && output.rbegin()->empty()) output.pop_back();
             }
-            return strings_out;
+            delete[] buffer;
+            return output;
+        }
+
+        std::vector<std::string> split(const char * string_in, char const * delimiters,
+            bool ignore_empty, bool trim) {
+            return split(std::string(string_in), delimiters, ignore_empty, trim);
+        }
+
+        // trim from start (in place)
+        void ltrim(std::string & s) {
+            s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](int ch) {
+                return !std::isspace(ch);
+            }));
+        }
+
+        // trim from end (in place)
+        void rtrim(std::string & s) {
+            s.erase(std::find_if(s.rbegin(), s.rend(), [](int ch) {
+                return !std::isspace(ch);
+            }).base(), s.end());
+        }
+
+        // trim from both ends (in place)
+        void trim(std::string & s) {
+            ltrim(s);
+            rtrim(s);
+        }
+
+        void upper(std::string & s)
+        {
+            for (size_t i = 0; i < s.size(); ++i)
+                s[i] = std::toupper(s[i]);
+        }
+
+        void lower(std::string & s)
+        {
+            for (size_t i = 0; i < s.size(); ++i)
+                s[i] = std::tolower(s[i]);
         }
 
         Vec3b randomColor()
@@ -24,18 +63,19 @@ namespace ark {
             return Vec3b(rand() % 256, rand() % 256, rand() % 256);
         }
 
-        Vec3b paletteColor(uchar color_index)
+        Vec3b paletteColor(int color_index, bool bgr)
         {
             static const Vec3b palette[] = {
                 Vec3b(0, 220, 255), Vec3b(177, 13, 201), Vec3b(94, 255, 34),
                 Vec3b(54, 65, 255), Vec3b(64, 255, 255), Vec3b(217, 116, 0),
-                Vec3b(27, 133, 255), Vec3b(190, 18, 240), Vec3b(63, 31, 0),
+                Vec3b(27, 133, 255), Vec3b(190, 18, 240), Vec3b(20, 31, 210),
                 Vec3b(75, 20, 133), Vec3b(255, 219, 127), Vec3b(204, 204, 57),
                 Vec3b(112, 153, 61), Vec3b(64, 204, 46), Vec3b(112, 255, 1),
-                Vec3b(170, 170, 170),
+                Vec3b(170, 170, 170), Vec3b(225, 30, 42)
             };
 
-            return palette[color_index % (sizeof palette / sizeof palette[0])];
+            Vec3b color = palette[color_index % (int)(sizeof palette / sizeof palette[0])];
+            return bgr ? color : Vec3b(color[2], color[1], color[0]);
         }
 
         template<class T>
@@ -89,6 +129,54 @@ namespace ark {
         template int euclideanDistance<int>(const cv::Vec<int, 3> & pt1, const cv::Vec<int, 3> & pt2);
         template float euclideanDistance<float>(const cv::Vec<float, 3> & pt1, const cv::Vec<float, 3> & pt2);
         template double euclideanDistance<double>(const cv::Vec<double, 3> & pt1, const cv::Vec<double, 3> & pt2);
+
+        template<class Param_T>
+        float pointLineNorm(const cv::Point_<Param_T> & p, const cv::Point_<Param_T> & a, const cv::Point_<Param_T> & b, int cv_norm_type)
+        {
+            cv::Point_<Param_T> ap = a - p, ab = b - a;
+            return util::norm(ap - (ap.dot(ab) / ab.dot(ab)) * ab, cv_norm_type);
+        }
+        template float pointLineNorm<int>(const cv::Point_<int> & p, const cv::Point_<int> & a, const cv::Point_<int> & b, int cv_norm_type);
+        template float pointLineNorm<float>(const cv::Point_<float> & p, const cv::Point_<float> & a, const cv::Point_<float> & b, int cv_norm_type);
+        template float pointLineNorm<double>(const cv::Point_<double> & p, const cv::Point_<double> & a, const cv::Point_<double> & b, int cv_norm_type);
+
+        template<class Param_T>
+        Param_T pointLineNorm(const cv::Vec<Param_T, 3> & p, const cv::Vec<Param_T, 3> & a, const cv::Vec<Param_T, 3> & b, int cv_norm_type)
+        {
+            cv::Vec<Param_T, 3> ap = p - a, ab = b - a;
+            return cv::norm(ap - (ap.dot(ab) / ab.dot(ab)) * ab, cv_norm_type);
+        }
+        template uchar pointLineNorm<uchar>(const cv::Vec<uchar, 3> & p, const cv::Vec<uchar, 3> & a, const cv::Vec<uchar, 3> & b, int cv_norm_type);
+        template int pointLineNorm<int>(const cv::Vec<int, 3> & p, const cv::Vec<int, 3> & a, const cv::Vec<int, 3> & b, int cv_norm_type);
+        template float pointLineNorm<float>(const cv::Vec<float, 3> & p, const cv::Vec<float, 3> & a, const cv::Vec<float, 3> & b, int cv_norm_type);
+        template double pointLineNorm<double>(const cv::Vec<double, 3> & p, const cv::Vec<double, 3> & a, const cv::Vec<double, 3> & b, int cv_norm_type);
+
+        template<class Param_T>
+        float pointLineSegmentNorm(const cv::Point_<Param_T>& p, const cv::Point_<Param_T>& a, const cv::Point_<Param_T>& b, int cv_norm_type)
+        {
+            const cv::Point_<Param_T> ab = b - a, ap = p - a;
+            const Param_T l2 = util::norm(ab, cv_norm_type);
+            if (l2 == (Param_T)0) return util::norm(ap, cv_norm_type);
+            float t = std::max<Param_T>(0, std::min<Param_T>(1, ap.dot(ab) / l2));
+            return util::norm(ap - t * ab, cv_norm_type);
+        }
+        template float pointLineSegmentNorm<int>(const cv::Point_<int> & p, const cv::Point_<int> & a, const cv::Point_<int> & b, int cv_norm_type);
+        template float pointLineSegmentNorm<float>(const cv::Point_<float> & p, const cv::Point_<float> & a, const cv::Point_<float> & b, int cv_norm_type);
+        template float pointLineSegmentNorm<double>(const cv::Point_<double> & p, const cv::Point_<double> & a, const cv::Point_<double> & b, int cv_norm_type);
+
+        template<class Param_T>
+        Param_T pointLineSegmentNorm(const cv::Vec<Param_T, 3>& p, const cv::Vec<Param_T, 3>& a, const cv::Vec<Param_T, 3> & b, int cv_norm_type)
+        {
+            const cv::Vec<Param_T, 3> ab = b - a, ap = p - a;
+            const Param_T l2 = cv::norm(ab, cv_norm_type);
+            if (l2 == (Param_T)0) return cv::norm(ap, cv_norm_type);
+            Param_T t = std::max<Param_T>(0, std::min<Param_T>(1, ap.dot(ab) / l2));
+            return cv::norm(ap - t * ab, cv_norm_type);
+        }
+        template uchar pointLineSegmentNorm<uchar>(const cv::Vec<uchar, 3> & p, const cv::Vec<uchar, 3> & a, const cv::Vec<uchar, 3> & b, int cv_norm_type);
+        template int pointLineSegmentNorm<int>(const cv::Vec<int, 3> & p, const cv::Vec<int, 3> & a, const cv::Vec<int, 3> & b, int cv_norm_type);
+        template float pointLineSegmentNorm<float>(const cv::Vec<float, 3> & p, const cv::Vec<float, 3> & a, const cv::Vec<float, 3> & b, int cv_norm_type);
+        template double pointLineSegmentNorm<double>(const cv::Vec<double, 3> & p, const cv::Vec<double, 3> & a, const cv::Vec<double, 3> & b, int cv_norm_type);
 
         template<class T>
         T pointPlaneDistance(const cv::Vec<T, 3> & pt, T a, T b, T c)
@@ -290,7 +378,7 @@ namespace ark {
                         continue;
                     }
 
-					//std::cout << (refPtr[col], plane_equation) << endl;
+                    //std::cout << (refPtr[col], plane_equation) << endl;
                     if (pointPlaneNorm(refPtr[col], plane_equation) < threshold) {
                         // found nearby plane, remove point (i.e. set to 0)
                         imgPtr[col] = 0;
@@ -928,34 +1016,47 @@ namespace ark {
         template double magnitude<float, 3>(cv::Vec<float, 3> pt);
         template double magnitude<double, 3>(cv::Vec<double, 3> pt);
 
-        template <class T>
-        double norm(cv::Point_<T> pt) {
-            return pt.x * pt.x + pt.y * pt.y;
+        // now basically just a wrapper around cv norm, probably will remove eventually
+        template <class Param_T>
+        double norm(const cv::Point_<Param_T> & pt, int cv_norm_type) {
+            if (cv_norm_type == cv::NORM_L2SQR) {
+                return pt.x * pt.x + pt.y * pt.y;
+            }
+            else if (cv_norm_type == cv::NORM_L2) {
+                return magnitude(pt);
+            }
+            // warning: inefficient
+            return cv::norm(cv::Mat(pt), cv_norm_type);
         }
 
-        template <class T>
-        double norm(cv::Point3_<T> pt) {
-            return pt.x * pt.x + pt.y * pt.y + pt.z * pt.z;
+        template <class Param_T>
+        double norm(const cv::Point3_<Param_T> & pt, int cv_norm_type) {
+            if (cv_norm_type == cv::NORM_L2SQR) {
+                return pt.x * pt.x + pt.y * pt.y + pt.z * pt.z;
+            }
+            else if (cv_norm_type == cv::NORM_L2) {
+                return magnitude(pt);
+            }
+            // warning: inefficient
+            return cv::norm(cv::Mat(pt), cv_norm_type);
         }
 
-        template <class T, int n>
-        double norm(cv::Vec<T, n> pt) {
-            double sm = 0;
-            for (int i = 0; i < n; ++i) sm += pt[i] * pt[i];
-            return sm;
+        template <class Param_T, int n>
+        double norm(const cv::Vec<Param_T, n> & pt, int cv_norm_type) {
+            return cv::norm(pt, cv_norm_type);
         }
 
         // instantialize
-        template double norm<int>(cv::Point_<int> pt);
-        template double norm<float>(cv::Point_<float> pt);
-        template double norm<double>(cv::Point_<double> pt);
-        template double norm<int>(cv::Point3_<int> pt);
-        template double norm<float>(cv::Point3_<float> pt);
-        template double norm<double>(cv::Point3_<double> pt);
-        template double norm<ushort, 3>(cv::Vec<ushort, 3> pt);
-        template double norm<int, 3>(cv::Vec<int, 3> pt);
-        template double norm<float, 3>(cv::Vec<float, 3> pt);
-        template double norm<double, 3>(cv::Vec<double, 3> pt);
+        template double norm<int>(const cv::Point_<int> & pt, int cv_norm_type);
+        template double norm<float>(const cv::Point_<float> & pt, int cv_norm_type);
+        template double norm<double>(const cv::Point_<double> & pt, int cv_norm_type);
+        template double norm<int>(const cv::Point3_<int> & pt, int cv_norm_type);
+        template double norm<float>(const cv::Point3_<float> & pt, int cv_norm_type);
+        template double norm<double>(const cv::Point3_<double> & pt, int cv_norm_type);
+        template double norm<ushort, 3>(const cv::Vec<ushort, 3> & pt, int cv_norm_type);
+        template double norm<int, 3>(const cv::Vec<int, 3> & pt, int cv_norm_type);
+        template double norm<float, 3>(const cv::Vec<float, 3> & pt, int cv_norm_type);
+        template double norm<double, 3>(const cv::Vec<double, 3> & pt, int cv_norm_type);
 
         // get angle between two 3D vectors through a central point
         double angleBetween3DVec(Vec3f a, Vec3f b, Vec3f center) {
@@ -1255,6 +1356,44 @@ namespace ark {
             }
 
             return 0;
+        }
+
+        pcl::PointXYZRGBA toPCLPoint(const Eigen::Vector3d & v, int r, int g, int b, int a) {
+            pcl::PointXYZRGBA pt;
+            pt.x = v.x(); pt.y = v.y(); pt.z = v.z();
+            pt.r = r; pt.g = g; pt.b = b; pt.a = a;
+            return pt;
+        }
+
+        pcl::PointXYZRGBA toPCLPoint(const Vec3f & v, int r, int g, int b, int a) {
+            pcl::PointXYZRGBA pt;
+            pt.x = v[0];
+            pt.y = v[1];
+            pt.z = v[2];
+            pt.r = r;
+            pt.b = b;
+            pt.g = g;
+            pt.a = a;
+            return pt;
+        }
+
+        /** Converts an xyz_map into a PCL point cloud of PointXYZRGBA
+         * @param flip_z if true, inverts the z coordinate of each point to convert to RH coordinates system
+         */
+        void toPointCloud(const cv::Mat & xyz_map, pcl::PointCloud<pcl::PointXYZRGBA>::Ptr & out_pc, bool flip_z) {
+
+            out_pc = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGBA> >();
+            const Vec3f * ptr;
+            for (int i = 0; i < xyz_map.rows; ++i) {
+                ptr = xyz_map.ptr<Vec3f>(i);
+                for (int j = 0; j < xyz_map.cols; ++j) {
+                    if (ptr[j][2] > 0.001) {
+                        pcl::PointXYZRGBA pt = toPCLPoint(ptr[j]);
+                        if (flip_z) pt.z = -pt.z;
+                        out_pc->points.push_back(pt);
+                    }
+                }
+            }
         }
 
         template<> bool PointComparer<Point2i>::operator()(Point2i a, Point2i b) {

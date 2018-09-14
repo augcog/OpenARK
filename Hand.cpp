@@ -483,7 +483,7 @@ namespace ark {
                 float curve_far = util::contourCurvature(contour, fingerTipCands[i], finger_length_ij * 0.45f);
 #ifdef DEBUG
                 cv::Scalar txtColorNear, txtColorFar;
-                txtColorFar = txtColorNear = cv::Scalar::all(255);
+                txtColorFar = txtColorNear = cv::Scalar(150, 150, 150);
                 if (curve_near < params->fingerCurveNearMin) {
                     txtColorNear = cv::Scalar(0, 0, 255);
                 }
@@ -493,10 +493,10 @@ namespace ark {
 
                 cv::putText(visual,
                     std::to_string(curve_near), finger_ij + topLeftPt + Point2i(0, 10),
-                    0, 0.5, txtColorNear, 1);
+                    0, 0.3, txtColorNear, 1);
                 cv::putText(visual,
                     std::to_string(curve_far) + "F", finger_ij + topLeftPt + Point2i(0, -10),
-                    0, 0.5, txtColorFar, 1);
+                    0, 0.3, txtColorFar, 1);
 #endif
 
                 if (finger_length < params->fingerLenMax && finger_length > params->fingerLenMin &&
