@@ -73,12 +73,20 @@ namespace ark {
         static void visualizePlaneRegression(const cv::Mat & input_mat, cv::Mat & output, 
                     std::vector<double> &equation, const double threshold, bool clicked = false);
 
+        /** Create a viewport within the given bounds (each coordinate should be within the range [0,1]).
+         * @return the ID of the viewport created
+         */
+        static int createPCLViewport(double xmin, double ymin, double xmax, double ymax);
+
         /**
         * Visualize points that lie on the plane.
         * @param input_mat the input point cloud
         * @param indicies (i,j) coordinates of the points belonging to the plane
         */
         static void visualizePlanePoints(cv::Mat &input_mat, std::vector<Point2i> indicies);
+
+        /** Get the internal PCL visualizer */
+        static pcl::visualization::PCLVisualizer::Ptr getPCLVisualizer();
 
     private:
         /**
@@ -95,17 +103,10 @@ namespace ark {
         */
         static void visualizeMatrix(const cv::Mat & input, cv::Mat & output);
 
-        /**
-        * Visualization for a depth map matrix (i,j,z).
-        * @param [in] depthMap matrix to be visualized
-        * @return a CV_8UC3 representation of the input matrix
-        */
-
 
         /**
         * PCL point cloud viewer
         */
-        static pcl::visualization::PCLVisualizer * viewer;
-
+        static pcl::visualization::PCLVisualizer::Ptr viewer;
     };
 }

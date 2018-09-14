@@ -56,6 +56,13 @@ if( OpenCV_FOUND )
    message( STATUS "Found OpenCV: ${OpenCV_INCLUDE_DIRS}" )
 endif( OpenCV_FOUND )
 
+# require Ceres
+find_package( Ceres REQUIRED )
+IF(Ceres_FOUND)
+   MESSAGE(STATUS "Found Ceres: ${CERES_INCLUDE_DIRS}")
+ENDIF(Ceres_FOUND)
+include_directories(${CERES_INCLUDE_DIRS})
+
 set( RSSDK2_FOUND OFF )
 if( USE_RSSDK2 )
   find_package( RSSDK2 )
@@ -114,6 +121,7 @@ set(
   HandDetector.cpp
   PlaneDetector.cpp
   MockCamera.cpp
+  Avatar.cpp
 )
 
 set(
@@ -134,6 +142,8 @@ set(
   ${INCLUDE_DIR}/HandDetector.h
   ${INCLUDE_DIR}/PlaneDetector.h
   ${INCLUDE_DIR}/MockCamera.h
+  ${INCLUDE_DIR}/Avatar.h
+  ${INCLUDE_DIR}/nanoflann.hpp
   stdafx.h
 )
 

@@ -70,6 +70,13 @@
 
 // Eigen
 #include <Eigen/SVD>
+#include <Eigen/Dense>
 
 // Flann
 #include <flann/util/serialization.h>
+
+// ceres
+#include <ceres/ceres.h>
+
+// nanoflann
+#include <nanoflann.hpp>

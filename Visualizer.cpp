@@ -4,7 +4,7 @@
 #include "Util.h"
 
 namespace ark {
-    pcl::visualization::PCLVisualizer * Visualizer::viewer = nullptr;
+    pcl::visualization::PCLVisualizer::Ptr Visualizer::viewer = nullptr;
 
     /***
     Maps matrix values to [0, 255] for viewing
@@ -19,11 +19,11 @@ namespace ark {
     RGB depth map visualization
     ***/
    
-    void Visualizer::visualizeXYZMap(const cv::Mat & xyzMap, cv::Mat & output, float Max_depth)
+    void Visualizer::visualizeXYZMap(const cv::Mat & xyzMap, cv::Mat & output, float max_depth)
     {
         cv::Mat depth;
         cv::extractChannel(xyzMap, depth, 2);
-        output = depth * 255 / Max_depth;
+        output = depth * 255 / max_depth;
         output.convertTo(output, CV_8UC1);
         cv::applyColorMap(output, output, cv::COLORMAP_HOT);
     }
@@ -218,6 +218,20 @@ namespace ark {
         }
     }
 
+    int Visualizer::createPCLViewport(double xmin, double ymin, double xmax, double ymax)
+    {
+        initPCLViewer();
+        int id;
+        viewer->createViewPort(xmin, ymin, xmax, ymax, id);
+        return id;
+    }
+
+    pcl::visualization::PCLVisualizer::Ptr Visualizer::getPCLVisualizer()
+    {
+        initPCLViewer();
+        return viewer;
+    }
+
     void Visualizer::visulizePolygonMesh(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)
     {
         if (cloud.get()->width == 0)
@@ -276,7 +290,7 @@ namespace ark {
 
     bool Visualizer::initPCLViewer() {
         if (viewer != nullptr) return false;
-        viewer = new pcl::visualization::PCLVisualizer("Point Cloud");
+        viewer = boost::make_shared<pcl::visualization::PCLVisualizer>("3D Viewport");
         return viewer != nullptr;
     }
 }
