@@ -10,9 +10,10 @@ namespace ark {
 		if (is_directory(image_dir)) {
 			boost::filesystem::directory_iterator end_iter;
 			for (boost::filesystem::directory_iterator dir_itr(image_dir); dir_itr != end_iter; ++dir_itr) {
-				const auto next_path = dir_itr->path().generic_string();
-				file_names.push_back(next_path);
+				const auto& next_path = dir_itr->path().generic_string();
+				file_names.emplace_back(next_path);
 			}
+			std::sort(file_names.begin(), file_names.end());
 		}
 	}
 

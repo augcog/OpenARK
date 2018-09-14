@@ -11,6 +11,7 @@ namespace ark {
 
     void PlaneDetector::detect(cv::Mat & image)
     {
+		//std:cout << image.cols << " " << image.rows << std::endl;
         planes.clear();
 
         std::vector<Vec3f> equations;
@@ -119,8 +120,9 @@ namespace ark {
                 int numPts = util::floodFill(normal_map, pt, params->planeFloodFillThreshold,
                                              &allIndices, nullptr, nullptr,
                                              params->normalResolution, 0, 0.0f, &floodFillMap);
-
+				//std::cout << numPts << endl;
                 if (numPts >= SUBPLANE_MIN_POINTS) {
+					//std::cout << numPts << endl;
                     std::vector<Vec3f> allXyzPoints(numPts);
 
                     for (int k = 0; k < numPts; ++k) {
