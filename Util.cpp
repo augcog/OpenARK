@@ -1380,7 +1380,8 @@ namespace ark {
         /** Converts an xyz_map into a PCL point cloud of PointXYZRGBA
          * @param flip_z if true, inverts the z coordinate of each point to convert to RH coordinates system
          */
-        void toPointCloud(const cv::Mat & xyz_map, pcl::PointCloud<pcl::PointXYZRGBA>::Ptr & out_pc, bool flip_z) {
+        void toPointCloud(const cv::Mat & xyz_map, pcl::PointCloud<pcl::PointXYZRGBA>::Ptr & out_pc,
+            bool flip_z, bool flip_y) {
 
             out_pc = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGBA> >();
             const Vec3f * ptr;
@@ -1390,6 +1391,7 @@ namespace ark {
                     if (ptr[j][2] > 0.001) {
                         pcl::PointXYZRGBA pt = toPCLPoint(ptr[j]);
                         if (flip_z) pt.z = -pt.z;
+                        if (flip_y) pt.y = -pt.y;
                         out_pc->points.push_back(pt);
                     }
                 }

@@ -15,157 +15,104 @@
 
 #include "Core.h"
 #include "Visualizer.h"
-#include "StreamingAverager.h"
-
+#include "Avatar.h"
 
 using namespace ark;
 
 void filter_by_depth(cv::Mat& xyz_map, double min_depth, double max_depth) {
-	for (int r = 0; r < xyz_map.rows; ++r)
-	{
-		Vec3f * ptr = xyz_map.ptr<Vec3f>(r);
+    for (int r = 0; r < xyz_map.rows; ++r)
+    {
+        Vec3f * ptr = xyz_map.ptr<Vec3f>(r);
 
-		for (int c = 0; c < xyz_map.cols; ++c)
-		{	
-			if (ptr[c][2] > max_depth || ptr[c][2] < min_depth) {
-				ptr[c][0] = ptr[c][1] = ptr[c][2] = 0.0f;
-			}
-		}
-	}
+        for (int c = 0; c < xyz_map.cols; ++c)
+        {
+            if (ptr[c][2] > max_depth || ptr[c][2] < min_depth) {
+                ptr[c][0] = ptr[c][1] = ptr[c][2] = 0.0f;
+            }
+        }
+    }
 }
 
 void filter_by_plane(cv::Mat& xyz_map) {
 
 }
 
-int main() {
-	printf("Welcome to OpenARK v %s Demo\n\n", VERSION);
-	printf("CONTROLS:\nQ or ESC to quit, P to show/hide planes, H to show/hide hands, SPACE to play/pause\n\n");
-	printf("VIEWER BACKGROUNDS:\n1 = RGB/IR Image, 2 = Depth Image, 3 = Normal Map, 0 = None\n\n");
-	printf("HAND DETECTION OPTIONS:\nS = Enable/Disable SVM, C = Enforce/Unenforce Edge Connected Criterion\n\n");
-	printf("MISCELLANEOUS:\nA = Measure Surface Area (Of Hands and Planes)\n");
+int main(int argc, char ** argv) {
+    google::InitGoogleLogging(argv[0]);
 
-	// seed the rng
-	srand(time(NULL));
+    printf("Welcome to OpenARK v %s Demo\n\n", VERSION);
+    // seed the rng
+    srand(time(NULL));
 
-	// initialize the camera
-	DepthCamera::Ptr camera;
+    const std::string IMG_PATH = "D:\\Programming\\3VR\\OpenARK_dataset\\human-basic2-D435\\capture_06.yml";
+    // gender-neutral model
+    const std::string HUMAN_MODEL_PATH = "D:/DataSets/human/SMPL/models/basicModel_neutral_lbs_10_207_0_v1.0.0/";
+    // male model
+    //const std::string HUMAN_MODEL_PATH = "D:/DataSets/human/SMPL/models/basicModel_m_lbs_10_207_0_v1.0.0/";
+    // female model
+    //const std::string HUMAN_MODEL_PATH = "D:/DataSets/human/SMPL/models/basicModel_f_lbs_10_207_0_v1.0.0/";
 
-#if defined(RSSDK2_ENABLED)
-	//camera = std::make_shared<RS2Camera>();
-	std::string path = "C:\\dev\\OpenARK_dataset\\human-basic2-D435\\";
-	camera = std::make_shared<MockCamera>(path);
-#elif defined(RSSDK_ENABLED)
-	ASSERT(strcmp(OPENARK_CAMERA_TYPE, "sr300") == 0, "Unsupported RealSense camera type.");
-	camera = std::make_shared<SR300Camera>();
-#elif defined(PMDSDK_ENABLED)
-	camera = std::make_shared<PMDCamera>();
-#endif
+    const std::vector<std::string> SHAPE_KEYS = { "shape000.pcd", "shape001.pcd",
+                                           "shape002.pcd", "shape003.pcd", "shape004.pcd",
+                                           "shape005.pcd", "shape006.pcd", "shape007.pcd",
+                                           "shape008.pcd", "shape009.pcd"
+    };
 
-	// initialize parameters
-	DetectionParams::Ptr params = camera->getDefaultParams(); // default parameters for camera
+    // initialize parameters
+    DetectionParams::Ptr params = DetectionParams::create();
 
-	PlaneDetector::Ptr planeDetector = std::make_shared<PlaneDetector>();
+    PlaneDetector::Ptr planeDetector = std::make_shared<PlaneDetector>();
+    cv::Mat xyzMap;
+    cv::FileStorage fs2(IMG_PATH, cv::FileStorage::READ);
+    fs2["xyz_map"] >> xyzMap;
+    fs2.release();
+    cv::Mat floodFillMap = xyzMap.clone();
 
-	// store frame & FPS information
-	const int FPS_CYCLE_FRAMES = 8; // number of frames to average FPS over (FPS 'cycle' length)
-	using ms = std::chrono::duration<float, std::milli>;
-	using time_point = std::chrono::high_resolution_clock::time_point;
+    filter_by_depth(floodFillMap, 1, 3);
 
-	std::chrono::high_resolution_clock timer = std::chrono::high_resolution_clock();
-	time_point currCycleStartTime = timer.now(); // start time of current cycle
+    planeDetector->update(xyzMap);
+    const std::vector<FramePlane::Ptr> & planes = planeDetector->getPlanes();
+    if (planes.size()) {
+        for (FramePlane::Ptr plane : planes) {
+            util::removePlane<Vec3f>(floodFillMap, floodFillMap, plane->equation, 0.0015);
+        }
 
-	float currFPS; // current FPS
+        std::vector<Point2i> allIndices;
+        allIndices.reserve(xyzMap.cols * xyzMap.rows);
 
-	int currFrame = 0; // current frame number (since launch/last pause)
-	int backgroundStyle = 1; // background style: 0=none, 1=ir, 2=depth, 3=normal
+        cv::Mat out(xyzMap.rows, xyzMap.cols, CV_32FC3);
+        //cv::Mat out = floodFillMap.clone();
+        int numPts = util::floodFill(floodFillMap, Point2i(410, 200), 2.0f,
+            &allIndices, nullptr, &out,
+            1, 0, 200.0f);
 
-							 // option flags
-	bool showHands = true, showPlanes = false, useSVM = true, useEdgeConn = false, showArea = false, playing = true;
+        cv::circle(floodFillMap, Point(410, 200), 2, cv::Scalar(1, 1, 1), 2);
+        //cv::imshow("Mid", floodFillMap);
+        cv::imshow("Fill", out);
+        cv::imshow("Depth Map", xyzMap);
 
-	// turn on the camera
-	camera->beginCapture();
+        auto humanCloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGBA>>();
+        util::toPointCloud(out, humanCloud, true, true);
+        auto viewer = Visualizer::getPCLVisualizer();
 
-	// main demo loop
-	while (true)
-	{
-		++currFrame;
+        HumanAvatar ava(HUMAN_MODEL_PATH, SHAPE_KEYS);
+        //ava.setCenterPosition(util::cloudCenter(humanCloud));
+        ava.update();
 
-		// get latest image from the camera
-		cv::Mat xyzMap = camera->getXYZMap();
-		if (xyzMap.cols == 0) {
-			continue;
-		}
+        const std::string MODEL_CLOUD_NAME = "model_cloud";
+        const std::string DATA_CLOUD_NAME = "human_cloud";
+        viewer->addPointCloud<HumanAvatar::Point_T>(ava.getCloud(), MODEL_CLOUD_NAME, 0);
+        viewer->addPointCloud(humanCloud, DATA_CLOUD_NAME, 0);
+        ava.fit(humanCloud);
+        ava.visualize(viewer, "ava_");
+        viewer->removePointCloud(MODEL_CLOUD_NAME);
+        viewer->addPointCloud<HumanAvatar::Point_T>(ava.getCloud(), MODEL_CLOUD_NAME, 0);
 
-		cv::Mat floodFillMap = xyzMap.clone();
+        viewer->spinOnce();
+    }
 
-		filter_by_depth(floodFillMap, 1, 3);
+    cv::waitKey(0);
 
-		planeDetector->update(xyzMap);
-		const std::vector<FramePlane::Ptr> & planes = planeDetector->getPlanes();
-		if (planes.size()) {
-			for (FramePlane::Ptr plane : planes) {
-				util::removePlane<Vec3f>(floodFillMap, floodFillMap, plane->equation, 0.0015);
-			}
-
-			std::vector<Point2i> allIndices;
-			allIndices.reserve(xyzMap.cols * xyzMap.rows);
-
-			cv::Mat out(xyzMap.rows, xyzMap.cols, CV_32FC3);
-			//cv::Mat out = floodFillMap.clone();
-			int numPts = util::floodFill(floodFillMap, Point2i(410, 200), 2.0f,
-				&allIndices, nullptr, &out,
-				1, 0, 200.0f);
-
-			cv::circle(floodFillMap, Point(410, 200), 2, cv::Scalar(1, 1, 1), 2);
-			cv::imshow("Mid", floodFillMap);
-			cv::imshow("Fill", out);
-		}
-
-		// show visualizations
-		if (!xyzMap.empty()) {
-			cv::imshow(camera->getModelName() + " Depth Map", xyzMap);
-		}
-		/**** End: Visualization ****/
-
-		/**** Start: Controls ****/
-		int c = cv::waitKey(1);
-
-		// make case insensitive
-		if (c >= 'a' && c <= 'z') c &= 0xdf;
-
-		// 27 is ESC
-		if (c == 'Q' || c == 27) {
-			/*** Loop Break Condition ***/
-			break;
-		}
-		else if (c >= '0' && c <= '3') {
-			backgroundStyle = c - '0';
-		}
-
-		switch (c) {
-		case 'P':
-			showPlanes ^= 1; break;
-		case 'H':
-			showHands ^= 1; break;
-		case 'S':
-			useSVM ^= 1; break;
-		case 'C':
-			useEdgeConn ^= 1; break;
-		case 'A':
-			showArea ^= 1; break;
-		case ' ':
-			playing ^= 1;
-			// reset frame number
-			if (playing) currFrame = -1;
-			break;
-		}
-
-		/**** End: Controls ****/
-	}
-
-	camera->endCapture();
-
-	cv::destroyAllWindows();
-	return 0;
+    cv::destroyAllWindows();
+    return 0;
 }

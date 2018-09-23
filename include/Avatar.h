@@ -208,17 +208,23 @@ namespace ark {
          */
         void update(bool propagate = true);
 
+        /** Color the point cloud by bone weights (this is the default initial coloring when model is loaded) */
+        void colorByWeights();
+
+        /** Color the point cloud by groups */
+        void color(std::vector<std::vector<int>> & groups);
+
     private:
         // helper functions, etc. for ceres solver
         /** Update the specified eigen point cloud to reflect changes to the joints
          * @param propagate if true, automatically propagates changes throughout the skeleton.
          *       (default is true)
          */
-        template<class T, int EigenOpt>
+        template<class T, int opt>
         void _updateCloud(const T * const _w, T * _pt, T * _rt, const T * const _s,
-            Eigen::Matrix<T, Eigen::Dynamic, 3, EigenOpt> & out) {
-            for (size_t i = 0; i < out.size(); ++i) {
-                out.row(i) = _computePointPosition(static_cast<JointType>(i), _w, _pt, _rt, _s).cast<T>();
+            Eigen::Matrix<T, -1, 3, opt> & out) {
+            for (size_t i = 0; i < out.rows(); ++i) {
+                out.row(i) = _computePointPosition(i, _w, _pt, _rt, _s).cast<T>();
             }
         }
 
@@ -227,17 +233,62 @@ namespace ark {
         void _findNN(const EigenCloud_T & dataCloud, const EigenCloud_T & modelCloud,
             std::vector<std::vector<int>> & closest);
 
-        class HumanAvatarCostFunctor {
+        /* Ceres-solver cost functor for alignment ICP */
+        class AlignICPCostFunctor {
         public:
-            HumanAvatarCostFunctor(HumanAvatar & ava, EigenCloud_T & dataCloud,
+            AlignICPCostFunctor(HumanAvatar & ava, EigenCloud_T & dataCloud,
+                std::vector<std::vector<int>> & closest)
+                : ava(ava), dataCloud(dataCloud), closest(closest) { }
+
+            template <typename T>
+            bool operator()(const T* const _r, const T* const _p, T* residual) const {
+                const int NUM_JOINTS = HumanAvatar::JointType::_COUNT;
+                T w[NUM_SHAPEKEYS], r[NUM_JOINTS * NUM_ROT_PARAMS], s[NUM_JOINTS * NUM_SCALE_PARAMS];
+                for (int i = 0; i < NUM_SHAPEKEYS; ++i) w[i] = T(ava.w()[i]);
+                for (int i = NUM_ROT_PARAMS; i < NUM_JOINTS * NUM_ROT_PARAMS; ++i) r[i] = T(ava.r()[i]);
+                for (int i = 0; i < NUM_JOINTS * NUM_SCALE_PARAMS; ++i) s[i] = T(ava.s()[i]);
+
+                for (int i = 0; i < NUM_ROT_PARAMS; ++i) r[i] = _r[i];
+
+                T pt[NUM_JOINTS * NUM_POS_PARAMS], rt[NUM_JOINTS * NUM_ROT_PARAMS];
+                // simulate propagation of skeletal transforms
+                ava._propagateJointTransforms(r, s, _p, pt, rt);
+                residual[0] = T(0);
+                for (size_t i = 0; i < ava.getCloud(false)->size(); ++i) {
+                    if (closest[i].empty()) continue; // short-circuit if no closest points
+                    Eigen::Matrix<T, 3, 1> point = ava._computePointPosition(i, w, pt, rt, s);
+                    for (int j : closest[i]) {
+                        // compute position of each point using transformed data
+                        residual[0] += (point - dataCloud.row(j).transpose().cast<T>()).squaredNorm();
+                    }
+                }
+                return true;
+            }
+        private:
+            HumanAvatar & ava;
+            EigenCloud_T & dataCloud;
+            std::vector<std::vector<int>> & closest;
+        };
+
+        /* Ceres-solver cost functor for fitting */
+        class AvatarFitCostFunctor {
+        public:
+            AvatarFitCostFunctor(HumanAvatar & ava, EigenCloud_T & dataCloud,
                 std::vector<std::vector<int>> & closest)
                 : ava(ava), dataCloud(dataCloud), closest(closest) { }
 
             template <typename T>
             bool operator()(const T* const w, const T* const r, const T* const s, const T* const p, T* residual) const {
-                T * pt, *rt;
-                pt = new T[ava.numJoints() * NUM_POS_PARAMS];
-                rt = new T[ava.numJoints() * NUM_ROT_PARAMS];
+                const int NUM_JOINTS = HumanAvatar::JointType::_COUNT;
+                /*
+                // to fix parameters (debug)
+                T w[NUM_SHAPEKEYS], r[NUM_JOINTS * NUM_ROT_PARAMS], s[NUM_JOINTS * NUM_SCALE_PARAMS];
+                for (int i = 0; i < NUM_SHAPEKEYS; ++i) w[i] = T(ava.w()[i]);
+                for (int i = 0; i < NUM_JOINTS * NUM_ROT_PARAMS; ++i) r[i] = T(ava.r()[i]);
+                for (int i = 0; i < NUM_JOINTS * NUM_SCALE_PARAMS; ++i) s[i] = T(ava.s()[i]);
+                */
+
+                T pt[NUM_JOINTS * NUM_POS_PARAMS], rt[NUM_JOINTS * NUM_ROT_PARAMS];
                 // simulate propagation of skeletal transforms
                 ava._propagateJointTransforms(r, s, p, pt, rt);
                 residual[0] = T(0);
@@ -249,8 +300,6 @@ namespace ark {
                         residual[0] += (point - dataCloud.row(j).transpose().cast<T>()).squaredNorm();
                     }
                 }
-                delete[] pt;
-                delete[] rt;
                 return true;
             }
         private:
@@ -259,11 +308,64 @@ namespace ark {
             std::vector<std::vector<int>> & closest;
         };
 
+        /* Ceres-solver local parameterization adapted for vector of Eigen Quaternions */
+        template<int N>
+        class MultiQuaternionParameterization : public ceres::LocalParameterization {
+        public:
+            virtual int GlobalSize() const { return 4*N; }
+            virtual int LocalSize() const { return 3*N; }
+
+            bool Plus(const double* x_ptr, const double* delta, double* x_plus_delta_ptr) const {
+                for (int i = 0; i < N; ++i) {
+                    Eigen::Map<Eigen::Quaterniond> x_plus_delta(x_plus_delta_ptr + (i<<2));
+                    Eigen::Map<const Eigen::Quaterniond> x(x_ptr + (i<<2));
+                    const double * delta_ = delta + 3*i;
+                    const double norm_delta =
+                        sqrt(delta_[0] * delta_[0] + delta_[1] * delta_[1] + delta_[2] * delta_[2]);
+                    if (norm_delta > 0.0) {
+                        const double sin_delta_by_delta = sin(norm_delta) / norm_delta;
+                        Eigen::Quaterniond delta_q(cos(norm_delta),
+                            sin_delta_by_delta * delta_[0],
+                            sin_delta_by_delta * delta_[1],
+                            sin_delta_by_delta * delta_[2]);
+                        x_plus_delta = delta_q * x;
+                    }
+                    else x_plus_delta = x;
+                }
+                return true;
+            }
+
+            bool ComputeJacobian(const double* x, double* jacobian) const {
+                memset(jacobian, 0, 4 * 3 * N*N * sizeof(jacobian[0]));
+                double * jacobian_ = jacobian;
+                for (int i = 0; i < N; ++i) {
+                    const double * x_ = x + (i<<2);
+                    jacobian_[0] = x_[3]; jacobian_[1] = x_[2]; jacobian_[2] = -x_[1];
+                    jacobian_ += 3 * N;
+                    jacobian_[0] = -x_[2]; jacobian_[1] = x_[3]; jacobian_[2] = x_[0];
+                    jacobian_ += 3 * N;
+                    jacobian_[0] = x_[1]; jacobian_[1] = -x_[0]; jacobian_[2] = x_[3];
+                    jacobian_ += 3 * N;
+                    jacobian_[0] = -x_[0]; jacobian_[1] = -x_[1]; jacobian_[2] = -x_[2];
+                    jacobian_ += 3 * N + 3;
+                }
+                return true;
+            }
+        };
 
     public:
 
         // SECTION Ceres-solver optimization
-        void fitShapeTo(const Cloud_T::Ptr & cloud);
+        /** Align center position, rotation, scale to cloud for the given number of iterations */
+        void alignICP(const Cloud_T::Ptr & cloud, int n_iter = 10);
+
+    private:
+        /** Align center position, rotation, scale to cloud for the given number of iterations */
+        void _alignICP(EigenCloud_T & dataCloud, EigenCloud_T & modelCloud, int n_iter = 10);
+    public:
+
+        /** Fit avatar's pose and shape to the given point cloud */
+        void fit(const Cloud_T::Ptr & cloud);
 
         /** Visualize the avatar's skeleton in a PCL viewer
          * @param viewer PCL visualizer instance
@@ -272,6 +374,10 @@ namespace ark {
          */
         void visualize(pcl::visualization::PCLVisualizer::Ptr & viewer, std::string pcl_prefix = "", int viewport = 0) const;
 
+        // sizes of data types (in bytes) for each parameter vector type
+        static const int NUM_ROT_PARAMS = 4, NUM_SCALE_PARAMS = 3, NUM_POS_PARAMS = 3;
+        // weight key, joint numbers. This allows us to use static cost function with Ceres.
+        static const int NUM_SHAPEKEYS = 10, NUM_JOINTS = HumanAvatar::JointType::_COUNT;
     private:
 
         /** Assign bone/joint weights to each vertex based on distance
@@ -296,9 +402,11 @@ namespace ark {
             typedef Eigen::Map<Eigen::Quaternion<T>> quatmap;
 
             v -= parent->posBase.cast<T>();
-            v = util::rotate(v, joint->rotBase);
+            const auto & rotBaseO = joint->rotBase;
+            Eigen::Quaternion<T> rotBase(T(rotBaseO.w()), T(rotBaseO.x()), T(rotBaseO.y()), T(rotBaseO.z()));
+            v = util::rotate(v, rotBase.inverse());
             v = v.cwiseProduct(vecmap(_s + joint_id * NUM_SCALE_PARAMS));
-            v = util::rotate(v, joint->rotBase.inverse());
+            v = util::rotate(v, rotBase);
             v = util::rotate(v, quatmap(_rt + joint_id * NUM_ROT_PARAMS));
             v = v.cwiseProduct(vecmap(_s));
             v += vecmap(_pt + parID * NUM_POS_PARAMS);
@@ -354,8 +462,6 @@ namespace ark {
 
         Eigen::Vector3d computePointPosition(size_t point_index);
 
-    private:
-
         // section MODEL PARAMETERS
 
         /** _w: shape key weights, _r : rotations, _s : scale, _p : global position */
@@ -364,8 +470,7 @@ namespace ark {
         // internal parameter storage
         double * _pb, *_rb, *_pt, *_rt;
         Eigen::Map<Eigen::Vector3d> basePos;
-
-        static const int NUM_ROT_PARAMS = 4, NUM_SCALE_PARAMS = 3, NUM_POS_PARAMS = 3;
+ 
 
         // section DATA
         // undeformed point cloud (from when model was initially loaded)
