@@ -596,14 +596,36 @@ namespace ark {
         /** Converts an OpenCV Vec3f to a PCL PointXYZRGBA instance, using r,g,b,a values specified if applicable  */
         pcl::PointXYZRGBA toPCLPoint(const Vec3f & v, int r = 200, int g = 200, int b = 200, int a = 200);
 
-        /** Converts an xyz_map into a PCL point cloud of PointXYZRGBA
-         * @param flip_z if true, inverts the z coordinate of each point to convert to RH coordinates system
-         */
-        void toPointCloud(const cv::Mat & xyz_map, pcl::PointCloud<pcl::PointXYZRGBA>::Ptr & out_pc, bool flip_z = true);
+        /** Get centroid (mean point) of specified point cloud. */
+        template <class Point_T>
+        Eigen::Vector3d cloudCenter(const boost::shared_ptr<pcl::PointCloud<Point_T>> & cloud, int dim = 1) {
+            Eigen::Vector4f avgPos4;
+            pcl::compute3DCentroid(*cloud, avgPos4);
+            return Eigen::Vector3d(avgPos4.x(), avgPos4.y(), avgPos4.z());
+        }
 
-        /** Rotate a 3D vector by a quaternion. */
-        template<class T, class Quat_t> inline
-            Eigen::Matrix<T, 3, 1> rotate(const Eigen::Matrix<T, 3, 1> & v, const Quat_t & q) {
+
+        /** Get height of point cloud in the specified dimension ((0,1,2) are (x,y,z) respectively). */
+        template <class Point_T>
+        float cloudHeight(const boost::shared_ptr<pcl::PointCloud<Point_T>> & cloud, int dim = 1) {
+            float miny = FLT_MAX, maxy = -FLT_MAX;
+            for (auto & pt : cloud->points) {
+                auto mp = pt.getVector3fMap();
+                miny = std::min(miny, mp[dim]);
+                maxy = std::min(maxy, mp[dim]);
+            }
+            return maxy - miny;
+        }
+
+        /** Converts an xyz_map into a PCL point cloud of PointXYZRGBA
+         * @param flip_z if true, inverts the z coordinate of each point
+         */
+        void toPointCloud(const cv::Mat & xyz_map, pcl::PointCloud<pcl::PointXYZRGBA>::Ptr & out_pc,
+            bool flip_z = false, bool flip_y = false);
+
+        /** Rotate a 3D vector by a quaternion. ( */
+        template<class T, class Quat_T> inline
+            Eigen::Matrix<T, 3, 1> rotate(const Eigen::Matrix<T, 3, 1> & v, const Quat_T & q) {
             const Eigen::Matrix<T, 3, 1> & u = q.vec().cast<T>();
             const T w = T(q.w()), two(2);
             return two * u.dot(v) * u + (w * w - u.dot(u)) * v + two * w * u.cross(v);

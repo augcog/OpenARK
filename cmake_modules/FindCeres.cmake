@@ -25,6 +25,8 @@ SET(_ceres_SEARCH_DIRS
   /opt/lib/ceres
 )
 
+SET(CMAKE_FIND_LIBRARY_PREFIXES "lib")
+
 FIND_PATH(CERES_INCLUDE_DIR
   NAMES
     ceres/ceres.h
