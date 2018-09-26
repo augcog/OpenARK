@@ -36,7 +36,7 @@ int main() {
 	DepthCamera::Ptr camera;
 
 #if defined(RSSDK2_ENABLED)
-	camera = std::make_shared<RS2Camera>();
+	camera = std::make_shared<RS2Camera>(true);
 #elif defined(RSSDK_ENABLED)
 	ASSERT(strcmp(OPENARK_CAMERA_TYPE, "sr300") == 0, "Unsupported RealSense camera type.");
 	camera = std::make_shared<SR300Camera>();
@@ -76,19 +76,25 @@ int main() {
 
 		// get latest image from the camera
 		cv::Mat xyzMap = camera->getXYZMap();
+		cv::Mat rgbMap = camera->getRGBMap();
 
 		std::stringstream ss;
-		ss << "C:\\dev\\OpenARK_dataset\\ceiling-D435\\capture_" << currFrame << ".yml";
+		ss << "C:\\dev\\OpenARK_dataset\\human-basic-rgb-D435\\capture_" << currFrame << ".yml";
 		std::string curr_file_name = ss.str();
 		std::cout << curr_file_name << std::endl;
 
 		cv::FileStorage fs(curr_file_name, cv::FileStorage::WRITE);
 		fs << "xyz_map" << xyzMap;
+		fs << "rgb_map" << rgbMap;
 		fs.release();
 
 		// show visualizations
 		if (!xyzMap.empty()) {
 			cv::imshow(camera->getModelName() + " Depth Map", xyzMap);
+		} 
+
+		if (!rgbMap.empty()) {
+			cv::imshow(camera->getModelName() + " RGB Map", rgbMap);
 		}
 		/**** End: Visualization ****/
 
