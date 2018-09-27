@@ -623,6 +623,12 @@ namespace ark {
         void toPointCloud(const cv::Mat & xyz_map, pcl::PointCloud<pcl::PointXYZRGBA>::Ptr & out_pc,
             bool flip_z = false, bool flip_y = false);
 
+		/** Converts an xyz_map into a PCL point cloud of PointXYZ
+		* @param flip_z if true, inverts the z coordinate of each point
+		*/
+		void toPointCloud(const cv::Mat & xyz_map, pcl::PointCloud<pcl::PointXYZ>::Ptr & out_pc,
+			bool flip_z = false, bool flip_y = false);
+
         /** Rotate a 3D vector by a quaternion. ( */
         template<class T, class Quat_T> inline
             Eigen::Matrix<T, 3, 1> rotate(const Eigen::Matrix<T, 3, 1> & v, const Quat_T & q) {
