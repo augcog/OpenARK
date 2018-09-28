@@ -1377,51 +1377,6 @@ namespace ark {
             return pt;
         }
 
-        /** Converts an xyz_map into a PCL point cloud of PointXYZRGBA
-         * @param flip_z if true, inverts the z coordinate of each point to convert to RH coordinates system
-         */
-        void toPointCloud(const cv::Mat & xyz_map, pcl::PointCloud<pcl::PointXYZRGBA>::Ptr & out_pc,
-            bool flip_z, bool flip_y) {
-
-            out_pc = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGBA> >();
-            const Vec3f * ptr;
-            for (int i = 0; i < xyz_map.rows; ++i) {
-                ptr = xyz_map.ptr<Vec3f>(i);
-                for (int j = 0; j < xyz_map.cols; ++j) {
-                    if (ptr[j][2] > 0.001) {
-                        pcl::PointXYZRGBA pt = toPCLPoint(ptr[j]);
-                        if (flip_z) pt.z = -pt.z;
-                        if (flip_y) pt.y = -pt.y;
-                        out_pc->points.push_back(pt);
-                    }
-                }
-            }
-        }
-
-		/** Converts an xyz_map into a PCL point cloud of PointXYZ
-		* @param flip_z if true, inverts the z coordinate of each point to convert to RH coordinates system
-		*/
-		void toPointCloud(const cv::Mat & xyz_map, pcl::PointCloud<pcl::PointXYZ>::Ptr & out_pc,
-			bool flip_z, bool flip_y) {
-
-			out_pc = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
-			const Vec3f * ptr;
-			for (int i = 0; i < xyz_map.rows; ++i) {
-				ptr = xyz_map.ptr<Vec3f>(i);
-				for (int j = 0; j < xyz_map.cols; ++j) {
-					if (ptr[j][2] > 0.001) {
-						pcl::PointXYZ pt;
-						pt.x = ptr[j][0];
-						pt.y = ptr[j][1];
-						pt.z = ptr[j][2];
-						if (flip_z) pt.z = -pt.z;
-						if (flip_y) pt.y = -pt.y;
-						out_pc->points.push_back(pt);
-					}
-				}
-			}
-		}
-
         template<> bool PointComparer<Point2i>::operator()(Point2i a, Point2i b) {
             if (compare_y_then_x) {
                 if (a.y == b.y) return reverse ^ (a.x < b.x);

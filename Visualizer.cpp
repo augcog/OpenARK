@@ -159,17 +159,6 @@ namespace ark {
         }
     }
 
-    void Visualizer::visualizeCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)
-    {
-        initPCLViewer();
-        viewer->setBackgroundColor(0, 0, 0);
-
-        if (!viewer->updatePointCloud(cloud))
-            viewer->addPointCloud(cloud);
-
-        viewer->spinOnce();
-    }
-
     void Visualizer::visualizePlaneRegression(const cv::Mat & input_mat, cv::Mat & output, std::vector<double> &equation, const double threshold, bool clicked)
     {
         if (input_mat.type() == CV_32FC3)
@@ -291,6 +280,13 @@ namespace ark {
     bool Visualizer::initPCLViewer() {
         if (viewer != nullptr) return false;
         viewer = boost::make_shared<pcl::visualization::PCLVisualizer>("3D Viewport");
+        viewer->registerKeyboardCallback([](const pcl::visualization::KeyboardEvent & evt) {
+            // add handler to allow quit
+            unsigned char k = evt.getKeyCode();
+            if (k == 'Q' || k == 'q' || k == 27) {
+                std::exit(0);
+            }
+        });
         return viewer != nullptr;
     }
 }

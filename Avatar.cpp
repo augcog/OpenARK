@@ -9,13 +9,13 @@ namespace ark {
         rotation(avatar._r + NUM_ROT_PARAMS * type),
         scale(avatar._s + NUM_SCALE_PARAMS * type),
         posBase(avatar._pb + NUM_POS_PARAMS * type),
-        rotBase(avatar._rb + NUM_ROT_PARAMS * type),
         posTransformed(avatar._pt + NUM_POS_PARAMS * type),
-        rotTransformed(avatar._rt + NUM_ROT_PARAMS * type)
+        rotTransformed(avatar._rt + NUM_ROT_PARAMS * type),
+        cachedTransform(avatar._cache + NUM_ROT_MAT_PARAMS * type)
     {
         rotation = Eigen::Quaterniond(1, 0, 0, 0);
         scale = Eigen::Vector3d(1, 1, 1);
-        rotBase = Eigen::Quaterniond::Identity();
+        cachedTransform = rotBaseInv = rotBase = Eigen::Matrix3d::Identity();
     }
 
     HumanAvatar::HumanAvatar(const std::string & model_dir) : HumanAvatar(model_dir, std::vector<std::string>()) { }
@@ -41,7 +41,11 @@ namespace ark {
         for (std::string k : shape_keys) {
             auto keyPC = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
             pcl::io::loadPCDFile<pcl::PointXYZ>((keyPath / k).string(), *keyPC);
-            keyClouds.push_back(keyPC);
+            EigenCloud_T keyCloud(keyPC->points.size(), 3);
+            for (size_t i = 0; i < keyPC->points.size(); ++i) {
+                keyCloud.row(i) = keyPC->points[i].getVector3fMap().cast<double>();
+            }
+            keyClouds.push_back(keyCloud);
         }
 
         // read skeleton file
@@ -53,10 +57,9 @@ namespace ark {
         _r = new double[nJoints * NUM_ROT_PARAMS];
         _s = new double[nJoints * NUM_SCALE_PARAMS];
         _pb = new double[nJoints * NUM_POS_PARAMS];
-        _rb = new double[nJoints * NUM_ROT_PARAMS];
         _pt = new double[nJoints * NUM_POS_PARAMS];
         _rt = new double[nJoints * NUM_ROT_PARAMS];
-        memset(_rb, 0, nJoints * NUM_ROT_PARAMS * sizeof(_rb[0]));
+        _cache = new double[nJoints * NUM_ROT_MAT_PARAMS];
 
         // assume joints are given in topologically sorted order
         for (int i = 0; i < nJoints; ++i) {
@@ -101,6 +104,7 @@ namespace ark {
                         total += w;
                     }
                 }
+
                 // normalize weights to add to 1
                 for (int j = 0; j < nJoints; ++j) {
                     if (weights[j] > 0.0) {
@@ -125,9 +129,14 @@ namespace ark {
             vBone.normalize();
             double dot = vBone.dot(Eigen::Vector3d(1, 0, 0));
             if (dot <= 0.9999 && dot >= -0.9999) {
-                joint->rotBase = Eigen::AngleAxisd(acosf(dot), vBone.cross(Eigen::Vector3d(1, 0, 0)));
+                Eigen::AngleAxisd rot(acosf(dot), vBone.cross(Eigen::Vector3d(1, 0, 0)));
+                joint->rotBase = rot.toRotationMatrix();
+                joint->rotBaseInv = rot.inverse().toRotationMatrix();
             }
         }
+
+        // compute locally transformed points
+        computeLocalPC();
 
         if (!modelProvidesVertWeights) {
             std::cerr << "WARNING: no vertex weights found in avatar model." <<
@@ -143,8 +152,8 @@ namespace ark {
     HumanAvatar::~HumanAvatar() {
         // clean up parameter vectors
         delete[] _w; delete[] _r; delete[] _s;
-        delete[] _pb; delete[] _rb;
-        delete[] _pt; delete[] _rt;
+        delete[] _pb; delete[] _pt; delete[] _rt;
+        delete[] _cache;
     }
 
     Eigen::Map<Eigen::Vector3d> HumanAvatar::getBasePosition() {
@@ -370,7 +379,7 @@ namespace ark {
 
         const int NUM_JOINTS = ava->numJoints();
         static const std::string MODEL_CLOUD_NAME = "model_cloud";
-        static const int NN_LINE_INTERVAL = 60;
+        static const int NN_LINE_INTERVAL = 5;
 
         if (print_params) {
             // print out model parameters
@@ -418,11 +427,11 @@ namespace ark {
         viewer->spinOnce();
     }
 
-    void HumanAvatar::_alignICP(EigenCloud_T & dataCloud, EigenCloud_T & modelCloud, int n_iter) {
+    void HumanAvatar::_alignICP(const EigenCloud_T & dataCloud, EigenCloud_T & modelCloud, int n_iter) {
         using namespace ceres;
 
         // ceres will run for 'CERES_ITER_INCR' more iterations at each ICP iteration
-        const int CERES_ITER_INCR = 2;
+        const int CERES_ITER_INCR = 1;
 
         Problem problem;
         std::vector<std::vector<int> > neighb;
@@ -448,12 +457,12 @@ namespace ark {
 
         for (int iter = 0; iter < n_iter; ++iter) {
             std::cout << ">> ALIGNMENT ICP: ITER " << iter << "\n";
-            _propagateJointTransforms(_r, _s, _p, _pt, _rt);
-            _updateCloud(_w, _pt, _rt, _s, modelCloud);
+            _propagateJointTransforms(_r, _s, _p, _pt, _rt, _cache);
+            _updateCloud(_w, _pt, _cache, modelCloud);
 
             // find nearest neighbors using nanoflann kd tree
             _findNN(dataCloud, modelCloud, neighb);
-            __debugVisualize(this, dataCloud, modelCloud, neighb);
+            //__debugVisualize(this, dataCloud, modelCloud, neighb);
 
             // solve ICP
             Solver::Summary summary;
@@ -466,37 +475,24 @@ namespace ark {
             options.max_num_iterations = options.max_linear_solver_iterations += CERES_ITER_INCR;
         }
 
-        _propagateJointTransforms(_r, _s, _p, _pt, _rt);
-        _updateCloud(_w, _pt, _rt, _s, modelCloud);
+        _propagateJointTransforms(_r, _s, _p, _pt, _rt, _cache);
+        _updateCloud(_w, _pt, _cache, modelCloud);
         _findNN(dataCloud, modelCloud, neighb);
-        __debugVisualize(this, dataCloud, modelCloud, neighb);
+        //__debugVisualize(this, dataCloud, modelCloud, neighb);
         std::cout << ">> ALIGNMENT ICP: DONE\n";
     }
 
-    void HumanAvatar::alignICP(const Cloud_T::Ptr & cloud, int n_iter) {
-
-        // store point cloud in Eigen format
-        EigenCloud_T dataCloud(cloud->points.size(), 3);
-        for (size_t i = 0; i < cloud->points.size(); ++i) {
-            dataCloud.row(i) = cloud->points[i].getVector3fMap().cast<double>();
-        }
-
+    void HumanAvatar::alignICP(const EigenCloud_T & dataCloud, int n_iter) {
         EigenCloud_T modelCloud(humanPCTransformed->points.size(), 3);
-        _updateCloud(_w, _pt, _rt, _s, modelCloud);
+        _updateCloud(_w, _pt, _cache, modelCloud);
         _alignICP(dataCloud, modelCloud);
     }
 
-    void HumanAvatar::fit(const Cloud_T::Ptr & cloud) {
+    void HumanAvatar::fit(const EigenCloud_T & dataCloud) {
         using namespace ceres;
 
-        // store point cloud in Eigen format
-        EigenCloud_T dataCloud(cloud->points.size(), 3);
-        for (size_t i = 0; i < cloud->points.size(); ++i) {
-            dataCloud.row(i) = cloud->points[i].getVector3fMap().cast<double>();
-        }
-
         EigenCloud_T modelCloud(humanPCTransformed->points.size(), 3);
-        _updateCloud(_w, _pt, _rt, _s, modelCloud);
+        _updateCloud(_w, _pt, _cache, modelCloud);
 
         _alignICP(dataCloud, modelCloud);
 
@@ -505,7 +501,7 @@ namespace ark {
         // ceres will run for 'CERES_ITER_INCR' more iterations on each successive ICP iteration
         const int CERES_ITER_INCR = 2;
         // re-aligns using ICP every 'ALIGN_INTERVAL' iterations.
-        const int ALIGN_INTERVAL = 3;
+        //const int ALIGN_INTERVAL = 3;
 
         Problem problem;
         std::vector<std::vector<int> > neighb;
@@ -537,8 +533,8 @@ namespace ark {
 
         for (int iter = 0; iter < MAX_SOLVE_ITER; ++iter) {
             std::cout << ">> FIT: ITER " << iter << "\n";
-            _propagateJointTransforms(_r, _s, _p, _pt, _rt);
-            _updateCloud(_w, _pt, _rt, _s, modelCloud);
+            _propagateJointTransforms(_r, _s, _p, _pt, _rt, _cache);
+            _updateCloud(_w, _pt, _cache, modelCloud);
 
             // find nearest neighbors using nanoflann kd tree
             _findNN(dataCloud, modelCloud, neighb);
@@ -555,11 +551,11 @@ namespace ark {
             options.max_num_iterations = options.max_linear_solver_iterations += CERES_ITER_INCR;
             
             // re-align
-            if (iter % ALIGN_INTERVAL == ALIGN_INTERVAL - 1) _alignICP(dataCloud, modelCloud, 1);
+            //if (iter % ALIGN_INTERVAL == ALIGN_INTERVAL - 1) _alignICP(dataCloud, modelCloud, 1);
         }
 
-        _propagateJointTransforms(_r, _s, _p, _pt, _rt);
-        _updateCloud(_w, _pt, _rt, _s, modelCloud);
+        _propagateJointTransforms(_r, _s, _p, _pt, _rt, _cache);
+        _updateCloud(_w, _pt, _cache, modelCloud);
         _findNN(dataCloud, modelCloud, neighb);
         __debugVisualize(this, dataCloud, modelCloud, neighb, true);
         std::cout << ">> FIT: DONE\n";
@@ -618,14 +614,30 @@ namespace ark {
     }
 
     Eigen::Vector3d HumanAvatar::toJointSpace(JointType joint_id, const Eigen::Vector3d & vec) {
-        return _toJointSpace(joint_id, vec, _pt, _rt, _s);
+        return _toJointSpace(joint_id, vec, _pt, _cache);
     }
 
     void HumanAvatar::propagateJointTransforms() {
-        _propagateJointTransforms(_r, _s, _p, _pt, _rt);
+        _propagateJointTransforms(_r, _s, _p, _pt, _rt, _cache);
+    }
+
+    void HumanAvatar::computeLocalPC()
+    {
+        for (int i = 0; i < MAX_ASSIGNED_JOINTS; ++i) {
+            localPC[i] = EigenCloud_T(humanPCBase->points.size(), 3);
+        }
+
+        for (size_t i = 0; i < humanPCBase->points.size(); ++i) {
+            Eigen::Vector3d v = humanPCBase->points[i].getVector3fMap().cast<double>();
+            for (size_t j = 0; j < boneWeights[i].size(); ++j) {
+                const int jid = boneWeights[i][j].first;
+                const auto & jnt = joints[jid];
+                localPC[j].row(i) = jnt->rotBaseInv * (v - jnt->parent->posBase);
+            }
+        }
     }
 
     Eigen::Vector3d HumanAvatar::computePointPosition(size_t point_index) {
-        return _computePointPosition(point_index, _w, _pt, _rt, _s);
+        return _computePointPosition(point_index, _w, _pt, _cache);
     }
 }
