@@ -617,11 +617,30 @@ namespace ark {
             return maxy - miny;
         }
 
-        /** Converts an xyz_map into a PCL point cloud of PointXYZRGBA
+        /** Converts an xyz_map into a PCL point cloud
          * @param flip_z if true, inverts the z coordinate of each point
          */
-        void toPointCloud(const cv::Mat & xyz_map, pcl::PointCloud<pcl::PointXYZRGBA>::Ptr & out_pc,
-            bool flip_z = false, bool flip_y = false);
+        template<class T>
+        boost::shared_ptr<pcl::PointCloud<T> > toPointCloud(const cv::Mat & xyz_map, 
+            bool flip_z = false, bool flip_y = false) {
+            auto out_pc = boost::make_shared<pcl::PointCloud<T> >();
+            const Vec3f * ptr;
+            for (int i = 0; i < xyz_map.rows; ++i) {
+                ptr = xyz_map.ptr<Vec3f>(i);
+                for (int j = 0; j < xyz_map.cols; ++j) {
+                    if (ptr[j][2] > 0.001) {
+                        T pt;
+                        pt.x = ptr[j][0];
+                        pt.y = ptr[j][1];
+                        pt.z = ptr[j][2];
+                        if (flip_z) pt.z = -pt.z;
+                        if (flip_y) pt.y = -pt.y;
+                        out_pc->points.push_back(pt);
+                    }
+                }
+            }
+            return out_pc;
+        }
 
 		/** Converts an xyz_map into a PCL point cloud of PointXYZ
 		* @param flip_z if true, inverts the z coordinate of each point

@@ -52,7 +52,16 @@ namespace ark {
         * Visualization for PCL point cloud.
         * @param [in] cloud PCL point cloud to be visualized
         */
-        static void visualizeCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
+        template<class Point_T>
+        static void visualizeCloud(boost::shared_ptr<pcl::PointCloud<Point_T>> cloud,
+                                   const std::string & name = "ark_cloud", int viewport = 0)
+        {
+            initPCLViewer();
+            viewer->setBackgroundColor(0, 0, 0);
+            if (!viewer->updatePointCloud<Point_T>(cloud, name))
+                viewer->addPointCloud<Point_T>(cloud, name, viewport);
+            viewer->spinOnce();
+        }
 
         /**
         * Visualization for polygon mesh.
