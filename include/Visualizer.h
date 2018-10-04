@@ -94,6 +94,8 @@ namespace ark {
         */
         static void visualizePlanePoints(cv::Mat &input_mat, std::vector<Point2i> indicies);
 
+		static void visualizeFaceLandmarks(cv::Mat &im, std::vector<cv::Point2f> &landmarks);
+
         /** Get the internal PCL visualizer */
         static pcl::visualization::PCLVisualizer::Ptr getPCLVisualizer();
 
@@ -117,5 +119,7 @@ namespace ark {
         * PCL point cloud viewer
         */
         static pcl::visualization::PCLVisualizer::Ptr viewer;
+
+		static void drawPolyline(cv::Mat &im, const std::vector<cv::Point2f> &landmarks, const int start, const int end, bool isClosed = false);
     };
 }
