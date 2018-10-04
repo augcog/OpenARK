@@ -30,7 +30,7 @@ static void filter_by_depth(cv::Mat& xyz_map, double min_depth, double max_depth
         Vec3f * ptr = xyz_map.ptr<Vec3f>(r);
         for (int c = 0; c < xyz_map.cols; ++c)
         {
-            if (ptr[c][2] > max_depth || ptr[c][2] < min_depth) {
+            if (ptr[c][2] > max_depth || ptr[c][2] < min_depth || r > 410) {
                 ptr[c][0] = ptr[c][1] = ptr[c][2] = 0.0f;
             }
         }
@@ -219,7 +219,7 @@ int main(int argc, char ** argv) {
 	// seed the rng
 	srand(time(NULL));
 
-	const std::string IMG_PATH = "D:\\Programming\\3VR\\OpenARK_dataset\\human-basic2-D435\\capture_04.yml";
+	const std::string IMG_PATH = "C:\\dev\\OpenARK_dataset\\human-basic-rgb-D435\\capture_14.yml";
 	// gender-neutral model
 	const std::string HUMAN_MODEL_PATH = "D:/DataSets/human/SMPL/models/basicModel_neutral_lbs_10_207_0_v1.0.0/";
 	// male model
@@ -237,71 +237,82 @@ int main(int argc, char ** argv) {
 	DetectionParams::Ptr params = DetectionParams::create();
 
 	PlaneDetector::Ptr planeDetector = std::make_shared<PlaneDetector>();
-	cv::Mat xyzMap;
+	cv::Mat xyzMap, rgbMap;
 
 	std::string imgPath = argc > 1 ? argv[1] : IMG_PATH;
 	cv::FileStorage fs2(imgPath, cv::FileStorage::READ);
 	fs2["xyz_map"] >> xyzMap;
+	fs2["rgb_map"] >> rgbMap;
 	fs2.release();
-	cv::Mat floodFillMap = xyzMap.clone();
+	
 
+	cv::Mat floodFillMap = xyzMap.clone();
 	filter_by_depth(floodFillMap, 1, 3);
+	cv::imshow("Mid", floodFillMap);
 
 	planeDetector->update(xyzMap);
 	const std::vector<FramePlane::Ptr> & planes = planeDetector->getPlanes();
+	//Visualizer::visualizeNormalMap(planeDetector->getNormalMap(), xyzMap, params->normalResolution);
+	/*auto viewer = Visualizer::getPCLVisualizer();
+	auto humanCloud = util::toPointCloud<pcl::PointXYZ>(xyzMap, true, true);
+	viewer->addPointCloud<pcl::PointXYZ>(humanCloud, "XYZ Map");
+	viewer->spinOnce();*/
+	
 	if (planes.size()) {
 		for (FramePlane::Ptr plane : planes) {
 			util::removePlane<Vec3f>(floodFillMap, floodFillMap, plane->equation, 0.0015);
 		}
-
-		std::vector<Point2i> allIndices;
-		allIndices.reserve(xyzMap.cols * xyzMap.rows);
-
-		cv::Mat out(xyzMap.rows, xyzMap.cols, CV_32FC3);
-		//cv::Mat out = floodFillMap.clone();
-		int numPts = util::floodFill(floodFillMap, Point2i(410, 200), 2.0f,
-			&allIndices, nullptr, &out,
-			1, 0, 200.0f);
-
-		cv::circle(floodFillMap, Point(410, 200), 2, cv::Scalar(1, 1, 1), 2);
-		//cv::imshow("Mid", floodFillMap);
-		cv::imshow("Fill", out);
-		cv::imshow("Depth Map", xyzMap);
-
-		auto humanCloud = util::toPointCloud<pcl::PointXYZ>(out, true, true);
-		auto humanCloud_filtered = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-		auto humanCloud_down = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-
-		auto viewer = Visualizer::getPCLVisualizer();
-
-		HumanAvatar ava(HUMAN_MODEL_PATH, SHAPE_KEYS);
-
-		ava.setCenterPosition(util::cloudCenter(humanCloud));
-		ava.update();
-
-		pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
-		sor.setInputCloud(humanCloud);
-		sor.setMeanK(50);
-		sor.setStddevMulThresh(1.0);
-		sor.filter(*humanCloud_filtered);
-
-		pcl::VoxelGrid<pcl::PointXYZ> voxel_processor;
-		voxel_processor.setInputCloud(humanCloud_filtered);
-		voxel_processor.setLeafSize(0.03f, 0.03f, 0.03f);
-		voxel_processor.filter(*humanCloud_down);
-
-		const std::string MODEL_CLOUD_NAME = "model_cloud", DATA_CLOUD_NAME = "data_cloud";
-
-		viewer->addPointCloud<pcl::PointXYZ>(humanCloud_down, DATA_CLOUD_NAME);
-		std::cout << "Data (Human) Points: " << humanCloud_down->size() << ". Model (Avatar) Points: " << ava.getCloud()->size() << "\n";
-		viewer->addPointCloud<HumanAvatar::Point_T>(ava.getCloud(), MODEL_CLOUD_NAME);
-		ava.fit(humanCloud_down);
-		ava.visualize();
-		viewer->removePointCloud(MODEL_CLOUD_NAME);
-		viewer->addPointCloud<HumanAvatar::Point_T>(ava.getCloud(), MODEL_CLOUD_NAME);
-		viewer->spinOnce();
 	}
 
+	std::vector<Point2i> allIndices;
+	allIndices.reserve(xyzMap.cols * xyzMap.rows);
+
+	cv::Mat out(xyzMap.rows, xyzMap.cols, CV_32FC3);
+	//cv::Mat out = floodFillMap.clone();
+	int numPts = util::floodFill(floodFillMap, Point2i(410, 200), 2.0f,
+		&allIndices, nullptr, &out,
+		1, 0, 200.0f);
+
+	cv::circle(rgbMap, Point(410, 200), 2, cv::Scalar(1, 1, 1), 2);
+	//cv::imshow("Mid", floodFillMap);
+	cv::imshow("RGB Map", rgbMap);
+	cv::imshow("Fill", out);
+	cv::imshow("Depth Map", xyzMap);
+
+	/**
+	auto humanCloud = util::toPointCloud<pcl::PointXYZ>(out, true, true);
+	auto humanCloud_filtered = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+	auto humanCloud_down = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+
+	auto viewer = Visualizer::getPCLVisualizer();
+
+	HumanAvatar ava(HUMAN_MODEL_PATH, SHAPE_KEYS);
+
+	ava.setCenterPosition(util::cloudCenter(humanCloud));
+	ava.update();
+
+	pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+	sor.setInputCloud(humanCloud);
+	sor.setMeanK(50);
+	sor.setStddevMulThresh(1.0);
+	sor.filter(*humanCloud_filtered);
+
+	pcl::VoxelGrid<pcl::PointXYZ> voxel_processor;
+	voxel_processor.setInputCloud(humanCloud_filtered);
+	voxel_processor.setLeafSize(0.03f, 0.03f, 0.03f);
+	voxel_processor.filter(*humanCloud_down);
+
+	const std::string MODEL_CLOUD_NAME = "model_cloud", DATA_CLOUD_NAME = "data_cloud";
+
+	viewer->addPointCloud<pcl::PointXYZ>(humanCloud_down, DATA_CLOUD_NAME);
+	std::cout << "Data (Human) Points: " << humanCloud_down->size() << ". Model (Avatar) Points: " << ava.getCloud()->size() << "\n";
+	viewer->addPointCloud<HumanAvatar::Point_T>(ava.getCloud(), MODEL_CLOUD_NAME);
+	ava.fit(humanCloud_down);
+	ava.visualize();
+	viewer->removePointCloud(MODEL_CLOUD_NAME);
+	viewer->addPointCloud<HumanAvatar::Point_T>(ava.getCloud(), MODEL_CLOUD_NAME);
+	viewer->spinOnce();
+	*/
 	cv::waitKey(0);
 
 	cv::destroyAllWindows();
