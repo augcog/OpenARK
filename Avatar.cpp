@@ -20,7 +20,7 @@ namespace ark {
 
     HumanAvatar::HumanAvatar(const std::string & model_dir) : HumanAvatar(model_dir, std::vector<std::string>()) { }
 
-    HumanAvatar::HumanAvatar(const std::string & model_dir, const std::vector<std::string> & shape_keys)
+    HumanAvatar::HumanAvatar(const std::string & model_dir, const std::vector<std::string> & shape_keys, const int downsample_factor)
         : MODEL_DIR(model_dir), keyNames(shape_keys), basePos(_p) {
 
         humanPCBase = boost::unique_ptr<Cloud_T>(new Cloud_T());
@@ -34,16 +34,31 @@ namespace ark {
         memset(_w, 0, shape_keys.size() * sizeof(double));
 
         auto humanPCRaw = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-        pcl::io::loadPCDFile<pcl::PointXYZ>(modelPath.string(), *humanPCRaw);
+		auto humanPCFull = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+        pcl::io::loadPCDFile<pcl::PointXYZ>(modelPath.string(), *humanPCFull);
+		for (int i = 0; i < humanPCFull->points.size(); ++i) {
+			// skip appropriate number of points if downsample is enabled
+			if (i % downsample_factor != 0) {
+				continue;
+			}
+			humanPCRaw->push_back(humanPCFull->points[i]);
+		}
 
         // load all required shape keys
         path keyPath(model_dir); keyPath = keyPath / "shapekey";
         for (std::string k : shape_keys) {
             auto keyPC = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
             pcl::io::loadPCDFile<pcl::PointXYZ>((keyPath / k).string(), *keyPC);
-            EigenCloud_T keyCloud(keyPC->points.size(), 3);
+			// Ceiling division to compute the number of points in the down sampled cloud
+            EigenCloud_T keyCloud((keyPC->points.size() + downsample_factor - 1 )/ downsample_factor, 3);
+			int ii = 0;
             for (size_t i = 0; i < keyPC->points.size(); ++i) {
-                keyCloud.row(i) = keyPC->points[i].getVector3fMap().cast<double>();
+				// skip appropriate number of points if downsample is enabled
+				if (i % downsample_factor != 0) {
+					continue;
+				}
+                keyCloud.row(ii) = keyPC->points[i].getVector3fMap().cast<double>();
+				ii++;
             }
             keyClouds.push_back(keyCloud);
         }
@@ -79,20 +94,31 @@ namespace ark {
         }
 
         std::vector<double> weights(nJoints);
-        boneWeights.resize(nVerts);
+        boneWeights.resize((nVerts + downsample_factor - 1) /downsample_factor);
 
+		int ii = 0;
         // true if the model already provides vertex weights (else we calculate them ourselves)
         bool modelProvidesVertWeights = static_cast<bool>(skel);
         if (modelProvidesVertWeights) {
             for (int i = 0; i < nVerts; ++i) {
+
                 int nEntries; skel >> nEntries;
 
+				// skip appropriate number of points if downsample is enabled
+				if (i % downsample_factor != 0) {
+					for (int j = 0; j < nEntries; ++j) {
+						int joint; double w; skel >> joint >> w;
+					}
+					continue;
+				}
+				
                 std::fill(weights.begin(), weights.end(), 0.0);
 
                 // need to convert vertex (joint) weights to bone weights
                 double total = 0.0;
                 for (int j = 0; j < nEntries; ++j) {
                     int joint; double w; skel >> joint >> w;
+					
                     // for non-leaf joints, add weight to child bones of joint
                     for (Joint * j : joints[joint]->children) {
                         weights[j->type] += w;
@@ -108,9 +134,10 @@ namespace ark {
                 // normalize weights to add to 1
                 for (int j = 0; j < nJoints; ++j) {
                     if (weights[j] > 0.0) {
-                        boneWeights[i].push_back(std::make_pair(j, weights[j] / total));
+						boneWeights[ii].push_back(std::make_pair(j, weights[j] / total));
                     }
                 }
+				ii++;
             }
         }
 
@@ -135,6 +162,8 @@ namespace ark {
             }
         }
 
+		
+
         // compute locally transformed points
         computeLocalPC();
 
@@ -147,6 +176,7 @@ namespace ark {
 
         // color the point cloud
         colorByWeights();
+		
     }
 
     HumanAvatar::~HumanAvatar() {
