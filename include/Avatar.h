@@ -79,7 +79,7 @@ namespace ark {
          *  @param model_dir path to directory containing model files
          *  @param shape_keys names of shape keys in 'model_dir'/shapekey to use
          */
-        HumanAvatar(const std::string & model_dir, const std::vector<std::string> & shape_keys);
+        HumanAvatar(const std::string & model_dir, const std::vector<std::string> & shape_keys, const int downsample_factor = 1);
 
         /** Destructor for HumanAvatar */
         ~HumanAvatar();

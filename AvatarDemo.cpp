@@ -221,7 +221,7 @@ int main(int argc, char ** argv) {
 
 	const std::string IMG_PATH = "C:\\dev\\OpenARK_dataset\\human-basic-rgb-D435\\capture_14.yml";
 	// gender-neutral model
-	const std::string HUMAN_MODEL_PATH = "D:/DataSets/human/SMPL/models/basicModel_neutral_lbs_10_207_0_v1.0.0/";
+	const std::string HUMAN_MODEL_PATH = "C:/dev/SMPL/models/basicModel_neutral_lbs_10_207_0_v1.0.0/";
 	// male model
 	//const std::string HUMAN_MODEL_PATH = "D:/DataSets/human/SMPL/models/basicModel_m_lbs_10_207_0_v1.0.0/";
 	// female model
@@ -233,88 +233,101 @@ int main(int argc, char ** argv) {
 		"shape008.pcd", "shape009.pcd"
 	};
 
-	// initialize parameters
-	DetectionParams::Ptr params = DetectionParams::create();
+	// ** create avatar instance **
+	HumanAvatar ava(HUMAN_MODEL_PATH, SHAPE_KEYS, 2);
 
-	PlaneDetector::Ptr planeDetector = std::make_shared<PlaneDetector>();
-	cv::Mat xyzMap, rgbMap;
+	// ** set up PCL viewer **
+	auto viewer = Visualizer::getPCLVisualizer();
+	int vp1 = 0;
+	viewer->setWindowName("3D View");
+	viewer->setCameraClipDistances(0.0, 1000.0);
 
-	std::string imgPath = argc > 1 ? argv[1] : IMG_PATH;
-	cv::FileStorage fs2(imgPath, cv::FileStorage::READ);
-	fs2["xyz_map"] >> xyzMap;
-	fs2["rgb_map"] >> rgbMap;
-	fs2.release();
-	
-
-	cv::Mat floodFillMap = xyzMap.clone();
-	filter_by_depth(floodFillMap, 1, 3);
-	cv::imshow("Mid", floodFillMap);
-
-	planeDetector->update(xyzMap);
-	const std::vector<FramePlane::Ptr> & planes = planeDetector->getPlanes();
-	//Visualizer::visualizeNormalMap(planeDetector->getNormalMap(), xyzMap, params->normalResolution);
-	/*auto viewer = Visualizer::getPCLVisualizer();
-	auto humanCloud = util::toPointCloud<pcl::PointXYZ>(xyzMap, true, true);
-	viewer->addPointCloud<pcl::PointXYZ>(humanCloud, "XYZ Map");
-	viewer->spinOnce();*/
-	
-	if (planes.size()) {
-		for (FramePlane::Ptr plane : planes) {
-			util::removePlane<Vec3f>(floodFillMap, floodFillMap, plane->equation, 0.0015);
+	volatile bool interrupt = false;
+	viewer->registerKeyboardCallback([&interrupt](const pcl::visualization::KeyboardEvent & evt) {
+		unsigned char k = evt.getKeyCode();
+		if (k == 'Q' || k == 'q' || k == 27) {
+			// force quit
+			interrupt = true;
 		}
+	});
+
+	// ** create control windows **
+	cv::namedWindow("Body Shape");
+	cv::namedWindow("Body Pose");
+
+	std::vector<int> pcw(SHAPE_KEYS.size(), 1000), p_pcw(SHAPE_KEYS.size(), 0);
+
+	// Define axes
+	const Eigen::Vector3d AXISX(1, 0, 0), AXISY(0, 1, 0), AXISZ(0, 0, 1);
+
+	// Body pose control definitions (currently this control system only supports rotation along one axis per body part)
+	const std::vector<std::string> CTRL_NAMES = { "L LEG",       "R LEG",       "L KNEE",       "R KNEE",       "L ANKLE",     "R ANKLE",     "L ARM",        "R ARM",        "L ELBOW",      "R ELBOW",      "HEAD",      "SPINE2" };
+	using jnt_t = HumanAvatar::JointType;
+	const std::vector<jnt_t> CTRL_JNT = { jnt_t::R_KNEE, jnt_t::L_KNEE, jnt_t::R_ANKLE, jnt_t::L_ANKLE, jnt_t::R_FOOT, jnt_t::L_FOOT, jnt_t::R_ELBOW, jnt_t::L_ELBOW, jnt_t::R_WRIST, jnt_t::L_WRIST, jnt_t::HEAD, jnt_t::SPINE2 };
+	const std::vector<Eigen::Vector3d> CTRL_AXIS = { AXISX,         AXISX,         AXISX,           AXISX,         AXISX,         AXISX,         AXISY,          AXISY,          AXISY,          AXISY,          AXISX,       AXISX };
+	const int N_CTRL = (int)CTRL_NAMES.size();
+	std::vector<int> ctrlw(N_CTRL, 1000), p_ctrlw(N_CTRL, 0);
+
+	// Body shapekeys are defined in SMPL model files.
+	int pifx = 0, pify = 0, picx = 0, picy = 0, pframeID = -1;
+	cv::resizeWindow("Body Shape", cv::Size(400, 700));
+	cv::resizeWindow("Body Pose", cv::Size(400, 700));
+	for (int i = 0; i < N_CTRL; ++i) {
+		cv::createTrackbar(CTRL_NAMES[i], "Body Pose", &ctrlw[i], 2000);
+	}
+	for (int i = 0; i < (int)pcw.size(); ++i) {
+		cv::createTrackbar("PC" + std::to_string(i), "Body Shape", &pcw[i], 2000);
 	}
 
-	std::vector<Point2i> allIndices;
-	allIndices.reserve(xyzMap.cols * xyzMap.rows);
+	// ** Primary control loop **
+	while (!interrupt) {
+		bool controlsChanged = false;
+		for (int i = 0; i < N_CTRL; ++i) {
+			if (ctrlw[i] != p_ctrlw[i]) {
+				controlsChanged = true;
+				break;
+			}
+		}
+		for (int i = 0; i < (int)pcw.size(); ++i) {
+			if (pcw[i] != p_pcw[i]) {
+				controlsChanged = true;
+				break;
+			}
+		}
+		if (controlsChanged) {
+			viewer->removeAllPointClouds();
+			viewer->removeAllShapes();
 
-	cv::Mat out(xyzMap.rows, xyzMap.cols, CV_32FC3);
-	//cv::Mat out = floodFillMap.clone();
-	int numPts = util::floodFill(floodFillMap, Point2i(410, 200), 2.0f,
-		&allIndices, nullptr, &out,
-		1, 0, 200.0f);
+			HumanAvatar::Cloud_T::Ptr depthPC;
 
-	cv::circle(rgbMap, Point(410, 200), 2, cv::Scalar(1, 1, 1), 2);
-	//cv::imshow("Mid", floodFillMap);
-	cv::imshow("RGB Map", rgbMap);
-	cv::imshow("Fill", out);
-	cv::imshow("Depth Map", xyzMap);
+			ava.update();
 
-	/**
-	auto humanCloud = util::toPointCloud<pcl::PointXYZ>(out, true, true);
-	auto humanCloud_filtered = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-	auto humanCloud_down = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+			viewer->addPointCloud<HumanAvatar::Point_T>(ava.getCloud(), "vp1_cloudHM");
+			ava.visualize(viewer, "vp1_");
 
-	auto viewer = Visualizer::getPCLVisualizer();
+			for (int i = 0; i < N_CTRL; ++i) {
+				double angle = (ctrlw[i] - 1000) / 1000.0 * PI;
+				ava.setRotation(CTRL_JNT[i], Eigen::AngleAxisd(angle, CTRL_AXIS[i]));
+			}
 
-	HumanAvatar ava(HUMAN_MODEL_PATH, SHAPE_KEYS);
+			for (int i = 0; i < (int)pcw.size(); ++i) {
+				ava.setKeyWeight(i, (float)(pcw[i] - 1000) / 500.0);
+			}
 
-	ava.setCenterPosition(util::cloudCenter(humanCloud));
-	ava.update();
+			ava.update();
 
-	pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
-	sor.setInputCloud(humanCloud);
-	sor.setMeanK(50);
-	sor.setStddevMulThresh(1.0);
-	sor.filter(*humanCloud_filtered);
+			viewer->spinOnce(1, true);
+		}
 
-	pcl::VoxelGrid<pcl::PointXYZ> voxel_processor;
-	voxel_processor.setInputCloud(humanCloud_filtered);
-	voxel_processor.setLeafSize(0.03f, 0.03f, 0.03f);
-	voxel_processor.filter(*humanCloud_down);
+		for (int i = 0; i < N_CTRL; ++i) p_ctrlw[i] = ctrlw[i];
+		for (int i = 0; i < (int)pcw.size(); ++i) p_pcw[i] = pcw[i];
 
-	const std::string MODEL_CLOUD_NAME = "model_cloud", DATA_CLOUD_NAME = "data_cloud";
+		int k = cv::waitKey(100);
+		if (k == 'q' || k == 27) break;
+	}
 
-	viewer->addPointCloud<pcl::PointXYZ>(humanCloud_down, DATA_CLOUD_NAME);
-	std::cout << "Data (Human) Points: " << humanCloud_down->size() << ". Model (Avatar) Points: " << ava.getCloud()->size() << "\n";
-	viewer->addPointCloud<HumanAvatar::Point_T>(ava.getCloud(), MODEL_CLOUD_NAME);
-	ava.fit(humanCloud_down);
-	ava.visualize();
-	viewer->removePointCloud(MODEL_CLOUD_NAME);
-	viewer->addPointCloud<HumanAvatar::Point_T>(ava.getCloud(), MODEL_CLOUD_NAME);
-	viewer->spinOnce();
-	*/
-	cv::waitKey(0);
+	viewer->removeAllPointClouds();
+	viewer->removeAllShapes();
 
-	cv::destroyAllWindows();
 	return 0;
 }
