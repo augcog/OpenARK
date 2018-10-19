@@ -21,6 +21,7 @@
 #include "Core.h"
 #include "Visualizer.h"
 #include "Avatar.h"
+#include "HumanDetector.h"
 
 using namespace ark;
 
@@ -219,7 +220,7 @@ int main(int argc, char ** argv) {
 	// seed the rng
 	srand(time(NULL));
 
-	const std::string IMG_PATH = "C:\\dev\\OpenARK_dataset\\human-basic-rgb-D435\\capture_14.yml";
+	const std::string IMG_PATH = "C:\\dev\\OpenARK_dataset\\human-basic-rgb-D435\\capture_09.yml";
 	// gender-neutral model
 	const std::string HUMAN_MODEL_PATH = "D:/DataSets/human/SMPL/models/basicModel_neutral_lbs_10_207_0_v1.0.0/";
 	// male model
@@ -237,6 +238,8 @@ int main(int argc, char ** argv) {
 	DetectionParams::Ptr params = DetectionParams::create();
 
 	PlaneDetector::Ptr planeDetector = std::make_shared<PlaneDetector>();
+	HumanDetector::Ptr humanDetector = std::make_shared<HumanDetector>();
+
 	cv::Mat xyzMap, rgbMap;
 
 	std::string imgPath = argc > 1 ? argv[1] : IMG_PATH;
@@ -276,8 +279,8 @@ int main(int argc, char ** argv) {
 	cv::circle(rgbMap, Point(410, 200), 2, cv::Scalar(1, 1, 1), 2);
 	//cv::imshow("Mid", floodFillMap);
 	cv::imshow("RGB Map", rgbMap);
-	cv::imshow("Fill", out);
-	cv::imshow("Depth Map", xyzMap);
+
+	humanDetector->update(rgbMap);
 
 	/**
 	auto humanCloud = util::toPointCloud<pcl::PointXYZ>(out, true, true);

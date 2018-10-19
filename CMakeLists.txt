@@ -138,6 +138,8 @@ set(
   HandDetector.cpp
   PlaneDetector.cpp
   MockCamera.cpp
+  HumanDetector.cpp
+  HumanBody.cpp
   Avatar.cpp
 )
 
@@ -159,6 +161,8 @@ set(
   ${INCLUDE_DIR}/HandDetector.h
   ${INCLUDE_DIR}/PlaneDetector.h
   ${INCLUDE_DIR}/MockCamera.h
+  ${INCLUDE_DIR}/HumanDetector.h
+  ${INCLUDE_DIR}/HumanBody.h
   ${INCLUDE_DIR}/Avatar.h
   ${INCLUDE_DIR}/nanoflann.hpp
   stdafx.h
