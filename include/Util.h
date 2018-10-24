@@ -303,6 +303,7 @@ namespace ark {
          *             for recording if a point is being visited (1), has already been visited (0)
          *             or is not yet visited (255)
          *             By default, allocates a temporary matrix for use during flood fill.
+         * @param cosine if true, uses cosine similarity instead of euclidean distance
          * @return number of points in component
          */
         int floodFill(const cv::Mat & xyz_map, const Point2i & seed,
@@ -311,7 +312,7 @@ namespace ark {
             std::vector <Vec3f> * output_xyz_points = nullptr,
             cv::Mat * output_mask = nullptr,
             int interval1 = 1, int interval2 = 0, float interval2_dist = 0.05f, 
-            cv::Mat * color = nullptr);
+            cv::Mat * color = nullptr, bool cosine = false);
 
         /**
         * Compute the angle in radians 'pointij' is at from the origin, going CCW starting from (0, 1), if y-axis is facing up.

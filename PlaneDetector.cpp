@@ -11,14 +11,13 @@ namespace ark {
 
     void PlaneDetector::detect(cv::Mat & image)
     {
-		//std:cout << image.cols << " " << image.rows << std::endl;
         planes.clear();
 
         std::vector<Vec3f> equations;
         std::vector<VecP2iPtr> points;
         std::vector<VecV3fPtr> pointsXYZ;
 
-        util::computeNormalMap(image, normalMap, 4, params->normalResolution, false);
+        util::computeNormalMap(image, normalMap, 8, params->normalResolution, false);
         detectPlaneHelper(image, normalMap, equations, points, pointsXYZ, params);
 
         for (uint i = 0; i < equations.size(); ++i) {
@@ -119,10 +118,9 @@ namespace ark {
                 // flood fill normals
                 int numPts = util::floodFill(normal_map, pt, params->planeFloodFillThreshold,
                                              &allIndices, nullptr, nullptr,
-                                             params->normalResolution, 0, 0.0f, &floodFillMap);
+                                             params->normalResolution, 0, 0.0f, &floodFillMap, true);
 				//std::cout << numPts << endl;
                 if (numPts >= SUBPLANE_MIN_POINTS) {
-					//std::cout << numPts << endl;
                     std::vector<Vec3f> allXyzPoints(numPts);
 
                     for (int k = 0; k < numPts; ++k) {
@@ -199,7 +197,6 @@ namespace ark {
                     ++goodPts;
                 }
             }
-
             if (goodPts < PLANE_MIN_INLIERS) continue;
 
             // push to output
