@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "Version.h"
@@ -114,6 +115,8 @@ namespace ark {
         */
         static void visualizeMatrix(const cv::Mat & input, cv::Mat & output);
 
+		static void drawPolyline(cv::Mat &im, const std::vector<cv::Point2f> &landmarks,
+            const int start, const int end, bool isClosed = false);
 
         /**
         * PCL point cloud viewer
