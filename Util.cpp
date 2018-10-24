@@ -233,7 +233,7 @@ namespace ark {
                 b(i) = points[i][N - 1];
             }
 
-            MatT LLSE = A.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(b);
+            MatT LLSE = A.colPivHouseholderQr().solve(b);
 
             cv::Vec<T, N> output;
             for (int i = 0; i < N; ++i) {
@@ -470,9 +470,11 @@ namespace ark {
 
             int xr = (pt.x < radius) ? radius : -radius;
             int yr = (pt.y < radius) ? radius : -radius;
+            int mul = ((xr > 0) ^ (yr > 0)) * -2 + 1;
 
-            return normalize((xyz_map.at<Vec3f>(pt.y + yr, pt.x) - center).cross(
-                              xyz_map.at<Vec3f>(pt.y, pt.x + xr) - center));
+            Vec3f cross = (xyz_map.at<Vec3f>(pt.y + yr, pt.x) - center).cross(
+                xyz_map.at<Vec3f>(pt.y, pt.x + xr) - center);
+            return cv::normalize(cross) * mul;
         }
 
         void computeNormalMap(const cv::Mat & xyz_map, cv::Mat & output_mat,
@@ -816,7 +818,7 @@ namespace ark {
         int floodFill(const cv::Mat & xyz_map, const Point2i & seed,
             float thresh, std::vector <Point2i> * output_ij_points,
             std::vector <Vec3f> * output_xyz_points, cv::Mat * output_mask,
-            int inv1, int inv2, float inv2_thresh, cv::Mat * color)
+            int inv1, int inv2, float inv2_thresh, cv::Mat * color, bool cosine)
         {
             // true if temporary 'visited' matrix allocated (we'll need to delete it after)
             bool tempVisMat = !color;
@@ -838,8 +840,11 @@ namespace ark {
                 stk.resize(R * C);
             }
 
-            thresh *= thresh; // use square of distance to save computations
-            float max_distance2 = inv2_thresh * inv2_thresh; // for interval2
+            float max_distance2 = inv2_thresh;
+            if (cosine) {
+                thresh *= thresh; // use square of distance to save computations
+                max_distance2 *= max_distance2; // for interval2
+            }
 
             // add seed to stack
             stk[0] = seed;
@@ -913,9 +918,10 @@ namespace ark {
                         // skip if already visited
                         if (adjVis <= 1) continue;
 
+                        double norm = cosine ? (1.0 - (xyz_map.at<Vec3f>(adjPt).dot(*xyz))) :
+                                            util::norm(*xyz - xyz_map.at<Vec3f>(adjPt));
                         // update & push to stack if point is close enough
-                        if (util::norm(*xyz - xyz_map.at<Vec3f>(adjPt)) <
-                            (i < 2 ? thresh : max_distance2)) {
+                        if (norm < (i < 2 ? thresh : max_distance2)) {
                             stk[stkSize++] = adjPt;
                             adjVis = 1; // mark 'visiting'
                         }
@@ -925,14 +931,15 @@ namespace ark {
                     if (sw) {
                         // go right
                         pt.x += inv1;
-                        if (pt.x >= C || visPtr[pt.x] == 0 ||
-                            util::norm(*xyz - xyzPtr[pt.x]) >= thresh) {
+                        double normr = cosine ? (1.0 -xyzPtr[pt.x].dot(*xyz)) : util::norm(*xyz - xyzPtr[pt.x]);
+                        if (pt.x >= C || visPtr[pt.x] == 0 || normr >= thresh) {
                             sw = false;
 
                             // reset to middle
                             pt.x = origX - inv1;
                             xyz = &xyzPtr[origX];
-                            if (pt.x < 0 || util::norm(*xyz - xyzPtr[pt.x]) >= thresh) {
+                            normr = cosine ? (1.0 - xyzPtr[pt.x].dot(*xyz)) : util::norm(*xyz - xyzPtr[pt.x]);
+                            if (pt.x < 0 || normr >= thresh) {
                                 break;
                             }
                         }
@@ -940,7 +947,8 @@ namespace ark {
                     else {
                         // go left
                         pt.x -= inv1;
-                        if (pt.x < 0 || util::norm(*xyz - xyzPtr[pt.x]) >= thresh) {
+                        double norml = cosine ? (1.0 - xyzPtr[pt.x].dot(*xyz)) : util::norm(*xyz - xyzPtr[pt.x]);
+                        if (pt.x < 0 || norml >= thresh) {
                             break;
                         }
                     }
