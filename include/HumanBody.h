@@ -12,12 +12,7 @@ namespace ark {
 		
 		~HumanBody();
 
-		std::vector<cv::Point2i> getMPIISkeleton2D();
-
-		cv::Vec3f getHeadDirection();
-
-	private:
-		std::vector<cv::Point2i> MPIISkeleton2D;
+		std::vector<cv::Point> MPIISkeleton2D;
 
 		cv::Vec3f headDirection;
 	};

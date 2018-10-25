@@ -7,6 +7,24 @@ namespace ark {
 
 		// Load the human HOG descriptor
 		humanHOG.setSVMDetector(cv::HOGDescriptor::getDefaultPeopleDetector());
+
+		// Load the OpenPose model
+		openPoseNet = cv::dnn::readNetFromCaffe(MPII_PROTO_FILE_PATH, MPII_WEIGHTS_FILE_PATH);
+
+		// Load face models
+		facemark = cv::face::FacemarkLBF::create();
+		facemark->loadModel("C:\\dev\\OpenARK_dataset\\lbfmodel.yaml");
+		faceDetector.load("C:\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt2.xml");
+
+		face_3D_model_points.push_back(cv::Point3d(0.0f, 0.0f, 0.0f));               // Nose tip
+		face_3D_model_points.push_back(cv::Point3d(0.0f, -330.0f, -65.0f));          // Chin
+		face_3D_model_points.push_back(cv::Point3d(-225.0f, 170.0f, -135.0f));       // Left eye left corner
+		face_3D_model_points.push_back(cv::Point3d(225.0f, 170.0f, -135.0f));        // Right eye right corner
+		face_3D_model_points.push_back(cv::Point3d(-150.0f, -150.0f, -125.0f));      // Left Mouth corner
+		face_3D_model_points.push_back(cv::Point3d(150.0f, -150.0f, -125.0f));       // Right mouth corner
+
+		// Create a empty human model
+		human = std::make_shared<HumanBody>();
 	}
 
 	void HumanDetector::detect(cv::Mat & image) {
@@ -14,7 +32,7 @@ namespace ark {
 		//detectHumanHOG(image);
 
 		// Feed the HOG area into the Body Pose Estimation
-		//detectBodyPose(image);
+		detectBodyPose(image);
 
 		// Feed the HOG area into the Head Pose Estimation
 		detectHeadPose(image);
@@ -114,104 +132,54 @@ namespace ark {
 	}
 
 	void HumanDetector::detectBodyPose(const cv::Mat& frame) {
-		static const int POSE_PAIRS[14][2] =
-		{
-			{ 0,1 },{ 1,2 },{ 2,3 },
-
-			{ 3,4 },{ 1,5 },{ 5,6 },
-
-			{ 6,7 },{ 1,14 },{ 14,8 },{ 8,9 },
-
-			{ 9,10 },{ 14,11 },{ 11,12 },{ 12,13 }
-		};
-
-		int nPoints = 15;
-
-		static const std::string protoFile = "C:\\dev\\openpose\\models\\pose\\mpi\\pose_deploy_linevec_faster_4_stages.prototxt";
-		static const std::string weightsFile = "C:\\dev\\openpose\\models\\pose\\mpi\\pose_iter_160000.caffemodel";
-
-		cv::dnn::Net net = cv::dnn::readNetFromCaffe(protoFile, weightsFile);
-
-
-		//cv::Mat frame = cv::imread("C:\\dev\\OpenARK_dataset\\human3.jpg");
-		cv::Mat frameCopy = frame.clone();
-		int frameWidth = frame.cols;
-		int frameHeight = frame.rows;
-
-		// Specify the input image dimensions
-		int inWidth = frame.cols;
-		int inHeight = frame.rows;
-		float thresh = 0.3;
-		//cv::ximgproc::dtFilter(frame, frame, frame, 1.0, 1.0);
-
-		cv::imshow("Human", frame);
+		const int nPoints = 15; // ignore 'background' point
 
 		// Prepare the frame to be fed to the network
-		cv::Mat inpBlob = cv::dnn::blobFromImage(frame, 1.0 / 255, cv::Size(inWidth, inHeight), cv::Scalar(0, 0, 0));
+		cv::Mat inpBlob = cv::dnn::blobFromImage(frame, 1.0 / 255, frame.size(), cv::Scalar(0, 0, 0));
 
 		// Set the prepared object as the input blob of the network
-		net.setInput(inpBlob);
+		openPoseNet.setInput(inpBlob);
 
-		cv::Mat output = net.forward();
-		int H = output.size[2];
-		int W = output.size[3];
+		cv::Mat output = openPoseNet.forward();
+		int H = output.size[2], W = output.size[3];
 
 		// find the position of the body parts
-		std::vector<cv::Point> points(nPoints);
+		human->MPIISkeleton2D.clear();
+		human->MPIISkeleton2D.resize(nPoints);
+
+		cv::Mat confMap = frame.clone();
+
 		for (int n = 0; n < nPoints; n++) {
 			// Probability map of corresponding body's part.
-
 			cv::Mat probMap(H, W, CV_32F, output.ptr(0, n));
 
 			cv::Point2f p(-1, -1);
 			cv::Point maxLoc;
 			double prob;
 
-			minMaxLoc(probMap, 0, &prob, 0, &maxLoc);
-
-			if (prob > thresh) {
-				p = maxLoc;
-				p.x *= (float)frameWidth / W;
-				p.y *= (float)frameHeight / H;
-
-				cv::circle(frameCopy, cv::Point((int)p.x, (int)p.y), 8, cv::Scalar(0, 255, 255), -1);
-				cv::putText(frameCopy, cv::format("%d", n), cv::Point((int)p.x, (int)p.y), cv::FONT_HERSHEY_COMPLEX, 1, cv::Scalar(0, 0, 255), 2);
+			cv::minMaxLoc(probMap, 0, &prob, 0, &maxLoc);
+			cv::Mat probMap_big; cv::resize(probMap, probMap_big, frame.size());
+			for (int i = 0; i < confMap.rows; ++i) {
+				float * pm_ptr = probMap_big.ptr<float>(i);
+				Vec3b * vis_ptr = confMap.ptr<cv::Vec3b>(i);
+				for (int j = 0; j < confMap.cols; ++j) {
+					if (pm_ptr[j] > POSE_CONFIDENCE_THRESHOLD) {
+						vis_ptr[j][2] = int(vis_ptr[j][2] * (1.0 - pm_ptr[j])) + int(255.0 * pm_ptr[j]);
+					}
+				}
 			}
-			points[n] = p;
+			if (prob > POSE_CONFIDENCE_THRESHOLD) {
+				p = maxLoc;
+				p.x *= (float)frame.cols / W;
+				p.y *= (float)frame.rows / H;
+			}
+			human->MPIISkeleton2D[n] = p;
 		}
 
-		int nPairs = sizeof(POSE_PAIRS) / sizeof(POSE_PAIRS[0]);
-
-		for (int n = 0; n < nPairs; n++) {
-
-			// lookup 2 connected body/hand parts
-
-			cv::Point2f partA = points[POSE_PAIRS[n][0]];
-			cv::Point2f partB = points[POSE_PAIRS[n][1]];
-
-			if (partA.x <= 0 || partA.y <= 0 || partB.x <= 0 || partB.y <= 0)
-				continue;
-
-
-			cv::line(frame, partA, partB, cv::Scalar(0, 255, 255), 8);
-			cv::circle(frame, partA, 8, cv::Scalar(0, 0, 255), -1);
-			cv::circle(frame, partB, 8, cv::Scalar(0, 0, 255), -1);
-		}
-
-		cv::imshow("Output-Keypoints", frameCopy);
-		cv::imshow("Output-Skeleton", frame);
+		cv::imshow("Confidence", confMap);
 	}
 
 	void HumanDetector::detectHeadPose(const cv::Mat& frame) {
-		cv::CascadeClassifier faceDetector("C:\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt2.xml");
-
-		// Create an instance of Facemark
-		cv::Ptr<cv::face::Facemark> facemark = cv::face::FacemarkLBF::create();
-
-		// Load landmark detector
-		facemark->loadModel("C:\\dev\\OpenARK_dataset\\lbfmodel.yaml");
-
-		cv::VideoCapture cam(0);
 		cv::Mat gray;
 
 		// Find face
@@ -245,17 +213,6 @@ namespace ark {
 			return;
 		}
 
-		// 3D model points.
-
-		std::vector<cv::Point3d> model_points;
-
-		model_points.push_back(cv::Point3d(0.0f, 0.0f, 0.0f));               // Nose tip
-		model_points.push_back(cv::Point3d(0.0f, -330.0f, -65.0f));          // Chin
-		model_points.push_back(cv::Point3d(-225.0f, 170.0f, -135.0f));       // Left eye left corner
-		model_points.push_back(cv::Point3d(225.0f, 170.0f, -135.0f));        // Right eye right corner
-		model_points.push_back(cv::Point3d(-150.0f, -150.0f, -125.0f));      // Left Mouth corner
-		model_points.push_back(cv::Point3d(150.0f, -150.0f, -125.0f));       // Right mouth corner
-
 																				// Camera internals
 		double focal_length = frame.cols; // Approximate focal length.
 		Point2d center = cv::Point2d(frame.cols / 2, frame.rows / 2);
@@ -267,7 +224,7 @@ namespace ark {
 		cv::Mat translation_vector;
 
 		// Solve for pose
-		cv::solvePnP(model_points, image_points, camera_matrix, dist_coeffs, rotation_vector, translation_vector);
+		cv::solvePnP(face_3D_model_points, image_points, camera_matrix, dist_coeffs, rotation_vector, translation_vector);
 
 
 		std::vector<cv::Point3d> nose_end_point3D;
@@ -296,5 +253,9 @@ namespace ark {
 
 		}
 		return max_rect;
+	}
+
+	std::shared_ptr<HumanBody> HumanDetector::getHuman() {
+		return human;
 	}
 }

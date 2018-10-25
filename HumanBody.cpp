@@ -8,12 +8,4 @@ namespace ark {
 	HumanBody::~HumanBody() {
 
 	}
-
-	std::vector<cv::Point2i> HumanBody::getMPIISkeleton2D() {
-		return MPIISkeleton2D;
-	}
-
-	cv::Vec3f HumanBody::getHeadDirection() {
-		return headDirection;
-	}
 }
