@@ -1,6 +1,20 @@
 #include "HumanDetector.h"
 
 namespace ark {
+	const std::vector<std::pair<int, int>> mapIdx = {
+		{0,1}, {2,3}, {4,5}, {6,7}, {8,9}, {10,11},
+		{12,13}, {14,15}, {16,17}, {18,19}, {20,21},
+		{22,23}, {24,25}, {26,27}
+	};
+
+	const std::vector<std::pair<int, int>> posePairs = {
+		{ 0,1 },{ 1,2 },{ 2,3 },
+		{ 3,4 },{ 1,5 },{ 5,6 },
+		{ 6,7 },{ 1,14 },{ 14,8 },{ 8,9 },
+		{ 9,10 },{ 14,11 },{ 11,12 },{ 12,13 }
+	};
+
+
 	HumanDetector::HumanDetector(DetectionParams::Ptr params) {
 		// Since we have seen no humans previously, we set this to default value
 		lastHumanDetectionBox = cv::Rect(0, 0, 0, 0);
@@ -22,9 +36,6 @@ namespace ark {
 		face_3D_model_points.push_back(cv::Point3d(225.0f, 170.0f, -135.0f));        // Right eye right corner
 		face_3D_model_points.push_back(cv::Point3d(-150.0f, -150.0f, -125.0f));      // Left Mouth corner
 		face_3D_model_points.push_back(cv::Point3d(150.0f, -150.0f, -125.0f));       // Right mouth corner
-
-		// Create a empty human model
-		human = std::make_shared<HumanBody>();
 	}
 
 	void HumanDetector::detect(cv::Mat & image) {
@@ -140,43 +151,279 @@ namespace ark {
 		// Set the prepared object as the input blob of the network
 		openPoseNet.setInput(inpBlob);
 
-		cv::Mat output = openPoseNet.forward();
-		int H = output.size[2], W = output.size[3];
+		cv::Mat netOutputBlob = openPoseNet.forward();
+		std::vector<cv::Mat> netOutputParts;
+		splitNetOutputBlobToParts(netOutputBlob, cv::Size(frame.cols, frame.rows), netOutputParts);
 
-		// find the position of the body parts
-		human->MPIISkeleton2D.clear();
-		human->MPIISkeleton2D.resize(nPoints);
+		int keyPointId = 0;
+		std::vector<std::vector<KeyPoint>> detectedKeypoints;
+		std::vector<KeyPoint> keyPointsList;
 
-		cv::Mat confMap = frame.clone();
+		for (int i = 0; i < nPoints; ++i) {
+			std::vector<KeyPoint> keyPoints;
 
-		for (int n = 0; n < nPoints; n++) {
-			// Probability map of corresponding body's part.
-			cv::Mat probMap(H, W, CV_32F, output.ptr(0, n));
+			getKeyPoints(netOutputParts[i], 0.3, keyPoints);
 
-			cv::Point2f p(-1, -1);
-			cv::Point maxLoc;
-			double prob;
-
-			cv::minMaxLoc(probMap, 0, &prob, 0, &maxLoc);
-			cv::Mat probMap_big; cv::resize(probMap, probMap_big, frame.size());
-			for (int i = 0; i < confMap.rows; ++i) {
-				float * pm_ptr = probMap_big.ptr<float>(i);
-				Vec3b * vis_ptr = confMap.ptr<cv::Vec3b>(i);
-				for (int j = 0; j < confMap.cols; ++j) {
-					if (pm_ptr[j] > POSE_CONFIDENCE_THRESHOLD) {
-						vis_ptr[j][2] = int(vis_ptr[j][2] * (1.0 - pm_ptr[j])) + int(255.0 * pm_ptr[j]);
-					}
-				}
+			for (int i = 0; i< keyPoints.size(); ++i, ++keyPointId) {
+				keyPoints[i].id = keyPointId;
 			}
-			if (prob > POSE_CONFIDENCE_THRESHOLD) {
-				p = maxLoc;
-				p.x *= (float)frame.cols / W;
-				p.y *= (float)frame.rows / H;
-			}
-			human->MPIISkeleton2D[n] = p;
+
+			detectedKeypoints.push_back(keyPoints);
+			keyPointsList.insert(keyPointsList.end(), keyPoints.begin(), keyPoints.end());
 		}
 
-		cv::imshow("Confidence", confMap);
+		std::vector<cv::Scalar> colors;
+		populateColorPalette(colors, nPoints);
+
+		cv::Mat outputFrame = frame.clone();
+
+		for (int i = 0; i < nPoints; ++i) {
+			for (int j = 0; j < detectedKeypoints[i].size(); ++j) {
+				cv::circle(outputFrame, detectedKeypoints[i][j].point, 5, colors[i], -1, cv::LINE_AA);
+			}
+		}
+
+		std::vector<std::vector<ValidPair>> validPairs;
+		std::set<int> invalidPairs;
+		getValidPairs(netOutputParts, detectedKeypoints, validPairs, invalidPairs);
+
+		std::vector<std::vector<int>> personwiseKeypoints;
+		getPersonwiseKeypoints(validPairs, invalidPairs, personwiseKeypoints);
+
+		for (int i = 0; i < personwiseKeypoints.size(); i++) {
+			std::shared_ptr<HumanBody> human = std::make_shared<HumanBody>();
+			human_bodies.push_back(human);
+		}
+
+		for (int n = 0; n < personwiseKeypoints.size(); ++n) {
+			for (int i = 0; i < nPoints; ++i) {
+				int indexA = personwiseKeypoints[n][i];
+
+				if (indexA == -1) {
+					continue;
+				}
+
+				const KeyPoint& kpA = keyPointsList[indexA];
+
+				cv::circle(outputFrame, kpA.point, 2, cv::Scalar(255, 0, 0), 2);
+				human_bodies[n]->MPIISkeleton2D[i] = kpA.point;
+				
+			}
+		}
+
+		cv::imshow("Detected Pose", outputFrame);
+	}
+
+	void HumanDetector::getPersonwiseKeypoints(const std::vector<std::vector<ValidPair>>& validPairs,
+		const std::set<int>& invalidPairs,
+		std::vector<std::vector<int>>& personwiseKeypoints) {
+		for (int k = 0; k < mapIdx.size(); ++k) {
+			if (invalidPairs.find(k) != invalidPairs.end()) {
+				continue;
+			}
+
+			const std::vector<ValidPair>& localValidPairs(validPairs[k]);
+
+			int indexA(posePairs[k].first);
+			int indexB(posePairs[k].second);
+
+			for (int i = 0; i< localValidPairs.size(); ++i) {
+				bool found = false;
+				int personIdx = -1;
+
+				for (int j = 0; !found && j < personwiseKeypoints.size(); ++j) {
+					if (indexA < personwiseKeypoints[j].size() &&
+						personwiseKeypoints[j][indexA] == localValidPairs[i].aId) {
+						personIdx = j;
+						found = true;
+					}
+				}/* j */
+
+				if (found) {
+					personwiseKeypoints[personIdx].at(indexB) = localValidPairs[i].bId;
+				}
+				else if (k < 15) {
+					std::vector<int> lpkp(std::vector<int>(18, -1));
+
+					lpkp.at(indexA) = localValidPairs[i].aId;
+					lpkp.at(indexB) = localValidPairs[i].bId;
+
+					personwiseKeypoints.push_back(lpkp);
+				}
+
+			}/* i */
+		}/* k */
+	}
+
+	void HumanDetector::getValidPairs(const std::vector<cv::Mat>& netOutputParts,
+		const std::vector<std::vector<KeyPoint>>& detectedKeypoints,
+		std::vector<std::vector<ValidPair>>& validPairs,
+		std::set<int>& invalidPairs) {
+
+		int nInterpSamples = 10;
+		float pafScoreTh = 0.1;
+		float confTh = 0.7;
+
+		for (int k = 0; k < mapIdx.size(); ++k) {
+
+			//A->B constitute a limb
+			cv::Mat pafA = netOutputParts[16 + mapIdx[k].first];
+			cv::Mat pafB = netOutputParts[16 + mapIdx[k].second];
+
+			//Find the keypoints for the first and second limb
+			const std::vector<KeyPoint>& candA = detectedKeypoints[posePairs[k].first];
+			const std::vector<KeyPoint>& candB = detectedKeypoints[posePairs[k].second];
+
+			int nA = candA.size();
+			int nB = candB.size();
+
+			/*
+			# If keypoints for the joint-pair is detected
+			# check every joint in candA with every joint in candB
+			# Calculate the distance vector between the two joints
+			# Find the PAF values at a set of interpolated points between the joints
+			# Use the above formula to compute a score to mark the connection valid
+			*/
+
+			if (nA != 0 && nB != 0) {
+				std::vector<ValidPair> localValidPairs;
+
+				for (int i = 0; i< nA; ++i) {
+					int maxJ = -1;
+					float maxScore = -1;
+					bool found = false;
+
+					for (int j = 0; j < nB; ++j) {
+						std::pair<float, float> distance(candB[j].point.x - candA[i].point.x, candB[j].point.y - candA[i].point.y);
+
+						float norm = std::sqrt(distance.first*distance.first + distance.second*distance.second);
+
+						if (!norm) {
+							continue;
+						}
+
+						distance.first /= norm;
+						distance.second /= norm;
+
+						//Find p(u)
+						std::vector<cv::Point> interpCoords;
+						populateInterpPoints(candA[i].point, candB[j].point, nInterpSamples, interpCoords);
+						//Find L(p(u))
+						std::vector<std::pair<float, float>> pafInterp;
+						for (int l = 0; l < interpCoords.size(); ++l) {
+							pafInterp.push_back(
+								std::pair<float, float>(
+									pafA.at<float>(interpCoords[l].y, interpCoords[l].x),
+									pafB.at<float>(interpCoords[l].y, interpCoords[l].x)
+									));
+						}
+
+						std::vector<float> pafScores;
+						float sumOfPafScores = 0;
+						int numOverTh = 0;
+						for (int l = 0; l< pafInterp.size(); ++l) {
+							float score = pafInterp[l].first*distance.first + pafInterp[l].second*distance.second;
+							sumOfPafScores += score;
+							if (score > pafScoreTh) {
+								++numOverTh;
+							}
+
+							pafScores.push_back(score);
+						}
+
+						float avgPafScore = sumOfPafScores / ((float)pafInterp.size());
+
+						if (((float)numOverTh) / ((float)nInterpSamples) > confTh) {
+							if (avgPafScore > maxScore) {
+								maxJ = j;
+								maxScore = avgPafScore;
+								found = true;
+							}
+						}
+
+					}/* j */
+
+					if (found) {
+						localValidPairs.push_back(ValidPair(candA[i].id, candB[maxJ].id, maxScore));
+					}
+
+				}/* i */
+
+				validPairs.push_back(localValidPairs);
+
+			}
+			else {
+				invalidPairs.insert(k);
+				validPairs.push_back(std::vector<ValidPair>());
+			}
+		}/* k */
+	}
+
+	void HumanDetector::populateInterpPoints(const cv::Point& a, const cv::Point& b, int numPoints, std::vector<cv::Point>& interpCoords) {
+		float xStep = ((float)(b.x - a.x)) / (float)(numPoints - 1);
+		float yStep = ((float)(b.y - a.y)) / (float)(numPoints - 1);
+
+		interpCoords.push_back(a);
+
+		for (int i = 1; i< numPoints - 1; ++i) {
+			interpCoords.push_back(cv::Point(a.x + xStep*i, a.y + yStep*i));
+		}
+
+		interpCoords.push_back(b);
+	}
+
+	void HumanDetector::populateColorPalette(std::vector<cv::Scalar>& colors, int nColors) {
+		//std::random_device rd;
+		//std::mt19937 gen(rd());
+		//std::uniform_int_distribution<> dis1(64, 200);
+		//std::uniform_int_distribution<> dis2(100, 255);
+		//std::uniform_int_distribution<> dis3(100, 255);
+
+		for (int i = 0; i < nColors; ++i) {
+			colors.push_back(cv::Scalar(100,100,100));
+		}
+	}
+
+	void HumanDetector::splitNetOutputBlobToParts(cv::Mat& netOutputBlob, const cv::Size& targetSize, std::vector<cv::Mat>& netOutputParts) {
+		int nParts = netOutputBlob.size[1];
+		int h = netOutputBlob.size[2];
+		int w = netOutputBlob.size[3];
+
+		for (int i = 0; i< nParts; ++i) {
+			cv::Mat part(h, w, CV_32F, netOutputBlob.ptr(0, i));
+
+			cv::Mat resizedPart;
+
+			cv::resize(part, resizedPart, targetSize);
+
+			netOutputParts.push_back(resizedPart);
+		}
+	}
+
+	void HumanDetector::getKeyPoints(cv::Mat& probMap, double threshold, std::vector<KeyPoint>& keyPoints) {
+		cv::Mat smoothProbMap;
+		cv::GaussianBlur(probMap, smoothProbMap, cv::Size(3, 3), 0, 0);
+
+		cv::Mat maskedProbMap;
+		cv::threshold(smoothProbMap, maskedProbMap, threshold, 255, cv::THRESH_BINARY);
+
+		maskedProbMap.convertTo(maskedProbMap, CV_8U, 1);
+
+		std::vector<std::vector<cv::Point> > contours;
+		cv::findContours(maskedProbMap, contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+
+		for (int i = 0; i < contours.size(); ++i) {
+			cv::Mat blobMask = cv::Mat::zeros(smoothProbMap.rows, smoothProbMap.cols, smoothProbMap.type());
+
+			cv::fillConvexPoly(blobMask, contours[i], cv::Scalar(1));
+
+			double maxVal;
+			cv::Point maxLoc;
+
+			cv::minMaxLoc(smoothProbMap.mul(blobMask), 0, &maxVal, 0, &maxLoc);
+
+			keyPoints.push_back(KeyPoint(maxLoc, probMap.at<float>(maxLoc.y, maxLoc.x)));
+		}
 	}
 
 	void HumanDetector::detectHeadPose(const cv::Mat& frame) {
@@ -255,7 +502,7 @@ namespace ark {
 		return max_rect;
 	}
 
-	std::shared_ptr<HumanBody> HumanDetector::getHuman() {
-		return human;
+	std::vector<std::shared_ptr<HumanBody>> HumanDetector::getHumanBodies() {
+		return human_bodies;
 	}
 }

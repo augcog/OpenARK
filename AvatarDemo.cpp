@@ -194,9 +194,15 @@ int main(int argc, char ** argv) {
     fs2["rgb_map"] >> rgbMap;
     fs2.release();
 
+	//rgbMap = cv::imread("C:\\dev\\OpenARK_dataset\\group.jpg");
+	//cv::imshow("Group", rgbMap);
+
     // joint estimation using CNN
 	human_detector->update(rgbMap);
-	std::vector<cv::Point> rgbJoints = human_detector->getHuman()->MPIISkeleton2D;
+	if (human_detector->getHumanBodies().size() != 1) {
+		cout << "ERROR: More than one human in scene" << endl;
+	}
+	std::vector<cv::Point> rgbJoints = human_detector->getHumanBodies()[0]->MPIISkeleton2D;
 
     // segmentation using agglomerate clustering
     cv::Mat out;
