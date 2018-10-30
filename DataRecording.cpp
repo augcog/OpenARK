@@ -18,6 +18,7 @@
 #include "Core.h"
 #include "Visualizer.h"
 #include "StreamingAverager.h"
+#include "HumanDetector.h"
 
 
 using namespace ark;
@@ -70,6 +71,8 @@ int main() {
 	camera->beginCapture();
 
 	// main demo loop
+	std::vector<cv::Mat> xyzMaps;
+	std::vector<cv::Mat> rgbMaps;
 	while (true)
 	{
 		++currFrame;
@@ -109,33 +112,59 @@ int main() {
 			/*** Loop Break Condition ***/
 			break;
 		}
-		else if (c >= '0' && c <= '3') {
-			backgroundStyle = c - '0';
-		}
-
-		switch (c) {
-		case 'P':
-			showPlanes ^= 1; break;
-		case 'H':
-			showHands ^= 1; break;
-		case 'S':
-			useSVM ^= 1; break;
-		case 'C':
-			useEdgeConn ^= 1; break;
-		case 'A':
-			showArea ^= 1; break;
-		case ' ':
-			playing ^= 1;
-			// reset frame number
-			if (playing) currFrame = -1;
-			break;
-		}
-
 		/**** End: Controls ****/
 	}
 
 	camera->endCapture();
 
+	ASSERT(xyzMaps.size() == rgbMaps.size(), "Depth map and RGB map are not in sync!");
+
+	for (int i = 0; i < xyzMaps.size(); ++i) {
+		std::stringstream ss;
+		ss << "C:\\dev\\OpenARK_dataset\\human-basic-rgb-D435\\capture_" << std::setw(2) << std::setfill('0') << i << ".yml";
+		std::string curr_file_name = ss.str();
+		std::cout << curr_file_name << std::endl;
+
+		cv::FileStorage fs(curr_file_name, cv::FileStorage::WRITE);
+		fs << "xyz_map" << xyzMaps[i];
+		fs << "rgb_map" << rgbMaps[i];
+		fs.release();
+	}
+
+	std::vector<std::string> file_names;
+	boost::filesystem::path image_dir("C:\\dev\\OpenARK_dataset\\human-basic-rgb-D435\\");
+
+	if (is_directory(image_dir)) {
+		
+		boost::filesystem::directory_iterator end_iter;
+		for (boost::filesystem::directory_iterator dir_itr(image_dir); dir_itr != end_iter; ++dir_itr) {
+			const auto& next_path = dir_itr->path().generic_string();
+			file_names.emplace_back(next_path);
+		}
+		std::sort(file_names.begin(), file_names.end());
+	}
+
+	std::shared_ptr<HumanDetector> human_detector = std::make_shared<HumanDetector>();
+	for (const auto& filename : file_names) {
+		std::cout << filename << std::endl;
+		cv::Mat rgb_map, xyz_map;
+		cv::FileStorage fs2(filename, cv::FileStorage::READ);
+		fs2["rgb_map"] >> rgb_map;
+		fs2.release();
+		
+
+		human_detector->update(rgb_map);
+		std::vector<cv::Point> rgbJoints = human_detector->getHumanBodies()[0]->MPIISkeleton2D;
+		for (const auto& joint : rgbJoints) {
+			cv::circle(rgb_map, joint, 2, cv::Scalar(255, 0, 0), 2);
+		}
+		cv::imshow("RGB Frame", rgb_map);
+		cv::FileStorage fs3(filename, cv::FileStorage::APPEND);
+		fs3 << "joints" << rgbJoints;
+		fs3.release();
+		cv::waitKey(1);
+	}
+	int c = cv::waitKey(1);
 	cv::destroyAllWindows();
 	return 0;
 }

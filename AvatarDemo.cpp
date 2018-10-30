@@ -184,6 +184,7 @@ int main(int argc, char ** argv) {
 
 
     cv::Mat xyzMap, rgbMap;
+	std::vector<cv::Point> rgbJoints;
     std::string imgPath = argc > 1 ? argv[1] : IMG_PATH;
     if (!boost::filesystem::exists(imgPath)) {
         std::cerr << "Image not found! Exiting...\n";
@@ -192,17 +193,18 @@ int main(int argc, char ** argv) {
     cv::FileStorage fs2(imgPath, cv::FileStorage::READ);
     fs2["xyz_map"] >> xyzMap;
     fs2["rgb_map"] >> rgbMap;
+	fs2["joints"] >> rgbJoints;
     fs2.release();
 
 	//rgbMap = cv::imread("C:\\dev\\OpenARK_dataset\\group.jpg");
 	//cv::imshow("Group", rgbMap);
 
     // joint estimation using CNN
-	human_detector->update(rgbMap);
+	/*human_detector->update(rgbMap);
 	if (human_detector->getHumanBodies().size() != 1) {
 		cout << "ERROR: More than one human in scene" << endl;
 	}
-	std::vector<cv::Point> rgbJoints = human_detector->getHumanBodies()[0]->MPIISkeleton2D;
+	std::vector<cv::Point> rgbJoints = human_detector->getHumanBodies()[0]->MPIISkeleton2D;*/
 
     // segmentation using agglomerate clustering
     cv::Mat out;
