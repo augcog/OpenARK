@@ -171,8 +171,6 @@ int main(int argc, char ** argv) {
     // seed the rng
     srand(time(NULL));
 
-	std::shared_ptr<HumanDetector> human_detector = std::make_shared<HumanDetector>();
-
     const std::string IMG_PATH = "C:\\dev\\OpenARK_dataset\\human-basic-rgb-D435\\capture_14.yml";
     // gender-neutral model
     const std::string HUMAN_MODEL_PATH = "C:/dev/SMPL/models/basicModel_neutral_lbs_10_207_0_v1.0.0/";
@@ -190,90 +188,106 @@ int main(int argc, char ** argv) {
         std::cerr << "Image not found! Exiting...\n";
         std::exit(0);
     }
-    cv::FileStorage fs2(imgPath, cv::FileStorage::READ);
-    fs2["xyz_map"] >> xyzMap;
-    fs2["rgb_map"] >> rgbMap;
-	fs2["joints"] >> rgbJoints;
-    fs2.release();
 
-	//rgbMap = cv::imread("C:\\dev\\OpenARK_dataset\\group.jpg");
-	//cv::imshow("Group", rgbMap);
-
-    // joint estimation using CNN
-	/*human_detector->update(rgbMap);
-	if (human_detector->getHumanBodies().size() != 1) {
-		cout << "ERROR: More than one human in scene" << endl;
+	boost::filesystem::path image_dir("C:\\dev\\OpenARK_dataset\\human-basic-rgb-D435-tiny\\");
+	std::vector<std::string> file_names;
+	if (is_directory(image_dir)) {
+		boost::filesystem::directory_iterator end_iter;
+		for (boost::filesystem::directory_iterator dir_itr(image_dir); dir_itr != end_iter; ++dir_itr) {
+			const auto& next_path = dir_itr->path().generic_string();
+			file_names.emplace_back(next_path);
+		}
+		std::sort(file_names.begin(), file_names.end());
 	}
-	std::vector<cv::Point> rgbJoints = human_detector->getHumanBodies()[0]->MPIISkeleton2D;*/
 
-    // segmentation using agglomerate clustering
-    cv::Mat out;
-    segmentAvatar(xyzMap, { rgbJoints[OpenPoseMPIJoint::LEFT_HIP],
-							rgbJoints[OpenPoseMPIJoint::RIGHT_HIP], 
-                            rgbJoints[OpenPoseMPIJoint::LEFT_SHOULDER],
-							rgbJoints[OpenPoseMPIJoint::RIGHT_SHOULDER]}, out);
+	std::vector<cv::Mat> xyzMaps;
+	std::vector<cv::Mat> rgbMaps;
+	std::vector<std::vector<cv::Point>> joint_maps;
 
-    // convert to PCL point cloud
-    auto humanCloudRaw = util::toPointCloud<pcl::PointXYZ>(out, true, true);
-    auto humanCloud = denoisePointCloud(humanCloudRaw); // denoise and downsample
+	for (const auto& filename : file_names) {
+		cv::Mat xyzMap, rgbMap;
+		std::vector<cv::Point> joints;
 
-    auto viewer = Visualizer::getPCLVisualizer();
-    auto vp0 = Visualizer::createPCLViewport(0, 0, 0.7, 1), vp1 = Visualizer::createPCLViewport(0.7, 0, 1, 1);
-    HumanAvatar::EigenCloud_T xyzJoints;
-    toSMPLJoints(out, rgbJoints, xyzJoints);
+		cv::FileStorage fs2(filename, cv::FileStorage::READ);
 
-    // show images
-    for (size_t n = 0; n < rgbJoints.size(); ++n) {
-        cv::circle(out, rgbJoints[n], 8, cv::Scalar(0, 255, 255), -1);
-        cv::putText(out, std::to_string(n), rgbJoints[n], cv::FONT_HERSHEY_COMPLEX, 1, cv::Scalar(255, 255, 0));
-    }
+		fs2["xyz_map"] >> xyzMap;
+		fs2["rgb_map"] >> rgbMap;
+		fs2["joints"] >> joints;
 
-    cv::imshow("Fill", out);
-    cv::Mat xyzVis;
-    Visualizer::visualizeXYZMap(xyzMap, xyzVis, 2.5f);
-    cv::imshow("Depth Map", xyzVis);
-    cv::imshow("RGB", rgbMap);
+		fs2.release();
 
-  
-    // initialize avatar
+		xyzMaps.push_back(xyzMap);
+		rgbMaps.push_back(rgbMap);
+		joint_maps.push_back(joints);
+		std::cout << "Loading: " << filename << std::endl;
+	}
+
+	ASSERT(xyzMaps.size() == rgbMaps.size() && xyzMaps.size() == joint_maps.size());
+
 	HumanAvatar ava(HUMAN_MODEL_PATH, SHAPE_KEYS, 2);
-    ava.setCenterPosition(util::cloudCenter(humanCloudRaw));
-    ava.update();
+	auto viewer = Visualizer::getPCLVisualizer();
+	auto vp0 = Visualizer::createPCLViewport(0, 0, 0.7, 1), vp1 = Visualizer::createPCLViewport(0.7, 0, 1, 1);
+	//std::shared_ptr<HumanDetector> human_detector = std::make_shared<HumanDetector>();
+	for (int i = 0; i < xyzMaps.size(); ++i) {
+		viewer->removeAllPointClouds();
+		std::cout << "Showing: " << i << std::endl;
+		cv::Mat xyzMap = xyzMaps[i];
+		cv::Mat rgbMap = rgbMaps[i];
+		std::vector<cv::Point> rgbJoints = joint_maps[i];
+		
+		// segmentation using agglomerate clustering
+		cv::Mat out;
+		segmentAvatar(xyzMap, { rgbJoints[OpenPoseMPIJoint::LEFT_HIP],
+								rgbJoints[OpenPoseMPIJoint::RIGHT_HIP], 
+		                        rgbJoints[OpenPoseMPIJoint::LEFT_SHOULDER],
+								rgbJoints[OpenPoseMPIJoint::RIGHT_SHOULDER]}, out);
 
-    /*
-    // print out joints (debug)
-    for (int i = 0; i < xyzJoints.rows(); ++i) {
-        auto r = xyzJoints.row(i);
-        cout << r.x() << "\t" << r.y() << "\t" << r.z() << "\n";
-    }
-    cout << "\n";
-    */
-    ava.alignToJoints(xyzJoints);
-    ava.update();
+		// convert to PCL point cloud
+		auto humanCloudRaw = util::toPointCloud<pcl::PointXYZ>(out, true, true);
+		auto humanCloud = denoisePointCloud(humanCloudRaw); // denoise and downsample
 
-    const std::string MODEL_CLOUD_NAME = "model_cloud", DATA_CLOUD_NAME = "data_cloud";
+		HumanAvatar::EigenCloud_T xyzJoints;
+		toSMPLJoints(out, rgbJoints, xyzJoints);
 
-    // visualize
-    viewer->addPointCloud<pcl::PointXYZ>(humanCloud, DATA_CLOUD_NAME, vp0);
-    std::cout << "Data (Human) Points: " << humanCloud->size() << ". "
-              << "Model (Avatar) Points: " << ava.getCloud()->size() << "\n";
+		// show images
+		for (size_t n = 0; n < rgbJoints.size(); ++n) {
+		    cv::circle(out, rgbJoints[n], 8, cv::Scalar(0, 255, 255), -1);
+		    cv::putText(out, std::to_string(n), rgbJoints[n], cv::FONT_HERSHEY_COMPLEX, 1, cv::Scalar(255, 255, 0));
+		}
 
-    viewer->addPointCloud<HumanAvatar::Point_T>(ava.getCloud(), MODEL_CLOUD_NAME, vp0);
-    ava.fit(humanCloud);
-    ava.visualize(viewer, "o1_ava_", vp1);
-    ava.visualize(viewer, "ava_", vp0);
-    viewer->removePointCloud(MODEL_CLOUD_NAME, vp0);
-    viewer->addPointCloud<HumanAvatar::Point_T>(ava.getCloud(), MODEL_CLOUD_NAME, vp0);
-    viewer->addPointCloud<HumanAvatar::Point_T>(ava.getCloud(), MODEL_CLOUD_NAME + "_o1", vp1);
-    /*
-    for (int i = 0; i < xyzJoints.rows(); ++i) {
-        auto pt = xyzJoints.row(i);
-        pcl::PointXYZ pclPt(pt.x(), pt.y(), pt.z());
-        viewer->addText3D(std::to_string(i), pclPt, 0.1, 0, 0, 255, "jnt_lab__" + std::to_string(i));
-        viewer->addSphere(pclPt, 0.04, 1.0, 0, 0, "jnt__" + std::to_string(i));
-    }*/
+		cv::imshow("Fill", out);
+		cv::Mat xyzVis;
+		Visualizer::visualizeXYZMap(xyzMap, xyzVis, 2.5f);
+		cv::imshow("Depth Map", xyzVis);
+		cv::imshow("RGB", rgbMap);
 
-    viewer->spinOnce();
+
+		ava.setCenterPosition(util::cloudCenter(humanCloudRaw));
+		ava.update();
+		ava.alignToJoints(xyzJoints);
+		ava.update();
+
+		const std::string MODEL_CLOUD_NAME = "model_cloud" + i, DATA_CLOUD_NAME = "data_cloud" + i;
+
+		// visualize
+		viewer->addPointCloud<pcl::PointXYZ>(humanCloud, DATA_CLOUD_NAME, vp0);
+		std::cout << "Data (Human) Points: " << humanCloud->size() << ". "
+		            << "Model (Avatar) Points: " << ava.getCloud()->size() << "\n";
+
+		viewer->addPointCloud<HumanAvatar::Point_T>(ava.getCloud(), MODEL_CLOUD_NAME, vp0);
+		ava.fit(humanCloud);
+		ava.visualize(viewer, "o1_ava_", vp1);
+		ava.visualize(viewer, "ava_", vp0);
+		viewer->removePointCloud(MODEL_CLOUD_NAME, vp0);
+		viewer->addPointCloud<HumanAvatar::Point_T>(ava.getCloud(), MODEL_CLOUD_NAME, vp0);
+		viewer->addPointCloud<HumanAvatar::Point_T>(ava.getCloud(), MODEL_CLOUD_NAME + "_o1", vp1);
+
+		viewer->spinOnce();
+
+
+		cv::waitKey(1);
+	}
+
     cv::waitKey(0);
 
     cv::destroyAllWindows();

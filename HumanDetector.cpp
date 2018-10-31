@@ -139,7 +139,7 @@ namespace ark {
 			//copy the found filter
 			lastHumanDetectionBox = max_rect;
 		}
-		imshow("original", original);
+		//imshow("original", original);
 	}
 
 	void HumanDetector::detectBodyPose(const cv::Mat& frame) {
@@ -196,6 +196,8 @@ namespace ark {
 		}
 
 		for (int n = 0; n < personwiseKeypoints.size(); ++n) {
+			human_bodies[n]->MPIISkeleton2D.clear();
+			human_bodies[n]->MPIISkeleton2D.resize(nPoints);
 			for (int i = 0; i < nPoints; ++i) {
 				int indexA = personwiseKeypoints[n][i];
 
@@ -211,7 +213,7 @@ namespace ark {
 			}
 		}
 
-		cv::imshow("Detected Pose", outputFrame);
+		//cv::imshow("Detected Pose", outputFrame);
 	}
 
 	void HumanDetector::getPersonwiseKeypoints(const std::vector<std::vector<ValidPair>>& validPairs,

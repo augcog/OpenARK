@@ -67,69 +67,69 @@ int main() {
 							 // option flags
 	bool showHands = true, showPlanes = false, useSVM = true, useEdgeConn = false, showArea = false, playing = true;
 
-	// turn on the camera
-	camera->beginCapture();
+	//// turn on the camera
+	//camera->beginCapture();
 
-	// main demo loop
-	std::vector<cv::Mat> xyzMaps;
-	std::vector<cv::Mat> rgbMaps;
-	while (true)
-	{
-		++currFrame;
+	//// main demo loop
+	//std::vector<cv::Mat> xyzMaps;
+	//std::vector<cv::Mat> rgbMaps;
+	//while (true)
+	//{
+	//	++currFrame;
 
-		// get latest image from the camera
-		cv::Mat xyzMap = camera->getXYZMap();
-		cv::Mat rgbMap = camera->getRGBMap();
+	//	// get latest image from the camera
+	//	cv::Mat xyzMap = camera->getXYZMap();
+	//	cv::Mat rgbMap = camera->getRGBMap();
 
-		std::stringstream ss;
-		ss << "C:\\dev\\OpenARK_dataset\\human-basic-rgb-D435\\capture_" << currFrame << ".yml";
-		std::string curr_file_name = ss.str();
-		std::cout << curr_file_name << std::endl;
+	//	std::stringstream ss;
+	//	ss << "C:\\dev\\OpenARK_dataset\\human-basic-rgb-D435\\capture_" << currFrame << ".yml";
+	//	std::string curr_file_name = ss.str();
+	//	std::cout << curr_file_name << std::endl;
 
-		cv::FileStorage fs(curr_file_name, cv::FileStorage::WRITE);
-		fs << "xyz_map" << xyzMap;
-		fs << "rgb_map" << rgbMap;
-		fs.release();
+	//	cv::FileStorage fs(curr_file_name, cv::FileStorage::WRITE);
+	//	fs << "xyz_map" << xyzMap;
+	//	fs << "rgb_map" << rgbMap;
+	//	fs.release();
 
-		// show visualizations
-		if (!xyzMap.empty()) {
-			cv::imshow(camera->getModelName() + " Depth Map", xyzMap);
-		} 
+	//	// show visualizations
+	//	if (!xyzMap.empty()) {
+	//		cv::imshow(camera->getModelName() + " Depth Map", xyzMap);
+	//	} 
 
-		if (!rgbMap.empty()) {
-			cv::imshow(camera->getModelName() + " RGB Map", rgbMap);
-		}
-		/**** End: Visualization ****/
+	//	if (!rgbMap.empty()) {
+	//		cv::imshow(camera->getModelName() + " RGB Map", rgbMap);
+	//	}
+	//	/**** End: Visualization ****/
 
-		/**** Start: Controls ****/
-		int c = cv::waitKey(1);
+	//	/**** Start: Controls ****/
+	//	int c = cv::waitKey(1);
 
-		// make case insensitive
-		if (c >= 'a' && c <= 'z') c &= 0xdf;
+	//	// make case insensitive
+	//	if (c >= 'a' && c <= 'z') c &= 0xdf;
 
-		// 27 is ESC
-		if (c == 'Q' || c == 27) {
-			/*** Loop Break Condition ***/
-			break;
-		}
-		/**** End: Controls ****/
-	}
+	//	// 27 is ESC
+	//	if (c == 'Q' || c == 27) {
+	//		/*** Loop Break Condition ***/
+	//		break;
+	//	}
+	//	/**** End: Controls ****/
+	//}
 
-	camera->endCapture();
+	//camera->endCapture();
 
-	ASSERT(xyzMaps.size() == rgbMaps.size(), "Depth map and RGB map are not in sync!");
+	//ASSERT(xyzMaps.size() == rgbMaps.size(), "Depth map and RGB map are not in sync!");
 
-	for (int i = 0; i < xyzMaps.size(); ++i) {
-		std::stringstream ss;
-		ss << "C:\\dev\\OpenARK_dataset\\human-basic-rgb-D435\\capture_" << std::setw(2) << std::setfill('0') << i << ".yml";
-		std::string curr_file_name = ss.str();
-		std::cout << curr_file_name << std::endl;
+	//for (int i = 0; i < xyzMaps.size(); ++i) {
+	//	std::stringstream ss;
+	//	ss << "C:\\dev\\OpenARK_dataset\\human-basic-rgb-D435\\capture_" << std::setw(2) << std::setfill('0') << i << ".yml";
+	//	std::string curr_file_name = ss.str();
+	//	std::cout << curr_file_name << std::endl;
 
-		cv::FileStorage fs(curr_file_name, cv::FileStorage::WRITE);
-		fs << "xyz_map" << xyzMaps[i];
-		fs << "rgb_map" << rgbMaps[i];
-		fs.release();
-	}
+	//	cv::FileStorage fs(curr_file_name, cv::FileStorage::WRITE);
+	//	fs << "xyz_map" << xyzMaps[i];
+	//	fs << "rgb_map" << rgbMaps[i];
+	//	fs.release();
+	//}
 
 	std::vector<std::string> file_names;
 	boost::filesystem::path image_dir("C:\\dev\\OpenARK_dataset\\human-basic-rgb-D435\\");
@@ -152,17 +152,20 @@ int main() {
 		fs2["rgb_map"] >> rgb_map;
 		fs2.release();
 		
-
+		
 		human_detector->update(rgb_map);
 		std::vector<cv::Point> rgbJoints = human_detector->getHumanBodies()[0]->MPIISkeleton2D;
 		for (const auto& joint : rgbJoints) {
 			cv::circle(rgb_map, joint, 2, cv::Scalar(255, 0, 0), 2);
 		}
-		cv::imshow("RGB Frame", rgb_map);
+		cv::imshow("RGB Frame Data", rgb_map);
+		
 		cv::FileStorage fs3(filename, cv::FileStorage::APPEND);
 		fs3 << "joints" << rgbJoints;
 		fs3.release();
 		cv::waitKey(1);
+
+		rgbJoints.clear();
 	}
 	int c = cv::waitKey(1);
 	cv::destroyAllWindows();
