@@ -28,7 +28,7 @@ using namespace ark;
 static void filterByDepth(cv::Mat& xyz_map, double min_depth, double max_depth) {
     for (int r = 0; r < xyz_map.rows; ++r)
     {
-        Vec3f * ptr = xyz_map.ptr<Vec3f>(r);
+        cv::Vec3f * ptr = xyz_map.ptr<cv::Vec3f>(r);
         for (int c = 0; c < xyz_map.cols; ++c)
         {
             if (ptr[c][2] > max_depth || ptr[c][2] < min_depth) {
@@ -38,27 +38,76 @@ static void filterByDepth(cv::Mat& xyz_map, double min_depth, double max_depth) 
     }
 }
 
+static int filterByHeight(cv::Mat& xyz_map, int feet) {
+	int skipped = 0;
+	for (int r = 0; r < xyz_map.rows; ++r)
+	{
+		cv::Vec3f * ptr = xyz_map.ptr<cv::Vec3f>(r);
+		for (int c = 0; c < xyz_map.cols; ++c)
+		{
+			if (r < feet) {
+				ptr[c][0] = ptr[c][1] = ptr[c][2] = 0.0f;
+				skipped++;
+			}
+		}
+	}
+	return skipped;
+}
+
 static void segmentAvatar(const cv::Mat & xyz_map, const std::vector<cv::Point2i> & points_on_target,
     cv::Mat & out) {
+
+	// Filter Background
     cv::Mat floodFillMap = xyz_map.clone();
     filterByDepth(floodFillMap, 1, 3);
+	cv::Mat ground = floodFillMap.clone();
+	filterByHeight(ground, points_on_target[12].y);
+    
+	// Remove Plane
+	auto viewer = Visualizer::getPCLVisualizer();
+	auto groundCloud = util::toPointCloud<pcl::PointXYZ>(ground);
 
-    // initialize plane detector
-    DetectionParams::Ptr params = DetectionParams::create();
-    params->normalResolution = 3;
-    params->planeFloodFillThreshold = 0.13;
-    params->handPlaneMinNorm = 0.01;
-    PlaneDetector::Ptr planeDetector = std::make_shared<PlaneDetector>();
-    planeDetector->setParams(params);
-    planeDetector->update(xyz_map);
+	pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+	pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+	// Create the segmentation object
+	pcl::SACSegmentation<pcl::PointXYZ> seg;
+	// Optional
+	seg.setOptimizeCoefficients(true);
+	// Mandatory
+	seg.setModelType(pcl::SACMODEL_PLANE);
+	seg.setMethodType(pcl::SAC_RANSAC);
+	seg.setDistanceThreshold(0.06);
 
-    const std::vector<FramePlane::Ptr> & planes = planeDetector->getPlanes();
-    std::cerr << planes.size() << " Planes Found\n";
-    for (FramePlane::Ptr plane : planes) {
-        util::removePlane<Vec3f>(floodFillMap, floodFillMap, plane->equation, 0.004);
-    }
+	seg.setInputCloud(groundCloud);
+	seg.segment(*inliers, *coefficients);
 
-    cv::imshow("PlaneRemove", floodFillMap);
+	if (inliers->indices.size() == 0) {
+		PCL_ERROR("Could not estimate a planar model for the given dataset.");
+		return;
+	}
+
+	double a = coefficients->values[0];
+	double b = coefficients->values[1];
+	double c = coefficients->values[2];
+	double d = coefficients->values[3];
+
+	for (int r = 0; r < floodFillMap.rows; ++r)
+	{
+		cv::Vec3f * ptr = floodFillMap.ptr<cv::Vec3f>(r);
+		for (int cc = 0; cc < floodFillMap.cols; ++cc)
+		{
+			double ax = a * ptr[cc][0];
+			double bx = b * ptr[cc][1];
+			double cx = c * ptr[cc][2];
+			double result = ax + bx + cx + d;
+			//cout << result << endl;
+			if (abs(result) < 0.06) {
+				ptr[cc][0] = ptr[cc][1] = ptr[cc][2] = 0.0f;
+			}
+		}
+	}
+
+	// Floodfill Avatar
 
     std::vector<Point2i> allIndices;
     allIndices.reserve(xyz_map.cols * xyz_map.rows);
@@ -171,7 +220,7 @@ int main(int argc, char ** argv) {
     // seed the rng
     srand(time(NULL));
 
-    const std::string IMG_PATH = "C:\\dev\\OpenARK_dataset\\human-basic-rgb-D435\\capture_14.yml";
+    const std::string IMG_PATH = "C:\\dev\\OpenARK_dataset\\human-basic-rgb-D435-tiny\\capture_15.yml";
     // gender-neutral model
     const std::string HUMAN_MODEL_PATH = "C:/dev/SMPL/models/basicModel_neutral_lbs_10_207_0_v1.0.0/";
 
@@ -188,6 +237,15 @@ int main(int argc, char ** argv) {
         std::cerr << "Image not found! Exiting...\n";
         std::exit(0);
     }
+
+	cv::FileStorage fs2(IMG_PATH, cv::FileStorage::READ);
+	fs2["xyz_map"] >> xyzMap;
+	fs2["rgb_map"] >> rgbMap;
+	fs2["joints"] >> rgbJoints;
+
+	/*cv::Mat out;
+	segmentAvatar(xyzMap, rgbJoints, out);
+	cv::imshow("Segment Results", out);*/
 
 	boost::filesystem::path image_dir("C:\\dev\\OpenARK_dataset\\human-basic-rgb-D435-tiny\\");
 	std::vector<std::string> file_names;
@@ -237,10 +295,7 @@ int main(int argc, char ** argv) {
 		
 		// segmentation using agglomerate clustering
 		cv::Mat out;
-		segmentAvatar(xyzMap, { rgbJoints[OpenPoseMPIJoint::LEFT_HIP],
-								rgbJoints[OpenPoseMPIJoint::RIGHT_HIP], 
-		                        rgbJoints[OpenPoseMPIJoint::LEFT_SHOULDER],
-								rgbJoints[OpenPoseMPIJoint::RIGHT_SHOULDER]}, out);
+		segmentAvatar(xyzMap, rgbJoints, out);
 
 		// convert to PCL point cloud
 		auto humanCloudRaw = util::toPointCloud<pcl::PointXYZ>(out, true, true);
