@@ -230,18 +230,18 @@ int main(int argc, char ** argv) {
 												 "shape009.pcd"};
 
 
-    cv::Mat xyzMap, rgbMap;
-	std::vector<cv::Point> rgbJoints;
-    std::string imgPath = argc > 1 ? argv[1] : IMG_PATH;
-    if (!boost::filesystem::exists(imgPath)) {
-        std::cerr << "Image not found! Exiting...\n";
-        std::exit(0);
-    }
+ //   cv::Mat xyzMap, rgbMap;
+	//std::vector<cv::Point> rgbJoints;
+ //   std::string imgPath = argc > 1 ? argv[1] : IMG_PATH;
+ //   if (!boost::filesystem::exists(imgPath)) {
+ //       std::cerr << "Image not found! Exiting...\n";
+ //       std::exit(0);
+ //   }
 
-	cv::FileStorage fs2(IMG_PATH, cv::FileStorage::READ);
-	fs2["xyz_map"] >> xyzMap;
-	fs2["rgb_map"] >> rgbMap;
-	fs2["joints"] >> rgbJoints;
+	//cv::FileStorage fs2(IMG_PATH, cv::FileStorage::READ);
+	//fs2["xyz_map"] >> xyzMap;
+	//fs2["rgb_map"] >> rgbMap;
+	//fs2["joints"] >> rgbJoints;
 
 	/*cv::Mat out;
 	segmentAvatar(xyzMap, rgbJoints, out);
@@ -330,7 +330,15 @@ int main(int argc, char ** argv) {
 		            << "Model (Avatar) Points: " << ava.getCloud()->size() << "\n";
 
 		viewer->addPointCloud<HumanAvatar::Point_T>(ava.getCloud(), MODEL_CLOUD_NAME, vp0);
-		ava.fit(humanCloud);
+		if (i == 0) {
+			ava.fit(humanCloud);
+			cout << "Fitting" << endl;
+		}
+		else {
+			ava.fitTrack(humanCloud);
+			cout << "Tracking" << endl;
+		}
+		
 		ava.visualize(viewer, "o1_ava_", vp1);
 		ava.visualize(viewer, "ava_", vp0);
 		viewer->removePointCloud(MODEL_CLOUD_NAME, vp0);
