@@ -34,10 +34,10 @@ int main() {
 	srand(time(NULL));
 
 	// initialize the camera
-	DepthCamera::Ptr camera;
+	//DepthCamera::Ptr camera;
 
 #if defined(RSSDK2_ENABLED)
-	camera = std::make_shared<RS2Camera>(true);
+	//camera = std::make_shared<RS2Camera>(true);
 #elif defined(RSSDK_ENABLED)
 	ASSERT(strcmp(OPENARK_CAMERA_TYPE, "sr300") == 0, "Unsupported RealSense camera type.");
 	camera = std::make_shared<SR300Camera>();
@@ -49,7 +49,7 @@ int main() {
 #endif
 
 	// initialize parameters
-	DetectionParams::Ptr params = camera->getDefaultParams(); // default parameters for camera
+	//DetectionParams::Ptr params = camera->getDefaultParams(); // default parameters for camera
 
 															  // store frame & FPS information
 	const int FPS_CYCLE_FRAMES = 8; // number of frames to average FPS over (FPS 'cycle' length)
@@ -67,6 +67,8 @@ int main() {
 							 // option flags
 	bool showHands = true, showPlanes = false, useSVM = true, useEdgeConn = false, showArea = false, playing = true;
 
+	const std::string directory_path = "C:\\dev\\OpenARK_dataset\\human-sport-D435\\";
+
 	//// turn on the camera
 	//camera->beginCapture();
 
@@ -82,14 +84,11 @@ int main() {
 	//	cv::Mat rgbMap = camera->getRGBMap();
 
 	//	std::stringstream ss;
-	//	ss << "C:\\dev\\OpenARK_dataset\\human-basic-rgb-D435\\capture_" << currFrame << ".yml";
+	//	ss << directory_path << currFrame << ".yml";
 	//	std::string curr_file_name = ss.str();
-	//	std::cout << curr_file_name << std::endl;
 
-	//	cv::FileStorage fs(curr_file_name, cv::FileStorage::WRITE);
-	//	fs << "xyz_map" << xyzMap;
-	//	fs << "rgb_map" << rgbMap;
-	//	fs.release();
+	//	xyzMaps.push_back(xyzMap);
+	//	rgbMaps.push_back(rgbMap);
 
 	//	// show visualizations
 	//	if (!xyzMap.empty()) {
@@ -102,7 +101,7 @@ int main() {
 	//	/**** End: Visualization ****/
 
 	//	/**** Start: Controls ****/
-	//	int c = cv::waitKey(1);
+	//	int c = cv::waitKey(66);
 
 	//	// make case insensitive
 	//	if (c >= 'a' && c <= 'z') c &= 0xdf;
@@ -120,8 +119,9 @@ int main() {
 	//ASSERT(xyzMaps.size() == rgbMaps.size(), "Depth map and RGB map are not in sync!");
 
 	//for (int i = 0; i < xyzMaps.size(); ++i) {
+	//	cout << "Writing " << i << " / " << xyzMaps.size() << endl;
 	//	std::stringstream ss;
-	//	ss << "C:\\dev\\OpenARK_dataset\\human-basic-rgb-D435\\capture_" << std::setw(2) << std::setfill('0') << i << ".yml";
+	//	ss << directory_path << "capture_" << std::setw(2) << std::setfill('0') << i << ".yml";
 	//	std::string curr_file_name = ss.str();
 	//	std::cout << curr_file_name << std::endl;
 
@@ -132,7 +132,7 @@ int main() {
 	//}
 
 	std::vector<std::string> file_names;
-	boost::filesystem::path image_dir("C:\\dev\\OpenARK_dataset\\human-basic-rgb-D435\\");
+	boost::filesystem::path image_dir(directory_path);
 
 	if (is_directory(image_dir)) {
 		
@@ -154,6 +154,9 @@ int main() {
 		
 		
 		human_detector->update(rgb_map);
+		if (human_detector->getHumanBodies().size() == 0) {
+			continue;
+		}
 		std::vector<cv::Point> rgbJoints = human_detector->getHumanBodies()[0]->MPIISkeleton2D;
 		for (const auto& joint : rgbJoints) {
 			cv::circle(rgb_map, joint, 2, cv::Scalar(255, 0, 0), 2);
@@ -163,9 +166,10 @@ int main() {
 		cv::FileStorage fs3(filename, cv::FileStorage::APPEND);
 		fs3 << "joints" << rgbJoints;
 		fs3.release();
-		cv::waitKey(1);
+		
 
 		rgbJoints.clear();
+		cv::waitKey(1);
 	}
 	int c = cv::waitKey(1);
 	cv::destroyAllWindows();

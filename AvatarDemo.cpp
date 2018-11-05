@@ -144,7 +144,7 @@ static boost::shared_ptr<pcl::PointCloud<T>> denoisePointCloud(boost::shared_ptr
     return humanCloud_down;
 }
 
-/** OpenPose MPI model output joint indices */
+/** OpenPose MPI model output joint indices  */
 enum OpenPoseMPIJoint {
     HEAD, NECK, RIGHT_SHOULDER, RIGHT_ELBOW, RIGHT_WRIST, LEFT_SHOULDER,
     LEFT_ELBOW, LEFT_WRIST, RIGHT_HIP, RIGHT_KNEE, RIGHT_ANKLE,

@@ -520,10 +520,10 @@ namespace ark {
 		auto startTime = std::chrono::high_resolution_clock::now();
 		kd_tree_ptr_t kdTree = _buildKDIndex(dataCloud);
 		std::vector<int> joints_subset;
-		//fitPose(dataCloud, 2, 14, joints_subset, false, kdTree);
-		fitShape(dataCloud, 3, 14, false, kdTree);
+		fitPose(dataCloud, 1, 4, joints_subset, false, kdTree);
+		//fitShape(dataCloud, 3, 14, false, kdTree);
 		//fitPose(dataCloud, 4, 14, joints_subset, false, kdTree);
-		fitShape(dataCloud, 3, 14, false, kdTree);
+		//fitShape(dataCloud, 3, 14, false, kdTree);
 		//fitPose(dataCloud, 3, 5, joints_subset, false, kdTree);
 		auto endTime = std::chrono::high_resolution_clock::now();
 
