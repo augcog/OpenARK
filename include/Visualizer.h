@@ -123,6 +123,6 @@ namespace ark {
         */
         static pcl::visualization::PCLVisualizer::Ptr viewer;
 
-		static void drawPolyline(cv::Mat &im, const std::vector<cv::Point2f> &landmarks, const int start, const int end, bool isClosed = false);
+		//static void drawPolyline(cv::Mat &im, const std::vector<cv::Point2f> &landmarks, const int start, const int end, bool isClosed = false);
     };
 }

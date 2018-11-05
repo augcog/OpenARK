@@ -18,6 +18,7 @@
 #include "Core.h"
 #include "Visualizer.h"
 #include "StreamingAverager.h"
+#include "HumanDetector.h"
 
 
 using namespace ark;
@@ -33,10 +34,10 @@ int main() {
 	srand(time(NULL));
 
 	// initialize the camera
-	DepthCamera::Ptr camera;
+	//DepthCamera::Ptr camera;
 
 #if defined(RSSDK2_ENABLED)
-	camera = std::make_shared<RS2Camera>(true);
+	//camera = std::make_shared<RS2Camera>(true);
 #elif defined(RSSDK_ENABLED)
 	ASSERT(strcmp(OPENARK_CAMERA_TYPE, "sr300") == 0, "Unsupported RealSense camera type.");
 	camera = std::make_shared<SR300Camera>();
@@ -48,7 +49,7 @@ int main() {
 #endif
 
 	// initialize parameters
-	DetectionParams::Ptr params = camera->getDefaultParams(); // default parameters for camera
+	//DetectionParams::Ptr params = camera->getDefaultParams(); // default parameters for camera
 
 															  // store frame & FPS information
 	const int FPS_CYCLE_FRAMES = 8; // number of frames to average FPS over (FPS 'cycle' length)
@@ -66,76 +67,111 @@ int main() {
 							 // option flags
 	bool showHands = true, showPlanes = false, useSVM = true, useEdgeConn = false, showArea = false, playing = true;
 
-	// turn on the camera
-	camera->beginCapture();
+	const std::string directory_path = "C:\\dev\\OpenARK_dataset\\human-sport-D435\\";
 
-	// main demo loop
-	while (true)
-	{
-		++currFrame;
+	//// turn on the camera
+	//camera->beginCapture();
 
-		// get latest image from the camera
-		cv::Mat xyzMap = camera->getXYZMap();
-		cv::Mat rgbMap = camera->getRGBMap();
+	//// main demo loop
+	//std::vector<cv::Mat> xyzMaps;
+	//std::vector<cv::Mat> rgbMaps;
+	//while (true)
+	//{
+	//	++currFrame;
 
-		std::stringstream ss;
-		ss << "C:\\dev\\OpenARK_dataset\\human-basic-rgb-D435\\capture_" << currFrame << ".yml";
-		std::string curr_file_name = ss.str();
-		std::cout << curr_file_name << std::endl;
+	//	// get latest image from the camera
+	//	cv::Mat xyzMap = camera->getXYZMap();
+	//	cv::Mat rgbMap = camera->getRGBMap();
 
-		cv::FileStorage fs(curr_file_name, cv::FileStorage::WRITE);
-		fs << "xyz_map" << xyzMap;
-		fs << "rgb_map" << rgbMap;
-		fs.release();
+	//	std::stringstream ss;
+	//	ss << directory_path << currFrame << ".yml";
+	//	std::string curr_file_name = ss.str();
 
-		// show visualizations
-		if (!xyzMap.empty()) {
-			cv::imshow(camera->getModelName() + " Depth Map", xyzMap);
-		} 
+	//	xyzMaps.push_back(xyzMap);
+	//	rgbMaps.push_back(rgbMap);
 
-		if (!rgbMap.empty()) {
-			cv::imshow(camera->getModelName() + " RGB Map", rgbMap);
+	//	// show visualizations
+	//	if (!xyzMap.empty()) {
+	//		cv::imshow(camera->getModelName() + " Depth Map", xyzMap);
+	//	} 
+
+	//	if (!rgbMap.empty()) {
+	//		cv::imshow(camera->getModelName() + " RGB Map", rgbMap);
+	//	}
+	//	/**** End: Visualization ****/
+
+	//	/**** Start: Controls ****/
+	//	int c = cv::waitKey(66);
+
+	//	// make case insensitive
+	//	if (c >= 'a' && c <= 'z') c &= 0xdf;
+
+	//	// 27 is ESC
+	//	if (c == 'Q' || c == 27) {
+	//		/*** Loop Break Condition ***/
+	//		break;
+	//	}
+	//	/**** End: Controls ****/
+	//}
+
+	//camera->endCapture();
+
+	//ASSERT(xyzMaps.size() == rgbMaps.size(), "Depth map and RGB map are not in sync!");
+
+	//for (int i = 0; i < xyzMaps.size(); ++i) {
+	//	cout << "Writing " << i << " / " << xyzMaps.size() << endl;
+	//	std::stringstream ss;
+	//	ss << directory_path << "capture_" << std::setw(2) << std::setfill('0') << i << ".yml";
+	//	std::string curr_file_name = ss.str();
+	//	std::cout << curr_file_name << std::endl;
+
+	//	cv::FileStorage fs(curr_file_name, cv::FileStorage::WRITE);
+	//	fs << "xyz_map" << xyzMaps[i];
+	//	fs << "rgb_map" << rgbMaps[i];
+	//	fs.release();
+	//}
+
+	std::vector<std::string> file_names;
+	boost::filesystem::path image_dir(directory_path);
+
+	if (is_directory(image_dir)) {
+		
+		boost::filesystem::directory_iterator end_iter;
+		for (boost::filesystem::directory_iterator dir_itr(image_dir); dir_itr != end_iter; ++dir_itr) {
+			const auto& next_path = dir_itr->path().generic_string();
+			file_names.emplace_back(next_path);
 		}
-		/**** End: Visualization ****/
-
-		/**** Start: Controls ****/
-		int c = cv::waitKey(1);
-
-		// make case insensitive
-		if (c >= 'a' && c <= 'z') c &= 0xdf;
-
-		// 27 is ESC
-		if (c == 'Q' || c == 27) {
-			/*** Loop Break Condition ***/
-			break;
-		}
-		else if (c >= '0' && c <= '3') {
-			backgroundStyle = c - '0';
-		}
-
-		switch (c) {
-		case 'P':
-			showPlanes ^= 1; break;
-		case 'H':
-			showHands ^= 1; break;
-		case 'S':
-			useSVM ^= 1; break;
-		case 'C':
-			useEdgeConn ^= 1; break;
-		case 'A':
-			showArea ^= 1; break;
-		case ' ':
-			playing ^= 1;
-			// reset frame number
-			if (playing) currFrame = -1;
-			break;
-		}
-
-		/**** End: Controls ****/
+		std::sort(file_names.begin(), file_names.end());
 	}
 
-	camera->endCapture();
+	std::shared_ptr<HumanDetector> human_detector = std::make_shared<HumanDetector>();
+	for (const auto& filename : file_names) {
+		std::cout << filename << std::endl;
+		cv::Mat rgb_map, xyz_map;
+		cv::FileStorage fs2(filename, cv::FileStorage::READ);
+		fs2["rgb_map"] >> rgb_map;
+		fs2.release();
+		
+		
+		human_detector->update(rgb_map);
+		if (human_detector->getHumanBodies().size() == 0) {
+			continue;
+		}
+		std::vector<cv::Point> rgbJoints = human_detector->getHumanBodies()[0]->MPIISkeleton2D;
+		for (const auto& joint : rgbJoints) {
+			cv::circle(rgb_map, joint, 2, cv::Scalar(255, 0, 0), 2);
+		}
+		cv::imshow("RGB Frame Data", rgb_map);
+		
+		cv::FileStorage fs3(filename, cv::FileStorage::APPEND);
+		fs3 << "joints" << rgbJoints;
+		fs3.release();
+		
 
+		rgbJoints.clear();
+		cv::waitKey(1);
+	}
+	int c = cv::waitKey(1);
 	cv::destroyAllWindows();
 	return 0;
 }

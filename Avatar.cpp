@@ -516,6 +516,26 @@ namespace ark {
         __debugVisualize(this, dataCloud, modelCloud, correspondences, true);
     }
 
+	void HumanAvatar::fitTrack(const EigenCloud_T & dataCloud) {
+		auto startTime = std::chrono::high_resolution_clock::now();
+		kd_tree_ptr_t kdTree = _buildKDIndex(dataCloud);
+		std::vector<int> joints_subset;
+		fitPose(dataCloud, 1, 4, joints_subset, false, kdTree);
+		//fitShape(dataCloud, 3, 14, false, kdTree);
+		//fitPose(dataCloud, 4, 14, joints_subset, false, kdTree);
+		//fitShape(dataCloud, 3, 14, false, kdTree);
+		//fitPose(dataCloud, 3, 5, joints_subset, false, kdTree);
+		auto endTime = std::chrono::high_resolution_clock::now();
+
+		std::cout << "Overall Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << " ms\n";
+
+		EigenCloud_T modelCloud(humanPCTransformed->points.size(), 3);
+		std::vector<std::pair<int, int> > correspondences;
+		_updateCloud(_w, _pt, _cache, modelCloud);
+		_findNN(kdTree, dataCloud, modelCloud, correspondences, false);
+		__debugVisualize(this, dataCloud, modelCloud, correspondences, true);
+	}
+
     void HumanAvatar::fitPose(const EigenCloud_T & dataCloud, int max_iter, int num_subiter,
         const std::vector<int> & joint_subset, bool inv_nn, kd_tree_ptr_t kd_tree) {
         using namespace ceres;
