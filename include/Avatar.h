@@ -5,6 +5,8 @@
 #include <Eigen/Dense>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
+#include <pcl/filters/uniform_sampling.h>
+#include <pcl/filters/random_sample.h>
 
 namespace ark {
 

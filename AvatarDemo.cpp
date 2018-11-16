@@ -230,129 +230,101 @@ int main(int argc, char ** argv) {
 												 "shape009.pcd"};
 
 
- //   cv::Mat xyzMap, rgbMap;
-	//std::vector<cv::Point> rgbJoints;
- //   std::string imgPath = argc > 1 ? argv[1] : IMG_PATH;
- //   if (!boost::filesystem::exists(imgPath)) {
- //       std::cerr << "Image not found! Exiting...\n";
- //       std::exit(0);
- //   }
+	// ** create avatar instance **
+	HumanAvatar ava(HUMAN_MODEL_PATH, SHAPE_KEYS);
 
-	//cv::FileStorage fs2(IMG_PATH, cv::FileStorage::READ);
-	//fs2["xyz_map"] >> xyzMap;
-	//fs2["rgb_map"] >> rgbMap;
-	//fs2["joints"] >> rgbJoints;
-
-	/*cv::Mat out;
-	segmentAvatar(xyzMap, rgbJoints, out);
-	cv::imshow("Segment Results", out);*/
-
-	boost::filesystem::path image_dir("C:\\dev\\OpenARK_dataset\\human-basic-rgb-D435-tiny\\");
-	std::vector<std::string> file_names;
-	if (is_directory(image_dir)) {
-		boost::filesystem::directory_iterator end_iter;
-		for (boost::filesystem::directory_iterator dir_itr(image_dir); dir_itr != end_iter; ++dir_itr) {
-			const auto& next_path = dir_itr->path().generic_string();
-			file_names.emplace_back(next_path);
-		}
-		std::sort(file_names.begin(), file_names.end());
-	}
-
-	std::vector<cv::Mat> xyzMaps;
-	std::vector<cv::Mat> rgbMaps;
-	std::vector<std::vector<cv::Point>> joint_maps;
-
-	for (const auto& filename : file_names) {
-		cv::Mat xyzMap, rgbMap;
-		std::vector<cv::Point> joints;
-
-		cv::FileStorage fs2(filename, cv::FileStorage::READ);
-
-		fs2["xyz_map"] >> xyzMap;
-		fs2["rgb_map"] >> rgbMap;
-		fs2["joints"] >> joints;
-
-		fs2.release();
-
-		xyzMaps.push_back(xyzMap);
-		rgbMaps.push_back(rgbMap);
-		joint_maps.push_back(joints);
-		std::cout << "Loading: " << filename << std::endl;
-	}
-
-	ASSERT(xyzMaps.size() == rgbMaps.size() && xyzMaps.size() == joint_maps.size());
-
-	HumanAvatar ava(HUMAN_MODEL_PATH, SHAPE_KEYS, 2);
+	// ** set up PCL viewer **
 	auto viewer = Visualizer::getPCLVisualizer();
-	auto vp0 = Visualizer::createPCLViewport(0, 0, 0.7, 1), vp1 = Visualizer::createPCLViewport(0.7, 0, 1, 1);
-	//std::shared_ptr<HumanDetector> human_detector = std::make_shared<HumanDetector>();
-	for (int i = 0; i < xyzMaps.size(); ++i) {
-		viewer->removeAllPointClouds();
-		std::cout << "Showing: " << i << std::endl;
-		cv::Mat xyzMap = xyzMaps[i];
-		cv::Mat rgbMap = rgbMaps[i];
-		std::vector<cv::Point> rgbJoints = joint_maps[i];
-		
-		// segmentation using agglomerate clustering
-		cv::Mat out;
-		segmentAvatar(xyzMap, rgbJoints, out);
+	int vp1 = 0;
+	viewer->setWindowName("3D View");
+	viewer->setCameraClipDistances(0.0, 1000.0, vp1);
 
-		// convert to PCL point cloud
-		auto humanCloudRaw = util::toPointCloud<pcl::PointXYZ>(out, true, true);
-		auto humanCloud = denoisePointCloud(humanCloudRaw); // denoise and downsample
-
-		HumanAvatar::EigenCloud_T xyzJoints;
-		toSMPLJoints(out, rgbJoints, xyzJoints);
-
-		// show images
-		for (size_t n = 0; n < rgbJoints.size(); ++n) {
-		    cv::circle(out, rgbJoints[n], 8, cv::Scalar(0, 255, 255), -1);
-		    cv::putText(out, std::to_string(n), rgbJoints[n], cv::FONT_HERSHEY_COMPLEX, 1, cv::Scalar(255, 255, 0));
+	volatile bool interrupt = false;
+	viewer->registerKeyboardCallback([&interrupt](const pcl::visualization::KeyboardEvent & evt) {
+		unsigned char k = evt.getKeyCode();
+		if (k == 'Q' || k == 'q' || k == 27) {
+			// force quit
+			interrupt = true;
 		}
+	});
 
-		cv::imshow("Fill", out);
-		cv::Mat xyzVis;
-		Visualizer::visualizeXYZMap(xyzMap, xyzVis, 2.5f);
-		cv::imshow("Depth Map", xyzVis);
-		cv::imshow("RGB", rgbMap);
+	// ** create control windows **
+	cv::namedWindow("Body Shape");
+	cv::namedWindow("Body Pose");
 
+	std::vector<int> pcw(SHAPE_KEYS.size(), 1000), p_pcw(SHAPE_KEYS.size(), 0);
 
-		ava.setCenterPosition(util::cloudCenter(humanCloudRaw));
-		ava.update();
-		ava.alignToJoints(xyzJoints);
-		ava.update();
+	// Define axes
+	const Eigen::Vector3d AXISX(1, 0, 0), AXISY(0, 1, 0), AXISZ(0, 0, 1);
 
-		const std::string MODEL_CLOUD_NAME = "model_cloud" + i, DATA_CLOUD_NAME = "data_cloud" + i;
+	// Body pose control definitions (currently this control system only supports rotation along one axis per body part)
+	const std::vector<std::string> CTRL_NAMES = { "L LEG",       "R LEG",       "L KNEE",       "R KNEE",       "L ANKLE",     "R ANKLE",     "L ARM",        "R ARM",        "L ELBOW",      "R ELBOW",      "HEAD",      "SPINE2" };
+	using jnt_t = HumanAvatar::JointType;
+	const std::vector<jnt_t> CTRL_JNT = { jnt_t::R_KNEE, jnt_t::L_KNEE, jnt_t::R_ANKLE, jnt_t::L_ANKLE, jnt_t::R_FOOT, jnt_t::L_FOOT, jnt_t::R_ELBOW, jnt_t::L_ELBOW, jnt_t::R_WRIST, jnt_t::L_WRIST, jnt_t::HEAD, jnt_t::SPINE2 };
+	const std::vector<Eigen::Vector3d> CTRL_AXIS = { AXISX,         AXISX,         AXISX,           AXISX,         AXISX,         AXISX,         AXISY,          AXISY,          AXISY,          AXISY,          AXISX,       AXISX };
+	const int N_CTRL = (int)CTRL_NAMES.size();
+	std::vector<int> ctrlw(N_CTRL, 1000), p_ctrlw(N_CTRL, 0);
 
-		// visualize
-		viewer->addPointCloud<pcl::PointXYZ>(humanCloud, DATA_CLOUD_NAME, vp0);
-		std::cout << "Data (Human) Points: " << humanCloud->size() << ". "
-		            << "Model (Avatar) Points: " << ava.getCloud()->size() << "\n";
-
-		viewer->addPointCloud<HumanAvatar::Point_T>(ava.getCloud(), MODEL_CLOUD_NAME, vp0);
-		if (i == 0) {
-			ava.fit(humanCloud);
-			cout << "Fitting" << endl;
-		}
-		else {
-			ava.fitTrack(humanCloud);
-			cout << "Tracking" << endl;
-		}
-		
-		ava.visualize(viewer, "o1_ava_", vp1);
-		ava.visualize(viewer, "ava_", vp0);
-		viewer->removePointCloud(MODEL_CLOUD_NAME, vp0);
-		viewer->addPointCloud<HumanAvatar::Point_T>(ava.getCloud(), MODEL_CLOUD_NAME, vp0);
-		viewer->addPointCloud<HumanAvatar::Point_T>(ava.getCloud(), MODEL_CLOUD_NAME + "_o1", vp1);
-
-		viewer->spinOnce();
-
-
-		cv::waitKey(1);
+	// Body shapekeys are defined in SMPL model files.
+	int pifx = 0, pify = 0, picx = 0, picy = 0, pframeID = -1;
+	cv::resizeWindow("Body Shape", cv::Size(400, 700));
+	cv::resizeWindow("Body Pose", cv::Size(400, 700));
+	for (int i = 0; i < N_CTRL; ++i) {
+		cv::createTrackbar(CTRL_NAMES[i], "Body Pose", &ctrlw[i], 2000);
+	}
+	for (int i = 0; i < (int)pcw.size(); ++i) {
+		cv::createTrackbar("PC" + std::to_string(i), "Body Shape", &pcw[i], 2000);
 	}
 
-    cv::waitKey(0);
+	// ** Primary control loop **
+	while (!interrupt) {
+		bool controlsChanged = false;
+		for (int i = 0; i < N_CTRL; ++i) {
+			if (ctrlw[i] != p_ctrlw[i]) {
+				controlsChanged = true;
+				break;
+			}
+		}
+		for (int i = 0; i < (int)pcw.size(); ++i) {
+			if (pcw[i] != p_pcw[i]) {
+				controlsChanged = true;
+				break;
+			}
+		}
+		if (controlsChanged) {
+			viewer->removeAllPointClouds(vp1);
+			viewer->removeAllShapes(vp1);
 
-    cv::destroyAllWindows();
-    return 0;
+			HumanAvatar::Cloud_T::Ptr depthPC;
+
+			ava.update();
+
+			viewer->addPointCloud<HumanAvatar::Point_T>(ava.getCloud(), "vp1_cloudHM", vp1);
+			ava.visualize(viewer, "vp1_", vp1);
+
+			for (int i = 0; i < N_CTRL; ++i) {
+				double angle = (ctrlw[i] - 1000) / 1000.0 * PI;
+				ava.setRotation(CTRL_JNT[i], Eigen::AngleAxisd(angle, CTRL_AXIS[i]));
+			}
+
+			for (int i = 0; i < (int)pcw.size(); ++i) {
+				ava.setKeyWeight(i, (float)(pcw[i] - 1000) / 500.0);
+			}
+
+			ava.update();
+
+			viewer->spinOnce(1, true);
+		}
+
+		for (int i = 0; i < N_CTRL; ++i) p_ctrlw[i] = ctrlw[i];
+		for (int i = 0; i < (int)pcw.size(); ++i) p_pcw[i] = pcw[i];
+
+		int k = cv::waitKey(100);
+		if (k == 'q' || k == 27) break;
+	}
+
+	viewer->removeAllPointClouds();
+	viewer->removeAllShapes();
+
+	return 0;
 }
