@@ -61,6 +61,7 @@ namespace ark
 		{
 			cv::Ptr<cv::StereoSGBM> sgbm = cv::StereoSGBM::create(0, 16, 3);
 <<<<<<< HEAD
+<<<<<<< HEAD
 			int numberOfDisparities = 48;
 			int SADWindowSize = 2;
 			numberOfDisparities = numberOfDisparities > 0 ? numberOfDisparities : ((img_l.cols / 8) + 15) & -16;
@@ -76,6 +77,13 @@ namespace ark
 
 			sgbm->setPreFilterCap(73);
 >>>>>>> 0494a82... Improved calibration; Adjusted detection parameters; Updated hand detection system to match newest OpenARK release
+=======
+			int numberOfDisparities = 48;
+			int SADWindowSize = 2;
+			numberOfDisparities = numberOfDisparities > 0 ? numberOfDisparities : ((img_l.cols / 8) + 15) & -16;
+
+			sgbm->setPreFilterCap(31);
+>>>>>>> 65dd9c9... Added functionality to send hand back to camera, improved depth quality,
 			int sgbmWinSize = SADWindowSize > 0 ? SADWindowSize : 3;
 			sgbm->setBlockSize(sgbmWinSize);
 
@@ -86,16 +94,22 @@ namespace ark
 			sgbm->setMinDisparity(0);
 			sgbm->setNumDisparities(numberOfDisparities);
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 65dd9c9... Added functionality to send hand back to camera, improved depth quality,
 			sgbm->setUniquenessRatio(5);
 			sgbm->setSpeckleWindowSize(10);
 			sgbm->setSpeckleRange(1);
 			sgbm->setDisp12MaxDiff(0);
+<<<<<<< HEAD
 =======
 			sgbm->setUniquenessRatio(1);
 			sgbm->setSpeckleWindowSize(100);
 			sgbm->setSpeckleRange(1);//推荐值为1或2，原值为32
 			sgbm->setDisp12MaxDiff(1);
 >>>>>>> 0494a82... Improved calibration; Adjusted detection parameters; Updated hand detection system to match newest OpenARK release
+=======
+>>>>>>> 65dd9c9... Added functionality to send hand back to camera, improved depth quality,
 			sgbm->setMode(cv::StereoSGBM::MODE_SGBM);
 
 			int min_disparity = sgbm->getMinDisparity();
@@ -122,6 +136,9 @@ namespace ark
 			wls_filter->setLambda(lambda);
 			wls_filter->setSigmaColor(sigma);
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 65dd9c9... Added functionality to send hand back to camera, improved depth quality,
             */
             cv::Mat filtered_disp;
             //wls_filter->filter(disp, img_l, filtered_disp, cv::Mat(), ROI);
@@ -136,6 +153,7 @@ namespace ark
 
             // DEBUG 
             cv::Mat disp8, vcat1, vcat2, hcat;
+<<<<<<< HEAD
 =======
 			cv::Mat filtered_disp;
             wls_filter->filter(disp, img_l, filtered_disp, cv::Mat(), ROI);
@@ -144,6 +162,8 @@ namespace ark
 
 			//disp = getFilterDepth(img_l, img_r, sgbm, currFrame);
 >>>>>>> 0494a82... Improved calibration; Adjusted detection parameters; Updated hand detection system to match newest OpenARK release
+=======
+>>>>>>> 65dd9c9... Added functionality to send hand back to camera, improved depth quality,
 			filtered_disp.convertTo(disp8, CV_8U, 255 / (numberOfDisparities*16.));
 			
             cv::vconcat(img_l, img_r, vcat1);
@@ -181,10 +201,14 @@ namespace ark
             if (cnt) std::cout << avg / cnt << "\n";
             */
 <<<<<<< HEAD
+<<<<<<< HEAD
 			out *= 18;
 =======
 			out *= 10;
 >>>>>>> 0494a82... Improved calibration; Adjusted detection parameters; Updated hand detection system to match newest OpenARK release
+=======
+			out *= 18;
+>>>>>>> 65dd9c9... Added functionality to send hand back to camera, improved depth quality,
 
 			//remove background from out image
 			//removeBackground(out);
