@@ -24,7 +24,6 @@ namespace ark {
 
     // overrided width
     int StereoCamera::getWidth() const {
-        // cut off 35 px to eliminate shadow on right
         return calib->imageSize.width;
     }
 
