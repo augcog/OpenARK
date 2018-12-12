@@ -52,8 +52,6 @@ if( OpenCV_FOUND )
    message( STATUS "Found OpenCV: ${OpenCV_INCLUDE_DIRS}" )
 endif( OpenCV_FOUND )
 
-find_package( PCL REQUIRED )
-
 find_package( Protobuf REQUIRED )
 
 if( USE_RSSDK2 )
