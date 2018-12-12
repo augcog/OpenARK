@@ -71,11 +71,15 @@ if( USE_RSSDK OR NOT RSSDK2_FOUND )
 endif( USE_RSSDK OR NOT RSSDK2_FOUND )
 
 if( USE_PMDSDK OR ( NOT RSSDK_FOUND AND NOT RSSDK2_FOUND ) )
-  find_package( PMDSDK REQUIRED )
+  find_package( PMDSDK )
   if( PMDSDK_FOUND )
      message( STATUS "Found PMDSDK: ${PMDSDK_INCLUDE_DIR}" )
   endif( PMDSDK_FOUND )
 endif( USE_PMDSDK OR ( NOT RSSDK_FOUND AND NOT RSSDK2_FOUND ) )
+
+if( NOT RSSDK_FOUND AND NOT RSSDK2_FOUND AND NOT PMDSDK_FOUND )
+    message( WARNING "Could not find any of RSSDK2 (librealsense2), RSSDK, PMDSDK, only depth from stereo will be available." )
+endif( NOT RSSDK_FOUND AND NOT RSSDK2_FOUND AND NOT PMDSDK_FOUND )
 
 include_directories(
   ${OpenCV_INCLUDE_DIRS}
