@@ -22,7 +22,7 @@ namespace ark {
         HumanAvatar(model_dir, std::vector<std::string>(), downsample_factor) { }
 
     HumanAvatar::HumanAvatar(const std::string & model_dir, const std::vector<std::string> & shape_keys,
-        int downsample_factor)
+        double downsample_radius)
         : MODEL_DIR(model_dir), keyNames(shape_keys), basePos(_p) {
 
         humanPCBase = boost::unique_ptr<Cloud_T>(new Cloud_T());
@@ -36,15 +36,29 @@ namespace ark {
         memset(_w, 0, shape_keys.size() * sizeof(double));
 
         auto humanPCRaw = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+		auto humanPCDown = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
 		auto humanPCFull = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
         pcl::io::loadPCDFile<pcl::PointXYZ>(modelPath.string(), *humanPCFull);
+
+		pcl::UniformSampling<pcl::PointXYZ> uniform_downsampler;
+		uniform_downsampler.setInputCloud(humanPCFull);
+		uniform_downsampler.setRadiusSearch(0.08);
+		uniform_downsampler.filter(*humanPCDown);
+
+		cout << "HumanPCFull Size: " << humanPCFull->size() << endl;
+		cout << "HumanPCRaw Size: " << humanPCDown->size() << endl;
+		std::vector<int> introns;
 		for (int i = 0; i < humanPCFull->points.size(); ++i) {
-			// skip appropriate number of points if downsample is enabled
-			if (i % downsample_factor != 0) {
-				continue;
+			for (int j = 0; j < humanPCDown->points.size(); ++j) {
+				auto full_pt = humanPCFull->points[i];
+				auto down_pt = humanPCDown->points[j];
+				if (full_pt.x == down_pt.x && full_pt.y == down_pt.y && full_pt.z == down_pt.z) {
+					introns.push_back(i);
+					humanPCRaw->push_back(humanPCFull->points[i]);
+				}
 			}
-			humanPCRaw->push_back(humanPCFull->points[i]);
 		}
+		cout << "Introns Size: " << introns.size() << endl;
 
         // load all required shape keys
         path keyPath(model_dir); keyPath = keyPath / "shapekey";
@@ -52,17 +66,18 @@ namespace ark {
             auto keyPC = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
             pcl::io::loadPCDFile<pcl::PointXYZ>((keyPath / k).string(), *keyPC);
 			// Ceiling division to compute the number of points in the down sampled cloud
-            EigenCloud_T keyCloud((keyPC->points.size() + downsample_factor - 1 )/ downsample_factor, 3);
+            //EigenCloud_T keyCloud((keyPC->points.size() + downsample_factor - 1 )/ downsample_factor, 3);
+			EigenCloud_T keyCloud(introns.size(), 3);
 			int ii = 0;
             for (size_t i = 0; i < keyPC->points.size(); ++i) {
-				// skip appropriate number of points if downsample is enabled
-				if (i % downsample_factor != 0) {
+				if (std::find(introns.begin(), introns.end(), i) == introns.end()) {
 					continue;
 				}
                 keyCloud.row(ii) = keyPC->points[i].getVector3fMap().cast<double>();
 				ii++;
             }
             keyClouds.push_back(keyCloud);
+			cout << "Key Cloud: " << ii << endl;
         }
 
         // read skeleton file
@@ -95,8 +110,11 @@ namespace ark {
             joints.push_back(j);
         }
 
+		std::cout << nVerts << endl;
+
         std::vector<double> weights(nJoints);
-        boneWeights.resize((nVerts + downsample_factor - 1) /downsample_factor);
+        //boneWeights.resize((nVerts + downsample_factor - 1) /downsample_factor);
+		boneWeights.resize(introns.size());
 
 		int ii = 0;
         // true if the model already provides vertex weights (else we calculate them ourselves)
@@ -105,9 +123,8 @@ namespace ark {
             for (int i = 0; i < nVerts; ++i) {
 
                 int nEntries; skel >> nEntries;
-
 				// skip appropriate number of points if downsample is enabled
-				if (i % downsample_factor != 0) {
+				if (std::find(introns.begin(), introns.end(), i) == introns.end()) {
 					for (int j = 0; j < nEntries; ++j) {
 						int joint; double w; skel >> joint >> w;
 					}
