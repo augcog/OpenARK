@@ -19,13 +19,23 @@ namespace ark {
 	class MockCamera : public DepthCamera
 	{
 	public:
-		explicit MockCamera(std::string& file_path);
+		explicit MockCamera(const char* path);
 
 		int getHeight() const override;
 
 		int getWidth() const override;
 
+		void update();
+
+		cv::Mat& getXYZMap();
+		
+		cv::Mat& getRGBMap();
+
+		std::vector<cv::Point>& getJoints();
+
 		~MockCamera();
+
+		bool hasNext() const;
 
 	protected:
 		/**
@@ -38,6 +48,9 @@ namespace ark {
 	private:
 		int height;
 		int width;
-		std::deque<std::string> file_names;
+		std::deque<std::string> depth_files;
+		std::deque<std::string> rgb_files;
+		std::deque<std::string> joint_files;
+		std::vector<cv::Point> joints;
 	};
 }

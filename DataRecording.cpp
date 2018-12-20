@@ -34,10 +34,10 @@ int main() {
 	srand(time(NULL));
 
 	// initialize the camera
-	//DepthCamera::Ptr camera;
+	DepthCamera::Ptr camera;
 
 #if defined(RSSDK2_ENABLED)
-	//camera = std::make_shared<RS2Camera>(true);
+	camera = std::make_shared<RS2Camera>(true);
 #elif defined(RSSDK_ENABLED)
 	ASSERT(strcmp(OPENARK_CAMERA_TYPE, "sr300") == 0, "Unsupported RealSense camera type.");
 	camera = std::make_shared<SR300Camera>();
@@ -49,7 +49,7 @@ int main() {
 #endif
 
 	// initialize parameters
-	//DetectionParams::Ptr params = camera->getDefaultParams(); // default parameters for camera
+	DetectionParams::Ptr params = camera->getDefaultParams(); // default parameters for camera
 
 															  // store frame & FPS information
 	const int FPS_CYCLE_FRAMES = 8; // number of frames to average FPS over (FPS 'cycle' length)
@@ -67,75 +67,81 @@ int main() {
 							 // option flags
 	bool showHands = true, showPlanes = false, useSVM = true, useEdgeConn = false, showArea = false, playing = true;
 
-	const std::string directory_path = "C:\\dev\\OpenARK_dataset\\human-sport-D435\\";
+	const std::string directory_path = "C:\\dev\\OpenARK_dataset\\test_capture\\";
 
-	//// turn on the camera
-	//camera->beginCapture();
+	// turn on the camera
+	camera->beginCapture();
 
-	//// main demo loop
-	//std::vector<cv::Mat> xyzMaps;
-	//std::vector<cv::Mat> rgbMaps;
-	//while (true)
-	//{
-	//	++currFrame;
+	// Read in camera input and save it to the buffer
+	std::vector<cv::Mat> xyzMaps;
+	std::vector<cv::Mat> rgbMaps;
+	while (true)
+	{
+		++currFrame;
 
-	//	// get latest image from the camera
-	//	cv::Mat xyzMap = camera->getXYZMap();
-	//	cv::Mat rgbMap = camera->getRGBMap();
+		// get latest image from the camera
+		cv::Mat xyzMap = camera->getXYZMap();
+		cv::Mat rgbMap = camera->getRGBMap();
 
-	//	std::stringstream ss;
-	//	ss << directory_path << currFrame << ".yml";
-	//	std::string curr_file_name = ss.str();
+		std::stringstream ss;
+		ss << directory_path << currFrame << ".yml";
+		std::string curr_file_name = ss.str();
 
-	//	xyzMaps.push_back(xyzMap);
-	//	rgbMaps.push_back(rgbMap);
+		xyzMaps.push_back(xyzMap);
+		rgbMaps.push_back(rgbMap);
 
-	//	// show visualizations
-	//	if (!xyzMap.empty()) {
-	//		cv::imshow(camera->getModelName() + " Depth Map", xyzMap);
-	//	} 
+		// show visualizations
+		if (!xyzMap.empty()) {
+			cv::imshow(camera->getModelName() + " Depth Map", xyzMap);
+		} 
 
-	//	if (!rgbMap.empty()) {
-	//		cv::imshow(camera->getModelName() + " RGB Map", rgbMap);
-	//	}
-	//	/**** End: Visualization ****/
+		if (!rgbMap.empty()) {
+			cv::imshow(camera->getModelName() + " RGB Map", rgbMap);
+		}
+		/**** End: Visualization ****/
 
-	//	/**** Start: Controls ****/
-	//	int c = cv::waitKey(66);
+		/**** Start: Controls ****/
+		int c = cv::waitKey(66);
 
-	//	// make case insensitive
-	//	if (c >= 'a' && c <= 'z') c &= 0xdf;
+		// make case insensitive
+		if (c >= 'a' && c <= 'z') c &= 0xdf;
 
-	//	// 27 is ESC
-	//	if (c == 'Q' || c == 27) {
-	//		/*** Loop Break Condition ***/
-	//		break;
-	//	}
-	//	/**** End: Controls ****/
-	//}
+		// 27 is ESC
+		if (c == 'Q' || c == 27) {
+			/*** Loop Break Condition ***/
+			break;
+		}
+		/**** End: Controls ****/
+	}
 
-	//camera->endCapture();
+	camera->endCapture();
+	
+	// Write the captured frames to disk
+	ASSERT(xyzMaps.size() == rgbMaps.size(), "Depth map and RGB map are not in sync!");
 
-	//ASSERT(xyzMaps.size() == rgbMaps.size(), "Depth map and RGB map are not in sync!");
+	std::string depth_path = directory_path + "depth\\";
+	std::string rgb_path = directory_path + "rgb\\";
+	if (boost::filesystem::exists(depth_path)) {
+		boost::filesystem::create_directories(depth_path);
+	} if (boost::filesystem::exists(rgb_path)) {
+		boost::filesystem::create_directories(rgb_path);
+	}
 
-	//for (int i = 0; i < xyzMaps.size(); ++i) {
-	//	cout << "Writing " << i << " / " << xyzMaps.size() << endl;
-	//	std::stringstream ss;
-	//	ss << directory_path << "capture_" << std::setw(2) << std::setfill('0') << i << ".yml";
-	//	std::string curr_file_name = ss.str();
-	//	std::cout << curr_file_name << std::endl;
+	for (int i = 0; i < xyzMaps.size(); ++i) {
+		cout << "Writing " << i << " / " << xyzMaps.size() << endl;
+		std::stringstream ss_depth, ss_rgb;
+		ss_depth << directory_path << "depth\\" << "depth_" << std::setw(4) << std::setfill('0') << i << ".exr";
+		ss_rgb << directory_path << "rgb\\" << "rgb_" << std::setw(4) << std::setfill('0') << i << ".jpg";
+		cout << "Writing " << ss_depth.str() << endl;
+		cv::imwrite(ss_depth.str(), xyzMaps[i]);
+		cv::imwrite(ss_rgb.str(), rgbMaps[i]);
+	}
 
-	//	cv::FileStorage fs(curr_file_name, cv::FileStorage::WRITE);
-	//	fs << "xyz_map" << xyzMaps[i];
-	//	fs << "rgb_map" << rgbMaps[i];
-	//	fs.release();
-	//}
-
+	// Read in all the rgb images
 	std::vector<std::string> file_names;
-	boost::filesystem::path image_dir(directory_path);
+	boost::filesystem::path image_dir(directory_path + "rgb\\");
 
 	if (is_directory(image_dir)) {
-		
 		boost::filesystem::directory_iterator end_iter;
 		for (boost::filesystem::directory_iterator dir_itr(image_dir); dir_itr != end_iter; ++dir_itr) {
 			const auto& next_path = dir_itr->path().generic_string();
@@ -144,15 +150,19 @@ int main() {
 		std::sort(file_names.begin(), file_names.end());
 	}
 
+	// Run neural network to predict where the human joints are
+	std::string joint_path = directory_path + "joint\\";
+	if (boost::filesystem::exists(joint_path)) {
+		boost::filesystem::create_directories(joint_path);
+	}
+
 	std::shared_ptr<HumanDetector> human_detector = std::make_shared<HumanDetector>();
+	int i = 0;
 	for (const auto& filename : file_names) {
 		std::cout << filename << std::endl;
 		cv::Mat rgb_map, xyz_map;
-		cv::FileStorage fs2(filename, cv::FileStorage::READ);
-		fs2["rgb_map"] >> rgb_map;
-		fs2.release();
-		
-		
+		rgb_map = cv::imread(filename);
+
 		human_detector->update(rgb_map);
 		if (human_detector->getHumanBodies().size() == 0) {
 			continue;
@@ -163,13 +173,16 @@ int main() {
 		}
 		cv::imshow("RGB Frame Data", rgb_map);
 		
-		cv::FileStorage fs3(filename, cv::FileStorage::APPEND);
+		std::stringstream ss_joint;
+		ss_joint << directory_path << "joint\\" << "joint_" << std::setw(4) << std::setfill('0') << i << ".yml";
+		cv::FileStorage fs3(ss_joint.str(), cv::FileStorage::WRITE);
 		fs3 << "joints" << rgbJoints;
 		fs3.release();
 		
 
 		rgbJoints.clear();
 		cv::waitKey(1);
+		i++;
 	}
 	int c = cv::waitKey(1);
 	cv::destroyAllWindows();
