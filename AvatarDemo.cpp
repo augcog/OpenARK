@@ -230,7 +230,7 @@ int main(int argc, char ** argv) {
 												 "shape009.pcd"};
 
 	boost::filesystem::path image_dir("C:\\dev\\OpenARK_dataset\\human-basic-rgb-D435-tiny\\");
-	auto path = "C:\\dev\\OpenARK_dataset\\test_capture";
+	auto path = "C:\\dev\\OpenARK_dataset\\human-wave-1";
 	const auto camera = std::make_shared<MockCamera>(path);
 
 	while (camera->hasNext()) {
