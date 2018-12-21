@@ -36,13 +36,14 @@ namespace ark {
 			}
 			std::sort(joint_files.begin(), joint_files.end());
 		}
+
+		ASSERT(depth_files.size() == rgb_files.size() && rgb_files.size() == joint_files.size());
 	}
 
 	// Reading from file OpenCV
 	// https://docs.opencv.org/2.4/modules/core/doc/xml_yaml_persistence.html
 	void MockCamera::update(cv::Mat & xyz_map, cv::Mat & rgb_map, cv::Mat & ir_map,
 		cv::Mat & amp_map, cv::Mat & flag_map) {
-		ASSERT(depth_files.size() == rgb_files.size(), "Depth map and RGB map are not in sync!");
 		if (depth_files.empty()) {
 			return;
 		}

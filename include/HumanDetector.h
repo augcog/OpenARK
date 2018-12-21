@@ -47,7 +47,7 @@ namespace ark {
 	public:
 		HumanDetector(DetectionParams::Ptr params = nullptr);
 
-		std::vector<std::shared_ptr<HumanBody>> getHumanBodies();
+		std::vector<std::shared_ptr<HumanBody>>& getHumanBodies();
 
 	protected:
 		void detect(cv::Mat & image) override;
