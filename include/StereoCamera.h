@@ -5,7 +5,6 @@
 
 // OpenARK Libraries
 #include "DepthCamera.h"
-#include "Converter.h"
 
 namespace ark {
     /** Stores stereo calibration parameters

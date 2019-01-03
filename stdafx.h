@@ -76,7 +76,7 @@
 #include <flann/util/serialization.h>
 
 // ceres
-#include <ceres/ceres.h>
+// #include <ceres/ceres.h>
 
 // nanoflann
 #include <nanoflann.hpp>
