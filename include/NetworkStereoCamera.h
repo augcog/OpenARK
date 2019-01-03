@@ -5,7 +5,6 @@
 
 // OpenARK Libraries
 #include "StereoCamera.h"
-#include "Converter.h"
 #include "NetworkLib.h"
 
 #include <vector>
