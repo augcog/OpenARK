@@ -504,7 +504,7 @@ namespace ark {
 		return max_rect;
 	}
 
-	std::vector<std::shared_ptr<HumanBody>> HumanDetector::getHumanBodies() {
+	std::vector<std::shared_ptr<HumanBody>>& HumanDetector::getHumanBodies() {
 		return human_bodies;
 	}
 }
