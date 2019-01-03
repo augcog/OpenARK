@@ -107,7 +107,7 @@ namespace ark {
         /**
          * maximum distance of hand from the camera.
          */
-        int handMaxDepth = 1.6;
+        double handMaxDepth = 1.6;
 
         /**
          * Amount to erode the contour image to remove small points
