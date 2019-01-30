@@ -131,28 +131,28 @@ namespace ark {
         template double euclideanDistance<double>(const cv::Vec<double, 3> & pt1, const cv::Vec<double, 3> & pt2);
 
         template<class Param_T>
-        float pointLineNorm(const cv::Point_<Param_T> & p, const cv::Point_<Param_T> & a, const cv::Point_<Param_T> & b, int cv_norm_type)
+        float pointLineDistance(const cv::Point_<Param_T> & p, const cv::Point_<Param_T> & a, const cv::Point_<Param_T> & b, int cv_norm_type)
         {
             cv::Point_<Param_T> ap = a - p, ab = b - a;
             return util::norm(ap - (ap.dot(ab) / ab.dot(ab)) * ab, cv_norm_type);
         }
-        template float pointLineNorm<int>(const cv::Point_<int> & p, const cv::Point_<int> & a, const cv::Point_<int> & b, int cv_norm_type);
-        template float pointLineNorm<float>(const cv::Point_<float> & p, const cv::Point_<float> & a, const cv::Point_<float> & b, int cv_norm_type);
-        template float pointLineNorm<double>(const cv::Point_<double> & p, const cv::Point_<double> & a, const cv::Point_<double> & b, int cv_norm_type);
+        template float pointLineDistance<int>(const cv::Point_<int> & p, const cv::Point_<int> & a, const cv::Point_<int> & b, int cv_norm_type);
+        template float pointLineDistance<float>(const cv::Point_<float> & p, const cv::Point_<float> & a, const cv::Point_<float> & b, int cv_norm_type);
+        template float pointLineDistance<double>(const cv::Point_<double> & p, const cv::Point_<double> & a, const cv::Point_<double> & b, int cv_norm_type);
 
         template<class Param_T>
-        Param_T pointLineNorm(const cv::Vec<Param_T, 3> & p, const cv::Vec<Param_T, 3> & a, const cv::Vec<Param_T, 3> & b, int cv_norm_type)
+        Param_T pointLineDistance(const cv::Vec<Param_T, 3> & p, const cv::Vec<Param_T, 3> & a, const cv::Vec<Param_T, 3> & b, int cv_norm_type)
         {
             cv::Vec<Param_T, 3> ap = p - a, ab = b - a;
             return cv::norm(ap - (ap.dot(ab) / ab.dot(ab)) * ab, cv_norm_type);
         }
-        template uchar pointLineNorm<uchar>(const cv::Vec<uchar, 3> & p, const cv::Vec<uchar, 3> & a, const cv::Vec<uchar, 3> & b, int cv_norm_type);
-        template int pointLineNorm<int>(const cv::Vec<int, 3> & p, const cv::Vec<int, 3> & a, const cv::Vec<int, 3> & b, int cv_norm_type);
-        template float pointLineNorm<float>(const cv::Vec<float, 3> & p, const cv::Vec<float, 3> & a, const cv::Vec<float, 3> & b, int cv_norm_type);
-        template double pointLineNorm<double>(const cv::Vec<double, 3> & p, const cv::Vec<double, 3> & a, const cv::Vec<double, 3> & b, int cv_norm_type);
+        template uchar pointLineDistance<uchar>(const cv::Vec<uchar, 3> & p, const cv::Vec<uchar, 3> & a, const cv::Vec<uchar, 3> & b, int cv_norm_type);
+        template int pointLineDistance<int>(const cv::Vec<int, 3> & p, const cv::Vec<int, 3> & a, const cv::Vec<int, 3> & b, int cv_norm_type);
+        template float pointLineDistance<float>(const cv::Vec<float, 3> & p, const cv::Vec<float, 3> & a, const cv::Vec<float, 3> & b, int cv_norm_type);
+        template double pointLineDistance<double>(const cv::Vec<double, 3> & p, const cv::Vec<double, 3> & a, const cv::Vec<double, 3> & b, int cv_norm_type);
 
         template<class Param_T>
-        float pointLineSegmentNorm(const cv::Point_<Param_T>& p, const cv::Point_<Param_T>& a, const cv::Point_<Param_T>& b, int cv_norm_type)
+        float pointLineSegmentDistance(const cv::Point_<Param_T>& p, const cv::Point_<Param_T>& a, const cv::Point_<Param_T>& b, int cv_norm_type)
         {
             const cv::Point_<Param_T> ab = b - a, ap = p - a;
             const Param_T l2 = util::norm(ab, cv_norm_type);
@@ -160,12 +160,12 @@ namespace ark {
             float t = std::max<Param_T>(0, std::min<Param_T>(1, ap.dot(ab) / l2));
             return util::norm(ap - t * ab, cv_norm_type);
         }
-        template float pointLineSegmentNorm<int>(const cv::Point_<int> & p, const cv::Point_<int> & a, const cv::Point_<int> & b, int cv_norm_type);
-        template float pointLineSegmentNorm<float>(const cv::Point_<float> & p, const cv::Point_<float> & a, const cv::Point_<float> & b, int cv_norm_type);
-        template float pointLineSegmentNorm<double>(const cv::Point_<double> & p, const cv::Point_<double> & a, const cv::Point_<double> & b, int cv_norm_type);
+        template float pointLineSegmentDistance<int>(const cv::Point_<int> & p, const cv::Point_<int> & a, const cv::Point_<int> & b, int cv_norm_type);
+        template float pointLineSegmentDistance<float>(const cv::Point_<float> & p, const cv::Point_<float> & a, const cv::Point_<float> & b, int cv_norm_type);
+        template float pointLineSegmentDistance<double>(const cv::Point_<double> & p, const cv::Point_<double> & a, const cv::Point_<double> & b, int cv_norm_type);
 
         template<class Param_T>
-        Param_T pointLineSegmentNorm(const cv::Vec<Param_T, 3>& p, const cv::Vec<Param_T, 3>& a, const cv::Vec<Param_T, 3> & b, int cv_norm_type)
+        Param_T pointLineSegmentDistance(const cv::Vec<Param_T, 3>& p, const cv::Vec<Param_T, 3>& a, const cv::Vec<Param_T, 3> & b, int cv_norm_type)
         {
             const cv::Vec<Param_T, 3> ab = b - a, ap = p - a;
             const Param_T l2 = cv::norm(ab, cv_norm_type);
@@ -173,10 +173,10 @@ namespace ark {
             Param_T t = std::max<Param_T>(0, std::min<Param_T>(1, ap.dot(ab) / l2));
             return cv::norm(ap - t * ab, cv_norm_type);
         }
-        template uchar pointLineSegmentNorm<uchar>(const cv::Vec<uchar, 3> & p, const cv::Vec<uchar, 3> & a, const cv::Vec<uchar, 3> & b, int cv_norm_type);
-        template int pointLineSegmentNorm<int>(const cv::Vec<int, 3> & p, const cv::Vec<int, 3> & a, const cv::Vec<int, 3> & b, int cv_norm_type);
-        template float pointLineSegmentNorm<float>(const cv::Vec<float, 3> & p, const cv::Vec<float, 3> & a, const cv::Vec<float, 3> & b, int cv_norm_type);
-        template double pointLineSegmentNorm<double>(const cv::Vec<double, 3> & p, const cv::Vec<double, 3> & a, const cv::Vec<double, 3> & b, int cv_norm_type);
+        template uchar pointLineSegmentDistance<uchar>(const cv::Vec<uchar, 3> & p, const cv::Vec<uchar, 3> & a, const cv::Vec<uchar, 3> & b, int cv_norm_type);
+        template int pointLineSegmentDistance<int>(const cv::Vec<int, 3> & p, const cv::Vec<int, 3> & a, const cv::Vec<int, 3> & b, int cv_norm_type);
+        template float pointLineSegmentDistance<float>(const cv::Vec<float, 3> & p, const cv::Vec<float, 3> & a, const cv::Vec<float, 3> & b, int cv_norm_type);
+        template double pointLineSegmentDistance<double>(const cv::Vec<double, 3> & p, const cv::Vec<double, 3> & a, const cv::Vec<double, 3> & b, int cv_norm_type);
 
         template<class T>
         T pointPlaneDistance(const cv::Vec<T, 3> & pt, T a, T b, T c)
@@ -198,24 +198,24 @@ namespace ark {
         template double pointPlaneDistance<double>(const cv::Vec<double, 3> & pt, const cv::Vec<double, 3> & eqn);
 
         template<class T>
-        T pointPlaneNorm(const cv::Vec<T, 3> & pt, T a, T b, T c)
+        T pointPlaneSquaredDistance(const cv::Vec<T, 3> & pt, T a, T b, T c)
         {
             T alpha = (a*pt[0] + b*pt[1] - pt[2] + c);
             return alpha * alpha / (a*a + b*b + 1.0);
         }
 
-        template float pointPlaneNorm<float>(const cv::Vec<float, 3> & pt, float a, float b, float c);
-        template double pointPlaneNorm<double>(const cv::Vec<double, 3> & pt, double a, double b, double c);
+        template float pointPlaneSquaredDistance<float>(const cv::Vec<float, 3> & pt, float a, float b, float c);
+        template double pointPlaneSquaredDistance<double>(const cv::Vec<double, 3> & pt, double a, double b, double c);
 
         template<class T>
-        T pointPlaneNorm(const cv::Vec<T, 3> & pt, const cv::Vec<T, 3> & eqn)
+        T pointPlaneSquaredDistance(const cv::Vec<T, 3> & pt, const cv::Vec<T, 3> & eqn)
         {
             T alpha = eqn[0] * pt[0] + eqn[1] * pt[1] - pt[2] + eqn[2];
             return alpha * alpha / (eqn[0] * eqn[0] + eqn[1] * eqn[1] + 1.0);
         }
 
-        template float pointPlaneNorm<float>(const cv::Vec<float, 3> & pt, const cv::Vec<float, 3> & eqn);
-        template double pointPlaneNorm<double>(const cv::Vec<double, 3> & pt, const cv::Vec<double, 3> & eqn);
+        template float pointPlaneSquaredDistance<float>(const cv::Vec<float, 3> & pt, const cv::Vec<float, 3> & eqn);
+        template double pointPlaneSquaredDistance<double>(const cv::Vec<double, 3> & pt, const cv::Vec<double, 3> & eqn);
 
         template<class T, int N>
         cv::Vec<T, N> linearRegression(const std::vector<cv::Vec<T, N>> & points, int num_points)
@@ -296,7 +296,7 @@ namespace ark {
                 // compute number of inliers
                 int inliers = 0;
                 for (int i = 0; i < num_points; ++i) {
-                    T norm = util::pointPlaneNorm(points[i], eqn);
+                    T norm = util::pointPlaneSquaredDistance(points[i], eqn);
                     if (norm < thresh) ++inliers;
                 }
 
@@ -379,7 +379,7 @@ namespace ark {
                     }
 
                     //std::cout << (refPtr[col], plane_equation) << endl;
-                    if (pointPlaneNorm(refPtr[col], plane_equation) < threshold) {
+                    if (pointPlaneSquaredDistance(refPtr[col], plane_equation) < threshold) {
                         // found nearby plane, remove point (i.e. set to 0)
                         imgPtr[col] = 0;
                     }

@@ -5,6 +5,8 @@
 #include <opencv2/face.hpp>
 #include <opencv2/ximgproc.hpp>
 
+#define GLOG_minloglevel 3
+
 // OpenARK Libraries
 #include "Version.h"
 #ifdef PMDSDK_ENABLED
@@ -181,35 +183,142 @@ static void toSMPLJoints(const cv::Mat & xyzMap, const std::vector<cv::Point> & 
 
     out = cloud((int)smpl_j::_COUNT, 3);
     out.row(smpl_j::PELVIS) = mpi.row(mpi_j::LEFT_HIP) * 0.5 + mpi.row(mpi_j::RIGHT_HIP) * 0.5 - forward * unit * 0.42;
-    out.row(smpl_j::R_HIP) = mpi.row(mpi_j::LEFT_HIP) * 0.8 + mpi.row(mpi_j::LEFT_KNEE) * 0.2 - forward * unit * 0.3;
-    out.row(smpl_j::L_HIP) = mpi.row(mpi_j::RIGHT_HIP) * 0.8 + mpi.row(mpi_j::RIGHT_KNEE) * 0.2 - forward * unit * 0.3;
-    out.row(smpl_j::R_KNEE) = mpi.row(mpi_j::LEFT_KNEE);
-    out.row(smpl_j::L_KNEE) = mpi.row(mpi_j::RIGHT_KNEE);
-    out.row(smpl_j::R_ANKLE) = mpi.row(mpi_j::LEFT_ANKLE);
-    out.row(smpl_j::L_ANKLE) = mpi.row(mpi_j::RIGHT_ANKLE);
+    out.row(smpl_j::L_HIP) = mpi.row(mpi_j::LEFT_HIP) * 0.8 + mpi.row(mpi_j::LEFT_KNEE) * 0.2 - forward * unit * 0.3;
+    out.row(smpl_j::R_HIP) = mpi.row(mpi_j::RIGHT_HIP) * 0.8 + mpi.row(mpi_j::RIGHT_KNEE) * 0.2 - forward * unit * 0.3;
+    out.row(smpl_j::L_KNEE) = mpi.row(mpi_j::LEFT_KNEE);
+    out.row(smpl_j::R_KNEE) = mpi.row(mpi_j::RIGHT_KNEE);
+    out.row(smpl_j::L_ANKLE) = mpi.row(mpi_j::LEFT_ANKLE);
+    out.row(smpl_j::R_ANKLE) = mpi.row(mpi_j::RIGHT_ANKLE);
     out.row(smpl_j::SPINE1) = mpi.row(mpi_j::CHEST) * 0.4 + mpi.row(mpi_j::LEFT_HIP) * 0.3 + mpi.row(mpi_j::RIGHT_HIP) * 0.3 - forward * unit * 0.6;
     out.row(smpl_j::SPINE2) = mpi.row(mpi_j::CHEST) - forward * unit * 0.65;
     out.row(smpl_j::SPINE3) = mpi.row(mpi_j::CHEST) * 0.8 + mpi.row(mpi_j::LEFT_SHOULDER) * 0.1 + mpi.row(mpi_j::RIGHT_SHOULDER) * 0.1 - forward * unit * 0.35;
     out.row(smpl_j::HEAD) = mpi.row(mpi_j::NECK) * 0.8 + mpi.row(mpi_j::HEAD) * 0.2 - up * unit * 0.2;
     out.row(smpl_j::NECK) = mpi.row(mpi_j::NECK) * 0.3 + mpi.row(mpi_j::LEFT_SHOULDER) * 0.35 + mpi.row(mpi_j::RIGHT_SHOULDER) * 0.35;
-    out.row(smpl_j::R_SHOULDER) = mpi.row(mpi_j::LEFT_SHOULDER) - up * unit * 0.25 + forward * unit * 0.1;
-    out.row(smpl_j::L_SHOULDER) = mpi.row(mpi_j::RIGHT_SHOULDER) - up * unit * 0.25 + forward * unit * 0.1;
-    out.row(smpl_j::R_ELBOW) = mpi.row(mpi_j::LEFT_ELBOW);
-    out.row(smpl_j::L_ELBOW) = mpi.row(mpi_j::RIGHT_ELBOW);
-    out.row(smpl_j::R_WRIST) = mpi.row(mpi_j::LEFT_WRIST);
-    out.row(smpl_j::L_WRIST) = mpi.row(mpi_j::RIGHT_WRIST);
-    out.row(smpl_j::R_HAND) = mpi.row(mpi_j::LEFT_WRIST) * 1.4 - mpi.row(mpi_j::LEFT_ELBOW) * 0.4;
-    out.row(smpl_j::L_HAND) = mpi.row(mpi_j::RIGHT_WRIST) * 1.4 - mpi.row(mpi_j::RIGHT_ELBOW) * 0.4;
-    out.row(smpl_j::R_COLLAR) = mpi.row(mpi_j::LEFT_SHOULDER) * 0.75 + mpi.row(mpi_j::RIGHT_SHOULDER) * 0.25 - up * unit * 0.5;
-    out.row(smpl_j::L_COLLAR) = mpi.row(mpi_j::LEFT_SHOULDER) * 0.25 + mpi.row(mpi_j::RIGHT_SHOULDER) * 0.75 - up * unit * 0.5;
-    out.row(smpl_j::R_FOOT) = mpi.row(mpi_j::LEFT_ANKLE) * 1.1 -  mpi.row(mpi_j::LEFT_KNEE) * 0.1 + forward * unit;
-    out.row(smpl_j::L_FOOT) = mpi.row(mpi_j::RIGHT_ANKLE) * 1.1 -  mpi.row(mpi_j::RIGHT_KNEE) * 0.1 + forward * unit;
+    out.row(smpl_j::L_SHOULDER) = mpi.row(mpi_j::LEFT_SHOULDER) - up * unit * 0.25 + forward * unit * 0.1;
+    out.row(smpl_j::R_SHOULDER) = mpi.row(mpi_j::RIGHT_SHOULDER) - up * unit * 0.25 + forward * unit * 0.1;
+    out.row(smpl_j::L_ELBOW) = mpi.row(mpi_j::LEFT_ELBOW);
+    out.row(smpl_j::R_ELBOW) = mpi.row(mpi_j::RIGHT_ELBOW);
+    out.row(smpl_j::L_WRIST) = mpi.row(mpi_j::LEFT_WRIST);
+    out.row(smpl_j::R_WRIST) = mpi.row(mpi_j::RIGHT_WRIST);
+    out.row(smpl_j::L_HAND) = mpi.row(mpi_j::LEFT_WRIST) * 1.4 - mpi.row(mpi_j::LEFT_ELBOW) * 0.4;
+    out.row(smpl_j::R_HAND) = mpi.row(mpi_j::RIGHT_WRIST) * 1.4 - mpi.row(mpi_j::RIGHT_ELBOW) * 0.4;
+    out.row(smpl_j::L_COLLAR) = mpi.row(mpi_j::LEFT_SHOULDER) * 0.75 + mpi.row(mpi_j::RIGHT_SHOULDER) * 0.25 - up * unit * 0.5;
+    out.row(smpl_j::R_COLLAR) = mpi.row(mpi_j::LEFT_SHOULDER) * 0.25 + mpi.row(mpi_j::RIGHT_SHOULDER) * 0.75 - up * unit * 0.5;
+    out.row(smpl_j::L_FOOT) = mpi.row(mpi_j::LEFT_ANKLE) * 1.1 -  mpi.row(mpi_j::LEFT_KNEE) * 0.1 + forward * unit;
+    out.row(smpl_j::R_FOOT) = mpi.row(mpi_j::RIGHT_ANKLE) * 1.1 -  mpi.row(mpi_j::RIGHT_KNEE) * 0.1 + forward * unit;
 
     for (int i = 0; i < out.rows(); ++i) {
         out.row(i) -= forward * unit * 0.2;
         if (out.row(i).x() < -1e10 || std::isnan(out.row(i).x())) {
             out.row(i).x() = NAN;
         }
+    }
+}
+
+// open a gui for interacting with avatar
+void __avatarGUI(const std::string & human_model_path, const std::vector<std::string> & shape_keys)
+{
+    // build file names and paths
+    HumanAvatar ava(human_model_path, shape_keys);
+
+    cv::namedWindow("Body Shape");
+    cv::namedWindow("Body Pose");
+    std::vector<int> pcw(shape_keys.size(), 1000), p_pcw(shape_keys.size(), 0);
+
+    // define some axes
+    const Eigen::Vector3d AXISX(1, 0, 0), AXISY(0, 1, 0), AXISZ(0, 0, 1);
+
+    // Body pose control definitions (currently this control system only supports rotation along one axis per body part)
+    const std::vector<std::string> CTRL_NAMES       = {"L HIP",      "R HIP",      "L KNEE",      "R KNEE",      "L ANKLE",      "R ANKLE",      "L ARM",        "R ARM",        "L ELBOW",      "R ELBOW",      "HEAD",      "SPINE2",     "ROOT"};
+    using jnt_t = HumanAvatar::JointType;
+    const std::vector<jnt_t> CTRL_JNT               = {jnt_t::L_HIP, jnt_t::R_HIP, jnt_t::L_KNEE, jnt_t::R_KNEE, jnt_t::L_ANKLE, jnt_t::R_ANKLE, jnt_t::L_ELBOW, jnt_t::R_ELBOW, jnt_t::L_WRIST, jnt_t::R_WRIST, jnt_t::HEAD, jnt_t::SPINE2, jnt_t::ROOT};
+    const std::vector<Eigen::Vector3d> CTRL_AXIS    = {AXISX,        AXISX,        AXISX,         AXISX,         AXISX,          AXISX,          AXISY,          AXISY,          AXISY,          AXISY,          AXISX,       AXISX,         AXISY};
+    const int N_CTRL = (int)CTRL_NAMES.size();
+
+    std::vector<int> ctrlw(N_CTRL, 1000), p_ctrlw(N_CTRL, 0);
+
+    // Body shapekeys are defined in SMPL model files.
+    int pifx = 0, pify = 0, picx = 0, picy = 0, pframeID = -1;
+    cv::resizeWindow("Body Shape", cv::Size(400, 700));
+    cv::resizeWindow("Body Pose", cv::Size(400, 700));
+    cv::resizeWindow("Body Scale", cv::Size(400, 700));
+    for (int i = 0; i < N_CTRL; ++i) {
+        cv::createTrackbar(CTRL_NAMES[i], "Body Pose", &ctrlw[i], 2000);
+    }
+    for (int i = 0; i < (int)pcw.size(); ++i) {
+        cv::createTrackbar("PC" + std::to_string(i), "Body Shape", &pcw[i], 2000);
+    }
+
+    auto viewer = Visualizer::getPCLVisualizer();
+
+    int vp1 = 0;
+    viewer->setWindowName("3D View");
+    viewer->setCameraClipDistances(0.0, 1000.0);
+
+    volatile bool interrupt = false;
+    viewer->registerKeyboardCallback([&interrupt](const pcl::visualization::KeyboardEvent & evt) {
+        unsigned char k = evt.getKeyCode();
+        if (k == 'Q' || k == 'q' || k == 27) {
+            interrupt = true;
+        }
+    });
+
+    while (!interrupt) {
+        bool controlsChanged = false;
+        for (int i = 0; i < N_CTRL; ++i) {
+            if (ctrlw[i] != p_ctrlw[i]) {
+                controlsChanged = true;
+                break;
+            }
+        }
+        for (int i = 0; i < (int)pcw.size(); ++i) {
+            if (pcw[i] != p_pcw[i]) {
+                controlsChanged = true;
+                break;
+            }
+        }
+        if (controlsChanged) {
+            viewer->removeAllPointClouds(vp1);
+            viewer->removeAllShapes(vp1);
+            HumanAvatar::Cloud_T::Ptr depthPC, depthPCPartial;
+            ava.update();
+
+            viewer->addPointCloud<HumanAvatar::Point_T>(ava.getCloud(), "vp1_cloudHM", vp1);
+            ava.visualize(viewer, "vp1_", vp1);
+
+            for (int i = 0; i < N_CTRL; ++i) {
+                double angle = (ctrlw[i] - 1000) / 1000.0 * PI;
+                ava.setRotation(CTRL_JNT[i], Eigen::AngleAxisd(angle, CTRL_AXIS[i]));
+            }
+
+            for (int i = 0; i < (int)pcw.size(); ++i) {
+                ava.setKeyWeight(i, (float)(pcw[i] - 1000) / 500.0);
+            }
+
+            ava.setCenterPosition(Eigen::Vector3d(0, 0, -3));
+            ava.update();
+
+            for (int k = 0; k < (int) pcw.size(); ++k) {
+                p_pcw[k] = pcw[k] = (int) (ava.getKeyWeight(k) * 500.0 + 1000);
+                cv::setTrackbarPos("PC" + std::to_string(k), "Body Shape", pcw[k]);
+            }
+
+            double prior = ava.posePrior.residual(ava.smplParams()).squaredNorm();
+            // show pose prior value
+            if (!viewer->updateText("-log likelihood: " + std::to_string(prior), 10, 20, 15, 1.0, 1.0, 1.0, "poseprior_disp")) {
+                viewer->addText("-log likelihood: " + std::to_string(prior), 10, 20, 15, 1.0, 1.0, 1.0, "poseprior_disp");
+            }
+
+            viewer->removePointCloud("vp1_cloudHM");
+            viewer->addPointCloud<HumanAvatar::Point_T>(ava.getCloud(), "vp1_cloudHM");
+            ava.visualize(viewer, "vp1_", vp1);
+            viewer->spinOnce();
+        }
+        for (int i = 0; i < N_CTRL; ++i) p_ctrlw[i] = ctrlw[i];
+        for (int i = 0; i < (int)pcw.size(); ++i) p_pcw[i] = pcw[i];
+
+        int k = cv::waitKey(100);
+        if (k == 'q' || k == 27) break;
     }
 }
 
@@ -220,7 +329,6 @@ int main(int argc, char ** argv) {
     // seed the rng
     srand(time(NULL));
 
-    const std::string IMG_PATH = "C:\\dev\\OpenARK_dataset\\human-basic-rgb-D435-tiny\\capture_15.yml";
     // gender-neutral model
     const std::string HUMAN_MODEL_PATH = "C:/dev/SMPL/models/basicModel_neutral_lbs_10_207_0_v1.0.0/";
 
@@ -228,6 +336,9 @@ int main(int argc, char ** argv) {
 												 "shape003.pcd", "shape004.pcd", "shape005.pcd",
 												 "shape006.pcd", "shape007.pcd", "shape008.pcd", 
 												 "shape009.pcd"};
+
+    // UNCOMMENT following line to see the GUI for manipulating SMPL avatar pose, shape, etc.
+    //__avatarGUI(HUMAN_MODEL_PATH, SHAPE_KEYS); return 0;
 
 	auto path = "C:\\dev\\OpenARK_dataset\\human-wave-1";
 	const auto camera = std::make_shared<MockCamera>(path);
@@ -241,8 +352,6 @@ int main(int argc, char ** argv) {
 		cv::Mat xyzMap = camera->getXYZMap();
 		cv::Mat rgbMap = camera->getRGBMap();
 		std::vector<cv::Point> rgbJoints = camera->getJoints();
-
-		viewer->removeAllPointClouds();
 			
 		// segmentation using agglomerate clustering
 		cv::Mat out;
@@ -263,37 +372,37 @@ int main(int argc, char ** argv) {
 
 		cv::imshow("Fill", out);
 		cv::Mat xyzVis;
-		Visualizer::visualizeXYZMap(xyzMap, xyzVis, 2.5f);
+		Visualizer::visualizeXYZMap(xyzMap, xyzVis, 7.5f);
 		cv::imshow("Depth Map", xyzVis);
 		cv::imshow("RGB", rgbMap);
 
-		ava.setCenterPosition(util::cloudCenter(humanCloudRaw));
-		ava.update();
-		ava.alignToJoints(xyzJoints);
+        if (i == 0) {
+            ava.setCenterPosition(util::cloudCenter(humanCloudRaw));
+            ava.update();
+            ava.alignToJoints(xyzJoints);
+        }
+        else {
+            ava.updateJointsPrior(xyzJoints);
+        }
 		ava.update();
 
-		const std::string MODEL_CLOUD_NAME = "model_cloud" + i, DATA_CLOUD_NAME = "data_cloud" + i;
 
 		// visualize
-		viewer->addPointCloud<pcl::PointXYZ>(humanCloud, DATA_CLOUD_NAME, vp0);
-		std::cout << "Data (Human) Points: " << humanCloud->size() << ". "
-			        << "Model (Avatar) Points: " << ava.getCloud()->size() << "\n";
-
-		viewer->addPointCloud<HumanAvatar::Point_T>(ava.getCloud(), MODEL_CLOUD_NAME, vp0);
 		if (i == 0) {
+			std::cout << "Fitting" << std::endl;
 			ava.fit(humanCloud);
-			cout << "Fitting" << endl;
 		}
 		else {
+			std::cout << "Tracking" << std::endl;
 			ava.fitTrack(humanCloud);
-			cout << "Tracking" << endl;
 		}
 			
 		ava.visualize(viewer, "o1_ava_", vp1);
 		ava.visualize(viewer, "ava_", vp0);
-		viewer->removePointCloud(MODEL_CLOUD_NAME, vp0);
-		viewer->addPointCloud<HumanAvatar::Point_T>(ava.getCloud(), MODEL_CLOUD_NAME, vp0);
-		viewer->addPointCloud<HumanAvatar::Point_T>(ava.getCloud(), MODEL_CLOUD_NAME + "_o1", vp1);
+
+		const std::string DATA_CLOUD_NAME = "data_cloud";
+        viewer->removePointCloud(DATA_CLOUD_NAME, vp0);
+        viewer->addPointCloud<pcl::PointXYZ>(humanCloud, DATA_CLOUD_NAME, vp0);
 
 		viewer->spinOnce();
 		int c = cv::waitKey(1);

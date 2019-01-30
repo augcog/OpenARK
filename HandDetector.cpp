@@ -50,7 +50,7 @@ namespace ark {
                 for (FramePlane::Ptr plane : planes) {
                     if (plane->getDepth() < params->handMaxDepth)
                         util::removePlane<uchar>(image, floodFillMap, plane->equation,
-                            params->handPlaneMinNorm);
+                            params->handPlaneMinSqrDist);
                 }
             }
         }

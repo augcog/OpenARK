@@ -7,15 +7,13 @@ namespace ark {
     HumanAvatar::Joint::Joint(HumanAvatar & avatar, JointType type) :
         avatar(avatar), type(type),
         rotation(avatar._r + NUM_ROT_PARAMS * type),
-        scale(avatar._s[NUM_SCALE_PARAMS * type]),
         posBase(avatar._pb + NUM_POS_PARAMS * type),
         posTransformed(avatar._pt + NUM_POS_PARAMS * type),
         rotTransformed(avatar._rt + NUM_ROT_PARAMS * type),
         cachedTransform(avatar._cache + NUM_ROT_MAT_PARAMS * type)
     {
         rotation = Eigen::Quaterniond::Identity();
-        scale = 1.0;
-        cachedTransform = rotBaseInv = rotBase = Eigen::Matrix3d::Identity();
+        cachedTransform = Eigen::Matrix3d::Identity();
     }
 
     HumanAvatar::HumanAvatar(const std::string & model_dir, int downsample_factor) : 
@@ -31,34 +29,73 @@ namespace ark {
         using namespace boost::filesystem;
         path modelPath(model_dir); modelPath = modelPath / "model.pcd";
         path skelPath(model_dir); skelPath = skelPath / "skeleton.txt";
+        path jrPath(model_dir); jrPath = jrPath / "joint_regressor.txt";
+        path priorPath(model_dir); priorPath = priorPath / "pose_prior.txt";
 
         _w = new double[shape_keys.size()];
         memset(_w, 0, shape_keys.size() * sizeof(double));
 
         auto humanPCRaw = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-		auto humanPCDown = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-		auto humanPCFull = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+        auto humanPCDown = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+        auto humanPCFull = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
         pcl::io::loadPCDFile<pcl::PointXYZ>(modelPath.string(), *humanPCFull);
 
-		pcl::UniformSampling<pcl::PointXYZ> uniform_downsampler;
-		uniform_downsampler.setInputCloud(humanPCFull);
-		uniform_downsampler.setRadiusSearch(0.08);
-		uniform_downsampler.filter(*humanPCDown);
+        std::ifstream jr(jrPath.string());
 
-		cout << "HumanPCFull Size: " << humanPCFull->size() << endl;
-		cout << "HumanPCRaw Size: " << humanPCDown->size() << endl;
-		std::vector<int> introns;
-		for (int i = 0; i < humanPCFull->points.size(); ++i) {
-			for (int j = 0; j < humanPCDown->points.size(); ++j) {
-				auto full_pt = humanPCFull->points[i];
-				auto down_pt = humanPCDown->points[j];
-				if (full_pt.x == down_pt.x && full_pt.y == down_pt.y && full_pt.z == down_pt.z) {
-					introns.push_back(i);
-					humanPCRaw->push_back(humanPCFull->points[i]);
-				}
-			}
-		}
-		cout << "Introns Size: " << introns.size() << endl;
+        int nJoints, nVerts;
+        std::vector<int> critVerts;
+        jr >> nJoints;
+        jointRegressor.resize(nJoints);
+        for (int i = 0; i < nJoints; ++i) {
+            int nEntries; jr >> nEntries;
+            jointRegressor[i].resize(nEntries);
+            for (int j = 0; j < nEntries; ++j) {
+                jr >> jointRegressor[i][j].first >> jointRegressor[i][j].second;
+                critVerts.push_back(jointRegressor[i][j].first);
+            }
+        }
+
+        posePrior.load(priorPath.string());
+
+        pcl::UniformSampling<pcl::PointXYZ> uniform_downsampler;
+        uniform_downsampler.setInputCloud(humanPCFull);
+        uniform_downsampler.setRadiusSearch(0.05);
+        uniform_downsampler.filter(*humanPCDown);
+
+        std::vector<int> introns;
+        for (int i = 0; i < humanPCFull->points.size(); ++i) {
+            for (int j = 0; j < humanPCDown->points.size(); ++j) {
+                auto full_pt = humanPCFull->points[i];
+                auto down_pt = humanPCDown->points[j];
+                if (full_pt.x == down_pt.x && full_pt.y == down_pt.y && full_pt.z == down_pt.z) {
+                    introns.push_back(i);
+                }
+            }
+        }
+        // add "critical" vertices used for SMPL joint regression
+        std::copy(critVerts.begin(), critVerts.end(), std::back_inserter(introns));
+        std::sort(introns.begin(), introns.end());
+
+        // sort and remove duplicates
+        introns.resize(std::unique(introns.begin(), introns.end()) - introns.begin());
+        for (auto i : introns) {
+            humanPCRaw->push_back(humanPCFull->points[i]);
+        }
+
+        std::cerr << "HumanPCFull Size: " << humanPCFull->size() << endl;
+        std::cerr << "HumanPCRaw Size: " << humanPCRaw->size() << endl;
+
+        // coordinate compression
+        for (int i = 0; i < nJoints; ++i) {
+            for (size_t j = 0; j < jointRegressor[i].size(); ++j) {
+                int & v = jointRegressor[i][j].first;
+                v = std::lower_bound(introns.begin(), introns.end(), v) - introns.begin();
+            }
+        }
+
+#ifdef DEBUG
+		std::cerr << "Introns Size: " << introns.size() << endl;
+#endif
 
         // load all required shape keys
         path keyPath(model_dir); keyPath = keyPath / "shapekey";
@@ -68,26 +105,22 @@ namespace ark {
 			// Ceiling division to compute the number of points in the down sampled cloud
             //EigenCloud_T keyCloud((keyPC->points.size() + downsample_factor - 1 )/ downsample_factor, 3);
 			EigenCloud_T keyCloud(introns.size(), 3);
-			int ii = 0;
-            for (size_t i = 0; i < keyPC->points.size(); ++i) {
-				if (std::find(introns.begin(), introns.end(), i) == introns.end()) {
-					continue;
-				}
-                keyCloud.row(ii) = keyPC->points[i].getVector3fMap().cast<double>();
-				ii++;
+            for (size_t i = 0; i < introns.size(); ++i) {
+                keyCloud.row(i) = keyPC->points[introns[i]].getVector3fMap().cast<double>();
             }
             keyClouds.push_back(keyCloud);
-			cout << "Key Cloud: " << ii << endl;
+#ifdef DEBUG
+			std::cerr << "Key Cloud: " << ii << endl;
+#endif
         }
 
         // read skeleton file
         std::ifstream skel(skelPath.string());
-        int nJoints, nVerts;
         skel >> nJoints >> nVerts;
 
         // initialize parameter vectors
         _r = new double[nJoints * NUM_ROT_PARAMS];
-        _s = new double[nJoints * NUM_SCALE_PARAMS];
+        _rr = new double[nJoints * NUM_POS_PARAMS];
         _pb = new double[nJoints * NUM_POS_PARAMS];
         _pt = new double[nJoints * NUM_POS_PARAMS];
         _rt = new double[nJoints * NUM_ROT_PARAMS];
@@ -100,8 +133,8 @@ namespace ark {
 
             auto j = std::make_shared<Joint>(*this, (JointType)id);
             skel >> j->name >> x >> y >> z;
-            j->posBase = Eigen::Vector3d(x, y, z);
-            j->posTransformed = j->posBase;
+            j->posSkel = Eigen::Vector3d(x, y, z);
+            j->posTransformed = j->posBase = j->posSkel;
             if (parID != -1) {
                 j->parent = joints[parID].get();
                 j->parent->children.push_back(j.get());
@@ -110,10 +143,6 @@ namespace ark {
             joints.push_back(j);
         }
 
-		std::cout << nVerts << endl;
-
-        std::vector<double> weights(nJoints);
-        //boneWeights.resize((nVerts + downsample_factor - 1) /downsample_factor);
 		boneWeights.resize(introns.size());
 
 		int ii = 0;
@@ -124,41 +153,30 @@ namespace ark {
 
                 int nEntries; skel >> nEntries;
 				// skip appropriate number of points if downsample is enabled
-				if (std::find(introns.begin(), introns.end(), i) == introns.end()) {
+				if (!std::binary_search(introns.begin(), introns.end(), i)) {
 					for (int j = 0; j < nEntries; ++j) {
 						int joint; double w; skel >> joint >> w;
 					}
 					continue;
 				}
 				
-                std::fill(weights.begin(), weights.end(), 0.0);
-
                 // need to convert vertex (joint) weights to bone weights
                 double total = 0.0;
                 for (int j = 0; j < nEntries; ++j) {
-                    int joint; double w; skel >> joint >> w;
-					
-                    // for non-leaf joints, add weight to child bones of joint
-                    for (Joint * j : joints[joint]->children) {
-                        weights[j->type] += w;
-                        total += w;
-                    }
-                    // for leaf joints, add weight to parent bone of joint
-                    if (joints[joint]->children.size() == 0) {
-                        weights[joint] += w;
-                        total += w;
-                    }
+                    int joint; double w;
+                    skel >> joint >> w;
+                    boneWeights[ii].push_back(std::make_pair(joint, w));
+                    total += w;
                 }
 
                 // normalize weights to add to 1
-                for (int j = 0; j < nJoints; ++j) {
-                    if (weights[j] > 0.0) {
-						boneWeights[ii].push_back(std::make_pair(j, weights[j] / total));
-                    }
+                for (auto & p : boneWeights[ii]) {
+                    p.second /= total;
                 }
 				ii++;
             }
         }
+
         // use XYZRGBA point format
         pcl::copyPointCloud(*humanPCRaw, *humanPCTransformed);
 
@@ -167,18 +185,6 @@ namespace ark {
 
         // propagate initial joint transforms (since meta file provides local position)
         propagateJointTransforms();
-
-        for (Joint::Ptr & joint : joints) {
-            if (joint->parent == nullptr) continue;
-            Eigen::Vector3d vBone = joint->posTransformed - joint->parent->posTransformed;
-            Eigen::Quaterniond rot = Eigen::Quaterniond::FromTwoVectors(vBone, Eigen::Vector3d(1, 0, 0));
-            joint->rotBase = rot.toRotationMatrix();
-            joint->rotBaseInv = rot.inverse().toRotationMatrix();
-        }
-
-
-        // compute locally transformed points
-        computeLocalPC();
 
         if (!modelProvidesVertWeights) {
             std::cerr << "WARNING: no vertex weights found in avatar model." <<
@@ -193,9 +199,14 @@ namespace ark {
 
     HumanAvatar::~HumanAvatar() {
         // clean up parameter vectors
-        delete[] _w; delete[] _r; delete[] _s;
+        delete[] _w; delete[] _r; delete[] _rr;
         delete[] _pb; delete[] _pt; delete[] _rt;
         delete[] _cache;
+    }
+
+    Eigen::VectorXd HumanAvatar::smplParams() const
+    {
+        return _smplParams(_r);
     }
 
     Eigen::Map<Eigen::Vector3d> HumanAvatar::getBasePosition() {
@@ -220,24 +231,12 @@ namespace ark {
         return joints[joint_id]->rotation;
     }
 
-    double & HumanAvatar::getLocalScale(JointType joint_id) {
-        return joints[joint_id]->scale;
-    }
-
     Eigen::Map<Eigen::Quaterniond> & HumanAvatar::getCenterRotation() {
         return joints[JointType::ROOT]->rotation;
     }
 
-    double & HumanAvatar::getCenterScale() {
-        return joints[JointType::ROOT]->scale;
-    }
-
     void HumanAvatar::setCenterPosition(const Eigen::Vector3d & val) {
         basePos = val;
-    }
-
-    void HumanAvatar::setCenterScale(double val){
-        joints[JointType::ROOT]->scale = val;
     }
 
     void HumanAvatar::setRotation(HumanAvatar::JointType joint_id, const Eigen::Quaterniond & quat) {
@@ -291,26 +290,6 @@ namespace ark {
         _addRotation(joint_id, v1, v);
     }
 
-
-    /** Set the local rotation of the bone ending at a joint so that
-      * it points to AND has the length of v */
-    void HumanAvatar::setBoneVector(JointType joint_id, const Eigen::Vector3d & v) {
-        // rotate to vector
-        _addRotation(joint_id, getBoneVector(joint_id), v);
-
-        // find ratio of norms 
-        Eigen::Vector3d vu = getUndeformedBoneVector(joint_id);
-        double normRatio = v.norm() / vu.norm();
-
-        Joint::Ptr & joint = joints[joint_id];
-        joint->scale = normRatio * joints[JointType::ROOT]->scale;
-    }
-
-    /** Set the local scale of the bone ending at a joint */
-    void HumanAvatar::setScale(JointType joint_id, double scale) {
-        joints[joint_id]->scale = scale;
-    }
-
     /** Get a pointer to the specified joint */
     HumanAvatar::Joint::Ptr HumanAvatar::getJoint(JointType joint_id) const {
         return joints[joint_id];
@@ -346,7 +325,6 @@ namespace ark {
         memset(_w, 0, NUM_SHAPEKEYS * sizeof(_w[0]));
         for (int i = 0; i < joints.size(); ++i) {
             joints[i]->rotation = Eigen::Quaterniond::Identity();
-            joints[i]->scale = 1.0;
         }
         if (update) {
             this->update();
@@ -408,15 +386,16 @@ namespace ark {
             kd_tree_t mindex(3, modelCloud, 10);
             mindex.index->buildIndex();
 
+            std::vector<std::vector<int>> neighb(modelCloud.rows());
+
             correspondences.clear();
             for (int i = 0; i < dataCloud.rows(); ++i) {
                 resultSet.init(&index, &dist);
                 mindex.index->findNeighbors(resultSet, dataCloud.data() + i * 3, nanoflann::SearchParams(10));
-                correspondences.emplace_back(int(index), i);
+                neighb[int(index)].emplace_back(i);
             }
 
             // limit to 1 NN point per model point
-            /*
             for (int i = 0; i < modelCloud.rows(); ++i) {
                 int best_idx = -1; double best_norm = DBL_MAX;
                 for (int nei : neighb[i]) {
@@ -427,11 +406,9 @@ namespace ark {
                     }
                 }
                 if (~best_idx) {
-                    neighb[i].resize(1);
-                    neighb[i][0] = best_idx;
+                    correspondences.emplace_back(i, best_idx);
                 }
             }
-            */
         } else {
             // perform FORWARD NN, i.e. match each model point to a data point
             correspondences.clear();
@@ -442,12 +419,13 @@ namespace ark {
                 resultSet.init(&index, &dist);
                 mindex->index->findNeighbors(resultSet, dataPtr, nanoflann::SearchParams(10));
                 dataPtr += 3;
-                invNN[index].push_back(i);
+                if (index >= 0 && index < static_cast<int>(invNN.size()))
+                    invNN[index].push_back(i);
             }
 
             // limit to 1 NN point per data point
             for (int i = 0; i < dataCloud.rows(); ++i) {
-                if (invNN[i].size() > 1) {
+                if (invNN[i].size() > 0) {
                     int best_idx = 0; double best_norm = DBL_MAX;
                     for (int j = 0; j < invNN[i].size(); ++j) {
                         double norm = (dataCloud.row(i) - modelCloud.row(invNN[i][j])).squaredNorm();
@@ -468,22 +446,16 @@ namespace ark {
                                                       bool print_params = false) {
 
         const int NUM_JOINTS = ava->numJoints();
-        static const std::string MODEL_CLOUD_NAME = "model_cloud";
-        static const int NN_LINE_INTERVAL = 2;
 
         if (print_params) {
             // print out model parameters
-            double * _w = ava->w(), *_r = ava->r(), *_s = ava->s(), *_p = ava->p();
+            double * _w = ava->w(), *_r = ava->r(), *_p = ava->p();
             for (int i = 0; i < HumanAvatar::NUM_SHAPEKEYS; ++i) {
                 cout << _w[i] << " ";
             }
             cout << " | ";
             for (int i = 0; i < NUM_JOINTS * HumanAvatar::NUM_ROT_PARAMS; ++i) {
                 cout << _r[i] << " ";
-            }
-            cout << " | ";
-            for (int i = 0; i < NUM_JOINTS * HumanAvatar::NUM_SCALE_PARAMS; ++i) {
-                cout << _s[i] << " ";
             }
             cout << " | ";
             for (int i = 0; i < HumanAvatar::NUM_POS_PARAMS; ++i) {
@@ -496,7 +468,8 @@ namespace ark {
         viewer->removeAllShapes(1);
 
         // draw nearest-neighbor1 lines
-        for (size_t k = 0; k < correspondences.size(); k += NN_LINE_INTERVAL) {
+        int lineInterval = std::max(2, int(correspondences.size()) / 100);
+        for (size_t k = 0; k < correspondences.size(); k += lineInterval) {
             int i, j; std::tie(i, j) = correspondences[k];
             HumanAvatar::Point_T p1, p2;
             p1.getVector3fMap() = modelCloud.row(i).cast<float>();
@@ -508,20 +481,18 @@ namespace ark {
         // re-draw model joints and points
         ava->update(false);
         ava->visualize(viewer, "ava_", 1);
-        viewer->removePointCloud(MODEL_CLOUD_NAME, 1);
-        viewer->addPointCloud<HumanAvatar::Point_T>(ava->getCloud(), MODEL_CLOUD_NAME, 1);
-        viewer->spinOnce();
+        //viewer->spinOnce();
     }
 
     void HumanAvatar::fit(const EigenCloud_T & dataCloud) {
         auto startTime = std::chrono::high_resolution_clock::now();
         kd_tree_ptr_t kdTree = _buildKDIndex(dataCloud);
         std::vector<int> joints_subset;
-        fitPose(dataCloud, 2, 14, joints_subset, false, kdTree);
-        fitShape(dataCloud, 3, 14, false, kdTree);
-        fitPose(dataCloud, 4, 14, joints_subset, false, kdTree);
-        fitShape(dataCloud, 3, 14, false, kdTree);
-        fitPose(dataCloud, 3, 5, joints_subset, false, kdTree);
+        fitPose(dataCloud, 6, 12, joints_subset, true, kdTree);
+        fitShape(dataCloud, 2, 14, true, kdTree);
+        fitPose(dataCloud, 4, 14, joints_subset, true, kdTree);
+        fitShape(dataCloud, 3, 14, true, kdTree);
+        fitPose(dataCloud, 3, 5, joints_subset, true, kdTree);
         auto endTime = std::chrono::high_resolution_clock::now();
 
         std::cout << "Overall Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << " ms\n";
@@ -529,7 +500,7 @@ namespace ark {
         EigenCloud_T modelCloud(humanPCTransformed->points.size(), 3);
         std::vector<std::pair<int, int> > correspondences;
         _updateCloud(_w, _pt, _cache, modelCloud);
-        _findNN(kdTree, dataCloud, modelCloud, correspondences, false);
+        _findNN(kdTree, dataCloud, modelCloud, correspondences, true);
         __debugVisualize(this, dataCloud, modelCloud, correspondences, true);
     }
 
@@ -537,11 +508,7 @@ namespace ark {
 		auto startTime = std::chrono::high_resolution_clock::now();
 		kd_tree_ptr_t kdTree = _buildKDIndex(dataCloud);
 		std::vector<int> joints_subset;
-		fitPose(dataCloud, 1, 4, joints_subset, false, kdTree);
-		//fitShape(dataCloud, 3, 14, false, kdTree);
-		//fitPose(dataCloud, 4, 14, joints_subset, false, kdTree);
-		//fitShape(dataCloud, 3, 14, false, kdTree);
-		//fitPose(dataCloud, 3, 5, joints_subset, false, kdTree);
+		fitPose(dataCloud, 1, 8, joints_subset, false, kdTree);
 		auto endTime = std::chrono::high_resolution_clock::now();
 
 		std::cout << "Overall Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << " ms\n";
@@ -550,7 +517,7 @@ namespace ark {
 		std::vector<std::pair<int, int> > correspondences;
 		_updateCloud(_w, _pt, _cache, modelCloud);
 		_findNN(kdTree, dataCloud, modelCloud, correspondences, false);
-		__debugVisualize(this, dataCloud, modelCloud, correspondences, true);
+		__debugVisualize(this, dataCloud, modelCloud, correspondences, false);
 	}
 
     void HumanAvatar::fitPose(const EigenCloud_T & dataCloud, int max_iter, int num_subiter,
@@ -560,18 +527,17 @@ namespace ark {
         kd_tree_ptr_t kdTree = (kd_tree ? kd_tree : _buildKDIndex(dataCloud));
 
         EigenCloud_T modelCloud(humanPCTransformed->points.size(), 3);
-        _updateCloud(_pt, _cache, modelCloud);
+        _updateCloud(_w, _pt, _cache, modelCloud);
 
         EigenCloud_T initJointPos(NUM_JOINTS, 3);
         for (int i = 0; i < NUM_JOINTS; ++i) {
             initJointPos.row(i) = Eigen::Map<Eigen::Vector3d>(_pt + i * NUM_POS_PARAMS);
         }
 
-        auto startTime = std::chrono::high_resolution_clock::now();
         for (int iter = 0; iter < max_iter; ++iter) {
             std::cout << ">> POSE FITTING: ITER " << iter << "\n";
-            _propagateJointTransforms(_r, _s, _p, _pt, _rt, _cache);
-            _updateCloud(_pt, _cache, modelCloud);
+            _propagateJointTransforms(_r, _p, _w, _pb, _pt, _rt, _cache);
+            _updateCloud(_w, _pt, _cache, modelCloud);
 
             Problem problem;
             std::vector<std::pair<int, int> > correspondences;
@@ -581,21 +547,18 @@ namespace ark {
             ceres::CostFunction * cost_function =
                 new AutoDiffCostFunction<PoseCostFunctor, ceres::DYNAMIC,
                 NUM_JOINTS * NUM_ROT_PARAMS,
-                NUM_JOINTS * NUM_SCALE_PARAMS,
                 NUM_POS_PARAMS>(
-                    new PoseCostFunctor(*this, dataCloud, correspondences, initJointPos) ,
-                        int(correspondences.size()) * NUM_POS_PARAMS + NUM_JOINTS * NUM_POS_PARAMS);
+                    new PoseCostFunctor(*this, dataCloud, correspondences, jointsPrior, posePrior),
+                    int(correspondences.size()) * NUM_POS_PARAMS + NUM_JOINTS * 2 + NUM_JOINTS * 3 - 2);
 
             problem.AddParameterBlock(_r, NUM_JOINTS * NUM_ROT_PARAMS
                 , new MultiQuaternionParameterization<NUM_JOINTS>()
             );
-            problem.AddParameterBlock(_s, NUM_JOINTS * NUM_SCALE_PARAMS);
             problem.AddParameterBlock(_p, NUM_POS_PARAMS);
-            problem.AddResidualBlock(cost_function, NULL /*new CauchyLoss(25.0)*/,
-                _r, _s, _p);
+            problem.AddResidualBlock(cost_function, NULL /*new CauchyLoss(25.0)*/, _r, _p);
 
             Solver::Options options;
-            options.linear_solver_type = ceres::LinearSolverType::DENSE_NORMAL_CHOLESKY;
+            options.linear_solver_type = ceres::LinearSolverType::SPARSE_NORMAL_CHOLESKY;
             options.trust_region_strategy_type = ceres::LEVENBERG_MARQUARDT;
             options.initial_trust_region_radius = 200;
             options.minimizer_progress_to_stdout = false;
@@ -606,26 +569,22 @@ namespace ark {
             options.max_linear_solver_iterations = num_subiter;
             options.max_num_iterations = num_subiter;
             options.num_threads = 1;
-            //options.num_linear_solver_threads = 1;
             options.function_tolerance = 1e-5;
 
-            //__debugVisualize(this, dataCloud, modelCloud, neighb);
-
-            // solve ICP
+            // solve iteratively
             Solver::Summary summary;
             ceres::Solve(options, &problem, &summary);
 
             // output (for debugging)
-            //std::cout << summary.FullReport() << "\n";
 
-            Visualizer::getPCLVisualizer()->spinOnce();
+            //__debugVisualize(this, dataCloud, modelCloud, correspondences);
+            //std::cout << summary.FullReport() << "\n";
+            //Visualizer::getPCLVisualizer()->spinOnce();
         }
 
-        auto endTime = std::chrono::high_resolution_clock::now();
-
-        _propagateJointTransforms(_r, _s, _p, _pt, _rt, _cache);
+        _propagateJointTransforms(_r, _p, _w, _pb, _pt, _rt, _cache);
+        _updateCloud(_w, _pt, _cache, modelCloud);
         std::cout << ">> POSE FITTING: DONE\n";
-        std::cout << "Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << " ms\n";
     }
 
     void HumanAvatar::fitShape(const EigenCloud_T & dataCloud, int max_iter, int num_subiter, bool inv_nn, kd_tree_ptr_t kd_tree) {
@@ -636,10 +595,9 @@ namespace ark {
         EigenCloud_T modelCloud(humanPCTransformed->points.size(), 3);
         _updateCloud(_w, _pt, _cache, modelCloud);
 
-        auto startTime = std::chrono::high_resolution_clock::now();
         for (int iter = 0; iter < max_iter; ++iter) {
             std::cout << ">> SHAPE FITTING: ITER " << iter << "\n";
-            _propagateJointTransforms(_r, _s, _p, _pt, _rt, _cache);
+            _propagateJointTransforms(_r, _p, _w, _pb, _pt, _rt, _cache);
             _updateCloud(_w, _pt, _cache, modelCloud);
 
             Problem problem;
@@ -652,7 +610,7 @@ namespace ark {
                 //NUM_JOINTS * NUM_ROT_PARAMS,
                 //NUM_JOINTS * NUM_SCALE_PARAMS,
                 /*NUM_POS_PARAMS*/>(
-                    new ShapeCostFunctor(*this, dataCloud, correspondences), int(correspondences.size()) * NUM_POS_PARAMS);
+                    new ShapeCostFunctor(*this, dataCloud, correspondences), int(correspondences.size()) * NUM_POS_PARAMS + NUM_SHAPEKEYS);
 
             problem.AddParameterBlock(_w, NUM_SHAPEKEYS);
             problem.AddResidualBlock(cost_function, NULL /*new CauchyLoss(25.0)*/, _w);
@@ -670,57 +628,63 @@ namespace ark {
             //options.num_linear_solver_threads = 1;
             options.function_tolerance = 1e-8;
 
-            //__debugVisualize(this, dataCloud, modelCloud, neighb);
+            // __debugVisualize(this, dataCloud, modelCloud, correspondences);
 
             // solve ICP
             Solver::Summary summary;
             ceres::Solve(options, &problem, &summary);
 
             // output (for debugging)
-            //std::cout << summary.FullReport() << "\n";
+            // std::cout << summary.FullReport() << "\n";
 
-            Visualizer::getPCLVisualizer()->spinOnce();
+            // Visualizer::getPCLVisualizer()->spinOnce(500);
         }
 
-        auto endTime = std::chrono::high_resolution_clock::now();
-
-        _propagateJointTransforms(_r, _s, _p, _pt, _rt, _cache);
+        _propagateJointTransforms(_r, _p, _w, _pb, _pt, _rt, _cache);
         std::cout << ">> SHAPE FITTING: DONE\n";
-        std::cout << "Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << " ms\n";
     }
 
     void HumanAvatar::alignToJoints(const EigenCloud_T & pos)
     {
         ASSERT(pos.rows() == JointType::_COUNT, "Joint number mismatch");
 
-        Eigen::Vector3d vr = joints[JointType::SPINE1]->posBase - joints[JointType::ROOT]->posBase;
+        Eigen::Vector3d vr = joints[JointType::SPINE1]->posSkel - joints[JointType::ROOT]->posSkel;
         Eigen::Vector3d vrt = pos.row(JointType::SPINE1) - pos.row(JointType::ROOT);
         basePos = pos.row(0);
         joints[JointType::ROOT]->rotTransformed = joints[JointType::ROOT]->rotation
                                                 = Eigen::Quaterniond::FromTwoVectors(vr, vrt);
 
-        double baseScale = (pos.row(JointType::SPINE2) - pos.row(JointType::PELVIS)).norm() /
-            (joints[JointType::SPINE2]->posBase - joints[JointType::PELVIS]->posBase).norm();
-        joints[JointType::ROOT]->scale = baseScale;
+        double scaleAvg = 0.0;
+        for (int i = 1; i < pos.rows(); ++i) {
+            scaleAvg += (pos.row(i) - pos.row(joints[i]->parent->type)).norm() /
+                (joints[i]->posSkel - joints[i]->parent->posSkel).norm();
+        }
+        scaleAvg /= (pos.rows() - 1.0);
+        double baseScale = (joints[JointType::SPINE2]->posSkel - joints[JointType::PELVIS]->posSkel).norm() * (scaleAvg - 1.0);
+        _w[0] = baseScale * PC1_DIST_FACT;
+        if (isnan(_w[0])) _w[0] = 1.5;
+        propagateJointTransforms();
 
         for (int i = 1; i < pos.rows(); ++i) {
-            if (std::isnan(pos.row(i).x()) || std::isnan(pos.row(joints[i]->parent->type).x())) {
-                joints[i]->scale = 1.0;
-                joints[i]->rotation = Eigen::Quaterniond::Identity();
-                joints[i]->rotTransformed = joints[i]->parent->rotTransformed;
-                cerr << "B " << i << "; ";
+            joints[i]->rotation = Eigen::Quaterniond::Identity();
+            joints[i]->rotTransformed = joints[i]->parent->rotTransformed;
+            joints[i]->cachedTransform = joints[i]->rotTransformed.toRotationMatrix();
+            if (joints[i]->children.empty() || std::isnan(pos.row(i).x()) || std::isnan(pos.row(joints[i]->children[0]->type).x())) {
             }
             else {
-                Eigen::Vector3d vv = joints[i]->posBase - joints[i]->parent->posBase;
-                Eigen::Vector3d vvt = pos.row(i) - pos.row(joints[i]->parent->type);
-                std::isnan(pos.row(joints[i]->parent->type).x());
-                joints[i]->scale = vvt.norm() / vv.norm() / baseScale;
-                joints[i]->rotation = Eigen::Quaterniond::FromTwoVectors(vv, vvt) * joints[i]->parent->rotTransformed.inverse();
+                Eigen::Vector3d vv = joints[i]->children[0]->posSkel - joints[i]->posSkel;
+                Eigen::Vector3d vvt = pos.row(joints[i]->children[0]->type) - pos.row(i);
+                joints[i]->rotation = joints[i]->parent->rotTransformed.inverse() * Eigen::Quaterniond::FromTwoVectors(vv, vvt);
                 joints[i]->rotTransformed = joints[i]->parent->rotTransformed * joints[i]->rotation;
+                joints[i]->cachedTransform = joints[i]->rotTransformed.toRotationMatrix();
             }
         }
+        updateJointsPrior(pos);
+    }
 
-        propagateJointTransforms();
+    void HumanAvatar::updateJointsPrior(const EigenCloud_T & pos)
+    {
+        jointsPrior = pos;
     }
 
     void HumanAvatar::visualize(pcl::visualization::PCLVisualizer::Ptr & viewer, std::string pcl_prefix, int viewport) const {
@@ -733,7 +697,6 @@ namespace ark {
             std::string jointName = pcl_prefix + "avatarJoint" + std::to_string(i);
             viewer->removeShape(jointName, viewport);
             viewer->addSphere(curr, 0.02, colorf[2], colorf[1], colorf[0], jointName, viewport);
-            //viewer->addText3D(std::to_string(i), curr, 0.03, 1.0, 1.0, 1.0, jointName + "T", viewport + 1);
 
             if (joints[i]->parent) {
                 Point_T parent = util::toPCLPoint(joints[i]->parent->posTransformed);
@@ -742,6 +705,10 @@ namespace ark {
                 viewer->addLine(curr, parent, colorf[2], colorf[1], colorf[0], boneName, viewport);
             }
         }
+
+        static const std::string MODEL_CLOUD_NAME = "model_cloud";
+        viewer->removePointCloud(pcl_prefix + MODEL_CLOUD_NAME, viewport);
+        viewer->addPointCloud<Point_T>(humanPCTransformed, pcl_prefix + MODEL_CLOUD_NAME, viewport);
     }
 
     void HumanAvatar::assignDistanceWeights(int max_vertex_bones, double norm_thresh) {
@@ -750,12 +717,11 @@ namespace ark {
         std::vector<std::pair<double, int>> tmp(joints.size() - 1);
         for (size_t i = 0; i < SZ; ++i) {
             const auto & pt = humanPCTransformed->points[i];
-            Vec3f v(pt.x, pt.y, pt.z);
+            Eigen::Vector3d v(pt.x, pt.y, pt.z);
             for (size_t j = 1; j < joints.size(); ++j) {
                 if (joints[j]->parent == nullptr) continue;
-                const auto & pb = joints[j]->posBase, &ppb = joints[j]->parent->posBase;
-                double norm = util::pointLineSegmentNorm(v,
-                    Vec3f(pb.x(), pb.y(), pb.z()), Vec3f(ppb.x(), ppb.y(), ppb.z()));
+                const auto & pb = joints[j]->posBase;
+                double norm = (v - pb).norm();
                 tmp[j - 1].first = norm;
                 tmp[j - 1].second = (int)j;
             }
@@ -780,26 +746,69 @@ namespace ark {
     }
 
     void HumanAvatar::propagateJointTransforms() {
-        _propagateJointTransforms(_r, _s, _p, _pt, _rt, _cache);
-    }
-
-    void HumanAvatar::computeLocalPC()
-    {
-        for (int i = 0; i < MAX_ASSIGNED_JOINTS; ++i) {
-            localPC[i] = EigenCloud_T(humanPCBase->points.size(), 3);
-        }
-
-        for (size_t i = 0; i < humanPCBase->points.size(); ++i) {
-            Eigen::Vector3d v = humanPCBase->points[i].getVector3fMap().cast<double>();
-            for (size_t j = 0; j < boneWeights[i].size(); ++j) {
-                const int jid = boneWeights[i][j].first;
-                const auto & jnt = joints[jid];
-                localPC[j].row(i) = jnt->rotBaseInv * (v - jnt->parent->posBase);
-            }
-        }
+        _propagateJointTransforms(_r, _p, _w, _pb, _pt, _rt, _cache);
     }
 
     Eigen::Vector3d HumanAvatar::computePointPosition(size_t point_index) {
         return _computePointPosition(point_index, _w, _pt, _cache);
+    }
+
+    void GaussianMixture::load(const std::string & path)
+    {
+        ifstream ifs(path);
+        ifs >> nComps >> nDims;
+
+        // compute constants
+        double sqrt_2_pi_n = ceres::pow(2 * M_PI, nDims * 0.5 );
+        double log_sqrt_2_pi_n = nDims * 0.5 * std::log(2 * M_PI);
+        weight.resize(nComps);
+        consts.resize(nComps);
+        consts_log.resize(nComps);
+        for (int i = 0; i < nComps; ++i) {
+            // load weights
+            ifs >> weight[i];
+            consts_log[i] = log(weight[i]) - log_sqrt_2_pi_n;
+            consts[i] = weight[i] / sqrt_2_pi_n;
+        }
+
+        mean.resize(nComps, nDims);
+        for (int i = 0; i < nComps; ++i) {
+            for (int j = 0; j < nDims; ++j) {
+                // load mean vectors
+                ifs >> mean(i, j);
+            }
+        }
+
+        /** Cholesky decomposition */
+        typedef Eigen::LLT<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>> Cholesky;
+
+        cov.resize(nComps);
+        cov_cho.resize(nComps);
+        double maxDet = 0.0;
+        for (int i = 0; i < nComps; ++i) {
+            auto & m = cov[i];
+            m.resize(nDims, nDims);
+            for (int j = 0; j < nDims; ++j) {
+                for (int k = 0; k < nDims; ++k) {
+                    // load covariance matrices
+                    ifs >> m(j, k);
+                }
+            }
+            Cholesky chol(cov[i].inverse());
+            if (chol.info() != Eigen::Success) throw "Decomposition failed!";
+            cov_cho[i] = chol.matrixL();
+            double det = chol.matrixL().determinant();
+            maxDet = std::max(det, maxDet);
+
+            // update constants
+            consts[i] *= det;
+            consts_log[i] += log(det);
+        }
+
+        for (int i = 0; i < nComps; ++i) {
+            // normalize constants
+            consts[i] /= maxDet;
+            consts_log[i] -= log(maxDet);
+        }
     }
 }
