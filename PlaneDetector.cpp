@@ -192,8 +192,8 @@ namespace ark {
             int goodPts = 0;
 
             for (uint j = 0; j < SZ; ++j) {
-                float norm = util::pointPlaneNorm((*planePointsXYZ[i])[j], planeEquation[i]);
-                if (norm < params->handPlaneMinNorm) {
+                float norm = util::pointPlaneSquaredDistance((*planePointsXYZ[i])[j], planeEquation[i]);
+                if (norm < params->handPlaneMinSqrDist) {
                     ++goodPts;
                 }
             }

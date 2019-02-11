@@ -83,7 +83,7 @@ namespace ark {
         float euclideanDistance(const cv::Point_<T> & pt1, const cv::Point_<T> & pt2);
 
         /**
-        * Get L2 norm (euclidean distance) between two 3D points.
+        * Get euclidean distance between two 3D points.
         * @param pt1 point 1
         * @param pt2 point 2
         * @return euclidean distance
@@ -92,43 +92,43 @@ namespace ark {
         T euclideanDistance(const cv::Vec<T, 3> & pt1, const cv::Vec<T, 3> & pt2);
 
         /**
-        * Compute the norm (squared L2 by default) between a point and any point on a  line
+        * Compute the squared distance between a point and any point on a  line
         * @param v the point
         * @param a, b two points on the line
         * @param cv_norm_type type of norm to use (cv::NORM_XYZ); defaults to square of L2
         */
         template<class Param_T>
-        float pointLineNorm(const cv::Point_<Param_T> & p, const cv::Point_<Param_T> & a, const cv::Point_<Param_T> & b, int cv_norm_type = cv::NORM_L2SQR);
+        float pointLineDistance(const cv::Point_<Param_T> & p, const cv::Point_<Param_T> & a, const cv::Point_<Param_T> & b, int cv_norm_type = cv::NORM_L2SQR);
 
         /**
-        * Compute the norm (squared L2 by default) between a point and any point on a line
+        * Compute the squared distance between a point and any point on a line
         * @param v the point
         * @param a, b two points on the line
         * @param cv_norm_type type of norm to use (cv::NORM_XYZ); defaults to square of L2
         */
         template<class Param_T>
-        Param_T pointLineNorm(const cv::Vec<Param_T, 3> & p, const cv::Vec<Param_T, 3> & a, const cv::Vec<Param_T, 3> & b, int cv_norm_type = cv::NORM_L2SQR);
+        Param_T pointLineDistance(const cv::Vec<Param_T, 3> & p, const cv::Vec<Param_T, 3> & a, const cv::Vec<Param_T, 3> & b, int cv_norm_type = cv::NORM_L2SQR);
 
         /**
-        * Compute the norm (squared L2 by default) between a point and any point on a line segment
+        * Compute the squared distance between a point and any point on a line segment
         * @param v the point
         * @param a, b end points of the line segment
         * @param cv_norm_type type of norm to use (cv::NORM_XYZ); defaults to square of L2
         */
         template<class Param_T>
-        float pointLineSegmentNorm(const cv::Point_<Param_T> & p, const cv::Point_<Param_T> & a, const cv::Point_<Param_T> & b, int cv_norm_type = cv::NORM_L2SQR);
+        float pointLineSegmentDistance(const cv::Point_<Param_T> & p, const cv::Point_<Param_T> & a, const cv::Point_<Param_T> & b, int cv_norm_type = cv::NORM_L2SQR);
 
         /*
-        * Compute the norm (squared L2 by default) between a point and any point on a line segment
+        * Compute the squared distance between a point and any point on a line segment
         * @param v the point
         * @param a, b end points of the line segment
         * @param cv_norm_type type of norm to use (cv::NORM_XYZ); defaults to square of L2
         */
         template<class Param_T>
-        Param_T pointLineSegmentNorm(const cv::Vec<Param_T, 3> & p, const cv::Vec<Param_T, 3> & a, const cv::Vec<Param_T, 3> & b, int cv_norm_type = cv::NORM_L2SQR);
+        Param_T pointLineSegmentDistance(const cv::Vec<Param_T, 3> & p, const cv::Vec<Param_T, 3> & a, const cv::Vec<Param_T, 3> & b, int cv_norm_type = cv::NORM_L2SQR);
 
         /**
-        * Compute the L2 norm (distance) between a point and a plane
+        * Compute the squared distance between a point and a plane
         * Where the plane is defined as: ax + by - z + c = 0
         * @param pt the point
         * @param eqn equation of plane in form: [a, b, c]
@@ -137,7 +137,7 @@ namespace ark {
         template<class T> T pointPlaneDistance(const cv::Vec<T, 3> & pt, const cv::Vec<T, 3> & eqn);
 
         /**
-        * Compute the L2 norm (distance) between a point and a plane
+        * Compute the euclidean distance between a point and a plane
         * Where the plane is defined as: ax + by - z + c = 0
         * @param pt the point
         * @param a, b, c parameters of plane
@@ -146,22 +146,22 @@ namespace ark {
         template<class T> T pointPlaneDistance(const cv::Vec<T, 3> & pt, T a, T b, T c);
 
         /**
-        * Compute the squared L2 norm between a point and a plane
+        * Compute the squared euclidean distance between a point and a plane
         * Where the plane is defined as: ax + by - z + c = 0
         * @param pt the point
         * @param eqn equation of plane in form: [a, b, c]
         * @return squared L2 norm in m^2
         */
-        template<class T> T pointPlaneNorm(const cv::Vec<T, 3> & pt, const cv::Vec<T, 3> & eqn);
+        template<class T> T pointPlaneSquaredDistance(const cv::Vec<T, 3> & pt, const cv::Vec<T, 3> & eqn);
 
         /**
-        * Compute the squared L2 norm (distance squared) between a point and a plane
+        * Compute the squared euclidean distance between a point and a plane
         * Where the plane is defined as: ax + by - z + c = 0
         * @param pt the point
         * @param a, b, c parameters of plane
         * @return squared L2 norm in m^2
         */
-        template<class T> T pointPlaneNorm(const cv::Vec<T, 3> & pt, T a, T b, T c);
+        template<class T> T pointPlaneSquaredDistance(const cv::Vec<T, 3> & pt, T a, T b, T c);
 
         /**
         * Estimate the euclidean distance per pixel around a point on a depth map

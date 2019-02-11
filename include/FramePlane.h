@@ -78,7 +78,7 @@ namespace ark {
          * @param point the point
          * @return euclidean distance
          */
-        float normToPoint(const Vec3f & point) const;
+        float squaredDistanceToPoint(const Vec3f & point) const;
 
         /**
          * Find the euclidean distance from the plane to a given point

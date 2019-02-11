@@ -263,12 +263,12 @@ namespace ark {
         double centroidDefectFingerAngleMin = 0.20 * PI;
 
         /**
-         * minimum norm (distance squared; in m^2) between a hand and a plane.
+         * minimum distance squared (in m^2) between a hand and a plane.
          * points closer to the plane are not considered during hand detection
          * so that the hand is isolated from the planar surfaces are removed.
          * default: 0.000075
          */
-        double handPlaneMinNorm = 0.000075;
+        double handPlaneMinSqrDist = 0.000075;
 
         // ** Plane detection parameters ** 
 

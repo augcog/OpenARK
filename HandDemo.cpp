@@ -161,7 +161,7 @@ int main() {
 
                         float norm = util::pointPlaneNorm(xyz, planes[i]->equation);
 
-                        float fact = std::max(0.0, 0.5f - norm / params->handPlaneMinNorm / 8.0f);
+                        float fact = std::max(0.0, 0.5f - norm / params->handPlaneMinSqrDist / 8.0f);
                         if (fact == 0.0f) continue;
 
                         outPtr[col] += (color - (cv::Vec3s)outPtr[col]) * fact;

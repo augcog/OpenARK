@@ -1,5 +1,8 @@
 #include <memory>
 #include <utility>
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
+#include <Eigen/Dense>
 
 #include "Core.h"
 #include "UnityInterface.h"
@@ -118,7 +121,7 @@ extern "C" {
     }
 
     float planePointNorm(int plane_id, float x, float y, float z) {
-        return planes->at(plane_id)->normToPoint(ark::Vec3f(x, y, z));
+        return planes->at(plane_id)->squaredDistanceToPoint(ark::Vec3f(x, y, z));
     }
 
     int computeTouches(int hand_id, int plane_id, float thresh) {
