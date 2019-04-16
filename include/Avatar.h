@@ -8,6 +8,8 @@
 #include <pcl/filters/uniform_sampling.h>
 #include <pcl/filters/random_sample.h>
 
+#include "Visualizer.h"
+
 namespace ark {
     // TODO: refactor this file
     /** Gaussian Mixture Model */

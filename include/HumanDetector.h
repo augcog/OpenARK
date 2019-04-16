@@ -1,11 +1,15 @@
 #pragma once
 #include "Detector.h"
 #include "HumanBody.h"
+#include "Avatar.h"
 
 #include "opencv2/objdetect/objdetect.hpp"
 #include "opencv2/video/tracking.hpp"
 #include <opencv2/dnn.hpp>
 #include <opencv2/face.hpp>
+
+#include <pcl/filters/statistical_outlier_removal.h>
+#include <pcl/filters/voxel_grid.h>
 
 namespace ark {
 	struct KeyPoint {
@@ -47,13 +51,21 @@ namespace ark {
 	public:
 		HumanDetector(DetectionParams::Ptr params = nullptr);
 
+		double update(cv::Mat & xyzMap, cv::Mat & rgbMap, std::vector<cv::Point>& rgbJoints);
+
 		std::vector<std::shared_ptr<HumanBody>>& getHumanBodies();
+
+		std::shared_ptr<HumanAvatar> getAvatarModel();
 
 	protected:
 		void detect(cv::Mat & image) override;
 
 	private:
+		std::shared_ptr<HumanAvatar> ava;
+
 		std::vector<std::shared_ptr<HumanBody>> human_bodies;
+
+		bool begin_tracking;
 
 		/** Human Detection Variables **/
 		cv::Rect lastHumanDetectionBox;
@@ -102,5 +114,32 @@ namespace ark {
 		void getPersonwiseKeypoints(const std::vector<std::vector<ValidPair>>& validPairs,
 			const std::set<int>& invalidPairs,
 			std::vector<std::vector<int>>& personwiseKeypoints);
+
+		void segmentAvatar(const cv::Mat & xyz_map, const std::vector<cv::Point2i> & points_on_target,
+			cv::Mat & out);
+
+		int filterByHeight(cv::Mat& xyz_map, int feet);
+
+		void toSMPLJoints(const cv::Mat & xyzMap, const std::vector<cv::Point> & mpi_joints,
+			HumanAvatar::EigenCloud_T & out);
+
+		template<class T>
+		boost::shared_ptr<pcl::PointCloud<T>> denoisePointCloud(boost::shared_ptr<pcl::PointCloud<T>> & human_cloud,
+			float resolution = 0.05f, int mean_k = 50, double std_dev_mul = 1.0) {
+			auto humanCloud_filtered = boost::make_shared<pcl::PointCloud<T>>();
+			auto humanCloud_down = boost::make_shared<pcl::PointCloud<T>>();
+
+			pcl::StatisticalOutlierRemoval<T> sor;
+			sor.setInputCloud(human_cloud);
+			sor.setMeanK(mean_k);
+			sor.setStddevMulThresh(std_dev_mul);
+			sor.filter(*humanCloud_filtered);
+
+			pcl::VoxelGrid<T> voxel_processor;
+			voxel_processor.setInputCloud(humanCloud_filtered);
+			voxel_processor.setLeafSize(resolution, resolution, resolution);
+			voxel_processor.filter(*humanCloud_down);
+			return humanCloud_down;
+		}
 	};
 }
