@@ -263,12 +263,12 @@ namespace ark {
         double centroidDefectFingerAngleMin = 0.20 * PI;
 
         /**
-         * minimum norm (distance squared; in m^2) between a hand and a plane.
+         * minimum distance squared (in m^2) between a hand and a plane.
          * points closer to the plane are not considered during hand detection
          * so that the hand is isolated from the planar surfaces are removed.
          * default: 0.000075
          */
-        double handPlaneMinNorm = 0.000075;
+        double handPlaneMinSqrDist = 0.000075;
 
         // ** Plane detection parameters ** 
 
@@ -276,7 +276,7 @@ namespace ark {
          * resolution of normal map used in plane detection
          * default: 3
          */
-        int normalResolution = 3;
+        int normalResolution = 10;
 
         /**
          * maximum difference between the surface normal vectors of two adjacent points
@@ -284,13 +284,13 @@ namespace ark {
          * (used in flood fill during plane detection)
          * default: 0.06
          */
-        float planeFloodFillThreshold = 0.06f;
+        float planeFloodFillThreshold = 0.60f;
 
         /**
          * fraction of outlier points to remove from the plane before performing regression
          * default: 0.2f
          */
-        float planeOutlierRemovalThreshold = 0.2f;
+        float planeOutlierRemovalThreshold = 0.02f;
 
         /**
          * minimum (# points / # total points on screen / normal resolution^2)

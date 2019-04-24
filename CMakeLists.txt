@@ -21,7 +21,7 @@ set( DATA_RECORDING_NAME "OpenARK_data_recording")
 set( TEST_NAME "OpenARK_test" )
 set( UNITY_PLUGIN_NAME "UnityPlugin" )
 
-option( BUILD_DEMO "BUILD_DEMO" ON )
+option( BUILD_HAND_DEMO "BUILD_HAND_DEMO" ON )
 option( BUILD_AVATAR_DEMO "BUILD_AVATAR_DEMO" ON)
 option( BUILD_DATA_RECORDING "BUILD_DATA_RECORDING" ON)
 option( BUILD_TESTS "BUILD_TESTS" OFF )
@@ -49,12 +49,32 @@ endif ( CMAKE_COMPILER_IS_GNUCXX )
 set( Boost_USE_STATIC_LIBS ON )
 set( Boost_USE_STATIC ON )
 
+# require PCL
 find_package( PCL REQUIRED )
+if( PCL_FOUND )
+   message( STATUS "Found PCL: ${PCL_INCLUDE_DIRS}" )
+endif( PCL_FOUND )
 
+# require OpenCV
 find_package( OpenCV REQUIRED )
 if( OpenCV_FOUND )
    message( STATUS "Found OpenCV: ${OpenCV_INCLUDE_DIRS}" )
 endif( OpenCV_FOUND )
+
+# require Ceres
+find_package( Ceres REQUIRED )
+IF(Ceres_FOUND)
+   MESSAGE(STATUS "Found Ceres: ${CERES_INCLUDE_DIRS}")
+ENDIF(Ceres_FOUND)
+include_directories(${CERES_INCLUDE_DIRS})
+
+# require glog
+find_package( Glog REQUIRED )
+message(STATUS "Found Glog: ${GLOG_LIBRARIES}")
+
+# require cxsparse
+find_package( CXSparse REQUIRED )
+message(STATUS "Found CXSparse: ${CXSPARSE_LIBRARIES}")
 
 set( RSSDK2_FOUND OFF )
 if( USE_RSSDK2 )
@@ -83,12 +103,16 @@ endif( USE_PMDSDK OR ( NOT RSSDK_FOUND AND NOT RSSDK2_FOUND ) )
 include_directories(
   ${OpenCV_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
+  ${CERES_INCLUDE_DIRS}
 )
 
 set(
   DEPENDENCIES
   ${OpenCV_LIBRARIES}
   ${PCL_LIBRARIES}
+  ${CERES_LIBRARIES}
+  ${GLOG_LIBRARIES}
+  ${CXSPARSE_LIBRARIES}
 )
 
 add_definitions(
@@ -114,6 +138,9 @@ set(
   HandDetector.cpp
   PlaneDetector.cpp
   MockCamera.cpp
+  HumanDetector.cpp
+  HumanBody.cpp
+  Avatar.cpp
 )
 
 set(
@@ -134,6 +161,10 @@ set(
   ${INCLUDE_DIR}/HandDetector.h
   ${INCLUDE_DIR}/PlaneDetector.h
   ${INCLUDE_DIR}/MockCamera.h
+  ${INCLUDE_DIR}/HumanDetector.h
+  ${INCLUDE_DIR}/HumanBody.h
+  ${INCLUDE_DIR}/Avatar.h
+  ${INCLUDE_DIR}/nanoflann.hpp
   stdafx.h
 )
 
@@ -203,13 +234,13 @@ if ( MSVC )
     set_target_properties( ${LIB_NAME} PROPERTIES COMPILE_FLAGS "/MD" )
 endif()
 
-if( ${BUILD_DEMO} )
+if( ${BUILD_HAND_DEMO} )
     add_executable( ${DEMO_NAME} HandDemo.cpp )
     target_include_directories( ${DEMO_NAME} PRIVATE ${INCLUDE_DIR} )
     target_link_libraries( ${DEMO_NAME} ${DEPENDENCIES} ${LIB_NAME} )
     set_target_properties( ${DEMO_NAME} PROPERTIES OUTPUT_NAME ${LIB_NAME} )
     set_target_properties( ${DEMO_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
-endif( ${BUILD_DEMO} )
+endif( ${BUILD_HAND_DEMO} )
 
 if( ${BUILD_AVATAR_DEMO} )
     add_executable( ${AVATAR_DEMO_NAME} AvatarDemo.cpp )

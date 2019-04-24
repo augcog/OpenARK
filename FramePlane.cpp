@@ -36,14 +36,14 @@ namespace ark {
 
     bool FramePlane::touching(const Vec3f & point, const Point2i & index, float norm_thresh, bool check_bounds) const
     {
-        if (normToPoint(point) > norm_thresh) return false;
+        if (squaredDistanceToPoint(point) > norm_thresh) return false;
         else if (!check_bounds) return true;
         return cv::pointPolygonTest(boundingRect, index, false) >= 0;
     }
 
-    float FramePlane::normToPoint(const Vec3f & point) const
+    float FramePlane::squaredDistanceToPoint(const Vec3f & point) const
     {
-        return util::pointPlaneNorm(point, equation);
+        return util::pointPlaneSquaredDistance(point, equation);
     }
 
     float FramePlane::distanceToPoint(const Vec3f & point) const
