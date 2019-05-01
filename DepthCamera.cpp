@@ -236,6 +236,12 @@ namespace ark {
         return xyzMap;
     }
 
+	const std::vector<cv::Mat> DepthCamera::getXYZMaps() const
+	{
+		std::lock_guard<std::mutex> lock(imageMutex);
+		return xyzMaps;
+	}
+
     const cv::Mat DepthCamera::getAmpMap() const
     {
         if (!hasAmpMap()) throw;
@@ -261,6 +267,13 @@ namespace ark {
         if (rgbMap.data == nullptr) return cv::Mat::zeros(getHeight(), getWidth(), CV_8UC3);
         return rgbMap;
     }
+
+	const std::vector<cv::Mat> DepthCamera::getRGBMaps() const {
+		if (!hasRGBMap()) throw;
+
+		std::lock_guard<std::mutex> lock(imageMutex);
+		return rgbMaps;
+	}
 
     const cv::Mat DepthCamera::getIRMap() const
     {

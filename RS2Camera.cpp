@@ -10,29 +10,59 @@
 /** RealSense SDK2 Cross-Platform Depth Camera Backend **/
 namespace ark {
 	RS2Camera::RS2Camera(bool use_rgb_stream) : align(RS2_STREAM_COLOR), useRGBStream(use_rgb_stream) {
-		pipe = std::make_shared<rs2::pipeline>();
+		for (auto&& dev : ctx.query_devices())
+		{
+			std::shared_ptr<rs2::pipeline> new_pipe = std::make_shared<rs2::pipeline>(ctx);
+			config.enable_device(dev.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER));
+			query_intrinsics();
+			badInputFlag = false;
+			rs2::pipeline_profile profile = new_pipe->start(config);
 
-		query_intrinsics();
-		badInputFlag = false;
-		rs2::pipeline_profile profile = pipe->start(config);
+			// get updated intrinsics
+			rgbIntrinsics = new rs2_intrinsics();
+			d2rExtrinsics = new rs2_extrinsics();
+			r2dExtrinsics = new rs2_extrinsics();
+			const std::vector<rs2::stream_profile> & stream_profiles = profile.get_streams();
 
-		// get updated intrinsics
-		rgbIntrinsics = new rs2_intrinsics();
-		d2rExtrinsics = new rs2_extrinsics();
-		r2dExtrinsics = new rs2_extrinsics();
-		const std::vector<rs2::stream_profile> & stream_profiles = profile.get_streams();
+			rs2::stream_profile depthProfile = profile.get_stream(RS2_STREAM_DEPTH);
 
-		rs2::stream_profile depthProfile = profile.get_stream(RS2_STREAM_DEPTH);
-		
-		scale = profile.get_device().first<rs2::depth_sensor>().get_depth_scale();
-		rs2::stream_profile rgbProfile;
-		if (useRGBStream) {
-			rgbProfile = profile.get_stream(RS2_STREAM_COLOR);
-			rs2::align align(RS2_STREAM_COLOR);
+			scale = profile.get_device().first<rs2::depth_sensor>().get_depth_scale();
+			rs2::stream_profile rgbProfile;
+			if (useRGBStream) {
+				rgbProfile = profile.get_stream(RS2_STREAM_COLOR);
+				rs2::align align(RS2_STREAM_COLOR);
+			}
+			else {
+				rgbProfile = profile.get_stream(RS2_STREAM_INFRARED);
+			}
+
+			pipes.emplace_back(new_pipe);
+			std::cout << "init " << pipes.size() << endl;
 		}
-		else {
-			rgbProfile = profile.get_stream(RS2_STREAM_INFRARED);
-		}
+
+		//pipe = std::make_shared<rs2::pipeline>();
+
+		//query_intrinsics();
+		//badInputFlag = false;
+		//rs2::pipeline_profile profile = pipe->start(config);
+
+		//// get updated intrinsics
+		//rgbIntrinsics = new rs2_intrinsics();
+		//d2rExtrinsics = new rs2_extrinsics();
+		//r2dExtrinsics = new rs2_extrinsics();
+		//const std::vector<rs2::stream_profile> & stream_profiles = profile.get_streams();
+
+		//rs2::stream_profile depthProfile = profile.get_stream(RS2_STREAM_DEPTH);
+		//
+		//scale = profile.get_device().first<rs2::depth_sensor>().get_depth_scale();
+		//rs2::stream_profile rgbProfile;
+		//if (useRGBStream) {
+		//	rgbProfile = profile.get_stream(RS2_STREAM_COLOR);
+		//	rs2::align align(RS2_STREAM_COLOR);
+		//}
+		//else {
+		//	rgbProfile = profile.get_stream(RS2_STREAM_INFRARED);
+		//}
 	}
 
 	RS2Camera::~RS2Camera() {
@@ -91,34 +121,47 @@ namespace ark {
 
 	void RS2Camera::update(cv::Mat & xyz_map, cv::Mat & rgb_map, cv::Mat & ir_map,
 		cv::Mat & amp_map, cv::Mat & flag_map) {
-		rs2::frameset frameset = pipe->wait_for_frames();
-		try {
-			if (useRGBStream) {
-				auto processed = align.process(frameset);
-				rs2::frame color = processed.first(RS2_STREAM_COLOR);
-				rs2::frame depth = processed.get_depth_frame();
-				memcpy(rgb_map.data, color.get_data(), 3 * width * height);
-				project(depth, color, xyz_map, rgb_map);
-			}
-			else {
-				rs2::frame depth = frameset.first(RS2_STREAM_DEPTH);
-				rs2::frame ir = frameset.first(RS2_STREAM_INFRARED);
-				memcpy(ir_map.data, ir.get_data(), width * height);
-				project(depth, ir, xyz_map, ir_map);
-			}
+		xyzMaps.clear();
+		rgbMaps.clear();
+		for (auto &&pipe : pipes) {
+			rs2::frameset frameset = pipe->wait_for_frames();
+			try {
+				if (useRGBStream) {
+					auto processed = align.process(frameset);
+					rs2::frame color = processed.first(RS2_STREAM_COLOR);
+					rs2::frame depth = processed.get_depth_frame();
+					memcpy(rgb_map.data, color.get_data(), 3 * width * height);
+					project(depth, color, xyz_map, rgb_map);
+					xyzMaps.emplace_back(xyz_map.clone());
+					rgbMaps.emplace_back(rgb_map.clone());
+				}
+				else {
+					rs2::frame depth = frameset.first(RS2_STREAM_DEPTH);
+					rs2::frame ir = frameset.first(RS2_STREAM_INFRARED);
+					memcpy(ir_map.data, ir.get_data(), width * height);
+					project(depth, ir, xyz_map, ir_map);
+					xyzMaps.emplace_back(xyz_map);
+				}
 
+			}
+			catch (std::runtime_error e) {
+				// try reconnecting
+				badInputFlag = true;
+				pipe->stop();
+				printf("Couldn't connect to camera, retrying in 0.5s...\n");
+				boost::this_thread::sleep_for(boost::chrono::milliseconds(500));
+				query_intrinsics();
+				pipe->start(config);
+				badInputFlag = false;
+				return;
+			}
 		}
-		catch (std::runtime_error e) {
-			// try reconnecting
-			badInputFlag = true;
-			pipe->stop();
-			printf("Couldn't connect to camera, retrying in 0.5s...\n");
-			boost::this_thread::sleep_for(boost::chrono::milliseconds(500));
-			query_intrinsics();
-			pipe->start(config);
-			badInputFlag = false;
-			return;
-		}		
+		/*if (xyzMaps.size() == 2 && !xyzMaps[0].empty() && !xyzMaps[1].empty()) {
+		cv::imshow(" Depth Map 1", xyzMaps[0]);
+		cv::imshow(" Depth Map 2", xyzMaps[1]);
+		}
+
+		int c = cv::waitKey(1);*/
 	}
 
 	// project depth map to xyz coordinates directly (faster and minimizes distortion, but will not be aligned to RGB/IR)

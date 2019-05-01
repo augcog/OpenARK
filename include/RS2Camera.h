@@ -88,6 +88,8 @@ namespace ark {
         void query_intrinsics();
 
         // internal storage
+		rs2::context ctx;
+		std::vector<std::shared_ptr<rs2::pipeline>> pipes;
         std::shared_ptr<rs2::pipeline> pipe;
         rs2::align align;
         rs2::config config;

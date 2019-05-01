@@ -4,6 +4,18 @@
 #include <opencv2/dnn.hpp>
 #include <opencv2/face.hpp>
 #include <opencv2/ximgproc.hpp>
+#include <opencv2/opencv.hpp>
+#include "opencv2/xfeatures2d.hpp"
+#include "opencv2/features2d.hpp"
+
+#include <pcl/common/common.h>
+#include <pcl/common/angles.h>
+#include <pcl/common/transforms.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/registration/transformation_estimation_svd.h>
+#include <pcl/registration/icp.h>
 
 #define GLOG_minloglevel 3
 
@@ -134,6 +146,81 @@ void __avatarGUI(const std::string & human_model_path, const std::vector<std::st
     }
 }
 
+const int MAX_FEATURES = 500;
+const float GOOD_MATCH_PERCENT = 0.15f;
+
+
+void alignImages(cv::Mat &im1, cv::Mat &im2, cv::Mat &im1Reg, cv::Mat &h)
+{
+
+	// Convert images to grayscale
+	cv::Mat im1Gray, im2Gray;
+	cv::cvtColor(im1, im1Gray, CV_BGR2GRAY);
+	cv::cvtColor(im2, im2Gray, CV_BGR2GRAY);
+
+	// Variables to store keypoints and descriptors
+	std::vector<cv::KeyPoint> keypoints1, keypoints2;
+	cv::Mat descriptors1, descriptors2;
+
+	// Detect ORB features and compute descriptors.
+	cv::Ptr<cv::Feature2D> orb = cv::ORB::create(MAX_FEATURES);
+	orb->detectAndCompute(im1Gray, cv::Mat(), keypoints1, descriptors1);
+	orb->detectAndCompute(im2Gray, cv::Mat(), keypoints2, descriptors2);
+
+	// Match features.
+	std::vector<cv::DMatch> matches;
+	cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create("BruteForce-Hamming");
+	matcher->match(descriptors1, descriptors2, matches, cv::Mat());
+
+	// Sort matches by score
+	std::sort(matches.begin(), matches.end());
+
+	// Remove not so good matches
+	const int numGoodMatches = matches.size() * GOOD_MATCH_PERCENT;
+	matches.erase(matches.begin() + numGoodMatches, matches.end());
+
+
+	// Draw top matches
+	cv::Mat imMatches;
+	cv::drawMatches(im1, keypoints1, im2, keypoints2, matches, imMatches);
+	cv::imshow("matches ", imMatches);
+
+	// Extract location of good matches
+	std::vector<cv::Point2f> points1, points2;
+
+	for (size_t i = 0; i < matches.size(); i++)
+	{
+		points1.push_back(keypoints1[matches[i].queryIdx].pt);
+		points2.push_back(keypoints2[matches[i].trainIdx].pt);
+	}
+
+	// Create partial point clounds based on matches
+
+	// Get correspondences between points
+	pcl::registration::TransformationEstimationSVD<pcl::PointXYZ, pcl::PointXYZ> TESVD;
+	pcl::registration::TransformationEstimationSVD<pcl::PointXYZ, pcl::PointXYZ>::Matrix4 transformation2;
+	TESVD.estimateRigidTransformation(*cloud_in, *cloud_out, transformation2);
+
+	// Get initialization on the full point clouds
+	pcl::transformPointCloud(*src, *icp_cloud, initial_pose);
+
+	// Perform ICP to get the final pose
+	pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+	icp.setInputSource(cloud_in);
+	icp.setInputTarget(cloud_out);
+	pcl::PointCloud<pcl::PointXYZ> Final;
+	icp.align(Final);
+	std::cout << "has converged:" << icp.hasConverged() << " score: " <<
+		icp.getFitnessScore() << std::endl;
+	std::cout << icp.getFinalTransformation() << std::endl;
+
+	//// Find homography
+	//h = cv::findHomography(points1, points2, cv::RANSAC);
+
+	//// Use homography to warp image
+	//cv::warpPerspective(im1, im1Reg, h, im2.size());
+}
+
 int main(int argc, char ** argv) {
     google::InitGoogleLogging(argv[0]);
 
@@ -153,35 +240,80 @@ int main(int argc, char ** argv) {
     //__avatarGUI(HUMAN_MODEL_PATH, SHAPE_KEYS); return 0;
 
 	auto path = "C:\\dev\\OpenARK_dataset\\human-dance-random";
-	const auto camera = std::make_shared<MockCamera>(path);
-	std::shared_ptr<HumanDetector> human_detector = std::make_shared<HumanDetector>();
+	const auto camera = std::make_shared<RS2Camera>(true);
+	//std::shared_ptr<HumanDetector> human_detector = std::make_shared<HumanDetector>();
 
-	HumanAvatar ava(HUMAN_MODEL_PATH, SHAPE_KEYS, 2);
-	auto viewer = Visualizer::getPCLVisualizer();
-	auto vp0 = Visualizer::createPCLViewport(0, 0, 0.7, 1), vp1 = Visualizer::createPCLViewport(0.7, 0, 1, 1);
+	//HumanAvatar ava(HUMAN_MODEL_PATH, SHAPE_KEYS, 2);
+	//auto viewer = Visualizer::getPCLVisualizer();
+	//auto vp0 = Visualizer::createPCLViewport(0, 0, 0.7, 1), vp1 = Visualizer::createPCLViewport(0.7, 0, 1, 1);
 	int i = 0;
-	while (camera->hasNext()) {
-		camera->update();
-		cv::Mat xyzMap = camera->getXYZMap();
-		cv::Mat rgbMap = camera->getRGBMap();
-		std::vector<cv::Point> rgbJoints = camera->getJoints();
+	camera->beginCapture();
+	while (true)
+	{
+		/*cv::Mat xyzMap = camera->getXYZMap();
+		cv::Mat rgbMap = camera->getRGBMap();*/
 
-		// Tracking code
-		human_detector->update(xyzMap, rgbMap, rgbJoints);
-		std::shared_ptr<HumanAvatar> avatar_model = human_detector->getAvatarModel();
-		// render the human in GUI
-		avatar_model->visualize(viewer, "o1_ava_", vp1);
-		avatar_model->visualize(viewer, "ava_", vp0);
-		viewer->spinOnce();
+		std::vector<cv::Mat> xyzMaps(camera->getXYZMaps());
+		std::vector<cv::Mat> rgbMaps(camera->getRGBMaps());
 
+		// show visualizations
+		if (xyzMaps.size() == 2 && !xyzMaps[0].empty() && !xyzMaps[1].empty()) {
+			cv::imshow(camera->getModelName() + " Depth Map 1", xyzMaps[0]);
+			cv::imshow(camera->getModelName() + " Depth Map 2", xyzMaps[1]);
+		}
+
+		if (rgbMaps.size() == 2 && !rgbMaps[0].empty() && !rgbMaps[1].empty()) {
+			cv::imshow(camera->getModelName() + " RGB Map 1", rgbMaps[0]);
+			cv::imshow(camera->getModelName() + " RGB Map 2", rgbMaps[1]);
+
+			cv::Mat imReg, h;
+			// Align images
+			//cout << "Aligning images ..." << endl;
+			alignImages(rgbMaps[0], rgbMaps[1], imReg, h);
+			//cout << "Estimated homography : \n" << h << endl;
+		}
+
+		// Print estimated homography
+		//cout << "Estimated homography : \n" << h << endl;
+
+		/**** End: Visualization ****/
+
+		/**** Start: Controls ****/
 		int c = cv::waitKey(1);
-		i++;
 
+		// make case insensitive
+		if (c >= 'a' && c <= 'z') c &= 0xdf;
+
+		// 27 is ESC
 		if (c == 'Q' || c == 27) {
 			/*** Loop Break Condition ***/
 			break;
 		}
+		/**** End: Controls ****/
 	}
+	camera->endCapture();
+	//while (camera->hasNext()) {
+	//	camera->update();
+	//	cv::Mat xyzMap = camera->getXYZMap();
+	//	cv::Mat rgbMap = camera->getRGBMap();
+	//	std::vector<cv::Point> rgbJoints = camera->getJoints();
+
+	//	// Tracking code
+	//	human_detector->update(xyzMap, rgbMap, rgbJoints);
+	//	std::shared_ptr<HumanAvatar> avatar_model = human_detector->getAvatarModel();
+	//	// render the human in GUI
+	//	avatar_model->visualize(viewer, "o1_ava_", vp1);
+	//	avatar_model->visualize(viewer, "ava_", vp0);
+	//	viewer->spinOnce();
+
+	//	int c = cv::waitKey(1);
+	//	i++;
+
+	//	if (c == 'Q' || c == 27) {
+	//		/*** Loop Break Condition ***/
+	//		break;
+	//	}
+	//}
 
     cv::destroyAllWindows();
     return 0;
