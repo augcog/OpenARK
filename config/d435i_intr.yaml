@@ -1,0 +1,86 @@
+%YAML:1.0
+---
+cameras:
+   -
+      T_SC: [ 1., 0., 0., 5.52000012e-03, 0., 1., 0., -5.10000018e-03,
+          0., 0., 1., -1.17400000e-02, 0., 0., 0., 1. ]
+      image_dimension: [ 640, 480 ]
+      distortion_type: radialtangential
+      distortion_coefficients: [ 0., 0., 0., 0. ]
+      focal_length: [ 3.84299896e+02, 3.84299896e+02 ]
+      principal_point: [ 3.22548157e+02, 2.36944305e+02 ]
+   -
+      T_SC: [ 1., 0., 0., 5.54125309e-02, 0., 1., 0., -5.10000018e-03,
+          0., 0., 1., -1.17400000e-02, 0., 0., 0., 1. ]
+      image_dimension: [ 640, 480 ]
+      distortion_type: radialtangential
+      distortion_coefficients: [ 0., 0., 0., 0. ]
+      focal_length: [ 3.84299896e+02, 3.84299896e+02 ]
+      principal_point: [ 3.22548157e+02, 2.36944305e+02 ]
+additional_cameras:
+   -
+      T_SC: [ 1., 0., 0., 5.52000012e-03, 0., 1., 0., -5.10000018e-03,
+          0., 0., 1., -1.17400000e-02, 0., 0., 0., 1. ]
+      image_dimension: [ 640, 480 ]
+      distortion_type: radialtangential
+      distortion_coefficients: [ 0., 0., 0., 0. ]
+      focal_length: [ 3.84299896e+02, 3.84299896e+02 ]
+      principal_point: [ 3.22548157e+02, 2.36944305e+02 ]
+   -
+      T_SC: [ 9.99979615e-01, -1.04404474e-03, -6.30262494e-03,
+          -9.13624093e-03, 1.02622155e-03, 9.99995470e-01,
+          -2.83047254e-03, -5.11779264e-03, 6.30555162e-03,
+          2.82394676e-03, 9.99976158e-01, -1.20424125e-02, 0., 0., 0.,
+          1. ]
+      image_dimension: [ 640, 480 ]
+      distortion_type: radialtangential
+      distortion_coefficients: [ 0., 0., 0., 0. ]
+      focal_length: [ 6.16403320e+02, 6.16171021e+02 ]
+      principal_point: [ 3.18104584e+02, 2.33643127e+02 ]
+camera_params:
+   camera_rate: 30
+   sigma_absolute_translation: 0.
+   sigma_absolute_orientation: 0.
+   sigma_c_relative_translation: 0.
+   sigma_c_relative_orientation: 0.
+   timestamp_tolerance: 5.0000000000000001e-03
+imu_params:
+   a_max: 176.
+   g_max: 7.7999999999999998e+00
+   sigma_g_c: 7.0710678119212389e-04
+   sigma_a_c: 9.9999997764825821e-03
+   sigma_bg: 1.4999999999999999e-02
+   sigma_ba: 3.8000000000000000e-01
+   sigma_gw_c: 3.9999999999999998e-06
+   sigma_aw_c: 4.0000000000000003e-05
+   tau: 3600.
+   g: 9.8100699999999996e+00
+   a0: [ 0., 0., 0. ]
+   imu_rate: 200
+   T_BS: [ 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0.,
+       1. ]
+numKeyframes: 4
+numImuFrames: 3
+ceres_options:
+   minIterations: 3
+   maxIterations: 5
+   timeLimit: 3.5000000000000003e-02
+detection_options:
+   threshold: 40.
+   octaves: 2
+   maxNoKeypoints: 75
+imageDelay: 0.
+displayImages: false
+useDriver: false
+enableLoopClosureDetection: 1
+publishing_options:
+   publish_rate: 200
+   publishLandmarks: false
+   landmarkQualityThreshold: 1.0000000000000000e-02
+   maximumLandmarkQuality: 5.0000000000000003e-02
+   maxPathLength: 20
+   publishImuPropagatedState: false
+   T_Wc_W: [ 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0.,
+       1. ]
+   trackedBodyFrame: B
+   velocitiesFrame: Wc

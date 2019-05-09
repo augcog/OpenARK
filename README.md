@@ -83,7 +83,21 @@ OpenARK is made for easy customization. Please feel free to build on top of this
 
 ## How to test the software
 
-Code used to run the demo video is included in main.cpp. Additional sample code can be found in /samplecode/ and you would need to replace it with the main that comes with the project solution.
+Code used to run the demo video is included in HandDemo.cpp. Additional sample code can be found in /samplecode/ and you would need to replace it with the main that comes with the project solution.
+
+## Using OpenARK SLAM
+
+Currently OpenARK only supports the Intel Realsense D435i Camera for use with OpenARK SLAM. OpenARK SLAM requires two configuration files to run, a camera intrinsicis file, and a vocab file. Examples of both files can be found in the config folder. To run the OpenARK SLAM Demo run:
+
+`OpenARK_SLAM_demo.exe <intrinsics file> <vocab file> `
+
+While the vocab file provided should work for most purposes, for best performance a custom intrinsics file should be generated for each camera. You can generate a custom intrinsics file for your camera by running
+
+`d435i_intrinsics_writer <camera name>` 
+
+This will generate a complete intrinsics file named `<camera name>_intr.yaml`
+
+OpenARK SLAM heavily utilizes the open source packages DBoW2, Okvis, and Ceres. Please respect their Licences and credit/cite when appropriate.  
 
 ## Known issues
 

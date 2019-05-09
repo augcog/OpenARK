@@ -24,7 +24,7 @@ namespace ark {
         template<class T>
         /** Compute PDF at 'input' */
         T pdf(const Eigen::Matrix<T, Eigen::Dynamic, 1> & x) const {
-            T prob = 0.0;
+            T prob(0.0);
             typedef Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> mat_t;
             for (int i = 0; i < nComps; ++i) {
                 Eigen::TriangularView<Eigen::MatrixXd, Eigen::Lower> L(cov_cho[i]);
@@ -349,13 +349,13 @@ namespace ark {
                         res = Vec2T::Zero();
                     } else {
                         Vec3TMap currjointPosition(pt + i * NUM_POS_PARAMS);
-                        res = (currjointPosition.head<2>() - jointsPrior.row(i).transpose().head<2>()) * betaP;
+                        res = (currjointPosition.head<2>() - jointsPrior.row(i).transpose().head<2>()) * (T)betaP;
                     }
                     residualPtr += 2;
                 }
 
                 Eigen::Map<Eigen::Matrix<T, NUM_JOINTS * 3 - 2, 1>> posePriorResidual(residualPtr);
-                posePriorResidual = posePrior.residual(ava._smplParams(r)) * betaS;
+                posePriorResidual = posePrior.residual(ava._smplParams(r)) * (T)betaS;
                 return true;
             }
         private:
@@ -550,9 +550,9 @@ namespace ark {
                 for (auto regrEntry : jointRegressor[jid]) {
                     vec_t blend = humanPCBase->points[regrEntry.first].getVector3fMap().cast<T>();
                     for (size_t j = 0; j < keyNames.size(); ++j) {
-                        blend += keyClouds[j].row(regrEntry.first) * _w[j];
+                        blend += keyClouds[j].row(regrEntry.first).cast<T>() * _w[j];
                     }
-                    basePos += blend * regrEntry.second;
+                    basePos += blend * (T)(regrEntry.second);
                 }
             }
 
@@ -582,7 +582,7 @@ namespace ark {
 
             // add blendshapes
             for (size_t j = 0; j < keyNames.size(); ++j) {
-                blend += keyClouds[j].row(point_index) * _w[j];
+                blend += keyClouds[j].row(point_index).cast<T>() * _w[j];
             }
 
             // linear blend skinning (LBS)

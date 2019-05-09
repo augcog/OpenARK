@@ -1,4 +1,6 @@
-cmake_minimum_required( VERSION 2.8 )
+cmake_minimum_required( VERSION 3.5 )
+cmake_policy( VERSION 3.5 )
+
 
 project( OpenARK )
 set( OpenARK_VERSION_MAJOR 0 )
@@ -17,13 +19,15 @@ endif()
 set( LIB_NAME "OpenARK" )
 set( DEMO_NAME "OpenARK_hand_demo" )
 set( AVATAR_DEMO_NAME "OpenARK_avatar_demo")
+set( SLAM_DEMO_NAME "OpenARK_SLAM_demo")
 set( DATA_RECORDING_NAME "OpenARK_data_recording")
 set( TEST_NAME "OpenARK_test" )
 set( UNITY_PLUGIN_NAME "UnityPlugin" )
 
 option( BUILD_HAND_DEMO "BUILD_HAND_DEMO" ON )
-option( BUILD_AVATAR_DEMO "BUILD_AVATAR_DEMO" ON)
-option( BUILD_DATA_RECORDING "BUILD_DATA_RECORDING" ON)
+option( BUILD_AVATAR_DEMO "BUILD_AVATAR_DEMO" OFF)
+option( BUILD_SLAM_DEMO "BUILD_SLAM_DEMO" ON)
+option( BUILD_DATA_RECORDING "BUILD_DATA_RECORDING" OFF)
 option( BUILD_TESTS "BUILD_TESTS" OFF )
 option( BUILD_UNITY_PLUGIN "BUILD_UNITY_PLUGIN" ON )
 option( USE_RSSDK2 "USE_RSSDK2" ON )
@@ -61,6 +65,40 @@ if( OpenCV_FOUND )
    message( STATUS "Found OpenCV: ${OpenCV_INCLUDE_DIRS}" )
 endif( OpenCV_FOUND )
 
+# require Eigen
+find_package( Eigen REQUIRED )
+include_directories(${EIGEN_INCLUDE_DIRS})
+message(STATUS "Found Eigen: ${EIGEN_INCLUDE_DIRS}")
+
+# require DBoW2
+find_package( DBoW2 REQUIRED )
+IF( DBoW2_FOUND )
+   MESSAGE( STATUS "Found DBoW2: ${DBoW2_INCLUDE_DIRS}" )
+   include_directories(${DBoW2_INCLUDE_DIRS})
+ENDIF( DBoW2_FOUND )
+
+# require DLoopDetector
+find_package( DLoopDetector REQUIRED )
+IF( DLoopDetector_FOUND )
+   MESSAGE( STATUS "Found DLoopDetector: ${DLoopDetector_INCLUDE_DIRS}" )
+   include_directories(${DLoopDetector_INCLUDE_DIRS})
+ENDIF( DLoopDetector_FOUND )
+
+# require glog
+find_package( Glog REQUIRED )
+message(STATUS "Found Glog: ${GLOG_LIBRARIES}")
+#add_definitions(-DGLOG_NO_ABBREVIATED_SEVERITIES)
+include_directories(${GLOG_INCLUDE_DIRS})
+
+# require Okvis
+find_package( Okvis 1.1 REQUIRED )
+include_directories(${OKVIS_INCLUDE_DIRS})
+message(STATUS "Found Okvis: ${OKVIS_INCLUDE_DIRS}")
+
+# require OpenGV (should come with Okvis)
+find_package( OpenGV REQUIRED )
+message(STATUS "Found OpenGV: ${OPENGV_INCLUDE_DIRS}")
+
 # require Ceres
 find_package( Ceres REQUIRED )
 IF(Ceres_FOUND)
@@ -68,13 +106,17 @@ IF(Ceres_FOUND)
 ENDIF(Ceres_FOUND)
 include_directories(${CERES_INCLUDE_DIRS})
 
-# require glog
-find_package( Glog REQUIRED )
-message(STATUS "Found Glog: ${GLOG_LIBRARIES}")
+find_package(OpenMP)
+if (OPENMP_FOUND)
+   message(STATUS "OpenMP found")
+   add_definitions(-DUSE_OPENMP)
+   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif()
 
-# require cxsparse
-find_package( CXSparse REQUIRED )
-message(STATUS "Found CXSparse: ${CXSPARSE_LIBRARIES}")
+# require Brisk
+find_package( Brisk 2 REQUIRED )
+include_directories(${BRISK_INCLUDE_DIRS})
+message(STATUS "Found Brisk: ${BRISK_INCLUDE_DIRS}")
 
 set( RSSDK2_FOUND OFF )
 if( USE_RSSDK2 )
@@ -110,9 +152,13 @@ set(
   DEPENDENCIES
   ${OpenCV_LIBRARIES}
   ${PCL_LIBRARIES}
-  ${CERES_LIBRARIES}
   ${GLOG_LIBRARIES}
   ${CXSPARSE_LIBRARIES}
+  ${OKVIS_LIBRARIES}
+  ${CERES_LIBRARIES}
+  ${BRISK_LIBRARIES}
+  ${DBoW2_LIBRARIES}
+  ${OPENGV_LIBRARIES}
 )
 
 add_definitions(
@@ -141,6 +187,9 @@ set(
   HumanDetector.cpp
   HumanBody.cpp
   Avatar.cpp
+  glfwManager.cpp
+  OkvisSLAMSystem.cpp
+  D435iCamera.cpp
 )
 
 set(
@@ -165,8 +214,47 @@ set(
   ${INCLUDE_DIR}/HumanBody.h
   ${INCLUDE_DIR}/Avatar.h
   ${INCLUDE_DIR}/nanoflann.hpp
+  ${INCLUDE_DIR}/SLAMSystem.h
+  ${INCLUDE_DIR}/OkvisSLAMSystem.h
+  ${INCLUDE_DIR}/glfwManager.h
+  ${INCLUDE_DIR}/D435iCamera.h
+  ${INCLUDE_DIR}/CameraSetup.h
+  ${INCLUDE_DIR}/SparseMap.h
+  ${INCLUDE_DIR}/PointCostSolver.h
+  ${INCLUDE_DIR}/PoseGraphSolver.h
+  ${INCLUDE_DIR}/Types.h
+  ${INCLUDE_DIR}/CorrespondenceRansac.h
+  ${INCLUDE_DIR}/D435iCalibWriter.h
   stdafx.h
 )
+
+if(WIN32)
+  add_subdirectory(third_party/glfw)
+  list(APPEND DEPENDENCIES glfw3)
+else()
+    # Find glfw header
+    find_path(GLFW_INCLUDE_DIR NAMES GLFW/glfw3.h
+        PATHS /usr/X11R6/include
+              /usr/include/X11
+              /opt/graphics/OpenGL/include
+              /opt/graphics/OpenGL/contrib/libglfw
+              /usr/local/include
+              /usr/include/GL
+              /usr/include
+    )
+    # Find glfw library
+    find_library(GLFW_LIBRARIES NAMES glfw glfw3
+            PATHS /usr/lib64
+                  /usr/lib
+                  /usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}
+                  /usr/local/lib64
+                  /usr/local/lib
+                  /usr/local/lib/${CMAKE_LIBRARY_ARCHITECTURE}
+                  /usr/X11R6/lib
+    )
+    list(APPEND DEPENDENCIES m ${GLFW_LIBRARIES} ${LIBUSB1_LIBRARIES})
+    include_directories(${GLFW_INCLUDE_DIR})
+endif() 
 
 if( NOT RSSDK2_FOUND )
   set( _RSSDK2_ "//" )
@@ -238,7 +326,7 @@ if( ${BUILD_HAND_DEMO} )
     add_executable( ${DEMO_NAME} HandDemo.cpp )
     target_include_directories( ${DEMO_NAME} PRIVATE ${INCLUDE_DIR} )
     target_link_libraries( ${DEMO_NAME} ${DEPENDENCIES} ${LIB_NAME} )
-    set_target_properties( ${DEMO_NAME} PROPERTIES OUTPUT_NAME ${LIB_NAME} )
+    set_target_properties( ${DEMO_NAME} PROPERTIES OUTPUT_NAME ${DEMO_NAME} )
     set_target_properties( ${DEMO_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
 endif( ${BUILD_HAND_DEMO} )
 
@@ -246,15 +334,28 @@ if( ${BUILD_AVATAR_DEMO} )
     add_executable( ${AVATAR_DEMO_NAME} AvatarDemo.cpp )
     target_include_directories( ${AVATAR_DEMO_NAME} PRIVATE ${INCLUDE_DIR} )
     target_link_libraries( ${AVATAR_DEMO_NAME} ${DEPENDENCIES} ${LIB_NAME} )
-    set_target_properties( ${AVATAR_DEMO_NAME} PROPERTIES OUTPUT_NAME ${LIB_NAME} )
+    set_target_properties( ${AVATAR_DEMO_NAME} PROPERTIES OUTPUT_NAME ${AVATAR_DEMO_NAME )
     set_target_properties( ${AVATAR_DEMO_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
 endif( ${BUILD_AVATAR_DEMO} )
+
+if( ${BUILD_SLAM_DEMO} )
+    add_executable( ${SLAM_DEMO_NAME} SlamDemo435i.cpp )
+    target_include_directories( ${SLAM_DEMO_NAME} PRIVATE ${INCLUDE_DIR} )
+    target_link_libraries( ${SLAM_DEMO_NAME} ${DEPENDENCIES} ${LIB_NAME} )
+    set_target_properties( ${SLAM_DEMO_NAME} PROPERTIES OUTPUT_NAME ${SLAM_DEMO_NAME} )
+    set_target_properties( ${SLAM_DEMO_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
+    add_executable( d435i_intrinsics_writer D435iCalibWriter.cpp )
+    target_include_directories( d435i_intrinsics_writer PRIVATE ${INCLUDE_DIR} )
+    target_link_libraries( d435i_intrinsics_writer ${DEPENDENCIES} ${LIB_NAME} )
+    #set_target_properties( d435i_intrinsics_writer PROPERTIES OUTPUT_NAME d435i_intrinsics_writer )
+    set_target_properties( d435i_intrinsics_writer PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
+endif( ${BUILD_SLAM_DEMO} )
 
 if( ${BUILD_DATA_RECORDING} )
     add_executable( ${DATA_RECORDING_NAME} DataRecording.cpp )
     target_include_directories( ${DATA_RECORDING_NAME} PRIVATE ${INCLUDE_DIR} )
     target_link_libraries( ${DATA_RECORDING_NAME} ${DEPENDENCIES} ${LIB_NAME} )
-    set_target_properties( ${DATA_RECORDING_NAME} PROPERTIES OUTPUT_NAME ${LIB_NAME} )
+    set_target_properties( ${DATA_RECORDING_NAME} PROPERTIES OUTPUT_NAME ${DATA_RECORDING_NAME} )
     set_target_properties( ${DATA_RECORDING_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
 endif( ${BUILD_DATA_RECORDING} )
 

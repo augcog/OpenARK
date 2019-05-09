@@ -159,7 +159,7 @@ int main() {
                         index.x = col;
                         if (cv::pointPolygonTest(boundingRect, index, false) < 0) continue;
 
-                        float norm = util::pointPlaneNorm(xyz, planes[i]->equation);
+                        float norm = util::pointPlaneSquaredDistance(xyz, planes[i]->equation);
 
                         float fact = std::max(0.0, 0.5f - norm / params->handPlaneMinSqrDist / 8.0f);
                         if (fact == 0.0f) continue;
