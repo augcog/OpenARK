@@ -15,7 +15,7 @@ modifying system variables.
 4. Download our installer from 
 <https://github.com/sxyu/OpenARK-Deps/releases/download/0.0.1/openark-deps-vc14-win64.exe> and run it. This should install pre-built versions for all other dependencies and configure CMake automatically.
 
-5. Now clone OpenARK, `cd` into the directory in a terminal, and enter `cmake .. -G"Visual Studio 14 2015 Win64"`. This will take a while the first time as it will download several large data files from Github.
+5. Now clone OpenARK, `cd` into the directory in a terminal, `mkdir build && cd build` and enter `cmake .. -G"Visual Studio 14 2015 Win64"`. This will take a while the first time as it will download several large data files from Github.
 
 6. Optionally, manually set the `OPENARK_DIR` environment variable to the project directory. This allows OpenARK binaries to find the `config` and `data` files regardless of the current working directory.
 
