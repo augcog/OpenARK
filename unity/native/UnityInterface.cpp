@@ -13,6 +13,12 @@
 #ifdef RSSDK_ENABLED
     #include "SR300Camera.h"
 #endif
+#ifdef RSSDK2_ENABLED
+    #include "RS2Camera.h"
+#endif
+#ifdef AZURE_KINECT_ENABLED
+    #include "AzureKinectCamera.h"
+#endif
 
 extern "C" {
     // static storage
@@ -27,11 +33,15 @@ extern "C" {
     static int lastTouchHand;
 
     static void init() {
-#ifdef PMDSDK_ENABLED
-        camera = std::make_shared<ark::PMDCamera>();
-#endif
-#ifdef RSSDK_ENABLED
+#if defined(AZURE_KINECT_ENABLED)
+        camera = std::make_shared<ark::AzureKinectCamera>();
+#elif defined(RSSDK2_ENABLED)
+        camera = std::make_shared<ark::RS2Camera>();
+#elif defined(RSSDK_ENABLED)
+        ASSERT(strcmp(OPENARK_CAMERA_TYPE, "sr300") == 0, "Unsupported RealSense camera type.");
         camera = std::make_shared<ark::SR300Camera>();
+#elif defined(PMDSDK_ENABLED)
+        camera = std::make_shared<ark::PMDCamera> ();
 #endif
         params = camera->getDefaultParams();
         pd = std::make_shared<ark::PlaneDetector>(params);

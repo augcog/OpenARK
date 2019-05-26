@@ -25,6 +25,9 @@
 #ifdef RSSDK2_ENABLED
 #include "RS2Camera.h"
 #endif
+#ifdef AZURE_KINECT_ENABLED
+#include "AzureKinectCamera.h"
+#endif
 #ifdef MOCKCAMERA_ENABLED
 #include "MockCamera.h"
 #endif
@@ -52,7 +55,9 @@ int main() {
 	// initialize the camera
 	DepthCamera::Ptr camera;
 
-#if defined(RSSDK2_ENABLED)
+#if defined(AZURE_KINECT_ENABLED)
+	camera = std::make_shared<AzureKinectCamera>(true);
+#elif defined(RSSDK2_ENABLED)
 	camera = std::make_shared<RS2Camera>(true);
 #elif defined(RSSDK_ENABLED)
 	ASSERT(strcmp(OPENARK_CAMERA_TYPE, "sr300") == 0, "Unsupported RealSense camera type.");
@@ -75,12 +80,10 @@ int main() {
 	std::chrono::high_resolution_clock timer = std::chrono::high_resolution_clock();
 	time_point currCycleStartTime = timer.now(); // start time of current cycle
 
-	float currFPS; // current FPS
-
 	int currFrame = 0; // current frame number (since launch/last pause)
 	int backgroundStyle = 1; // background style: 0=none, 1=ir, 2=depth, 3=normal
 
-							 // option flags
+    // option flags
 	bool showHands = true, showPlanes = false, useSVM = true, useEdgeConn = false, showArea = false, playing = true;
 
 	const std::string directory_path = "C:\\dev\\OpenARK_dataset\\human-walk\\";

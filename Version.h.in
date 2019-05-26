@@ -1,5 +1,7 @@
 #pragma once
 
+@_AZURE_KINECT_SDK_@#define AZURE_KINECT_ENABLED
+@_AZURE_KINECT_SDK_@#define OPENARK_CAMERA_TYPE "azurekinect"
 @_RSSDK2_@#define RSSDK2_ENABLED
 @_RSSDK2_@#define OPENARK_CAMERA_TYPE "realsense"
 @_RSSDK_@#define RSSDK_ENABLED

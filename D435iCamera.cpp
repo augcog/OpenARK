@@ -194,7 +194,6 @@ namespace ark {
                 }
                 srcPixel[0] = c;
                 rs2_deproject_pixel_to_point(destXYZ, dIntrin, srcPixel, srcPtr[c]);
-                //std::cout<< destXYZ[0] << destXYZ[1] << destXYZ[2] <<std::endl;
                 memcpy(&destPtr[c], destXYZ, 3 * sizeof(float));
             }
         }
