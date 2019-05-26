@@ -1,4 +1,18 @@
-#include "stdafx.h"
+#include <ctime>
+#include <cstdlib>
+#include <cstdio>
+#include <string>
+#include <vector>
+#include <memory>
+#include <algorithm>
+#include <Eigen/Dense>
+#include <opencv2/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <ceres/ceres.h>
+#include <nanoflann.hpp>
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
 #include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/filters/voxel_grid.h>
 #include <opencv2/dnn.hpp>
@@ -17,8 +31,8 @@
 #endif
 #ifdef RSSDK2_ENABLED
 #include "RS2Camera.h"
-#include "MockCamera.h"
 #endif
+#include "MockCamera.h"
 
 #include "Core.h"
 #include "Visualizer.h"
@@ -28,14 +42,15 @@
 using namespace ark;
 
 // open a gui for interacting with avatar
-void __avatarGUI(const std::string & human_model_path, const std::vector<std::string> & shape_keys)
+void __avatarGUI()
 {
     // build file names and paths
-    HumanAvatar ava(human_model_path, shape_keys);
+    HumanAvatar ava(HumanDetector::HUMAN_MODEL_PATH, HumanDetector::HUMAN_MODEL_SHAPE_KEYS);
+    const size_t NKEYS = HumanDetector::HUMAN_MODEL_SHAPE_KEYS.size();
 
     cv::namedWindow("Body Shape");
     cv::namedWindow("Body Pose");
-    std::vector<int> pcw(shape_keys.size(), 1000), p_pcw(shape_keys.size(), 0);
+    std::vector<int> pcw(NKEYS, 1000), p_pcw(NKEYS, 0);
 
     // define some axes
     const Eigen::Vector3d AXISX(1, 0, 0), AXISY(0, 1, 0), AXISZ(0, 0, 1);
@@ -141,22 +156,24 @@ int main(int argc, char ** argv) {
     // seed the rng
     srand(time(NULL));
 
-    // gender-neutral model
-    const std::string HUMAN_MODEL_PATH = "C:/dev/SMPL/models/basicModel_neutral_lbs_10_207_0_v1.0.0/";
+    // pass 'gui' as first argument to see the GUI for manipulating SMPL avatar pose, shape, etc.
+    if (argc > 1 && strcmp(argv[1], "gui") == 0) {
+        __avatarGUI(); return 0;
+    }
 
-    const std::vector<std::string> SHAPE_KEYS = {"shape000.pcd", "shape001.pcd", "shape002.pcd", 
-												 "shape003.pcd", "shape004.pcd", "shape005.pcd",
-												 "shape006.pcd", "shape007.pcd", "shape008.pcd", 
-												 "shape009.pcd"};
+    std::string path;
+    if (argc > 1) {
+        path = argv[1];
+    }
+    else {
+        // sample dataset
+        path = util::resolveRootPath("data/avatar-dataset/human-dance-random");
+    }
 
-    // UNCOMMENT following line to see the GUI for manipulating SMPL avatar pose, shape, etc.
-    //__avatarGUI(HUMAN_MODEL_PATH, SHAPE_KEYS); return 0;
-
-	auto path = "C:\\dev\\OpenARK_dataset\\human-dance-random";
-	const auto camera = std::make_shared<MockCamera>(path);
+    cv::namedWindow("RGB Frame");
+	const auto camera = std::make_shared<MockCamera>(path.c_str());
 	std::shared_ptr<HumanDetector> human_detector = std::make_shared<HumanDetector>();
 
-	HumanAvatar ava(HUMAN_MODEL_PATH, SHAPE_KEYS, 2);
 	auto viewer = Visualizer::getPCLVisualizer();
 	auto vp0 = Visualizer::createPCLViewport(0, 0, 0.7, 1), vp1 = Visualizer::createPCLViewport(0.7, 0, 1, 1);
 	int i = 0;
@@ -170,8 +187,12 @@ int main(int argc, char ** argv) {
 		human_detector->update(xyzMap, rgbMap, rgbJoints);
 		std::shared_ptr<HumanAvatar> avatar_model = human_detector->getAvatarModel();
 		// render the human in GUI
+        cv::imshow("RGB Frame", rgbMap);
 		avatar_model->visualize(viewer, "o1_ava_", vp1);
 		avatar_model->visualize(viewer, "ava_", vp0);
+        auto dataCloud = util::toPointCloud<pcl::PointXYZRGBA>(xyzMap, true, true, 3);
+        Visualizer::visualizeCloud(dataCloud, "o1_data", vp1);
+
 		viewer->spinOnce();
 
 		int c = cv::waitKey(1);

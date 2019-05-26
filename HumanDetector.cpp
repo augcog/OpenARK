@@ -1,4 +1,5 @@
 #include "HumanDetector.h"
+#include "Util.h"
 
 namespace ark {
 	const std::vector<std::pair<int, int>> mapIdx = {
@@ -15,6 +16,18 @@ namespace ark {
 	};
 
 
+    const std::string HumanDetector::MPII_PROTO_FILE_PATH = util::resolveRootPath("config/pose-net/pose.prototxt");
+    const std::string HumanDetector::MPII_WEIGHTS_FILE_PATH = util::resolveRootPath("config/pose-net/pose.caffemodel");
+    const std::string HumanDetector::FACE_LBFMODEL_FILE_PATH = util::resolveRootPath("config/face/lbfmodel.yaml");
+    const std::string HumanDetector::FACE_HAARCASCADE_FILE_PATH
+                        = util::resolveRootPath("config/face/haarcascade_frontalface_alt2.xml");
+    const std::string HumanDetector::HUMAN_MODEL_PATH = util::resolveRootPath("data/avatar-model");
+
+    const std::vector<std::string> HumanDetector::HUMAN_MODEL_SHAPE_KEYS = {
+        "shape000.pcd", "shape001.pcd", "shape002.pcd", "shape003.pcd", "shape004.pcd",
+        "shape005.pcd", "shape006.pcd", "shape007.pcd", "shape008.pcd", "shape009.pcd"
+    };
+
 	HumanDetector::HumanDetector(DetectionParams::Ptr params) {
 		// Since we have seen no humans previously, we set this to default value
 		lastHumanDetectionBox = cv::Rect(0, 0, 0, 0);
@@ -27,8 +40,8 @@ namespace ark {
 
 		// Load face models
 		facemark = cv::face::FacemarkLBF::create();
-		facemark->loadModel("C:\\dev\\OpenARK_dataset\\lbfmodel.yaml");
-		faceDetector.load("C:\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt2.xml");
+		facemark->loadModel(FACE_LBFMODEL_FILE_PATH);
+		faceDetector.load(FACE_HAARCASCADE_FILE_PATH);
 
 		face_3D_model_points.push_back(cv::Point3d(0.0f, 0.0f, 0.0f));               // Nose tip
 		face_3D_model_points.push_back(cv::Point3d(0.0f, -330.0f, -65.0f));          // Chin
@@ -37,14 +50,8 @@ namespace ark {
 		face_3D_model_points.push_back(cv::Point3d(-150.0f, -150.0f, -125.0f));      // Left Mouth corner
 		face_3D_model_points.push_back(cv::Point3d(150.0f, -150.0f, -125.0f));       // Right mouth corner
 		
-		const std::string HUMAN_MODEL_PATH = "C:/dev/SMPL/models/basicModel_neutral_lbs_10_207_0_v1.0.0/";
 
-		const std::vector<std::string> SHAPE_KEYS = { "shape000.pcd", "shape001.pcd", "shape002.pcd",
-			"shape003.pcd", "shape004.pcd", "shape005.pcd",
-			"shape006.pcd", "shape007.pcd", "shape008.pcd",
-			"shape009.pcd" };
-
-		ava = std::make_shared<HumanAvatar>(HUMAN_MODEL_PATH, SHAPE_KEYS, 2);
+		ava = std::make_shared<HumanAvatar>(HUMAN_MODEL_PATH, HUMAN_MODEL_SHAPE_KEYS, 2);
 
 		begin_tracking = false;
 	}
@@ -53,6 +60,10 @@ namespace ark {
 	{
 		return ava;
 	}
+
+    void HumanDetector::detectPoseRGB(cv::Mat & rgbMap) {
+        detect(rgbMap);
+    }
 
 	double HumanDetector::update(cv::Mat& xyzMap, cv::Mat& rgbMap, std::vector<cv::Point>& rgbJoints) {
 		cv::Mat out;
@@ -77,11 +88,11 @@ namespace ark {
 
 		if (begin_tracking == false) {
 			std::cout << "Fitting" << std::endl;
-			ava->fit(humanCloud);
+			ava->fit(humanCloud, false);
 		}
 		else {
 			std::cout << "Tracking" << std::endl;
-			ava->fitTrack(humanCloud);
+			ava->fit(humanCloud, true);
 		}
 
 		begin_tracking = true;

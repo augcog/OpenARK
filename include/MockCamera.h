@@ -52,5 +52,8 @@ namespace ark {
 		std::deque<std::string> rgb_files;
 		std::deque<std::string> joint_files;
 		std::vector<cv::Point> joints;
+
+        // camera intrinsics, if available
+        double intr_fx, intr_fy, intr_cx, intr_cy = -1.;
 	};
 }

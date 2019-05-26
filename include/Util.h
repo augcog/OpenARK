@@ -591,6 +591,9 @@ namespace ark {
                              double angle, double angle_offset = 0.0);
 
 
+        /** try to find the correct path relative to the current directory, given path from root (dir with data, config) */
+        std::string resolveRootPath(const std::string & root_path);
+
         /** Converts an Eigen Vector3d to a PCL PointXYZRGBA instance, using r.g,b,a values specified if applicable */
         pcl::PointXYZRGBA toPCLPoint(const Eigen::Vector3d & v, int r = 200, int g = 200, int b = 200, int a = 200);
 
@@ -623,12 +626,12 @@ namespace ark {
          */
         template<class T>
         boost::shared_ptr<pcl::PointCloud<T> > toPointCloud(const cv::Mat & xyz_map, 
-            bool flip_z = false, bool flip_y = false) {
+            bool flip_z = false, bool flip_y = false, int step = 1) {
             auto out_pc = boost::make_shared<pcl::PointCloud<T> >();
             const Vec3f * ptr;
-            for (int i = 0; i < xyz_map.rows; ++i) {
+            for (int i = 0; i < xyz_map.rows; i += step) {
                 ptr = xyz_map.ptr<Vec3f>(i);
-                for (int j = 0; j < xyz_map.cols; ++j) {
+                for (int j = 0; j < xyz_map.cols; j += step) {
                     if (ptr[j][2] > 0.001) {
                         T pt;
                         pt.x = ptr[j][0];

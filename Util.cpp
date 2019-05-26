@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Version.h"
 #include "Util.h"
+#include "include\Util.h"
 
 namespace ark {
 
@@ -1364,6 +1365,40 @@ namespace ark {
             }
 
             return 0;
+        }
+
+        std::string resolveRootPath(const std::string & root_path)
+        {
+            static const std::string TEST_PATH = "config/hand-svm/svm.xml";
+            static const int MAX_LEVELS = 3;
+            static std::string rootDir = "\n";
+            if (rootDir == "\n") {
+                rootDir.clear();
+                const char * env = std::getenv("OPENARK_DIR");
+                if (env) {
+                    // use environmental variable if exists and works
+                    rootDir = env;
+
+                    // auto append slash
+                    if (!rootDir.empty() && rootDir.back() != '/' && rootDir.back() != '\\')
+                        rootDir.push_back('/');
+
+                    std::ifstream test_ifs(rootDir + TEST_PATH);
+                    if (!test_ifs) rootDir.clear();
+                }
+
+                // else check current directory and parents
+                if (rootDir.empty()) {
+                    for (int i = 0; i < MAX_LEVELS; ++i) {
+                        std::ifstream test_ifs(rootDir + TEST_PATH);
+                        if (test_ifs) break;
+                        rootDir.append("../");
+                    }
+                }
+            }
+            typedef boost::filesystem::path path;
+
+            return (path(rootDir) / path(root_path)).string();
         }
 
         pcl::PointXYZRGBA toPCLPoint(const Eigen::Vector3d & v, int r, int g, int b, int a) {

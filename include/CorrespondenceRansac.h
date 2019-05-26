@@ -1,5 +1,4 @@
-#ifndef _CORRESPONDENCE_RANSAC_H_
-#define _CORRESPONDENCE_RANSAC_H_
+#pragma once
 
 #include <vector>
 #include <Eigen/Core>
@@ -179,7 +178,4 @@ private:
 
 
 }//namespace ICP
-
-#endif
-
 

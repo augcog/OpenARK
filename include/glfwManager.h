@@ -1,5 +1,7 @@
+#pragma once
 #ifdef _WIN32
 	#include <Windows.h>
+    #undef ERROR
 	#include <gl/GLU.h>
 #else
 	#include <GL/glew.h>

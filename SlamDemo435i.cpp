@@ -3,6 +3,7 @@
 #include <iostream>
 #include <thread>
 #include "glfwManager.h"
+#include "Util.h"
 
 using namespace ark;
 
@@ -25,11 +26,11 @@ int main(int argc, char **argv)
     // read configuration file
     std::string configFilename;
     if (argc > 1) configFilename = argv[1];
-    else configFilename = "../../config/d435i_intr.yaml";
+    else configFilename = util::resolveRootPath("config/d435i_intr.yaml");
 
     std::string vocabFilename;
     if (argc > 2) vocabFilename = argv[2];
-    else vocabFilename = "../../config/brisk_vocab.bn";
+    else vocabFilename = util::resolveRootPath("config/brisk_vocab.bn");
 
     OkvisSLAMSystem slam(vocabFilename, configFilename);
 

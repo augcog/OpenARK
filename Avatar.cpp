@@ -4,6 +4,51 @@
 #include "Avatar.h"
 
 namespace ark {
+    /** UKF Model for HumanAvatar */
+    struct HumanAvatarUKFModel {
+        /** define state vector */
+        typedef kalman::Vector<0,                            // scalars (none used)
+            HumanAvatar::NUM_JOINTS + 2,  // 3-vectors (joint ang. vel. + root pos, root vel)
+            HumanAvatar::NUM_JOINTS>      // quaternions (one for each joint)
+            StateVec;
+
+        /** define measurement vector */
+        typedef kalman::Vector<0,                           // measured scalars (none used)
+            HumanAvatar::NUM_JOINTS,     // measured 3-vectors
+            0>                           // measured quaternions (none used)
+            MeasureVec;
+
+        /** initializer */
+        static void init(kalman::UKF<HumanAvatarUKFModel, HumanAvatar> & ukf) {
+            ukf.defaultInitialize();
+        }
+
+        /** process model definition: first derivative */
+        static StateVec dF(const StateVec & state, const HumanAvatar & input) {
+            StateVec out = state;
+            ark::kalman::util::diffQuaternion(out, 0);
+            ark::kalman::util::diffPosition(out, StateVec::QUAT_START - 6,
+                StateVec::QUAT_START - 3, StateVec::QUAT_START - 3);
+            return out;
+        }
+
+        /* measurement model definition */
+        static MeasureVec H(const StateVec & state, const HumanAvatar & input) {
+            static double pb[HumanAvatar::NUM_JOINTS * 3],
+                rt[HumanAvatar::NUM_JOINTS * 4], cache[HumanAvatar::NUM_JOINTS * 9];
+
+            const double * r = state.data() + StateVec::QUAT_START,
+                *p = state.data() + StateVec::QUAT_START - 6,
+                *w = input.w();
+
+            MeasureVec m = MeasureVec::Zero();
+            double * pt = m.data();
+            input._propagateJointTransforms(r, p, w, pb, pt, rt, cache);
+            return m;
+        }
+    };
+
+
     HumanAvatar::Joint::Joint(HumanAvatar & avatar, JointType type) :
         avatar(avatar), type(type),
         rotation(avatar._r + NUM_ROT_PARAMS * type),
@@ -23,7 +68,7 @@ namespace ark {
         double downsample_radius)
         : MODEL_DIR(model_dir), keyNames(shape_keys), basePos(_p) {
 
-        humanPCBase = boost::unique_ptr<Cloud_T>(new Cloud_T());
+        humanPCBase = std::unique_ptr<Cloud_T>(new Cloud_T());
         humanPCTransformed = boost::make_shared<Cloud_T>();
 
         using namespace boost::filesystem;
@@ -484,41 +529,48 @@ namespace ark {
         //viewer->spinOnce();
     }
 
-    void HumanAvatar::fit(const EigenCloud_T & dataCloud) {
+    void HumanAvatar::fit(const EigenCloud_T & dataCloud, bool track) {
+        static kalman::UKF<HumanAvatarUKFModel, HumanAvatar> ukf;
+
         auto startTime = std::chrono::high_resolution_clock::now();
         kd_tree_ptr_t kdTree = _buildKDIndex(dataCloud);
         std::vector<int> joints_subset;
-        fitPose(dataCloud, 6, 12, joints_subset, true, kdTree);
-        fitShape(dataCloud, 2, 14, true, kdTree);
-        fitPose(dataCloud, 4, 14, joints_subset, true, kdTree);
-        fitShape(dataCloud, 3, 14, true, kdTree);
-        fitPose(dataCloud, 3, 5, joints_subset, true, kdTree);
-        auto endTime = std::chrono::high_resolution_clock::now();
+        if (!track) {
+            fitPose(dataCloud, 6, 12, joints_subset, true, kdTree);
+            fitShape(dataCloud, 2, 14, true, kdTree);
+            fitPose(dataCloud, 4, 14, joints_subset, true, kdTree);
+            fitShape(dataCloud, 3, 14, true, kdTree);
+            fitPose(dataCloud, 3, 5, joints_subset, true, kdTree);
 
+            // manually reset state to estimate
+            ukf.state.template head<NUM_JOINTS * 3>().setZero(); // ang vels
+            ukf.state.template segment<3>(NUM_JOINTS * 3) = basePos; // pos
+            ukf.state.template segment<3>(NUM_JOINTS * 3 + 3).setZero(); // vel
+            Eigen::Map<Eigen::Matrix<double, NUM_JOINTS * 4, 1> > rots(_r); 
+            ukf.state.template segment<NUM_JOINTS * 4>(NUM_JOINTS * 3 + 6) = rots; // rotations
+        }
+        else {
+            fitPose(dataCloud, 2, 8, joints_subset, false, kdTree);
+
+            // update ukf
+            Eigen::Map<Eigen::Matrix<double, NUM_JOINTS * 3, 1>> z(_pt);
+            ukf.update(0.0031363, HumanAvatarUKFModel::MeasureVec(z), *this);
+        }
+
+        Eigen::Map<Eigen::Matrix<double, NUM_JOINTS * 4, 1>> rots(_r);
+        rots = ukf.state.template tail<NUM_JOINTS * 4>();
+        basePos = ukf.state.template segment<3>(NUM_JOINTS * 3);
+        update(true);
+
+        auto endTime = std::chrono::high_resolution_clock::now();
         std::cout << "Overall Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << " ms\n";
 
         EigenCloud_T modelCloud(humanPCTransformed->points.size(), 3);
         std::vector<std::pair<int, int> > correspondences;
         _updateCloud(_w, _pt, _cache, modelCloud);
-        _findNN(kdTree, dataCloud, modelCloud, correspondences, true);
-        __debugVisualize(this, dataCloud, modelCloud, correspondences, true);
+        _findNN(kdTree, dataCloud, modelCloud, correspondences, false);
+        __debugVisualize(this, dataCloud, modelCloud, correspondences, false);
     }
-
-	void HumanAvatar::fitTrack(const EigenCloud_T & dataCloud) {
-		auto startTime = std::chrono::high_resolution_clock::now();
-		kd_tree_ptr_t kdTree = _buildKDIndex(dataCloud);
-		std::vector<int> joints_subset;
-		fitPose(dataCloud, 1, 8, joints_subset, false, kdTree);
-		auto endTime = std::chrono::high_resolution_clock::now();
-
-		std::cout << "Overall Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << " ms\n";
-
-		EigenCloud_T modelCloud(humanPCTransformed->points.size(), 3);
-		std::vector<std::pair<int, int> > correspondences;
-		_updateCloud(_w, _pt, _cache, modelCloud);
-		_findNN(kdTree, dataCloud, modelCloud, correspondences, false);
-		__debugVisualize(this, dataCloud, modelCloud, correspondences, false);
-	}
 
     void HumanAvatar::fitPose(const EigenCloud_T & dataCloud, int max_iter, int num_subiter,
         const std::vector<int> & joint_subset, bool inv_nn, kd_tree_ptr_t kd_tree) {
@@ -558,7 +610,7 @@ namespace ark {
             problem.AddResidualBlock(cost_function, NULL /*new CauchyLoss(25.0)*/, _r, _p);
 
             Solver::Options options;
-            options.linear_solver_type = ceres::LinearSolverType::SPARSE_NORMAL_CHOLESKY;
+            options.linear_solver_type = ceres::LinearSolverType::DENSE_NORMAL_CHOLESKY;
             options.trust_region_strategy_type = ceres::LEVENBERG_MARQUARDT;
             options.initial_trust_region_radius = 200;
             options.minimizer_progress_to_stdout = false;

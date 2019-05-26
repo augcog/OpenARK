@@ -51,11 +51,23 @@ namespace ark {
 	public:
 		HumanDetector(DetectionParams::Ptr params = nullptr);
 
+		void detectPoseRGB(cv::Mat & rgbMap);
+
 		double update(cv::Mat & xyzMap, cv::Mat & rgbMap, std::vector<cv::Point>& rgbJoints);
 
 		std::vector<std::shared_ptr<HumanBody>>& getHumanBodies();
 
 		std::shared_ptr<HumanAvatar> getAvatarModel();
+
+        /** Data file paths */
+        static const std::string MPII_PROTO_FILE_PATH;
+        static const std::string MPII_WEIGHTS_FILE_PATH;
+        static const std::string FACE_LBFMODEL_FILE_PATH;
+        static const std::string FACE_HAARCASCADE_FILE_PATH;
+        static const std::string HUMAN_MODEL_PATH;
+
+        /** Names of shapekeys to use */
+        static const std::vector<std::string> HUMAN_MODEL_SHAPE_KEYS;
 
 	protected:
 		void detect(cv::Mat & image) override;
@@ -79,9 +91,6 @@ namespace ark {
 
 		const double POSE_CONFIDENCE_THRESHOLD = 0.3;
 
-		const std::string MPII_PROTO_FILE_PATH = "C:\\dev\\openpose\\models\\pose\\mpi\\pose_deploy_linevec_faster_4_stages.prototxt";
-
-		const std::string MPII_WEIGHTS_FILE_PATH = "C:\\dev\\openpose\\models\\pose\\mpi\\pose_iter_160000.caffemodel";
 
 		/** Head Pose Variables **/
 		cv::CascadeClassifier faceDetector;

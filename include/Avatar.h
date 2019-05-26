@@ -11,7 +11,8 @@
 #include "Visualizer.h"
 
 namespace ark {
-    // TODO: refactor this file
+    struct HumanAvatarUKFModel;
+
     /** Gaussian Mixture Model */
     class GaussianMixture {        
     public:
@@ -152,13 +153,16 @@ namespace ark {
           * (ith index is relative weight of ith shape key a.k.a. blendshape;
           *  total size is numKeys()) */
         double * w() { return _w; }
+        const double * w() const { return _w; }
 
         /** Get the avatar's bone rotation parameter vector (stores quaternions: x y z w)
           * (first 4 indices are root rotation quaternion, total size is numJoints() * 4) */
         double * r() { return _r; }
+        const double * r () const { return _r; }
 
         /** Get the avatar's global position (length 3) */
         double * p() { return _p; }
+        const double * p() const { return _p; }
 
         /** Compute the avatar's SMPL pose parameters (Rodrigues angles) */
         Eigen::VectorXd smplParams() const;
@@ -304,7 +308,7 @@ namespace ark {
         class PoseCostFunctor {
         public:
             /** HYPERPARAMETERS: Weights for different cost function terms */
-            double betaP = 3.0, betaS = 0.55; // betaICP assumed 1
+            double betaP = 6.0, betaS = 0.55; // betaICP assumed 1
 
             PoseCostFunctor(HumanAvatar & ava, const EigenCloud_T & data_cloud,
                 std::vector<std::pair<int, int>> & correspondences, const EigenCloud_T & joints_prior, GaussianMixture & pose_prior)
@@ -458,31 +462,18 @@ namespace ark {
         // SECTION Ceres-solver optimization
 
         /** Fit avatar's pose and shape to the given point cloud */
-        void fit(const EigenCloud_T & data_cloud);
-
-		void fitTrack(const EigenCloud_T & data_cloud);
+        void fit(const EigenCloud_T & data_cloud, bool track = false);
 
         /** Fit avatar's pose and shape to the given point cloud. Please use 'alignToJoints' to initialize before fitting. */
         template<class T>
-        void fit(const boost::shared_ptr<pcl::PointCloud<T> > & cloud) {
+        void fit(const boost::shared_ptr<pcl::PointCloud<T> > & cloud, bool track = false) {
             // store point cloud in Eigen format
             EigenCloud_T dataCloud(cloud->points.size(), 3);
             for (size_t i = 0; i < cloud->points.size(); ++i) {
                 dataCloud.row(i) = cloud->points[i].getVector3fMap().cast<double>();
             }
-            fit(dataCloud);
+            fit(dataCloud, track);
         }
-
-		template<class T>
-        /** Track avatar's pose and shape given a new point cloud. Please use 'setJointsPrior' to update the joints prior before calling this. */
-		void fitTrack(const boost::shared_ptr<pcl::PointCloud<T> > & cloud) {
-			// store point cloud in Eigen format
-			EigenCloud_T dataCloud(cloud->points.size(), 3);
-			for (size_t i = 0; i < cloud->points.size(); ++i) {
-				dataCloud.row(i) = cloud->points[i].getVector3fMap().cast<double>();
-			}
-			fitTrack(dataCloud);
-		}
 
         /** Fit avatar's pose only. Please use 'alignToJoints' to initialize before fitting. */
         void fitPose(const EigenCloud_T & data_cloud, int max_iter = 8, int num_subiter = 6,
@@ -515,7 +506,7 @@ namespace ark {
         /** Transform a point in initial posture space to a joint's transformed posture space,
           * given computer position, transform vectors _pt, _cache */
         template<class T, class VecT_t>
-        Eigen::Matrix<T, 3, 1> inline _toJointSpace(JointType joint_id, const VecT_t & vec, T * _pt, T * _cache) {
+        Eigen::Matrix<T, 3, 1> inline _toJointSpace(JointType joint_id, const VecT_t & vec, T * _pt, T * _cache) const {
             return Eigen::Map<Eigen::Matrix<T, 3, 3> >(_cache + joint_id * NUM_ROT_MAT_PARAMS) * vec
                  + Eigen::Map<const Eigen::Matrix<T, 3, 1>> (_pt + joint_id * NUM_POS_PARAMS);
         }
@@ -528,7 +519,7 @@ namespace ark {
           * to global space transforms (_pt, _rt). Assumes joints are topologically sorted */
         template<class T>
         void _propagateJointTransforms(const T * const  _r, const T * const _p, const T * const _w, T * _pb,
-                                       T * _pt, T * _rt, T * _cache) {
+                                       T * _pt, T * _rt, T * _cache) const {
             typedef Eigen::Map<const Eigen::Matrix<T, 2, 1>> const_vec2map;
             typedef Eigen::Matrix<T, 3, 1> vec_t;
             typedef Eigen::Map<vec_t> vecmap;
@@ -557,7 +548,7 @@ namespace ark {
             }
 
             for (size_t jid = 1; jid < joints.size(); ++jid) {
-                Joint::Ptr & joint = joints[jid];
+                const Joint::Ptr & joint = joints[jid];
                 JointType parID = joint->parent->type;
 
                 const size_t ROT_IDX = jid * NUM_ROT_PARAMS, POS_IDX = jid * NUM_POS_PARAMS;
@@ -615,7 +606,7 @@ namespace ark {
 
         // section DATA
         // undeformed point cloud (from when model was initially loaded)
-        boost::unique_ptr<Cloud_T> humanPCBase;
+        std::unique_ptr<Cloud_T> humanPCBase;
 
         // deformed point cloud
         Cloud_T::Ptr humanPCTransformed;
@@ -647,5 +638,6 @@ public: // debug: public to allow displaying pose prior in PCL viewer
 private:
 
         friend struct Joint;
+        friend struct HumanAvatarUKFModel;
     };
 }

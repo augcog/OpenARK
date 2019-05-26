@@ -72,22 +72,9 @@ namespace ark {
 
         SVMHandClassifier::SVMHandClassifier() { }
 
-        SVMHandClassifier::SVMHandClassifier(const char * path) {
+        SVMHandClassifier::SVMHandClassifier(const std::string & path) {
             initSVMs();
-            loadFile(path);
-        }
-
-        SVMHandClassifier::SVMHandClassifier(const char * paths[]) {
-            initSVMs();
-
-            for (int i = 0; ; ++i) {
-                if (strcmp(paths[i], "\n") == 0) {
-                    break;
-                }
-                if (loadFile(paths[i])) {
-                    break;
-                }
-            }
+            loadFile(util::resolveRootPath(path));
         }
 
         SVMHandClassifier::~SVMHandClassifier() {
@@ -95,7 +82,7 @@ namespace ark {
 
         }
 
-        bool SVMHandClassifier::loadFile(std::string ipath) {
+        bool SVMHandClassifier::loadFile(const std::string & ipath) {
             using namespace boost::filesystem;
 
             const char * env = std::getenv("OPENARK_DIR");
@@ -123,7 +110,7 @@ namespace ark {
             return trained;
         }
 
-        bool SVMHandClassifier::exportFile(std::string opath) const {
+        bool SVMHandClassifier::exportFile(const std::string & opath) const {
             boost::filesystem::path filePath(opath);
             for (int i = 0; i < NUM_SVMS; ++i) {
                 boost::filesystem::path savePath = filePath / ("svm_" + std::to_string(i) + ".xml");
@@ -132,9 +119,10 @@ namespace ark {
             return true;
         }
 
-        bool SVMHandClassifier::train(std::string dataPath, const double hyperparams[5 * NUM_SVMS]) {
+        bool SVMHandClassifier::train(const std::string & dataPath_, const double hyperparams[5 * NUM_SVMS]) {
             initSVMs(hyperparams);
 
+            std::string dataPath = dataPath_;
             if (dataPath[dataPath.size() - 1] != '/' && dataPath[dataPath.size() - 1] != '\\') {
                 dataPath += boost::filesystem::path::preferred_separator;
             }
@@ -483,22 +471,9 @@ namespace ark {
 
         SVMHandValidator::SVMHandValidator() { }
 
-        SVMHandValidator::SVMHandValidator(const char * path) {
+        SVMHandValidator::SVMHandValidator(const std::string & path) {
             initSVMs();
-            loadFile(path);
-        }
-
-        SVMHandValidator::SVMHandValidator(const char * paths[]) {
-            initSVMs();
-
-            for (int i = 0; ; ++i) {
-                if (strcmp(paths[i], "\n") == 0) {
-                    break;
-                }
-                if (loadFile(paths[i])) {
-                    break;
-                }
-            }
+            loadFile(util::resolveRootPath(path));
         }
 
         SVMHandValidator::~SVMHandValidator() {
@@ -506,39 +481,34 @@ namespace ark {
 
         }
 
-        bool SVMHandValidator::loadFile(std::string ipath) {
+        bool SVMHandValidator::loadFile(const std::string & ipath) {
             using namespace boost::filesystem;
 
             const char * FILE_NAME = "svm.xml";
 
-            path loadPath(ipath / FILE_NAME);
-            if (!boost::filesystem::exists(loadPath)) {
-                const char * env = std::getenv("OPENARK_DIR");
-                if (env) {
-                    loadPath = path(env) / ipath / FILE_NAME;
-                }
+            std::string loadPath = ipath + "/" + FILE_NAME;
 
-                if (!env || !boost::filesystem::exists(loadPath)) {
-                    trained = false;
-                    return trained;
-                }
+            std::ifstream testIfs(loadPath);
+            if (!testIfs) {
+                return trained = false;
             }
 
-            svm = cv::ml::SVM::load(loadPath.string());
+            svm = cv::ml::SVM::load(loadPath);
             trained = true;
             return trained;
         }
 
-        bool SVMHandValidator::exportFile(std::string opath) const {
+        bool SVMHandValidator::exportFile(const std::string & opath) const {
             boost::filesystem::path filePath(opath);
             boost::filesystem::path savePath = filePath / "svm.xml";
             svm->save(savePath.string());
             return true;
         }
 
-        bool SVMHandValidator::train(std::string dataPath, const double hyperparams[5]) {
+        bool SVMHandValidator::train(const std::string & dataPath_, const double hyperparams[5]) {
             initSVMs(hyperparams);
 
+            std::string dataPath = dataPath_;
             if (dataPath[dataPath.size() - 1] != '/' && dataPath[dataPath.size() - 1] != '\\') {
                 dataPath += boost::filesystem::path::preferred_separator;
             }

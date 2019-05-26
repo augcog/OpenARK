@@ -1,6 +1,4 @@
-#ifndef _POSE_GRAPH_SOLVER_H_
-#define _POSE_GRAPH_SOLVER_H_
-
+#pragma once
 
 #include "Types.h"
 #include <iostream>
@@ -253,5 +251,3 @@ public:
 };//PoseGraphSolver
 
 }//ark
-
-#endif //_POSE_GRAPH_SOLVER_H_

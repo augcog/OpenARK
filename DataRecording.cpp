@@ -1,4 +1,18 @@
-#include "stdafx.h"
+#include <ctime>
+#include <cstdlib>
+#include <cstdio>
+#include <string>
+#include <vector>
+#include <memory>
+#include <algorithm>
+#include <Eigen/Dense>
+#include <opencv2/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <ceres/ceres.h>
+#include <nanoflann.hpp>
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
 
 // OpenARK Libraries
 #include "Version.h"
@@ -188,7 +202,7 @@ int main() {
 
 		human_detector->getHumanBodies().clear();
 		//cout << human_detector->getHumanBodies().size() << endl;
-		human_detector->update(rgb_map);
+		human_detector->detectPoseRGB(rgb_map);
 		std::vector<cv::Point> rgbJoints;
 		if (human_detector->getHumanBodies().size() != 0) {
 			int front_id = -1, min_dist = 100;

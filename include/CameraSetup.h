@@ -1,6 +1,4 @@
-#ifndef _CAMERA_SETUP_H_
-#define _CAMERA_SETUP_H_
-
+#pragma once
 #include "Types.h"
 
 namespace ark{
@@ -21,5 +19,3 @@ namespace ark{
     }; //CameraSetup
 
 } //ark
-
-#endif //_CAMERA_SETUP_H_

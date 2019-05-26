@@ -1,5 +1,4 @@
-#ifndef _CALIB_WRITER_HPP_
-#define _CALIB_WRITER_HPP_
+#pragma once
 
 #include <opencv2/core/core.hpp>
 #include <Eigen/Core>
@@ -193,5 +192,3 @@ namespace ark{
 
     
 };
-
-#endif

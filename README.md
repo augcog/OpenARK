@@ -1,6 +1,6 @@
 # OpenARK
 
-OpenARK is an open-source wearable augmented reality (AR) system founded at UC Berkeley in 2016. The C++ based software offers innovative core functionalities to power a wide range of off-the-shelf AR components, including see-through glasses, depth cameras, and IMUs. The open-source platform includes fundamental tools such as AR-based camera calibration and SLAM, and it also includes higher-level modules to aid human-computer interaction, such as 3D gesture recognition, plane detection, and multi-user collaboration, all with real-time (30+ FPS) performance. Currently, it supports both PMD Pico Flexx and Intel RealSense SR300 cameras. The project builds natively on both Windows and Linux.
+OpenARK is an open-source wearable augmented reality (AR) system founded at UC Berkeley in 2016. The C++ based software offers innovative core functionalities to power a wide range of off-the-shelf AR components, including see-through glasses, depth cameras, and IMUs. The open-source platform includes higher-level modules to aid human-computer interaction, such as 3D gesture recognition, plane detection, avatar/pose tracking, and multi-user collaboration, and also contains fundamental tools such as AR-based camera calibration, depth-to-stereo, and SLAM, and it also. Currently, it supports both PMD Pico Flexx and Intel RealSense SR300 cameras. The project builds natively on both Windows and Linux.
 
 At a Glance
 
@@ -15,9 +15,13 @@ Hardware
 - Transparent AR Glasses (optional)
 
 Software
+- Eigen 3
 - OpenCV 3.2.0+
 - PCL 1.8
 - Boost 1.6.4
+- Ceres-solver
+- DBoW2
+- etc. for the full list, see DEPENDENCIES.md
 
 ## Installation
 
@@ -27,10 +31,13 @@ Instructions are available in the following documents:
 
 - Windows: [documentation/Windows-build-instructions.pdf](https://github.com/augcog/OpenARK/blob/master/documentation/Windows-build-instructions.pdf)
 
+  **New** a dependency pack installer is now available, which accelerates the setup process. Please read
+  [documentation/Windows-build-instructions-quick.md](https://github.com/augcog/OpenARK/blob/master/documentation/Windows-build-instructions-quick.md) for instructions. The installer may be found at <https://github.com/sxyu/OpenARK-Deps/releases/download/0.0.1/openark-deps-vc14-win64.exe>.
+
 - Linux: [documentation/Linux-build-instructions.md](https://github.com/augcog/OpenARK/blob/master/documentation/Linux-build-instructions.md)
 
 ### Prebuilt Binaries (For Windows)
-Prebuilt binaries for 64-bit Windows are available [here](https://github.com/augcog/OpenARK/releases).
+Prebuilt binaries for 64-bit Windows are available [here](https://github.com/augcog/OpenARK/releases). This is only updated for major releases.
 Both the static library (with the headers) and the demo program are included. For the SVM to work properly, the `svm/` folder
  must be present in the current directory OR under the directory pointed to by the OPENARK_DIR environment variable.
 

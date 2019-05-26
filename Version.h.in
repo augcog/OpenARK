@@ -47,9 +47,6 @@ namespace ark {
     // OpenARK version number (modify in CMakeLists.txt)
     static const char * VERSION = "@OpenARK_VERSION_MAJOR@.@OpenARK_VERSION_MINOR@.@OpenARK_VERSION_PATCH@";
 
-    // Paths to possible SVM model file locations (terminated by "\n")
-    static const char * SVM_PATHS[] = {@SVM_PATHS@, "\n"};
-
     // Typedefs for common types
     typedef cv::Point Point;
     typedef cv::Point2i Point2i;
