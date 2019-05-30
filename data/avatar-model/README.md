@@ -1,5 +1,5 @@
 # Avatar Module - SMPL Human Body Model Instructions
-Due to licensing restrictions, we are unable to directly provide the SMPL human model files required by the avatar module here. Instead, we ask the user to download the original files from the SMPL website and then run the included Python script for extracting the models to a format usable by OpenARK. Please follow the instructions below:
+Due to licensing restrictions, we are unable to directly provide the SMPL human model files required by the avatar module here. Instead, we ask the user to download the original files from the SMPL website and then run the included Python script to convert the models to a format usable by OpenARK. Please follow the instructions below:
 
 - Register and download one of:
     - Gender-neutral model from <smplify.is.tue.mpg.de/pre_download>. Download *SMPLify_Code_V2.zip*. *Recommended*

@@ -25,13 +25,16 @@ namespace ark {
 
 		int getWidth() const override;
 
-		void update();
+        bool hasRGBMap() const override;
 
-		cv::Mat& getXYZMap();
-		
-		cv::Mat& getRGBMap();
+        /** Get the current timestamp in us; if unavailable, returns -1 */
+        long long getTimestamp() const;
+
+        /** Get the last frame time in us; if unavailable, returns -1 */
+        long long getDeltaT() const;
 
 		std::vector<cv::Point>& getJoints();
+		std::vector<cv::Point> getJoints() const;
 
 		~MockCamera();
 
@@ -51,7 +54,9 @@ namespace ark {
 		std::deque<std::string> depth_files;
 		std::deque<std::string> rgb_files;
 		std::deque<std::string> joint_files;
+		std::deque<long long> timestamps;
 		std::vector<cv::Point> joints;
+        long long timestamp, deltaT;
 
         // camera intrinsics, if available
         double intr_fx, intr_fy, intr_cx, intr_cy = -1.;

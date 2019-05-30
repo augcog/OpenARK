@@ -2,25 +2,38 @@
 #include "Visualizer.h"
 #include "Util.h"
 #include "Avatar.h"
+#include "HumanDetector.h"
 
 namespace ark {
     /** UKF Model for HumanAvatar */
     struct HumanAvatarUKFModel {
         /** define state vector */
-        typedef kalman::Vector<0,                            // scalars (none used)
+        typedef kalman::Vector<0,         // scalars (none used)
             HumanAvatar::NUM_JOINTS + 2,  // 3-vectors (joint ang. vel. + root pos, root vel)
             HumanAvatar::NUM_JOINTS>      // quaternions (one for each joint)
             StateVec;
 
         /** define measurement vector */
-        typedef kalman::Vector<0,                           // measured scalars (none used)
-            HumanAvatar::NUM_JOINTS,     // measured 3-vectors
-            0>                           // measured quaternions (none used)
+        typedef kalman::Vector<0,            // measured scalars (none used)
+            HumanAvatar::NUM_JOINTS,         // measured 3-vectors
+            0>                               // measured quaternions (none used)
             MeasureVec;
 
         /** initializer */
         static void init(kalman::UKF<HumanAvatarUKFModel, HumanAvatar> & ukf) {
-            ukf.defaultInitialize();
+            ukf.defaultInitialize(1e-5, 5e-3, 1e-3);
+            // manually set the state root cov
+            ukf.stateRootCov.diagonal().template segment<3>(StateVec::QUAT_START - 6).setConstant(1e-6);
+            ukf.stateRootCov.diagonal().template segment<3>(StateVec::QUAT_START - 3).setConstant(5e-6);
+            for (int i = 0; i < StateVec::_NUM_QUATERNIONS; ++i) {
+                ukf.stateRootCov.diagonal().template segment<3>(StateVec::QUAT_START + i * 3) << 1e-5, 1e-5, 1e-5;
+            }
+
+            // manually set the process noise cov
+            ukf.processNoiseRootCov.diagonal().template segment<3>(StateVec::QUAT_START - 6)
+                                                .setConstant(1e-4);
+            ukf.processNoiseRootCov.diagonal().template segment<3>(StateVec::QUAT_START - 3)
+                                                .setConstant(1e-4);
         }
 
         /** process model definition: first derivative */
@@ -34,6 +47,7 @@ namespace ark {
 
         /* measurement model definition */
         static MeasureVec H(const StateVec & state, const HumanAvatar & input) {
+
             static double pb[HumanAvatar::NUM_JOINTS * 3],
                 rt[HumanAvatar::NUM_JOINTS * 4], cache[HumanAvatar::NUM_JOINTS * 9];
 
@@ -258,43 +272,43 @@ namespace ark {
         return basePos;
     }
 
-    Eigen::Vector3d HumanAvatar::getUndeformedBoneVector(JointType joint_id) {
+    Eigen::Vector3d HumanAvatar::getUndeformedBoneVector(int joint_id) {
         if (joints[joint_id]->parent == nullptr) return Eigen::Vector3d(0, 0, 0);
         return joints[joint_id]->posBase - joints[joint_id]->parent->posBase;
     }
 
-    Eigen::Vector3d HumanAvatar::getBoneVector(JointType joint_id) {
+    Eigen::Vector3d HumanAvatar::getBoneVector(int joint_id) {
         if (joints[joint_id]->parent == nullptr) return Eigen::Vector3d(0, 0, 0);
         return joints[joint_id]->posTransformed - joints[joint_id]->parent->posTransformed;
     }
 
-    const Eigen::Map<Eigen::Vector3d> & HumanAvatar::getPosition(JointType joint_id) const {
+    const Eigen::Map<Eigen::Vector3d> & HumanAvatar::getPosition(int joint_id) const {
         return joints[joint_id]->posTransformed;
     }
 
-    Eigen::Map<Eigen::Quaterniond> & HumanAvatar::getLocalRotation(JointType joint_id) {
+    Eigen::Map<Eigen::Quaterniond> & HumanAvatar::getLocalRotation(int joint_id) {
         return joints[joint_id]->rotation;
     }
 
     Eigen::Map<Eigen::Quaterniond> & HumanAvatar::getCenterRotation() {
-        return joints[JointType::ROOT]->rotation;
+        return joints[JointType::ROOT_PELVIS]->rotation;
     }
 
     void HumanAvatar::setCenterPosition(const Eigen::Vector3d & val) {
         basePos = val;
     }
 
-    void HumanAvatar::setRotation(HumanAvatar::JointType joint_id, const Eigen::Quaterniond & quat) {
+    void HumanAvatar::setRotation(int joint_id, const Eigen::Quaterniond & quat) {
         joints[joint_id]->rotation = quat.normalized();
     }
 
     /** Set the local rotation of the bone ending at a joint to the given AngleAxis object */
-    void HumanAvatar::setRotation(HumanAvatar::JointType joint_id, const Eigen::AngleAxisd & angle_axis) {
+    void HumanAvatar::setRotation(int joint_id, const Eigen::AngleAxisd & angle_axis) {
         joints[joint_id]->rotation = Eigen::Quaterniond(angle_axis);
     }
 
     /** Set the local rotation of the bone ending at a joint to the given euler angles */
-    void HumanAvatar::setRotation(HumanAvatar::JointType joint_id, double yaw, double pitch, double roll) {
+    void HumanAvatar::setRotation(int joint_id, double yaw, double pitch, double roll) {
         joints[joint_id]->rotation = Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX())
             * Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY())
             * Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ());
@@ -302,7 +316,7 @@ namespace ark {
     }
 
     /** Set the local rotation of the bone ending at a joint so that v1 in the original space rotates to v2 */
-    void HumanAvatar::setRotation(JointType joint_id, Eigen::Vector3d v1, Eigen::Vector3d v2) {
+    void HumanAvatar::setRotation(int joint_id, Eigen::Vector3d v1, Eigen::Vector3d v2) {
         Eigen::Map<Eigen::Quaterniond> & q = joints[joint_id]->rotation;
         v1.normalize(); v2.normalize();
         double dot = v1.dot(v2);
@@ -316,7 +330,7 @@ namespace ark {
     }
 
     /** Adds a rotation to the local rotation of the bone ending at a joint */
-    void HumanAvatar::_addRotation(JointType joint_id, Eigen::Vector3d v1, Eigen::Vector3d v2) {
+    void HumanAvatar::_addRotation(int joint_id, Eigen::Vector3d v1, Eigen::Vector3d v2) {
         v1.normalize(); v2.normalize();
         double dot = v1.dot(v2);
         if (dot <= 0.9999 && dot >= -0.9999) {
@@ -330,14 +344,22 @@ namespace ark {
     }
 
     /** Set the local rotation of the bone ending at a joint so that it points to v */
-    void HumanAvatar::setRotation(JointType joint_id, const Eigen::Vector3d & v) {
+    void HumanAvatar::setRotation(int joint_id, const Eigen::Vector3d & v) {
         Eigen::Vector3d v1 = getBoneVector(joint_id);
         _addRotation(joint_id, v1, v);
     }
 
     /** Get a pointer to the specified joint */
-    HumanAvatar::Joint::Ptr HumanAvatar::getJoint(JointType joint_id) const {
+    HumanAvatar::Joint::Ptr HumanAvatar::getJoint(int joint_id) const {
         return joints[joint_id];
+    }
+
+    Eigen::Vector3d HumanAvatar::getJointPosition(int joint_id) const {
+        return joints[joint_id]->posTransformed;
+    }
+
+    Eigen::Vector2d HumanAvatar::getJointPosition2d(int joint_id) const {
+        return HumanDetector::projectToImage(pinholeIntrin, joints[joint_id]->posTransformed);
     }
 
     /** Get the number of joints in the avatar's skeleton */
@@ -512,7 +534,7 @@ namespace ark {
         auto & viewer = Visualizer::getPCLVisualizer();
         viewer->removeAllShapes(1);
 
-        // draw nearest-neighbor1 lines
+        // draw nearest-neighbor lines
         int lineInterval = std::max(2, int(correspondences.size()) / 100);
         for (size_t k = 0; k < correspondences.size(); k += lineInterval) {
             int i, j; std::tie(i, j) = correspondences[k];
@@ -529,16 +551,16 @@ namespace ark {
         //viewer->spinOnce();
     }
 
-    void HumanAvatar::fit(const EigenCloud_T & dataCloud, bool track) {
+    void HumanAvatar::fit(const EigenCloud_T & dataCloud, double deltat, bool track) {
         static kalman::UKF<HumanAvatarUKFModel, HumanAvatar> ukf;
 
         auto startTime = std::chrono::high_resolution_clock::now();
         kd_tree_ptr_t kdTree = _buildKDIndex(dataCloud);
         std::vector<int> joints_subset;
         if (!track) {
-            fitPose(dataCloud, 6, 12, joints_subset, true, kdTree);
-            fitShape(dataCloud, 2, 14, true, kdTree);
-            fitPose(dataCloud, 4, 14, joints_subset, true, kdTree);
+            fitPose(dataCloud, 1, 2, joints_subset, true, kdTree);
+            fitShape(dataCloud, 1, 14, true, kdTree);
+            fitPose(dataCloud, 10, 12, joints_subset, true, kdTree);
             fitShape(dataCloud, 3, 14, true, kdTree);
             fitPose(dataCloud, 3, 5, joints_subset, true, kdTree);
 
@@ -550,17 +572,23 @@ namespace ark {
             ukf.state.template segment<NUM_JOINTS * 4>(NUM_JOINTS * 3 + 6) = rots; // rotations
         }
         else {
-            fitPose(dataCloud, 2, 8, joints_subset, false, kdTree);
+            fitPose(dataCloud, 2, 4, joints_subset, true, kdTree);
 
             // update ukf
-            Eigen::Map<Eigen::Matrix<double, NUM_JOINTS * 3, 1>> z(_pt);
-            ukf.update(0.0031363, HumanAvatarUKFModel::MeasureVec(z), *this);
+            Eigen::Map<Eigen::Matrix<double, NUM_JOINTS*3, 1>> z(_pt);
+            if (deltat < 0) {
+                deltat = 1./40.;// default interval between frames in our dataset
+            }
+            ukf.update(deltat, static_cast<HumanAvatarUKFModel::MeasureVec>(z), *this);
         }
 
+        // use ukf state to overwrite avatar state
+        /*
         Eigen::Map<Eigen::Matrix<double, NUM_JOINTS * 4, 1>> rots(_r);
         rots = ukf.state.template tail<NUM_JOINTS * 4>();
         basePos = ukf.state.template segment<3>(NUM_JOINTS * 3);
         update(true);
+*/
 
         auto endTime = std::chrono::high_resolution_clock::now();
         std::cout << "Overall Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << " ms\n";
@@ -600,8 +628,12 @@ namespace ark {
                 new AutoDiffCostFunction<PoseCostFunctor, ceres::DYNAMIC,
                 NUM_JOINTS * NUM_ROT_PARAMS,
                 NUM_POS_PARAMS>(
-                    new PoseCostFunctor(*this, dataCloud, correspondences, jointsPrior, posePrior),
-                    int(correspondences.size()) * NUM_POS_PARAMS + NUM_JOINTS * 2 + NUM_JOINTS * 3 - 2);
+                    new PoseCostFunctor(*this, dataCloud, correspondences, jointsPrior,
+                                        pinholeIntrin, posePrior),
+                            int(correspondences.size()) * NUM_POS_PARAMS
+                        + HumanDetector::NUM_MATCHED_JOINTS * 3
+                        + NUM_JOINTS * 3 - 2
+                    );
 
             problem.AddParameterBlock(_r, NUM_JOINTS * NUM_ROT_PARAMS
                 , new MultiQuaternionParameterization<NUM_JOINTS>()
@@ -610,9 +642,9 @@ namespace ark {
             problem.AddResidualBlock(cost_function, NULL /*new CauchyLoss(25.0)*/, _r, _p);
 
             Solver::Options options;
-            options.linear_solver_type = ceres::LinearSolverType::DENSE_NORMAL_CHOLESKY;
+            options.linear_solver_type = ceres::LinearSolverType::DENSE_QR;
             options.trust_region_strategy_type = ceres::LEVENBERG_MARQUARDT;
-            options.initial_trust_region_radius = 200;
+            options.initial_trust_region_radius = 1e2;
             options.minimizer_progress_to_stdout = false;
             options.logging_type = ceres::LoggingType::SILENT;
             options.minimizer_type = ceres::TRUST_REGION;
@@ -631,7 +663,6 @@ namespace ark {
 
             //__debugVisualize(this, dataCloud, modelCloud, correspondences);
             //std::cout << summary.FullReport() << "\n";
-            //Visualizer::getPCLVisualizer()->spinOnce();
         }
 
         _propagateJointTransforms(_r, _p, _w, _pb, _pt, _rt, _cache);
@@ -662,13 +693,16 @@ namespace ark {
                 //NUM_JOINTS * NUM_ROT_PARAMS,
                 //NUM_JOINTS * NUM_SCALE_PARAMS,
                 /*NUM_POS_PARAMS*/>(
-                    new ShapeCostFunctor(*this, dataCloud, correspondences), int(correspondences.size()) * NUM_POS_PARAMS + NUM_SHAPEKEYS);
+                    new ShapeCostFunctor(*this, dataCloud, correspondences, jointsPrior, pinholeIntrin),
+                    int(correspondences.size()) * NUM_POS_PARAMS
+                    + HumanDetector::NUM_MATCHED_JOINTS * 3
+                    + NUM_SHAPEKEYS);
 
             problem.AddParameterBlock(_w, NUM_SHAPEKEYS);
             problem.AddResidualBlock(cost_function, NULL /*new CauchyLoss(25.0)*/, _w);
 
             Solver::Options options;
-            options.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY;
+            options.linear_solver_type = ceres::DENSE_QR;
             options.minimizer_progress_to_stdout = false;
             options.logging_type = ceres::SILENT;
             options.initial_trust_region_radius = 200;
@@ -698,12 +732,12 @@ namespace ark {
 
     void HumanAvatar::alignToJoints(const EigenCloud_T & pos)
     {
-        ASSERT(pos.rows() == JointType::_COUNT, "Joint number mismatch");
+        ARK_ASSERT(pos.rows() == JointType::_COUNT, "Joint number mismatch");
 
-        Eigen::Vector3d vr = joints[JointType::SPINE1]->posSkel - joints[JointType::ROOT]->posSkel;
-        Eigen::Vector3d vrt = pos.row(JointType::SPINE1) - pos.row(JointType::ROOT);
+        Eigen::Vector3d vr = joints[JointType::SPINE1]->posSkel - joints[JointType::ROOT_PELVIS]->posSkel;
+        Eigen::Vector3d vrt = pos.row(JointType::SPINE1) - pos.row(JointType::ROOT_PELVIS);
         basePos = pos.row(0);
-        joints[JointType::ROOT]->rotTransformed = joints[JointType::ROOT]->rotation
+        joints[JointType::ROOT_PELVIS]->rotTransformed = joints[JointType::ROOT_PELVIS]->rotation
                                                 = Eigen::Quaterniond::FromTwoVectors(vr, vrt);
 
         double scaleAvg = 0.0;
@@ -712,7 +746,7 @@ namespace ark {
                 (joints[i]->posSkel - joints[i]->parent->posSkel).norm();
         }
         scaleAvg /= (pos.rows() - 1.0);
-        double baseScale = (joints[JointType::SPINE2]->posSkel - joints[JointType::PELVIS]->posSkel).norm() * (scaleAvg - 1.0);
+        double baseScale = (joints[JointType::SPINE2]->posSkel - joints[JointType::ROOT_PELVIS]->posSkel).norm() * (scaleAvg - 1.0);
         _w[0] = baseScale * PC1_DIST_FACT;
         if (isnan(_w[0])) _w[0] = 1.5;
         propagateJointTransforms();
@@ -731,12 +765,16 @@ namespace ark {
                 joints[i]->cachedTransform = joints[i]->rotTransformed.toRotationMatrix();
             }
         }
-        updateJointsPrior(pos);
     }
 
     void HumanAvatar::updateJointsPrior(const EigenCloud_T & pos)
     {
         jointsPrior = pos;
+    }
+
+    void HumanAvatar::updateCameraIntrin(const cv::Vec4d & intrin)
+    {
+        pinholeIntrin = intrin;
     }
 
     void HumanAvatar::visualize(pcl::visualization::PCLVisualizer::Ptr & viewer, std::string pcl_prefix, int viewport) const {
@@ -793,7 +831,7 @@ namespace ark {
         }
     }
 
-    Eigen::Vector3d HumanAvatar::toJointSpace(JointType joint_id, const Eigen::Vector3d & vec) {
+    Eigen::Vector3d HumanAvatar::toJointSpace(int joint_id, const Eigen::Vector3d & vec) {
         return _toJointSpace(joint_id, vec, _pt, _cache);
     }
 

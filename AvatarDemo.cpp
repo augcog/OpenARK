@@ -58,7 +58,7 @@ void __avatarGUI()
     // Body pose control definitions (currently this control system only supports rotation along one axis per body part)
     const std::vector<std::string> CTRL_NAMES       = {"L HIP",      "R HIP",      "L KNEE",      "R KNEE",      "L ANKLE",      "R ANKLE",      "L ARM",        "R ARM",        "L ELBOW",      "R ELBOW",      "HEAD",      "SPINE2",     "ROOT"};
     using jnt_t = HumanAvatar::JointType;
-    const std::vector<jnt_t> CTRL_JNT               = {jnt_t::L_HIP, jnt_t::R_HIP, jnt_t::L_KNEE, jnt_t::R_KNEE, jnt_t::L_ANKLE, jnt_t::R_ANKLE, jnt_t::L_ELBOW, jnt_t::R_ELBOW, jnt_t::L_WRIST, jnt_t::R_WRIST, jnt_t::HEAD, jnt_t::SPINE2, jnt_t::ROOT};
+    const std::vector<jnt_t> CTRL_JNT               = {jnt_t::L_HIP, jnt_t::R_HIP, jnt_t::L_KNEE, jnt_t::R_KNEE, jnt_t::L_ANKLE, jnt_t::R_ANKLE, jnt_t::L_ELBOW, jnt_t::R_ELBOW, jnt_t::L_WRIST, jnt_t::R_WRIST, jnt_t::HEAD, jnt_t::SPINE2, jnt_t::ROOT_PELVIS};
     const std::vector<Eigen::Vector3d> CTRL_AXIS    = {AXISX,        AXISX,        AXISX,         AXISX,         AXISX,          AXISX,          AXISY,          AXISY,          AXISY,          AXISY,          AXISX,       AXISX,         AXISY};
     const int N_CTRL = (int)CTRL_NAMES.size();
 
@@ -167,10 +167,10 @@ int main(int argc, char ** argv) {
     }
     else {
         // sample dataset
-        path = util::resolveRootPath("data/avatar-dataset/human-dance-random");
+        path = util::resolveRootPath("data/avatar-dataset/human-dance");
     }
 
-    cv::namedWindow("RGB Frame");
+    cv::namedWindow("RGB Visualization");
 	const auto camera = std::make_shared<MockCamera>(path.c_str());
 	std::shared_ptr<HumanDetector> human_detector = std::make_shared<HumanDetector>();
 
@@ -178,16 +178,27 @@ int main(int argc, char ** argv) {
 	auto vp0 = Visualizer::createPCLViewport(0, 0, 0.7, 1), vp1 = Visualizer::createPCLViewport(0.7, 0, 1, 1);
 	int i = 0;
 	while (camera->hasNext()) {
-		camera->update();
+		camera->nextFrame(false);
 		cv::Mat xyzMap = camera->getXYZMap();
 		cv::Mat rgbMap = camera->getRGBMap();
+        long long deltaT = camera->getDeltaT();
 		std::vector<cv::Point> rgbJoints = camera->getJoints();
 
 		// Tracking code
-		human_detector->update(xyzMap, rgbMap, rgbJoints);
+		human_detector->update(xyzMap, rgbMap, rgbJoints, double(deltaT)/1e9);
 		std::shared_ptr<HumanAvatar> avatar_model = human_detector->getAvatarModel();
+
+        // visualize
+        cv::Mat rgbVis = rgbMap.clone();
+        for (int i = 0; i < avatar_model->numJoints(); ++i) {
+            Eigen::Vector2d v = avatar_model->getJointPosition2d(i);
+            cv::circle(rgbVis, cv::Point(int(v.x()), int(v.y())), 3, cv::Scalar(0, 0, 255));
+        }
+        for (size_t i = 0; i < rgbJoints.size(); ++i) {
+            cv::circle(rgbVis, rgbJoints[i], 3, cv::Scalar(255, 0, 0));
+        }
 		// render the human in GUI
-        cv::imshow("RGB Frame", rgbMap);
+        cv::imshow("RGB Visualization", rgbVis);
 		avatar_model->visualize(viewer, "o1_ava_", vp1);
 		avatar_model->visualize(viewer, "ava_", vp0);
         auto dataCloud = util::toPointCloud<pcl::PointXYZRGBA>(xyzMap, true, true, 3);

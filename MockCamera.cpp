@@ -8,6 +8,7 @@ namespace ark {
         typedef boost::filesystem::path fspath;
 		fspath file_path(path);
 		fspath intrin_path = file_path / "intrin.txt";
+		fspath timestamps_path = file_path / "timestamp.txt";
 
         std::ifstream intrin_ifs(intrin_path.string());
         
@@ -26,6 +27,13 @@ namespace ark {
             intrin_ifs >> intr_cy;
         }
         // else: assume depth files are xyz maps
+
+        // read timestamps
+        std::ifstream ts_ifs(timestamps_path.string());
+        long long _tmp;
+        while (ts_ifs >> _tmp) {
+            timestamps.push_back(_tmp);
+        }
 
 		fspath rgb_dir = file_path / "rgb";
 		fspath joint_dir = file_path / "joint";
@@ -64,7 +72,9 @@ namespace ark {
 	// https://docs.opencv.org/2.4/modules/core/doc/xml_yaml_persistence.html
 	void MockCamera::update(cv::Mat & xyz_map, cv::Mat & rgb_map, cv::Mat & ir_map,
 		cv::Mat & amp_map, cv::Mat & flag_map) {
-		if (depth_files.empty()) {
+		if (depth_files.empty() || rgb_files.empty() || joint_files.empty()) {
+            std::cout << "MockCamera: No more files to read\n";
+            badInputFlag = true;
 			return;
 		}
 
@@ -74,38 +84,30 @@ namespace ark {
 		depth_files.pop_front();
 		rgb_files.pop_front();
 		joint_files.pop_front();
+        if (timestamps.empty()) {
+            timestamp = -1;
+            deltaT = -1;
+        }
+        else {
+            if (timestamp == -1) {
+                deltaT = -1;
+            }
+            else {
+                deltaT = timestamps.front() - timestamp;
+            }
+            timestamp = timestamps.front();
+            timestamps.pop_front();
+        }
 
-		xyz_map = cv::imread(depth_path, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
-		rgb_map = cv::imread(rgb_path);
-		
-		cv::FileStorage fs2(joint_path, cv::FileStorage::READ);
-		fs2["joints"] >> joints;
-		fs2.release();
-	}
-	
-	void MockCamera::update() {
-		ASSERT(depth_files.size() == rgb_files.size(), "Depth map and RGB map are not in sync!");
-		if (depth_files.empty()) {
-			return;
-		}
-
-		const auto depth_path = depth_files.front();
-		const auto rgb_path = rgb_files.front();
-		const auto joint_path = joint_files.front();
-		depth_files.pop_front();
-		rgb_files.pop_front();
-		joint_files.pop_front();
-
-		xyzMap = cv::imread(depth_path, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+		cv::Mat depth = cv::imread(depth_path, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
         if (intr_cy >= 0.) {
             // depth to xyz
-            cv::Mat depth = xyzMap;
-            xyzMap = cv::Mat(xyzMap.size(), CV_32FC3);
+            xyz_map = cv::Mat(depth.size(), CV_32FC3);
             float * inPtr; cv::Vec3f * outPtr;
-            for (int r = 0; r < xyzMap.rows; ++r) {
+            for (int r = 0; r < depth.rows; ++r) {
                 inPtr = depth.ptr<float>(r);
-                outPtr = xyzMap.ptr<cv::Vec3f>(r);
-                for (int c = 0; c < xyzMap.cols; ++c) {
+                outPtr = xyz_map.ptr<cv::Vec3f>(r);
+                for (int c = 0; c < depth.cols; ++c) {
                     const float z = inPtr[c];
                     outPtr[c] = cv::Vec3f(
                         (c - intr_cx) * z / intr_fx,
@@ -114,22 +116,31 @@ namespace ark {
                 }
             }
         }
-		rgbMap = cv::imread(rgb_path);
-
+        else {
+            xyz_map = depth;
+        }
+		rgb_map = cv::imread(rgb_path);
+		
 		cv::FileStorage fs2(joint_path, cv::FileStorage::READ);
 		fs2["joints"] >> joints;
 		fs2.release();
 	}
+	
+    long long MockCamera::getTimestamp() const
+    {
+        return timestamp;
+    }
 
-	cv::Mat& MockCamera::getXYZMap() {
-		return xyzMap;
-	}
-
-	cv::Mat& MockCamera::getRGBMap() {
-		return rgbMap;
-	}
+    long long MockCamera::getDeltaT() const
+    {
+        return deltaT;
+    }
 
 	std::vector<cv::Point>& MockCamera::getJoints() {
+		return joints;
+	}
+
+	std::vector<cv::Point> MockCamera::getJoints() const {
 		return joints;
 	}
 
@@ -140,6 +151,11 @@ namespace ark {
 	int MockCamera::getWidth() const {
 		return 0;
 	}
+
+    bool MockCamera::hasRGBMap() const
+    {
+        return true;
+    }
 
 	bool MockCamera::hasNext() const {
 		return depth_files.size() != 0;

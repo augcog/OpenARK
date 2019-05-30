@@ -133,7 +133,7 @@ int main() {
 	camera->endCapture();
 	
 	// Write the captured frames to disk
-	ASSERT(xyzMaps.size() == rgbMaps.size(), "Depth map and RGB map are not in sync!");
+	ARK_ASSERT(xyzMaps.size() == rgbMaps.size(), "Depth map and RGB map are not in sync!");
 
 	std::string depth_path = directory_path + "depth\\";
 	std::string rgb_path = directory_path + "rgb\\";
@@ -176,7 +176,7 @@ int main() {
 		}
 		std::sort(depth_files.begin(), depth_files.end());
 	}
-	ASSERT(depth_files.size() == rgb_files.size());
+	ARK_ASSERT(depth_files.size() == rgb_files.size());
 
 	// Run neural network to predict where the human joints are
 	std::string joint_path = directory_path + "joint\\";

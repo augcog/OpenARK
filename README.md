@@ -36,6 +36,9 @@ Instructions are available in the following documents:
 
 - Linux: [documentation/Linux-build-instructions.md](https://github.com/augcog/OpenARK/blob/master/documentation/Linux-build-instructions.md)
 
+**To use the avatar module/demo**: you will need to download the SMPL model files manually. The instructions are in [data/avatar-model/README.md](https://github.com/augcog/OpenARK/blob/master/data/avatar-model/README.md).
+You may also download the dataset sample by running `data/avatar-dataset/download.sh`.
+
 ### Prebuilt Binaries (For Windows)
 Prebuilt binaries for 64-bit Windows are available [here](https://github.com/augcog/OpenARK/releases). This is only updated for major releases.
 Both the static library (with the headers) and the demo program are included. For the SVM to work properly, the `svm/` folder

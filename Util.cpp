@@ -1420,6 +1420,46 @@ namespace ark {
             return pt;
         }
 
+        cv::Vec4d getCameraIntrinFromXYZ(const cv::Mat & xyz_map)
+        {
+            int rows = xyz_map.rows, cols = xyz_map.cols;
+            Eigen::MatrixXd A(rows * cols, 2);
+            Eigen::MatrixXd b(rows * cols, 1);
+            cv::Vec4d result;
+
+            // fx cx
+            const cv::Vec3f * ptr;
+            for (int r = 0; r < rows; ++r) {
+                ptr = xyz_map.ptr<cv::Vec3f>(r);
+                for (int c = 0; c < cols; ++c) {
+                    const int i = r * cols + c;
+                    A(i, 0) = ptr[c][0];
+                    A(i, 1) = ptr[c][2];
+                    b(i) = c * ptr[c][2];
+                }
+            }
+
+            Eigen::Vector2d wx = A.colPivHouseholderQr().solve(b);
+            result[0] = wx[0];
+            result[1] = wx[1];
+
+            // fy cy
+            for (int r = 0; r < rows; ++r) {
+                ptr = xyz_map.ptr<cv::Vec3f>(r);
+                for (int c = 0; c < cols; ++c) {
+                    const int i = r * cols + c;
+                    A(i, 0) = ptr[c][1];
+                    A(i, 1) = ptr[c][2];
+                    b(i) = r * ptr[c][2];
+                }
+            }
+
+            Eigen::Vector2d wy = A.colPivHouseholderQr().solve(b);
+            result[2] = wy[0];
+            result[3] = wy[1];
+            return result;
+        }
+
         template<> bool PointComparer<Point2i>::operator()(Point2i a, Point2i b) {
             if (compare_y_then_x) {
                 if (a.y == b.y) return reverse ^ (a.x < b.x);
