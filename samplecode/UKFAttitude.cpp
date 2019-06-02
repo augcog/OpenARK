@@ -1,4 +1,5 @@
 /** OpenARK UKF usage example  */
+#include<iostream>
 #include<Eigen/Core>
 
 // OpenARK Libraries

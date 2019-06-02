@@ -58,11 +58,11 @@ set( Boost_USE_STATIC_LIBS ON )
 set( Boost_USE_STATIC ON )
 
 # require Eigen
-if( ${Eigen_DIR} )
+if( DEFINED Eigen_DIR )
     set( EIGEN_INCLUDE_DIRS ${Eigen_DIR} )
-endif( ${Eigen_DIR} )
+endif( DEFINED Eigen_DIR )
 find_package( Eigen QUIET )
-if( EIGEN_INCLUDE_DIRS )
+if( DEFINED EIGEN_INCLUDE_DIRS )
     message(STATUS "Using user-provided Eigen")
 else()
     # use submodule automatically if not found
@@ -76,7 +76,7 @@ else()
         message(STATUS "Submodule up to date")
     endif(NOT GIT_SUBMOD_RESULT EQUAL "0")
     set( EIGEN_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/third_party/eigen3" )
-endif( EIGEN_INCLUDE_DIRS )
+endif( DEFINED EIGEN_INCLUDE_DIRS )
 set( EIGEN_INCLUDE_DIR EIGEN_INCLUDE_DIRS )
 include_directories(${EIGEN_INCLUDE_DIRS})
 message(STATUS "Found Eigen: ${EIGEN_INCLUDE_DIRS}")
@@ -117,7 +117,7 @@ IF( DLoopDetector_FOUND )
 ENDIF( DLoopDetector_FOUND )
 
 # require Okvis
-find_package( Okvis 1.1 REQUIRED )
+find_package( okvis REQUIRED )
 include_directories(${OKVIS_INCLUDE_DIRS})
 message(STATUS "Found Okvis: ${OKVIS_INCLUDE_DIRS} ${OKVIS_LIBRARIES}")
 
@@ -133,7 +133,7 @@ ENDIF(Ceres_FOUND)
 include_directories(${CERES_INCLUDE_DIRS})
 
 # require SuiteSparse
-find_package( SuiteSparse REQUIRED )
+find_package( SuiteSparse )
 IF(SuiteSparse_FOUND)
     MESSAGE(STATUS "Found SuiteSparse: ${SuiteSparse_INCLUDE_DIRS} ${SuiteSparse_LIBRARIES}")
 ENDIF(SuiteSparse_FOUND)
@@ -147,7 +147,7 @@ if (OPENMP_FOUND)
 endif()
 
 # require Brisk
-find_package( Brisk REQUIRED )
+find_package( brisk REQUIRED )
 include_directories(${BRISK_INCLUDE_DIRS})
 message(STATUS "Found Brisk: ${BRISK_INCLUDE_DIRS} ${BRISK_LIBRARIES}")
 

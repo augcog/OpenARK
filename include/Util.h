@@ -649,7 +649,7 @@ namespace ark {
         /** Rotate a 3D vector by a quaternion. */
         template<class T, class Quat_T> inline
             Eigen::Matrix<T, 3, 1> rotate(const Eigen::Matrix<T, 3, 1> & v, const Quat_T & q) {
-            const Eigen::Matrix<T, 3, 1> & u = q.vec().cast<T>();
+            const Eigen::Matrix<T, 3, 1> & u = q.vec().template cast<T>();
             const T w = T(q.w()), two(2);
             return two * u.dot(v) * u + (w * w - u.dot(u)) * v + two * w * u.cross(v);
         }
