@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "HumanDetector.h"
 #include "Util.h"
 
@@ -21,23 +22,6 @@ namespace {
 }
 
 namespace ark {
-    const std::pair<int, int> HumanDetector::MATCHED_JOINTS[] = {
-        //{ smpl_j::L_HIP, mpi_j::LEFT_HIP },
-        //{ smpl_j::R_HIP, mpi_j::RIGHT_HIP },
-        { smpl_j::L_KNEE, mpi_j::LEFT_KNEE },
-        { smpl_j::R_KNEE, mpi_j::RIGHT_KNEE },
-        { smpl_j::L_ANKLE, mpi_j::LEFT_ANKLE },
-        { smpl_j::R_ANKLE, mpi_j::RIGHT_ANKLE },
-        { smpl_j::NECK, mpi_j::NECK },
-        { smpl_j::L_ELBOW, mpi_j::LEFT_ELBOW },
-        { smpl_j::R_ELBOW, mpi_j::RIGHT_ELBOW },
-        { smpl_j::L_WRIST, mpi_j::LEFT_WRIST },
-        { smpl_j::R_WRIST, mpi_j::RIGHT_WRIST }
-    };
-    const int HumanDetector::NUM_MATCHED_JOINTS = static_cast<int>(sizeof HumanDetector::MATCHED_JOINTS /
-                                                                   sizeof HumanDetector::MATCHED_JOINTS[0]);
-
-
     const std::string HumanDetector::MPII_PROTO_FILE_PATH = util::resolveRootPath("config/pose-net/pose.prototxt");
     const std::string HumanDetector::MPII_WEIGHTS_FILE_PATH = util::resolveRootPath("config/pose-net/pose.caffemodel");
     const std::string HumanDetector::FACE_LBFMODEL_FILE_PATH = util::resolveRootPath("config/face/lbfmodel.yaml");
@@ -753,10 +737,10 @@ namespace ark {
             out.row(smpl_j::R_FOOT) = mpi.row(mpi_j::RIGHT_ANKLE) * 1.1 - mpi.row(mpi_j::RIGHT_KNEE) * 0.1 + forward * unit;
         }
         else {
-            out = cloud(NUM_MATCHED_JOINTS, 3);
+            out = cloud(HumanAvatar::NUM_MATCHED_JOINTS, 3);
 
-            for (int i = 0; i < NUM_MATCHED_JOINTS; ++i) {
-                out.row(i) = mpi.row(MATCHED_JOINTS[i].second);
+            for (int i = 0; i < HumanAvatar::NUM_MATCHED_JOINTS; ++i) {
+                out.row(i) = mpi.row(HumanAvatar::MATCHED_JOINTS[i].second);
             }
         }
 

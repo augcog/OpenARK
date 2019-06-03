@@ -78,12 +78,6 @@ namespace ark {
             LEFT_HIP, LEFT_KNEE, LEFT_ANKLE, CHEST, BACKGROUND, _COUNT
         };
 
-        /** matchee joints used for joint prior, given as paired (smpl, mpi) indices */
-        static const std::pair<int, int> MATCHED_JOINTS[];
-
-        /** number of matched joints */
-        static const int NUM_MATCHED_JOINTS;
-
         /** convert 2D MPI-15 joints to 3D SMPL joints, given xyzMap and joints, and outputs 3D joints into out;
           * if a joint's position cannot be determined, the x component of the output position will be NAN.
           * @param complete if true, tries to guess all SMPL joints even ones with no correspondences using predetermined linear combinations of nearby joints;

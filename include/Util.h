@@ -1,5 +1,10 @@
 #pragma once
 #include <opencv2/core.hpp>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl/common/transforms.h>
+#include <boost/smart_ptr.hpp>
+#include <Eigen/Dense>
 #include <vector>
 #include <string>
 #include "Version.h"

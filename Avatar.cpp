@@ -4,6 +4,12 @@
 #include "Avatar.h"
 #include "HumanDetector.h"
 
+namespace {
+    typedef ark::HumanAvatar::EigenCloud_T cloud;
+    typedef ark::HumanAvatar::JointType smpl_j;
+    typedef ark::HumanDetector::OpenPoseMPIJoint mpi_j;
+}
+
 namespace ark {
     /** UKF Model for HumanAvatar */
     struct HumanAvatarUKFModel {
@@ -74,6 +80,23 @@ namespace ark {
         rotation = Eigen::Quaterniond::Identity();
         cachedTransform = Eigen::Matrix3d::Identity();
     }
+
+    const std::pair<int, int> HumanAvatar::MATCHED_JOINTS[] = {
+        //{ smpl_j::L_HIP, mpi_j::LEFT_HIP },
+        //{ smpl_j::R_HIP, mpi_j::RIGHT_HIP },
+        { smpl_j::L_KNEE, mpi_j::LEFT_KNEE },
+        { smpl_j::R_KNEE, mpi_j::RIGHT_KNEE },
+        { smpl_j::L_ANKLE, mpi_j::LEFT_ANKLE },
+        { smpl_j::R_ANKLE, mpi_j::RIGHT_ANKLE },
+        { smpl_j::NECK, mpi_j::NECK },
+        { smpl_j::L_ELBOW, mpi_j::LEFT_ELBOW },
+        { smpl_j::R_ELBOW, mpi_j::RIGHT_ELBOW },
+        { smpl_j::L_WRIST, mpi_j::LEFT_WRIST },
+        { smpl_j::R_WRIST, mpi_j::RIGHT_WRIST }
+    };
+    const int HumanAvatar::NUM_MATCHED_JOINTS = static_cast<int>(sizeof HumanAvatar::MATCHED_JOINTS /
+                                                                   sizeof HumanAvatar::MATCHED_JOINTS[0]);
+
 
     HumanAvatar::HumanAvatar(const std::string & model_dir, int downsample_factor) : 
         HumanAvatar(model_dir, std::vector<std::string>(), downsample_factor) { }
@@ -531,7 +554,7 @@ namespace ark {
             cout << "\n";
         }
 
-        auto & viewer = Visualizer::getPCLVisualizer();
+        const auto & viewer = Visualizer::getPCLVisualizer();
         viewer->removeAllShapes(1);
 
         // draw nearest-neighbor lines
@@ -631,7 +654,7 @@ namespace ark {
                     new PoseCostFunctor(*this, dataCloud, correspondences, jointsPrior,
                                         pinholeIntrin, posePrior),
                             int(correspondences.size()) * NUM_POS_PARAMS
-                        + HumanDetector::NUM_MATCHED_JOINTS * 3
+                        + NUM_MATCHED_JOINTS * 3
                         + NUM_JOINTS * 3 - 2
                     );
 
@@ -695,7 +718,7 @@ namespace ark {
                 /*NUM_POS_PARAMS*/>(
                     new ShapeCostFunctor(*this, dataCloud, correspondences, jointsPrior, pinholeIntrin),
                     int(correspondences.size()) * NUM_POS_PARAMS
-                    + HumanDetector::NUM_MATCHED_JOINTS * 3
+                    + NUM_MATCHED_JOINTS * 3
                     + NUM_SHAPEKEYS);
 
             problem.AddParameterBlock(_w, NUM_SHAPEKEYS);
@@ -777,7 +800,7 @@ namespace ark {
         pinholeIntrin = intrin;
     }
 
-    void HumanAvatar::visualize(pcl::visualization::PCLVisualizer::Ptr & viewer, std::string pcl_prefix, int viewport) const {
+    void HumanAvatar::visualize(const pcl::visualization::PCLVisualizer::Ptr & viewer, std::string pcl_prefix, int viewport) const {
         for (int i = 0; i < joints.size(); ++i) {
             Point_T curr = util::toPCLPoint(joints[i]->posTransformed);
             //std::cerr << "Joint:" << joints[i]->name << ":" << curr.x << "," << curr.y << "," << curr.z << "\n";

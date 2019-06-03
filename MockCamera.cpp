@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "MockCamera.h"
 
 namespace ark {

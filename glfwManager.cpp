@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "glfwManager.h"
 #include <iostream>
 

@@ -7,6 +7,8 @@
 #include <pcl/point_cloud.h>
 #include <pcl/filters/uniform_sampling.h>
 #include <pcl/filters/random_sample.h>
+#include <ceres/ceres.h>
+#include <nanoflann.hpp>
 
 #include "Visualizer.h"
 
@@ -287,11 +289,11 @@ namespace ark {
 
                 T n = q.vec().norm();
                 if (n == T(0)) {
-                    res.segment<3>((i - 1) * 3).setZero();
+                    res.template segment<3>((i - 1) * 3).setZero();
                 }
                 else {
                     if (q.w() < T(0)) n = -n;
-                    res.segment<3>((i - 1) * 3) = q.vec() / n * T(2) * ceres::atan2(n, abs(q.w()));
+                    res.template segment<3>((i - 1) * 3) = q.vec() / n * T(2) * ceres::atan2(n, abs(q.w()));
                 }
             }
             return res;
@@ -368,12 +370,12 @@ namespace ark {
                 cloudMap currJointPositions(pt);
                 //HumanDetector::toMPIJoints<T, cloudMap>(intrin, currJointPositions, joints2d);
 
-                for (int i = 0; i < HumanDetector::NUM_MATCHED_JOINTS; ++i) {
+                for (int i = 0; i < NUM_MATCHED_JOINTS; ++i) {
                     Vec3TMap res(residualPtr);
                     if (std::isnan(jointsPrior.row(i).x())) {
                         res = Vec3T::Zero();
                     } else {
-                        res = (currJointPositions.row(HumanDetector::MATCHED_JOINTS[i].first)
+                        res = (currJointPositions.row(MATCHED_JOINTS[i].first)
                                 - jointsPrior.row(i)) * (T)betaJ;
                     }
                     residualPtr += 3;
@@ -440,12 +442,12 @@ namespace ark {
                 cloudMap currJointPositions(pt);
                 //HumanDetector::toMPIJoints<T, cloudMap>(intrin, currJointPositions, joints2d);
 
-                for (int i = 0; i < HumanDetector::NUM_MATCHED_JOINTS; ++i) {
+                for (int i = 0; i < NUM_MATCHED_JOINTS; ++i) {
                     Vec3TMap res(residualPtr);
                     if (std::isnan(jointsPrior.row(i).x())) {
                         res = Vec3T::Zero();
                     } else {
-                        res = (currJointPositions.row(HumanDetector::MATCHED_JOINTS[i].first)
+                        res = (currJointPositions.row(MATCHED_JOINTS[i].first)
                                 - jointsPrior.row(i)) * (T)betaJ;
                     }
                     residualPtr += 3;
@@ -524,7 +526,7 @@ namespace ark {
             // store point cloud in Eigen format
             EigenCloud_T dataCloud(cloud->points.size(), 3);
             for (size_t i = 0; i < cloud->points.size(); ++i) {
-                dataCloud.row(i) = cloud->points[i].getVector3fMap().cast<double>();
+                dataCloud.row(i) = cloud->points[i].getVector3fMap().template cast<double>();
             }
             fit(dataCloud, deltat, track);
         }
@@ -550,8 +552,14 @@ namespace ark {
          * @param pcl_prefix unique prefix to use for PCL id's (so that multiple avatars can be shown at once)
          * @param viewport PCL viewport ID (0 = all)
          */
-        void visualize(pcl::visualization::PCLVisualizer::Ptr & viewer = Visualizer::getPCLVisualizer(),
+        void visualize(const pcl::visualization::PCLVisualizer::Ptr & viewer = Visualizer::getPCLVisualizer(),
                        std::string pcl_prefix = "", int viewport = 0) const;
+
+        /** matched joints used for joint prior, given as paired (smpl, mpi) indices */
+        static const std::pair<int, int> MATCHED_JOINTS[];
+
+        /** number of matched joints */
+        static const int NUM_MATCHED_JOINTS;
     private:
 
         /** Assign bone/joint weights to each vertex based on distance
