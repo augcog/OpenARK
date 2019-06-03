@@ -29,13 +29,12 @@ sudo update-alternatives --set gcc "/usr/bin/gcc-5"
 
 For conciseness, in all sections below "build with CMake" will mean
 
-1. `mkdir build && cd build`
-
-2. `cmake -DCMAKE_BUILD_TYPE=Release ..`
-
-3. `make -j4`
-
-4. `sudo make install`
+```sh
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make -j4
+sudo make install
+```
 
 Note that this installs the library. You may replace '4' in step 3 with any number of threads. The build process should not take too long.
 
@@ -54,11 +53,12 @@ sudo apt-mark hold libeigen3-dev
 
 We will build VTK from source.
 
-1. Download the source archive: `wget http://www.vtk.org/files/release/7.1/VTK-7.1.0.tar.gz`
-
-2. `tar -xf VTK-7.1.0.tar.gz` to extract.
-
-3. `cd VTK-7.1.0` and build with CMake.
+```sh
+wget http://www.vtk.org/files/release/7.1/VTK-7.1.0.tar.gz`
+tar -xf VTK-7.1.0.tar.gz
+cd VTK-7.1.0
+```
+Now build with CMake.
 
 ### Installing OpenCV with Contrib
 
