@@ -1,6 +1,6 @@
 ## OpenARK CMAKE build instructions for Ubuntu 16.04:
 
-Due to the variety of distributions and packaging tools available, we will only provide detailed step-by-step build instructions for *Ubuntu 16.04* using `apt-get`. However, the steps below (installing OpenCV, installing PCL, installing RealSense SDK, building OpenARK) should be similar for any Linux distribution.
+Due to the variety of distributions and packaging tools available, we will only provide detailed step-by-step build instructions for *Ubuntu 16.04* using `apt-get`. However, the steps below should be similar for any Linux distribution.
 
 ### Preliminaries
 
@@ -60,6 +60,20 @@ cd VTK-7.1.0
 ```
 Now build with CMake.
 
+### Installing Glog
+
+1. `git clone https://github.com/google/glog`
+
+2. As usual, build with CMake
+
+### Installing SuiteSparse
+
+```sh
+sudo add-apt-repository ppa:jmaye/ethz
+sudo apt update
+sudo apt install libsuitesparse-dev
+```
+
 ### Installing OpenCV with Contrib
 
 1. Install prerequisites:
@@ -70,22 +84,23 @@ sudo apt -y install libavcodec-dev libavformat-dev libswscale-dev libxine2-dev l
 sudo apt -y install libv4l-dev libtbb-dev libfaac-dev libmp3lame-dev libopencore-amrnb-dev libopencore-amrwb-dev libtheora-dev
 sudo apt -y install libvorbis-dev libxvidcore-dev v4l-utils
 sudo apt -y install liblapacke-dev libopenblas-dev libgdal-dev checkinstall
-sudo apt -y install libssl-dev
+sudo apt -y install libssl-dev libopenexr-dev openexr
 ```
 
-2. Download the OpenCV sources (Minimum version 3.2) from their website: <https://opencv.org/releases.html>
+2. Download OpenCV and OpenCV_contrib sources:
+```sh
+wget -O opencv346.tar.gz https://github.com/opencv/opencv/archive/3.4.6.tar.gz
+tar -xf opencv346.tar.gz
+cd opencv-3.4.6
+wget -O contrib.tar.gz https://github.com/opencv/opencv_contrib/archive/3.4.6.tar.gz
+tar -xf contrib.tar.gz
+```
 
-3. Download corresponding OpenCV contrib from <https://github.com/opencv/opencv_contrib/releases>
-
-4. Unpack the OpenCV source zip using `unzip`
-
-5. Unpack the OpenCV contrib zip into the OpenCV extraction directory using `unzip`, so that the contrib modules directory is in *opencv_extraction_directory/opencv_contrib/modules*
-
-4. Enter the OpenCV extraction directory and enter the following:
+3. Build:
 
 ``` sh
 mkdir build && cd build
-cmake -D CMAKE_BUILD_TYPE=RELEASE -DWITH_TBB=ON -DOPENCV_EXTRA_MODULES_PATH="opencv_contrib/modules" ..
+cmake -D CMAKE_BUILD_TYPE=RELEASE -DWITH_TBB=ON -DOPENCV_EXTRA_MODULES_PATH="../opencv_contrib-3.4.6/modules" ..
 make -j4
 sudo make install
 ```
@@ -97,26 +112,11 @@ We will build PCL from source. Please be warned that building VTK and PCL can ta
 Some PCL dependencies, QHull and OpenNI, are optional and are not currently needed for building OpenARK. They will not be included in the build.
 
 ```sh
-wget https://github.com/PointCloudLibrary/pcl/archive/pcl-1.8.1.tar.gz
-tar xf pcl-pcl-1.8.1.tar.gz
-cd pcl-pcl-1.8.1
+wget https://github.com/PointCloudLibrary/pcl/archive/pcl-1.8.0.tar.gz
+tar -xf pcl-1.8.0.tar.gz
+cd pcl-pcl-1.8.0
 ```
 Then build with CMake as usual.
-
-### Installing Glog
-
-1. `git clone https://github.com/google/glog`
-
-2. As usual, build with CMake
-
-### Installing SuiteSparse
-
-```sh
-apt -y install python-software-properties
-sudo add-apt-repository ppa:jmaye/ethz
-sudo apt update
-sudo apt install libsuitesparse-dev
-```
 
 ### Installing Ceres
 
