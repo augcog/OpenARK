@@ -46,7 +46,7 @@ namespace ark {
 
         // Load face models
         facemark = cv::face::FacemarkLBF::create();
-        //facemark->loadModel(FACE_LBFMODEL_FILE_PATH);
+        facemark->loadModel(FACE_LBFMODEL_FILE_PATH);
         faceDetector.load(FACE_HAARCASCADE_FILE_PATH);
 
         face_3D_model_points.push_back(cv::Point3d(0.0f, 0.0f, 0.0f));               // Nose tip
@@ -58,7 +58,6 @@ namespace ark {
 
 
         ava = std::make_shared<HumanAvatar>(HUMAN_MODEL_PATH, HUMAN_MODEL_SHAPE_KEYS, 2);
-        std::cerr<<"HAAR DONE\n";
 
         begin_tracking = false;
     }
@@ -517,7 +516,7 @@ namespace ark {
         std::vector<std::vector<cv::Point2f>> landmarks;
 
         // Run landmark detector
-        bool success = false;//facemark->fit(frame, faces, landmarks);
+        bool success = facemark->fit(frame, faces, landmarks);
 
         std::vector<cv::Point2d> image_points;
         if (success && landmarks[0].size() == 68) {
