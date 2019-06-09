@@ -81,5 +81,6 @@ endif()
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(OPENGV DEFAULT_MSG
                                   OPENGV_LIBS OPENGV_INCLUDE_DIR)
- 
+
+set( OPENGV_LIBRARIES ${OPENGV_LIBS} )
 
