@@ -62,9 +62,11 @@ if( NOT DEFINED EIGEN_INCLUDE_DIRS )
     if ( DEFINED Eigen_DIR )
         set( EIGEN_INCLUDE_DIRS ${Eigen_DIR} )
     endif ( DEFINED Eigen_DIR )
-else()
-    find_package( Eigen QUIET )
 endif( NOT DEFINED EIGEN_INCLUDE_DIRS )
+if ( NOT DEFINED Eigen_DIR )
+    find_package( Eigen QUIET )
+endif ( NOT DEFINED Eigen_DIR )
+
 if( DEFINED EIGEN_INCLUDE_DIRS )
     message(STATUS "Using user-provided Eigen")
 else()
@@ -97,7 +99,11 @@ if( OpenCV_FOUND )
 endif( OpenCV_FOUND )
 
 # require glog
-find_package( Glog REQUIRED )
+if( DEFINED ENV{ARK_DEPS_DIR} )
+    find_package( Glog REQUIRED NO_MODULE )
+else()
+    find_package( Glog REQUIRED )
+endif( DEFINED ENV{ARK_DEPS_DIR} )
 message(STATUS "Found Glog: ${GLOG_INCLUDE_DIRS} ${GLOG_LIBRARIES}")
 # fix glog windows conflicts and bugs
 if(WIN32)
@@ -125,8 +131,14 @@ include_directories(${OKVIS_INCLUDE_DIRS})
 message(STATUS "Found Okvis: ${OKVIS_INCLUDE_DIRS} ${OKVIS_LIBRARIES}")
 
 # require OpenGV (should come with Okvis)
-find_package( OpenGV REQUIRED )
-message(STATUS "Found OpenGV: ${OPENGV_INCLUDE_DIRS} ${OPENGV_LIBRARIES}")
+if( DEFINED ENV{ARK_DEPS_DIR} )
+    find_package( OpenGV REQUIRED NO_MODULE )
+else()
+    find_package( OpenGV REQUIRED )
+endif( DEFINED ENV{ARK_DEPS_DIR} )
+IF(OPENGV_FOUND)
+    MESSAGE(STATUS "Found OpenGV: ${OPENGV_INCLUDE_DIR} ${OPENGV_LIBS}")
+ENDIF(OPENGV_FOUND)
 
 # require Ceres
 find_package( Ceres REQUIRED )
@@ -194,7 +206,7 @@ set(
   ${CERES_LIBRARIES}
   ${BRISK_LIBRARIES}
   ${DBoW2_LIBRARIES}
-  ${OPENGV_LIBRARIES}
+  ${OPENGV_LIBS}
 )
 
 add_definitions(

@@ -40,7 +40,7 @@ namespace ark {
             cv::imshow("Gray Amp", ampGray);
 
             // Find chessboards on amplitude
-            found1 = findChessboardCorners(ampGray, board_sz, cornersAmp, CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_FILTER_QUADS);
+            found1 = findChessboardCorners(ampGray, board_sz, cornersAmp, cv::CALIB_CB_ADAPTIVE_THRESH | cv::CALIB_CB_FILTER_QUADS);
             if (found1) {
                 cv::cornerSubPix(ampGray, cornersAmp, cv::Size(11, 11), cv::Size(-1, -1), cv::TermCriteria(CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 30, 0.1));
                 auto ampRGB = ampGray.clone();
