@@ -1,4 +1,16 @@
-#include "stdafx.h"
+#include <ctime>
+#include <cstdlib>
+#include <cstdio>
+#include <string>
+#include <vector>
+#include <memory>
+#include <algorithm>
+#include <Eigen/Dense>
+#include <opencv2/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
 
 // OpenARK Libraries
 #include "Version.h"
@@ -14,7 +26,7 @@
 
 #include "Core.h"
 #include "Visualizer.h"
-#include "StreamingAverager.h"
+#include "Util.h"
 
 using namespace ark;
 

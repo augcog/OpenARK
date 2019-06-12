@@ -1,4 +1,18 @@
-#include "stdafx.h"
+#include <ctime>
+#include <cstdlib>
+#include <cstdio>
+#include <string>
+#include <vector>
+#include <memory>
+#include <algorithm>
+#include <Eigen/Dense>
+#include <opencv2/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <ceres/ceres.h>
+#include <nanoflann.hpp>
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
 
 // OpenARK Libraries
 #include "Version.h"
@@ -119,7 +133,7 @@ int main() {
 	camera->endCapture();
 	
 	// Write the captured frames to disk
-	ASSERT(xyzMaps.size() == rgbMaps.size(), "Depth map and RGB map are not in sync!");
+	ARK_ASSERT(xyzMaps.size() == rgbMaps.size(), "Depth map and RGB map are not in sync!");
 
 	std::string depth_path = directory_path + "depth\\";
 	std::string rgb_path = directory_path + "rgb\\";
@@ -162,7 +176,7 @@ int main() {
 		}
 		std::sort(depth_files.begin(), depth_files.end());
 	}
-	ASSERT(depth_files.size() == rgb_files.size());
+	ARK_ASSERT(depth_files.size() == rgb_files.size());
 
 	// Run neural network to predict where the human joints are
 	std::string joint_path = directory_path + "joint\\";
@@ -188,7 +202,7 @@ int main() {
 
 		human_detector->getHumanBodies().clear();
 		//cout << human_detector->getHumanBodies().size() << endl;
-		human_detector->update(rgb_map);
+		human_detector->detectPoseRGB(rgb_map);
 		std::vector<cv::Point> rgbJoints;
 		if (human_detector->getHumanBodies().size() != 0) {
 			int front_id = -1, min_dist = 100;

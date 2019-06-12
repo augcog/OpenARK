@@ -1,4 +1,18 @@
-#include "stdafx.h"
+#include <ctime>
+#include <cstdlib>
+#include <cstdio>
+#include <string>
+#include <vector>
+#include <memory>
+#include <algorithm>
+#include <Eigen/Dense>
+#include <opencv2/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <ceres/ceres.h>
+#include <nanoflann.hpp>
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
 #include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/filters/voxel_grid.h>
 #include <opencv2/dnn.hpp>
@@ -17,8 +31,8 @@
 #endif
 #ifdef RSSDK2_ENABLED
 #include "RS2Camera.h"
-#include "MockCamera.h"
 #endif
+#include "MockCamera.h"
 
 #include "Core.h"
 #include "Visualizer.h"
@@ -28,14 +42,15 @@
 using namespace ark;
 
 // open a gui for interacting with avatar
-void __avatarGUI(const std::string & human_model_path, const std::vector<std::string> & shape_keys)
+void __avatarGUI()
 {
     // build file names and paths
-    HumanAvatar ava(human_model_path, shape_keys);
+    HumanAvatar ava(HumanDetector::HUMAN_MODEL_PATH, HumanDetector::HUMAN_MODEL_SHAPE_KEYS);
+    const size_t NKEYS = HumanDetector::HUMAN_MODEL_SHAPE_KEYS.size();
 
     cv::namedWindow("Body Shape");
     cv::namedWindow("Body Pose");
-    std::vector<int> pcw(shape_keys.size(), 1000), p_pcw(shape_keys.size(), 0);
+    std::vector<int> pcw(NKEYS, 1000), p_pcw(NKEYS, 0);
 
     // define some axes
     const Eigen::Vector3d AXISX(1, 0, 0), AXISY(0, 1, 0), AXISZ(0, 0, 1);
@@ -43,7 +58,7 @@ void __avatarGUI(const std::string & human_model_path, const std::vector<std::st
     // Body pose control definitions (currently this control system only supports rotation along one axis per body part)
     const std::vector<std::string> CTRL_NAMES       = {"L HIP",      "R HIP",      "L KNEE",      "R KNEE",      "L ANKLE",      "R ANKLE",      "L ARM",        "R ARM",        "L ELBOW",      "R ELBOW",      "HEAD",      "SPINE2",     "ROOT"};
     using jnt_t = HumanAvatar::JointType;
-    const std::vector<jnt_t> CTRL_JNT               = {jnt_t::L_HIP, jnt_t::R_HIP, jnt_t::L_KNEE, jnt_t::R_KNEE, jnt_t::L_ANKLE, jnt_t::R_ANKLE, jnt_t::L_ELBOW, jnt_t::R_ELBOW, jnt_t::L_WRIST, jnt_t::R_WRIST, jnt_t::HEAD, jnt_t::SPINE2, jnt_t::ROOT};
+    const std::vector<jnt_t> CTRL_JNT               = {jnt_t::L_HIP, jnt_t::R_HIP, jnt_t::L_KNEE, jnt_t::R_KNEE, jnt_t::L_ANKLE, jnt_t::R_ANKLE, jnt_t::L_ELBOW, jnt_t::R_ELBOW, jnt_t::L_WRIST, jnt_t::R_WRIST, jnt_t::HEAD, jnt_t::SPINE2, jnt_t::ROOT_PELVIS};
     const std::vector<Eigen::Vector3d> CTRL_AXIS    = {AXISX,        AXISX,        AXISX,         AXISX,         AXISX,          AXISX,          AXISY,          AXISY,          AXISY,          AXISY,          AXISX,       AXISX,         AXISY};
     const int N_CTRL = (int)CTRL_NAMES.size();
 
@@ -141,37 +156,54 @@ int main(int argc, char ** argv) {
     // seed the rng
     srand(time(NULL));
 
-    // gender-neutral model
-    const std::string HUMAN_MODEL_PATH = "C:/dev/SMPL/models/basicModel_neutral_lbs_10_207_0_v1.0.0/";
+    // pass 'gui' as first argument to see the GUI for manipulating SMPL avatar pose, shape, etc.
+    if (argc > 1 && strcmp(argv[1], "gui") == 0) {
+        __avatarGUI(); return 0;
+    }
 
-    const std::vector<std::string> SHAPE_KEYS = {"shape000.pcd", "shape001.pcd", "shape002.pcd", 
-												 "shape003.pcd", "shape004.pcd", "shape005.pcd",
-												 "shape006.pcd", "shape007.pcd", "shape008.pcd", 
-												 "shape009.pcd"};
+    std::string path;
+    if (argc > 1) {
+        path = argv[1];
+    }
+    else {
+        // sample dataset
+        path = util::resolveRootPath("data/avatar-dataset/human-dance");
+    }
 
-    // UNCOMMENT following line to see the GUI for manipulating SMPL avatar pose, shape, etc.
-    //__avatarGUI(HUMAN_MODEL_PATH, SHAPE_KEYS); return 0;
-
-	auto path = "C:\\dev\\OpenARK_dataset\\human-dance-random";
-	const auto camera = std::make_shared<MockCamera>(path);
+    cv::namedWindow("RGB Visualization");
+	const auto camera = std::make_shared<MockCamera>(path.c_str());
 	std::shared_ptr<HumanDetector> human_detector = std::make_shared<HumanDetector>();
 
-	HumanAvatar ava(HUMAN_MODEL_PATH, SHAPE_KEYS, 2);
 	auto viewer = Visualizer::getPCLVisualizer();
 	auto vp0 = Visualizer::createPCLViewport(0, 0, 0.7, 1), vp1 = Visualizer::createPCLViewport(0.7, 0, 1, 1);
 	int i = 0;
 	while (camera->hasNext()) {
-		camera->update();
+		camera->nextFrame(false);
 		cv::Mat xyzMap = camera->getXYZMap();
 		cv::Mat rgbMap = camera->getRGBMap();
+        long long deltaT = camera->getDeltaT();
 		std::vector<cv::Point> rgbJoints = camera->getJoints();
 
 		// Tracking code
-		human_detector->update(xyzMap, rgbMap, rgbJoints);
+		human_detector->update(xyzMap, rgbMap, rgbJoints, double(deltaT)/1e9);
 		std::shared_ptr<HumanAvatar> avatar_model = human_detector->getAvatarModel();
+
+        // visualize
+        cv::Mat rgbVis = rgbMap.clone();
+        for (int i = 0; i < avatar_model->numJoints(); ++i) {
+            Eigen::Vector2d v = avatar_model->getJointPosition2d(i);
+            cv::circle(rgbVis, cv::Point(int(v.x()), int(v.y())), 3, cv::Scalar(0, 0, 255));
+        }
+        for (size_t i = 0; i < rgbJoints.size(); ++i) {
+            cv::circle(rgbVis, rgbJoints[i], 3, cv::Scalar(255, 0, 0));
+        }
 		// render the human in GUI
+        cv::imshow("RGB Visualization", rgbVis);
 		avatar_model->visualize(viewer, "o1_ava_", vp1);
 		avatar_model->visualize(viewer, "ava_", vp0);
+        auto dataCloud = util::toPointCloud<pcl::PointXYZRGBA>(xyzMap, true, true, 3);
+        Visualizer::visualizeCloud(dataCloud, "o1_data", vp1);
+
 		viewer->spinOnce();
 
 		int c = cv::waitKey(1);

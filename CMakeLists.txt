@@ -6,7 +6,6 @@ project( OpenARK )
 set( OpenARK_VERSION_MAJOR 0 )
 set( OpenARK_VERSION_MINOR 9 )
 set( OpenARK_VERSION_PATCH 3 )
-set( SVM_PATHS "\"svm/\", \"../svm/\", \"\"" )
 set( INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include" )
 
 set( CMAKE_CXX_STACK_SIZE "10000000" )
@@ -50,8 +49,42 @@ if ( CMAKE_COMPILER_IS_GNUCXX )
     set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated -Wno-deprecated-declarations -O3 -g" )
 endif ( CMAKE_COMPILER_IS_GNUCXX )
 
+if( DEFINED ENV{ARK_DEPS_DIR} )
+    message( STATUS "Detected ARK_DEPS_DIR: $ENV{ARK_DEPS_DIR}" )
+    include( $ENV{ARK_DEPS_DIR}/CMakeLists.txt )
+endif( DEFINED ENV{ARK_DEPS_DIR} )
+
 set( Boost_USE_STATIC_LIBS ON )
 set( Boost_USE_STATIC ON )
+
+# require Eigen
+if( NOT DEFINED EIGEN_INCLUDE_DIRS )
+    if ( DEFINED Eigen_DIR )
+        set( EIGEN_INCLUDE_DIRS ${Eigen_DIR} )
+    endif ( DEFINED Eigen_DIR )
+endif( NOT DEFINED EIGEN_INCLUDE_DIRS )
+if ( NOT DEFINED Eigen_DIR )
+    find_package( Eigen QUIET )
+endif ( NOT DEFINED Eigen_DIR )
+
+if( DEFINED EIGEN_INCLUDE_DIRS )
+    message(STATUS "Using user-provided Eigen")
+else()
+    # use submodule automatically if not found
+    message(STATUS "Using Eigen submodule, updating...")
+    execute_process(COMMAND git submodule update --init --recursive
+                WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+                RESULT_VARIABLE GIT_SUBMOD_RESULT)
+    if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+        message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules manually")
+    else()
+        message(STATUS "Submodule up to date")
+    endif(NOT GIT_SUBMOD_RESULT EQUAL "0")
+    set( EIGEN_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/third_party/eigen3" )
+endif( DEFINED EIGEN_INCLUDE_DIRS )
+set( EIGEN_INCLUDE_DIR EIGEN_INCLUDE_DIRS )
+include_directories(${EIGEN_INCLUDE_DIRS})
+message(STATUS "Found Eigen: ${EIGEN_INCLUDE_DIRS}")
 
 # require PCL
 find_package( PCL REQUIRED )
@@ -65,46 +98,61 @@ if( OpenCV_FOUND )
    message( STATUS "Found OpenCV: ${OpenCV_INCLUDE_DIRS}" )
 endif( OpenCV_FOUND )
 
-# require Eigen
-find_package( Eigen REQUIRED )
-include_directories(${EIGEN_INCLUDE_DIRS})
-message(STATUS "Found Eigen: ${EIGEN_INCLUDE_DIRS}")
+# require glog
+if( DEFINED ENV{ARK_DEPS_DIR} )
+    find_package( Glog REQUIRED NO_MODULE )
+else()
+    find_package( Glog REQUIRED )
+endif( DEFINED ENV{ARK_DEPS_DIR} )
+message(STATUS "Found Glog: ${GLOG_INCLUDE_DIRS} ${GLOG_LIBRARIES}")
+# fix glog windows conflicts and bugs
+if(WIN32)
+    add_definitions(-DGLOG_NO_ABBREVIATED_SEVERITIES -DGOOGLE_GLOG_DLL_DECL= -D_MBCS)
+endif(WIN32)
+include_directories(${GLOG_INCLUDE_DIRS})
 
 # require DBoW2
 find_package( DBoW2 REQUIRED )
 IF( DBoW2_FOUND )
-   MESSAGE( STATUS "Found DBoW2: ${DBoW2_INCLUDE_DIRS}" )
+    MESSAGE( STATUS "Found DBoW2: ${DBoW2_INCLUDE_DIRS} ${DBoW2_LIBRARIES}" )
    include_directories(${DBoW2_INCLUDE_DIRS})
 ENDIF( DBoW2_FOUND )
 
 # require DLoopDetector
 find_package( DLoopDetector REQUIRED )
 IF( DLoopDetector_FOUND )
-   MESSAGE( STATUS "Found DLoopDetector: ${DLoopDetector_INCLUDE_DIRS}" )
+    MESSAGE( STATUS "Found DLoopDetector: ${DLoopDetector_INCLUDE_DIRS} ${DLoopDetector_LIBRARIES}" )
    include_directories(${DLoopDetector_INCLUDE_DIRS})
 ENDIF( DLoopDetector_FOUND )
 
-# require glog
-find_package( Glog REQUIRED )
-message(STATUS "Found Glog: ${GLOG_LIBRARIES}")
-#add_definitions(-DGLOG_NO_ABBREVIATED_SEVERITIES)
-include_directories(${GLOG_INCLUDE_DIRS})
-
 # require Okvis
-find_package( Okvis 1.1 REQUIRED )
+find_package( okvis REQUIRED )
 include_directories(${OKVIS_INCLUDE_DIRS})
-message(STATUS "Found Okvis: ${OKVIS_INCLUDE_DIRS}")
+message(STATUS "Found Okvis: ${OKVIS_INCLUDE_DIRS} ${OKVIS_LIBRARIES}")
 
 # require OpenGV (should come with Okvis)
-find_package( OpenGV REQUIRED )
-message(STATUS "Found OpenGV: ${OPENGV_INCLUDE_DIRS}")
+if( DEFINED ENV{ARK_DEPS_DIR} )
+    find_package( OpenGV REQUIRED NO_MODULE )
+else()
+    find_package( OpenGV REQUIRED )
+endif( DEFINED ENV{ARK_DEPS_DIR} )
+IF(OPENGV_FOUND)
+    MESSAGE(STATUS "Found OpenGV: ${OPENGV_INCLUDE_DIR} ${OPENGV_LIBRARIES}")
+ENDIF(OPENGV_FOUND)
 
 # require Ceres
 find_package( Ceres REQUIRED )
 IF(Ceres_FOUND)
-   MESSAGE(STATUS "Found Ceres: ${CERES_INCLUDE_DIRS}")
+    MESSAGE(STATUS "Found Ceres: ${CERES_INCLUDE_DIRS} ${CERES_LIBRARIES}")
 ENDIF(Ceres_FOUND)
 include_directories(${CERES_INCLUDE_DIRS})
+
+# require SuiteSparse
+find_package( SuiteSparse QUIET )
+IF(SuiteSparse_FOUND)
+    MESSAGE(STATUS "Found SuiteSparse: ${SuiteSparse_INCLUDE_DIRS} ${SuiteSparse_LIBRARIES}")
+ENDIF(SuiteSparse_FOUND)
+#include_directories(${SuiteSparse_INCLUDE_DIRS})
 
 find_package(OpenMP)
 if (OPENMP_FOUND)
@@ -114,33 +162,33 @@ if (OPENMP_FOUND)
 endif()
 
 # require Brisk
-find_package( Brisk 2 REQUIRED )
+find_package( brisk REQUIRED )
 include_directories(${BRISK_INCLUDE_DIRS})
-message(STATUS "Found Brisk: ${BRISK_INCLUDE_DIRS}")
+message(STATUS "Found Brisk: ${BRISK_INCLUDE_DIRS} ${BRISK_LIBRARIES}")
 
-set( RSSDK2_FOUND OFF )
+set( realsense2_FOUND OFF )
 if( USE_RSSDK2 )
-  find_package( RSSDK2 )
-  if( RSSDK2_FOUND )
-       message( STATUS "Found RSSDK2: ${RSSDK2_INCLUDE_DIR}" )
-  endif( RSSDK2_FOUND )
+  find_package( realsense2 )
+  if( realsense2_FOUND )
+       message( STATUS "Found librealsense2: ${realsense2_INCLUDE_DIR}" )
+  endif( realsense2_FOUND )
 endif( USE_RSSDK2 )
 
 set( RSSDK_FOUND OFF )
-if( USE_RSSDK OR NOT RSSDK2_FOUND )
+if( USE_RSSDK OR NOT realsense2_FOUND )
   find_package( RSSDK )
   if( RSSDK_FOUND )
        message( STATUS "Found RSSDK: ${RSSDK_INCLUDE_DIR}" )
   endif( RSSDK_FOUND )
-endif( USE_RSSDK OR NOT RSSDK2_FOUND )
+endif( USE_RSSDK OR NOT realsense2_FOUND )
 
 set( PMDSDK_FOUND OFF )
-if( USE_PMDSDK OR ( NOT RSSDK_FOUND AND NOT RSSDK2_FOUND ) )
+if( USE_PMDSDK OR ( NOT RSSDK_FOUND AND NOT realsense2_FOUND ) )
   find_package( PMDSDK REQUIRED )
   if( PMDSDK_FOUND )
      message( STATUS "Found PMDSDK: ${PMDSDK_INCLUDE_DIR}" )
   endif( PMDSDK_FOUND )
-endif( USE_PMDSDK OR ( NOT RSSDK_FOUND AND NOT RSSDK2_FOUND ) )
+endif( USE_PMDSDK OR ( NOT RSSDK_FOUND AND NOT realsense2_FOUND ) )
 
 include_directories(
   ${OpenCV_INCLUDE_DIRS}
@@ -152,8 +200,8 @@ set(
   DEPENDENCIES
   ${OpenCV_LIBRARIES}
   ${PCL_LIBRARIES}
-  ${GLOG_LIBRARIES}
-  ${CXSPARSE_LIBRARIES}
+  ${GLOG_LIBRARIES} #${CXSPARSE_LIBRARIES}
+  ${SuiteSparse_LIBRARIES}
   ${OKVIS_LIBRARIES}
   ${CERES_LIBRARIES}
   ${BRISK_LIBRARIES}
@@ -175,6 +223,7 @@ set(
   Webcam.cpp
   DepthCamera.cpp
   RGBCamera.cpp
+  StereoCamera.cpp
   StreamingAverager.cpp
   Calibration.cpp
   Util.cpp
@@ -201,6 +250,7 @@ set(
   ${INCLUDE_DIR}/Webcam.h
   ${INCLUDE_DIR}/DepthCamera.h
   ${INCLUDE_DIR}/RGBCamera.h
+  ${INCLUDE_DIR}/StereoCamera.h
   ${INCLUDE_DIR}/StreamingAverager.h
   ${INCLUDE_DIR}/Calibration.h
   ${INCLUDE_DIR}/Util.h
@@ -225,6 +275,7 @@ set(
   ${INCLUDE_DIR}/Types.h
   ${INCLUDE_DIR}/CorrespondenceRansac.h
   ${INCLUDE_DIR}/D435iCalibWriter.h
+  ${INCLUDE_DIR}/UKF.h
   stdafx.h
 )
 
@@ -256,14 +307,14 @@ else()
     include_directories(${GLFW_INCLUDE_DIR})
 endif() 
 
-if( NOT RSSDK2_FOUND )
+if( NOT realsense2_FOUND )
   set( _RSSDK2_ "//" )
 else()
-  include_directories( ${RSSDK2_INCLUDE_DIR} )
+  include_directories( ${realsense2_INCLUDE_DIR} )
   set( SOURCES ${SOURCES} RS2Camera.cpp )
   set( HEADERS ${HEADERS} ${INCLUDE_DIR}/RS2Camera.h )
-  set( DEPENDENCIES ${DEPENDENCIES} ${RSSDK2_LIBRARY} )
-endif( NOT RSSDK2_FOUND )
+  set( DEPENDENCIES ${DEPENDENCIES} ${realsense2_LIBRARY} )
+endif( NOT realsense2_FOUND )
 
 if( NOT RSSDK_FOUND )
   set( _RSSDK_ "//" )
@@ -304,11 +355,31 @@ if ( MSVC )
                                            OBJECT_DEPENDS "${PRECOMPILED_HEADER}" )
     set( SOURCES ${SOURCES} ${PRECOMPILED_SOURCE} )
     add_definitions( -D_CRT_SECURE_NO_WARNINGS )
-    set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /Ot" )
-    set( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT" )
+    set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /Ot /Z7 /Zm1010 /MP" )
+    set( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT /DEBUG" )
     set( CMAKE_SHARED_LINKER_FLAGS  "${CMAKE_SHARED_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT" )
     set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD" )
 endif ( MSVC )
+
+# download required files
+if (NOT EXISTS "${PROJECT_SOURCE_DIR}/config/brisk_vocab.bn")
+    message( STATUS "Downloading Brisk vocab to config/brisk_vocab.bn..." )
+    file(DOWNLOAD "https://github.com/sxyu/OpenARK-Deps/releases/download/0.0.1/brisk_vocab.bn" "${PROJECT_SOURCE_DIR}/config/brisk_vocab.bn")
+endif()
+
+if (NOT EXISTS "${PROJECT_SOURCE_DIR}/config/face/lbfmodel.yaml")
+    message( STATUS "Downloading face landmarks model to config/face/lbfmodel.yaml..." )
+    file(DOWNLOAD "https://raw.githubusercontent.com/kurnianggoro/GSOC2017/master/data/lbfmodel.yaml" "${PROJECT_SOURCE_DIR}/config/face/lbfmodel.yaml")
+endif()
+
+if (NOT EXISTS "${PROJECT_SOURCE_DIR}/config/pose-net/pose.caffemodel")
+    message( STATUS "Downloading pose net model to config/pose-net/pose.caffemodel..." )
+    file(DOWNLOAD "https://github.com/sxyu/OpenARK-Deps/releases/download/0.0.1/pose.caffemodel" "${PROJECT_SOURCE_DIR}/config/pose-net/pose.caffemodel")
+endif()
+
+if (NOT EXISTS "${PROJECT_SOURCE_DIR}/data/avatar-model/model.pcd")
+    message( WARNING "SMPL model files are not present, so the avatar module will not work. To use the avatar module and/or run the avatar demo, you will need to download the SMPL model manually. Please follow the instructions in data/avatar-model/README.md. Note that SMPL is available for non-commercial, academic research purposes only." )
+endif()
 
 add_library( ${LIB_NAME} STATIC "${INCLUDE_DIR}/Core.h" ${SOURCES} ${HEADERS} )
 set_target_properties( ${LIB_NAME} PROPERTIES OUTPUT_NAME
@@ -334,21 +405,24 @@ if( ${BUILD_AVATAR_DEMO} )
     add_executable( ${AVATAR_DEMO_NAME} AvatarDemo.cpp )
     target_include_directories( ${AVATAR_DEMO_NAME} PRIVATE ${INCLUDE_DIR} )
     target_link_libraries( ${AVATAR_DEMO_NAME} ${DEPENDENCIES} ${LIB_NAME} )
-    set_target_properties( ${AVATAR_DEMO_NAME} PROPERTIES OUTPUT_NAME ${AVATAR_DEMO_NAME )
+    set_target_properties( ${AVATAR_DEMO_NAME} PROPERTIES OUTPUT_NAME ${AVATAR_DEMO_NAME} )
     set_target_properties( ${AVATAR_DEMO_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
 endif( ${BUILD_AVATAR_DEMO} )
 
 if( ${BUILD_SLAM_DEMO} )
     add_executable( ${SLAM_DEMO_NAME} SlamDemo435i.cpp )
     target_include_directories( ${SLAM_DEMO_NAME} PRIVATE ${INCLUDE_DIR} )
-    target_link_libraries( ${SLAM_DEMO_NAME} ${DEPENDENCIES} ${LIB_NAME} )
     set_target_properties( ${SLAM_DEMO_NAME} PROPERTIES OUTPUT_NAME ${SLAM_DEMO_NAME} )
     set_target_properties( ${SLAM_DEMO_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
+    if ( MSVC )
+        target_link_libraries( ${SLAM_DEMO_NAME} ${DEPENDENCIES} ${LIB_NAME} )
+    else()
+        target_link_libraries( ${SLAM_DEMO_NAME} ${DEPENDENCIES} ${LIB_NAME} GLU GL glut )
+    endif ( MSVC )
     add_executable( d435i_intrinsics_writer D435iCalibWriter.cpp )
     target_include_directories( d435i_intrinsics_writer PRIVATE ${INCLUDE_DIR} )
     target_link_libraries( d435i_intrinsics_writer ${DEPENDENCIES} ${LIB_NAME} )
     #set_target_properties( d435i_intrinsics_writer PROPERTIES OUTPUT_NAME d435i_intrinsics_writer )
-    set_target_properties( d435i_intrinsics_writer PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
 endif( ${BUILD_SLAM_DEMO} )
 
 if( ${BUILD_DATA_RECORDING} )

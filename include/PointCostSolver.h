@@ -1,5 +1,4 @@
-#ifndef _POINT_COST_SOLVER_H_
-#define _POINT_COST_SOLVER_H_
+#pragma once
 
 #include <vector>
 #include <Eigen/Core>
@@ -107,5 +106,3 @@ private:
 
 
 }//namespace ICP
-
-#endif

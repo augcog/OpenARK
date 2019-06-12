@@ -1,6 +1,4 @@
-#ifndef _SPARSE_MAP_H_
-#define _SPARSE_MAP_H_
-
+#pragma once
 
 #include "Types.h"
 #include <iostream>
@@ -214,5 +212,3 @@ private:
 
 } //namespace ark
 
-
-#endif //_SPARSE_MAP_H_

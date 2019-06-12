@@ -25,6 +25,10 @@
 #include <thread>
 #include <mutex>
 
+// Eigen
+#include <Eigen/SVD>
+#include <Eigen/Dense>
+
 // Boost
 #include <boost/filesystem.hpp>
 #include <boost/function.hpp>
@@ -44,6 +48,7 @@
 #include <opencv2/objdetect/objdetect.hpp>
 #include <opencv2/features2d.hpp>
 #include <opencv2/ml.hpp>
+#include <opencv2/core/eigen.hpp>
 
 // PCL Libraries
 #include <pcl/filters/voxel_grid.h>
@@ -67,10 +72,8 @@
 #include <pcl/surface/gp3.h>
 #include <pcl/features/impl/feature.hpp>
 #include <pcl/point_traits.h>
-
-// Eigen
-#include <Eigen/SVD>
-#include <Eigen/Dense>
+#include <pcl/common/time.h>
+#include <pcl/registration/icp.h>
 
 // Flann
 #include <flann/util/serialization.h>
@@ -80,3 +83,24 @@
 
 // nanoflann
 #include <nanoflann.hpp>
+
+// Brisk
+#include <brisk/brisk.h>
+
+// DBoW2
+#include <DBoW2.h>
+
+// DLoopDetector
+#include <DLoopDetector.h>
+
+// Okvis
+#include <okvis/Time.hpp>
+#include <okvis/kinematics/Transformation.hpp>
+#include <okvis/VioParametersReader.hpp>
+#include <okvis/ThreadedKFVio.hpp>
+
+// GLFW
+#include <GLFW/glfw3.h>
+
+// UKF
+#include <UKF.h>

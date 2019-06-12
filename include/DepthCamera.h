@@ -254,6 +254,11 @@ namespace ark {
          * badInput()'s behavior may be overridden.
          */
         bool badInputFlag;
+        
+        /** Mutex to ensure thread safety while updating images 
+         *  (mutable = modificable even to const methods)
+         */
+        mutable std::mutex imageMutex;
 
     private:
         // Section D: implementation details
@@ -318,10 +323,5 @@ namespace ark {
         cv::Mat irMapBuf;
         cv::Mat ampMapBuf;
         cv::Mat flagMapBuf;
-
-        /** Mutex to ensure thread safety while updating images 
-         *  (mutable = modificable even to const methods)
-         */
-        mutable std::mutex imageMutex;
     };
 }

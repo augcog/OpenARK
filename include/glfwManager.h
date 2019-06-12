@@ -1,8 +1,11 @@
+#pragma once
 #ifdef _WIN32
 	#include <Windows.h>
+    #undef ERROR
 	#include <gl/GLU.h>
 #else
-	#include <GL/glew.h>
+	//#include <GL/glew.h>
+	#include <GL/glu.h>
 #endif
 #include <Eigen/Core>
 #include <Eigen/Geometry>

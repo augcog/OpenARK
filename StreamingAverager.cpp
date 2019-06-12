@@ -7,7 +7,7 @@ namespace ark {
     StreamingAverager::StreamingAverager(int frequency, float rejectionDistance) :
         sampleFrequency(frequency), rejectionThreshold(rejectionDistance * rejectionDistance)
     {
-        ASSERT(frequency > 0, "Sampling frequency must be at least 1");
+        ARK_ASSERT(frequency > 0, "Sampling frequency must be at least 1");
     }
 
     Vec3f StreamingAverager::addDataPoint(Vec3f pt)

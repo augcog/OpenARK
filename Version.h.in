@@ -24,17 +24,17 @@
 
 // Custom assertion statement that prints out a message
 #if !defined(NDEBUG) || defined(DEBUG)
-#   define ASSERT(condition, message) \
+#   define ARK_ASSERT(condition, message) \
     do { \
         if (!(condition)) { \
-             std::cerr << "OpenARK assertion '" #condition "' failed in " << \
+             std::cerr << "OpenARK assertion '" << (#condition) << "' failed in " << \
               __FILE__ << " at line " << __LINE__ << ": " << message << "\n"; \
             std::terminate(); \
         } \
     } while (false)
 #else
 // disable assert if not debugging
-#  define ASSERT(condition, message) do { } while (false)
+#  define ARK_ASSERT(condition, message) do { } while (false)
 #endif
 
 // Necessary for typedefs
@@ -46,9 +46,6 @@
 namespace ark {
     // OpenARK version number (modify in CMakeLists.txt)
     static const char * VERSION = "@OpenARK_VERSION_MAJOR@.@OpenARK_VERSION_MINOR@.@OpenARK_VERSION_PATCH@";
-
-    // Paths to possible SVM model file locations (terminated by "\n")
-    static const char * SVM_PATHS[] = {@SVM_PATHS@, "\n"};
 
     // Typedefs for common types
     typedef cv::Point Point;

@@ -1366,6 +1366,40 @@ namespace ark {
             return 0;
         }
 
+        std::string resolveRootPath(const std::string & root_path)
+        {
+            static const std::string TEST_PATH = "config/hand-svm/svm.xml";
+            static const int MAX_LEVELS = 3;
+            static std::string rootDir = "\n";
+            if (rootDir == "\n") {
+                rootDir.clear();
+                const char * env = std::getenv("OPENARK_DIR");
+                if (env) {
+                    // use environmental variable if exists and works
+                    rootDir = env;
+
+                    // auto append slash
+                    if (!rootDir.empty() && rootDir.back() != '/' && rootDir.back() != '\\')
+                        rootDir.push_back('/');
+
+                    std::ifstream test_ifs(rootDir + TEST_PATH);
+                    if (!test_ifs) rootDir.clear();
+                }
+
+                // else check current directory and parents
+                if (rootDir.empty()) {
+                    for (int i = 0; i < MAX_LEVELS; ++i) {
+                        std::ifstream test_ifs(rootDir + TEST_PATH);
+                        if (test_ifs) break;
+                        rootDir.append("../");
+                    }
+                }
+            }
+            typedef boost::filesystem::path path;
+
+            return (path(rootDir) / path(root_path)).string();
+        }
+
         pcl::PointXYZRGBA toPCLPoint(const Eigen::Vector3d & v, int r, int g, int b, int a) {
             pcl::PointXYZRGBA pt;
             pt.x = v.x(); pt.y = v.y(); pt.z = v.z();
@@ -1383,6 +1417,46 @@ namespace ark {
             pt.g = g;
             pt.a = a;
             return pt;
+        }
+
+        cv::Vec4d getCameraIntrinFromXYZ(const cv::Mat & xyz_map)
+        {
+            int rows = xyz_map.rows, cols = xyz_map.cols;
+            Eigen::MatrixXd A(rows * cols, 2);
+            Eigen::MatrixXd b(rows * cols, 1);
+            cv::Vec4d result;
+
+            // fx cx
+            const cv::Vec3f * ptr;
+            for (int r = 0; r < rows; ++r) {
+                ptr = xyz_map.ptr<cv::Vec3f>(r);
+                for (int c = 0; c < cols; ++c) {
+                    const int i = r * cols + c;
+                    A(i, 0) = ptr[c][0];
+                    A(i, 1) = ptr[c][2];
+                    b(i) = c * ptr[c][2];
+                }
+            }
+
+            Eigen::Vector2d wx = A.colPivHouseholderQr().solve(b);
+            result[0] = wx[0];
+            result[1] = wx[1];
+
+            // fy cy
+            for (int r = 0; r < rows; ++r) {
+                ptr = xyz_map.ptr<cv::Vec3f>(r);
+                for (int c = 0; c < cols; ++c) {
+                    const int i = r * cols + c;
+                    A(i, 0) = ptr[c][1];
+                    A(i, 1) = ptr[c][2];
+                    b(i) = r * ptr[c][2];
+                }
+            }
+
+            Eigen::Vector2d wy = A.colPivHouseholderQr().solve(b);
+            result[2] = wy[0];
+            result[3] = wy[1];
+            return result;
         }
 
         template<> bool PointComparer<Point2i>::operator()(Point2i a, Point2i b) {

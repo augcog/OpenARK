@@ -157,7 +157,7 @@ namespace ark {
 		rs2::context ctx;
 		rs2::device_list list = ctx.query_devices();
 
-		ASSERT(list.size() > 0, "No camera detected.");
+		ARK_ASSERT(list.size() > 0, "No camera detected.");
 		const rs2::device & dev = list.front();
 		const std::vector<rs2::sensor> sensors = dev.query_sensors();
 
@@ -182,7 +182,7 @@ namespace ark {
 			if (this->depthIntrinsics) break;
 		}
 
-		ASSERT(this->depthIntrinsics, "FATAL: Camera has no depth stream!");
+		ARK_ASSERT(this->depthIntrinsics, "FATAL: Camera has no depth stream!");
 		width = depthIntrinsics->width;
 		height = depthIntrinsics->height;
 

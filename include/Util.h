@@ -1,5 +1,10 @@
 #pragma once
 #include <opencv2/core.hpp>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl/common/transforms.h>
+#include <boost/smart_ptr.hpp>
+#include <Eigen/Dense>
 #include <vector>
 #include <string>
 #include "Version.h"
@@ -292,14 +297,14 @@ namespace ark {
          * @param [in] xyz_map the input point cloud
          * @param seed seed point
          * @param thresh maximum euclidean distance allowed between neighbors
-         * @param [out] output_ij_points optionally, pointer to a vector for storing ij coords of the points in the component.
-         * @param [out] output_xyz_points optionally, pointer to a vector for storing xyz coords of the points in the component.
-         * @param [out] output_mask optional output matrix for storing points visited by the floodfill (set to NULL to disable)
-
-         * @param interval1 interval to adjacent points (e.g. if 2, adjacent points are (-2, 0), (0, 2), etc.)
-         * @param interval2 additional interval to adjacent points (0 = not used), only works for up/down fill
-         * @param interval2_thresh distance theshold for interval2
-         * @param [in, out] color an auxiliary matrix (CV_8U)
+         * @param [out] output_ij_points optionally, pointer to a vector for storing 2D coords of the points visited by flood fill
+         * @param [out] output_xyz_points optionally, pointer to a vector for storing 3D coords of the points visited by flood fill
+         * @param [out] output_mask optional output image of same type as xyz_map where all pixels visited by
+         *                          the floodfill are copied from xyz_map and other pixels are set to black (set to NULL to disable)
+         * @param interval1 distance in pixels to neighbors on the image (e.g. if 2, neighbors are (-2, 0), (0, 2), etc.); default 1
+         * @param interval2 (advanced) optional additional interval (0 = not used), only works for up/down fill
+         * @param interval2_thresh (advanced) optionally, the distance theshold for interval2 replacing thresh
+         * @param [in, out] visited_map (advanced) an auxiliary matrix (CV_8U)
          *             for recording if a point is being visited (1), has already been visited (0)
          *             or is not yet visited (255)
          *             By default, allocates a temporary matrix for use during flood fill.
@@ -312,7 +317,7 @@ namespace ark {
             std::vector <Vec3f> * output_xyz_points = nullptr,
             cv::Mat * output_mask = nullptr,
             int interval1 = 1, int interval2 = 0, float interval2_dist = 0.05f, 
-            cv::Mat * color = nullptr, bool cosine = false);
+            cv::Mat * visited_map = nullptr, bool cosine = false);
 
         /**
         * Compute the angle in radians 'pointij' is at from the origin, going CCW starting from (0, 1), if y-axis is facing up.
@@ -591,6 +596,9 @@ namespace ark {
                              double angle, double angle_offset = 0.0);
 
 
+        /** try to find the correct path relative to the current directory, given path from root (dir with data, config) */
+        std::string resolveRootPath(const std::string & root_path);
+
         /** Converts an Eigen Vector3d to a PCL PointXYZRGBA instance, using r.g,b,a values specified if applicable */
         pcl::PointXYZRGBA toPCLPoint(const Eigen::Vector3d & v, int r = 200, int g = 200, int b = 200, int a = 200);
 
@@ -623,12 +631,12 @@ namespace ark {
          */
         template<class T>
         boost::shared_ptr<pcl::PointCloud<T> > toPointCloud(const cv::Mat & xyz_map, 
-            bool flip_z = false, bool flip_y = false) {
+            bool flip_z = false, bool flip_y = false, int step = 1) {
             auto out_pc = boost::make_shared<pcl::PointCloud<T> >();
             const Vec3f * ptr;
-            for (int i = 0; i < xyz_map.rows; ++i) {
+            for (int i = 0; i < xyz_map.rows; i += step) {
                 ptr = xyz_map.ptr<Vec3f>(i);
-                for (int j = 0; j < xyz_map.cols; ++j) {
+                for (int j = 0; j < xyz_map.cols; j += step) {
                     if (ptr[j][2] > 0.001) {
                         T pt;
                         pt.x = ptr[j][0];
@@ -643,19 +651,18 @@ namespace ark {
             return out_pc;
         }
 
-		/** Converts an xyz_map into a PCL point cloud of PointXYZ
-		* @param flip_z if true, inverts the z coordinate of each point
-		*/
-		void toPointCloud(const cv::Mat & xyz_map, pcl::PointCloud<pcl::PointXYZ>::Ptr & out_pc,
-			bool flip_z = false, bool flip_y = false);
-
-        /** Rotate a 3D vector by a quaternion. ( */
+        /** Rotate a 3D vector by a quaternion. */
         template<class T, class Quat_T> inline
             Eigen::Matrix<T, 3, 1> rotate(const Eigen::Matrix<T, 3, 1> & v, const Quat_T & q) {
-            const Eigen::Matrix<T, 3, 1> & u = q.vec().cast<T>();
+            const Eigen::Matrix<T, 3, 1> & u = q.vec().template cast<T>();
             const T w = T(q.w()), two(2);
             return two * u.dot(v) * u + (w * w - u.dot(u)) * v + two * w * u.cross(v);
         }
+
+        /** Estimate pinhole camera intrinsics from xyz_map (by solving OLS)
+         *  @return (fx, cx, fy, cy)
+         */
+        cv::Vec4d getCameraIntrinFromXYZ(const cv::Mat & xyz_map);
 
         /**
          * Compares two points (Point, Point2f, Vec3i or Vec3f),

@@ -24,7 +24,7 @@ namespace ark {
 
     void DepthCamera::beginCapture(int fps_cap, bool remove_noise)
     {
-        ASSERT(captureInterrupt == true, "beginCapture: already capturing from this camera");
+        ARK_ASSERT(captureInterrupt == true, "beginCapture: already capturing from this camera");
         captureInterrupt = false;
         std::thread thd(&DepthCamera::captureThreadingHelper, this, fps_cap,
             &captureInterrupt, remove_noise);

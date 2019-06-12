@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "glfwManager.h"
 #include <iostream>
 
@@ -123,7 +124,7 @@ bool ImageWindow::display(){
         Manager::windows.erase(name_);
         glfwDestroyWindow(win_ptr);
         win_ptr=NULL;
-        current_image = NULL;
+        current_image.release();
         return false;
     }
 

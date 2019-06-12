@@ -35,14 +35,14 @@ namespace ark {
              * @param path path to import from
              * @return true on success, false on error.
              */
-            virtual bool loadFile(std::string path) = 0;
+            virtual bool loadFile(const std::string & path) = 0;
 
             /**
              * Export the classifier model to a file.
              * @param path path to export to
              * @return true if success, false on error.
              */
-            virtual bool exportFile(std::string path) const = 0;
+            virtual bool exportFile(const std::string & path) const = 0;
 
             /**
              * Start training this classifier with data from the specified path.
@@ -50,7 +50,7 @@ namespace ark {
              * @param hyperparams hyperparameter array
              * @return true on success, false on error. If already trained, returns true.
              */
-            virtual bool train(std::string dataPath, const double hyperparams[]) = 0;
+            virtual bool train(const std::string & dataPath, const double hyperparams[]) = 0;
 
             /**
              * Returns true if this classifier has finished training
@@ -103,13 +103,7 @@ namespace ark {
              *  loading the classifier models from disk.
              *  @param path path to directory with model files
              */
-            explicit SVMHandClassifier(const char * path);
-
-            /** Construct a SVM hand classifier by
-             *  loading the classifier models from disk. Attempts multiple locations.
-             *  @param paths paths to attempt to load the model files from
-             */
-            explicit SVMHandClassifier(const char * paths[]);
+            explicit SVMHandClassifier(const std::string & path);
 
             /**
              * Destroy this SVM hand classifier
@@ -121,14 +115,14 @@ namespace ark {
              * @param path directory to load models from.
              * @return true on success, false on error.
              */
-            bool loadFile(std::string path) override;
+            bool loadFile(const std::string & path) override;
 
             /**
              * Write the SVM models to disk.
              * @param path directory to export models to.
              * @return true if success, false on error.
              */
-            bool exportFile(std::string path) const override;
+            bool exportFile(const std::string & path) const override;
 
             /**
              * Start training this classifier with data from the specified path.
@@ -136,7 +130,7 @@ namespace ark {
              * @param hyperparams hyperparameter array
              * @return true on success, false on error. If already trained, returns true.
              */
-            virtual bool train(std::string dataPath,
+            virtual bool train(const std::string & dataPath,
                 const double hyperparams[5 * NUM_SVMS] = DEFAULT_HYPERPARAMS) override;
 
             /**
@@ -226,13 +220,7 @@ namespace ark {
              *  loading the classifier models from disk.
              *  @param path path to directory with model files
              */
-            explicit SVMHandValidator(const char * path);
-
-            /** Construct a SVM hand classifier by
-             *  loading the classifier models from disk. Attempts multiple locations.
-             *  @param paths paths to attempt to load the model files from
-             */
-            explicit SVMHandValidator(const char * paths[]);
+            explicit SVMHandValidator(const std::string & path);
 
             /**
              * Destroy this SVM hand classifier
@@ -244,14 +232,14 @@ namespace ark {
              * @param path directory to load models from.
              * @return true on success, false on error.
              */
-            bool loadFile(std::string path) override;
+            bool loadFile(const std::string & path) override;
 
             /**
              * Write the SVM models to disk.
              * @param path directory to export models to.
              * @return true if success, false on error.
              */
-            bool exportFile(std::string path) const override;
+            bool exportFile(const std::string & path) const override;
 
             /**
              * Start training this classifier with data from the specified path.
@@ -259,7 +247,7 @@ namespace ark {
              * @param hyperparams hyperparameter array
              * @return true on success, false on error. If already trained, returns true.
              */
-            virtual bool train(std::string dataPath,
+            virtual bool train(const std::string & dataPath,
                 const double hyperparams[5] = DEFAULT_HYPERPARAMS) override;
 
             /**

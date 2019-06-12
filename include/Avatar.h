@@ -7,11 +7,15 @@
 #include <pcl/point_cloud.h>
 #include <pcl/filters/uniform_sampling.h>
 #include <pcl/filters/random_sample.h>
+#include <ceres/ceres.h>
+#include <nanoflann.hpp>
 
 #include "Visualizer.h"
 
 namespace ark {
-    // TODO: refactor this file
+    class HumanDetector;
+    struct HumanAvatarUKFModel;
+
     /** Gaussian Mixture Model */
     class GaussianMixture {        
     public:
@@ -75,13 +79,14 @@ namespace ark {
 
         /** Eigen "point cloud" representation. Contains 3 columns, one point per row */
         typedef Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor> EigenCloud_T;
+        typedef Eigen::Matrix<double, Eigen::Dynamic, 2, Eigen::RowMajor> EigenCloud2d_T;
 
         /** Names for the various skeletal joints in the SMPL model (does not work for other models) */
         typedef enum _JointType {
             // TODO: delegate to a skeleton instead
 
             // BFS Order (topologically sorted)
-            ROOT = 0, PELVIS = 0, L_HIP, R_HIP, SPINE1, L_KNEE, R_KNEE, SPINE2, L_ANKLE,
+            ROOT_PELVIS = 0, L_HIP, R_HIP, SPINE1, L_KNEE, R_KNEE, SPINE2, L_ANKLE,
             R_ANKLE, SPINE3, L_FOOT, R_FOOT, NECK, L_COLLAR, R_COLLAR, HEAD, L_SHOULDER,
             R_SHOULDER, L_ELBOW, R_ELBOW, L_WRIST, R_WRIST, L_HAND, R_HAND,
 
@@ -152,13 +157,16 @@ namespace ark {
           * (ith index is relative weight of ith shape key a.k.a. blendshape;
           *  total size is numKeys()) */
         double * w() { return _w; }
+        const double * w() const { return _w; }
 
         /** Get the avatar's bone rotation parameter vector (stores quaternions: x y z w)
           * (first 4 indices are root rotation quaternion, total size is numJoints() * 4) */
         double * r() { return _r; }
+        const double * r () const { return _r; }
 
         /** Get the avatar's global position (length 3) */
         double * p() { return _p; }
+        const double * p() const { return _p; }
 
         /** Compute the avatar's SMPL pose parameters (Rodrigues angles) */
         Eigen::VectorXd smplParams() const;
@@ -172,18 +180,18 @@ namespace ark {
           * before any deformations were applied.
           * @return bone vector; zero for the root joint (since it is not the end of a bone)
           */
-        Eigen::Vector3d getUndeformedBoneVector(JointType joint_id);
+        Eigen::Vector3d getUndeformedBoneVector(int joint_id);
 
         /** Get the vector with the direction and length length of the bone ending at a joint
           * @return bone vector; zero for the root joint (since it is not the end of a bone)
           */
-        Eigen::Vector3d getBoneVector(JointType joint_id);
+        Eigen::Vector3d getBoneVector(int joint_id);
 
         /** Get the global position of a joint */
-        const Eigen::Map<Eigen::Vector3d> & getPosition(JointType joint_id = JointType::PELVIS) const;
+        const Eigen::Map<Eigen::Vector3d> & getPosition(int joint_id = JointType::ROOT_PELVIS) const;
 
         /** Get the local rotation of a bone ending at a joint */
-        Eigen::Map<Eigen::Quaterniond> & getLocalRotation(JointType joint_id);
+        Eigen::Map<Eigen::Quaterniond> & getLocalRotation(int joint_id);
 
         /** Get the base rotation of this avatar (all dimensions are rotated by this amount; same as ROOT joint rotation) */
         Eigen::Map<Eigen::Quaterniond> & getCenterRotation();
@@ -191,26 +199,32 @@ namespace ark {
         /* Set global position of the skeleton's center */
         void setCenterPosition(const Eigen::Vector3d & val);
 
-        /** Set the base rotation of this avatar (everything is rotated by this amount; same as setting ROOT/PELVIS rotation) */
-        template<class T> void setCenterRotation(const T & val) { setRotation(JointType::ROOT, val); }
+        /** Set the base rotation of this avatar (everything is rotated by this amount; same as setting ROOT_PELVIS rotation) */
+        template<class T> void setCenterRotation(const T & val) { setRotation(JointType::ROOT_PELVIS, val); }
 
         /** Set the local rotation of the bone ending at a joint to the specified quaternion */
-        void setRotation(JointType joint_id, const Eigen::Quaterniond & quat);
+        void setRotation(int joint_id, const Eigen::Quaterniond & quat);
 
         /** Set the local rotation of the bone ending at a joint to the given AngleAxis object */
-        void setRotation(JointType joint_id, const Eigen::AngleAxisd & angle_axis);
+        void setRotation(int joint_id, const Eigen::AngleAxisd & angle_axis);
 
         /** Set the local rotation of the bone ending at a joint to the given euler angles */
-        void setRotation(JointType joint_id, double yaw, double pitch, double roll);
+        void setRotation(int joint_id, double yaw, double pitch, double roll);
 
         /** Set the local rotation of the bone ending at a joint so that v1 in the original space rotates to v2 */
-        void setRotation(JointType joint_id, Eigen::Vector3d v1, Eigen::Vector3d v2);
+        void setRotation(int joint_id, Eigen::Vector3d v1, Eigen::Vector3d v2);
 
         /** Set the local rotation of the bone ending at a joint so that it points to v */
-        void setRotation(JointType joint_id, const Eigen::Vector3d & v);
+        void setRotation(int joint_id, const Eigen::Vector3d & v);
 
         /** Get a pointer to the specified joint */
-        Joint::Ptr getJoint(JointType joint_id) const;
+        Joint::Ptr getJoint(int joint_id) const;
+
+        /** Get joint position in world space */
+        Eigen::Vector3d getJointPosition(int joint_id) const;
+
+        /** Get joint position on image */
+        Eigen::Vector2d getJointPosition2d(int joint_id) const;
 
         /** Get the number of joints in the avatar's skeleton */
         int numJoints() const;
@@ -275,18 +289,18 @@ namespace ark {
 
                 T n = q.vec().norm();
                 if (n == T(0)) {
-                    res.segment<3>((i - 1) * 3).setZero();
+                    res.template segment<3>((i - 1) * 3).setZero();
                 }
                 else {
                     if (q.w() < T(0)) n = -n;
-                    res.segment<3>((i - 1) * 3) = q.vec() / n * T(2) * ceres::atan2(n, abs(q.w()));
+                    res.template segment<3>((i - 1) * 3) = q.vec() / n * T(2) * ceres::atan2(n, abs(q.w()));
                 }
             }
             return res;
         }
 
         /** Adds a rotation to the local rotation of the bone ending at a joint */
-        void _addRotation(JointType joint_id, Eigen::Vector3d v1, Eigen::Vector3d v2);
+        void _addRotation(int joint_id, Eigen::Vector3d v1, Eigen::Vector3d v2);
 
         typedef nanoflann::KDTreeEigenMatrixAdaptor<HumanAvatar::EigenCloud_T, 3, nanoflann::metric_L2_Simple> kd_tree_t;
         typedef std::shared_ptr<kd_tree_t> kd_tree_ptr_t;
@@ -304,11 +318,13 @@ namespace ark {
         class PoseCostFunctor {
         public:
             /** HYPERPARAMETERS: Weights for different cost function terms */
-            double betaP = 3.0, betaS = 0.55; // betaICP assumed 1
+            double betaJ = 30.0, betaP = 0.7; // betaICP assumed 1
 
             PoseCostFunctor(HumanAvatar & ava, const EigenCloud_T & data_cloud,
-                std::vector<std::pair<int, int>> & correspondences, const EigenCloud_T & joints_prior, GaussianMixture & pose_prior)
-                : ava(ava), dataCloud(data_cloud), correspondences(correspondences), jointsPrior(joints_prior), posePrior(pose_prior) { }
+                std::vector<std::pair<int, int>> & correspondences, const EigenCloud_T & joints_prior,
+                const cv::Vec4d & pinhole_intrin, GaussianMixture & pose_prior)
+                : ava(ava), dataCloud(data_cloud), correspondences(correspondences), jointsPrior(joints_prior),
+                  intrin(pinhole_intrin), posePrior(pose_prior) { }
 
             template <typename T>
             bool operator()(const T* const r, const T* const p, T* residual) const {
@@ -329,38 +345,55 @@ namespace ark {
                 // propagate skeletal transforms
                 ava._propagateJointTransforms(r, p, w, pb, pt, rt, cache);
 
-                typedef Eigen::Matrix<T, 3, 1> Vec3T;
-                typedef Eigen::Matrix<T, 2, 1> Vec2T;
-                typedef Eigen::Map<Eigen::Matrix<T, 3, 1> > Vec3TMap;
-                typedef Eigen::Map<Eigen::Matrix<T, 2, 1> > Vec2TMap;
+                typedef Eigen::Matrix<T, 1, 3, Eigen::RowMajor> Vec3T;
+                typedef Eigen::Map<Vec3T> Vec3TMap;
+                typedef Eigen::Matrix<T, 1, 2, Eigen::RowMajor> Vec2T;
+                typedef Eigen::Map<Vec2T> Vec2TMap;
 
+                //T r1 = T(0), r2 = T(0), r3 = T(0);
                 T * residualPtr = residual;
                 for (auto & cor : correspondences) {
                     // compute position of each point using transformed data
                     Vec3T surfPoint = ava._computePointPosition(cor.first, w, pt, cache);
                     Vec3TMap res(residualPtr);
-                    res = surfPoint - dataCloud.row(cor.second).transpose();
+                    res = surfPoint - dataCloud.row(cor.second);
+                    //r1 += ceres::pow(res.x(),2);
+                    //r1 += ceres::pow(res.y(),2);
+                    //r1 += ceres::pow(res.z(),2);
                     residualPtr += NUM_POS_PARAMS;
                 }
 
-                for (int i = 0; i < NUM_JOINTS; ++i) {
-                    Vec2TMap res(residualPtr);
+                //Eigen::Matrix<T, Eigen::Dynamic, 2, Eigen::RowMajor> joints2d;
+                //static const int MPI_NJOINTS = HumanDetector::OpenPoseMPIJoint::_COUNT - 1;
+
+                typedef Eigen::Map<Eigen::Matrix<T, NUM_JOINTS, 3, Eigen::RowMajor> > cloudMap;
+                cloudMap currJointPositions(pt);
+                //HumanDetector::toMPIJoints<T, cloudMap>(intrin, currJointPositions, joints2d);
+
+                for (int i = 0; i < NUM_MATCHED_JOINTS; ++i) {
+                    Vec3TMap res(residualPtr);
                     if (std::isnan(jointsPrior.row(i).x())) {
-                        res = Vec2T::Zero();
+                        res = Vec3T::Zero();
                     } else {
-                        Vec3TMap currjointPosition(pt + i * NUM_POS_PARAMS);
-                        res = (currjointPosition.head<2>() - jointsPrior.row(i).transpose().head<2>()) * (T)betaP;
+                        res = (currJointPositions.row(MATCHED_JOINTS[i].first)
+                                - jointsPrior.row(i)) * (T)betaJ;
                     }
-                    residualPtr += 2;
+                    residualPtr += 3;
                 }
 
                 Eigen::Map<Eigen::Matrix<T, NUM_JOINTS * 3 - 2, 1>> posePriorResidual(residualPtr);
-                posePriorResidual = posePrior.residual(ava._smplParams(r)) * (T)betaS;
+                posePriorResidual = posePrior.residual(ava._smplParams(r)) * (T)betaP;
+                //for (int k = 0; k < NUM_JOINTS * 3 - 2; ++k) {
+                //    r3 += ceres::pow(posePriorResidual[k], 2);
+                //}
+                //std::cerr << "[" << r1 << "\n " << r2 << "\n " << r3 << "]\n\n";
                 return true;
             }
         private:
             HumanAvatar & ava;
-            const EigenCloud_T & dataCloud, & jointsPrior;
+            const EigenCloud_T & dataCloud;
+            const EigenCloud_T & jointsPrior;
+            const cv::Vec4d & intrin;
             GaussianMixture & posePrior;
             std::vector<std::pair<int, int> > & correspondences;
         };
@@ -368,10 +401,12 @@ namespace ark {
         /* Ceres-solver cost functor for fitting shape */
         class ShapeCostFunctor {
         public:
-            double betaShape = 0.1;
+            double betaShape = 0.12, betaJ = 2.0;
             ShapeCostFunctor(HumanAvatar & ava, const EigenCloud_T & data_cloud,
-                std::vector<std::pair<int, int>> & correspondences)
-                : ava(ava), dataCloud(data_cloud), correspondences(correspondences) { }
+                std::vector<std::pair<int, int>> & correspondences,  const EigenCloud_T & joints_prior,
+                const cv::Vec4d & pinhole_intrin)
+                : ava(ava), dataCloud(data_cloud), correspondences(correspondences), jointsPrior(joints_prior),
+                  intrin(pinhole_intrin) { }
 
             template <typename T>
             bool operator()(const T* const w, T* residual) const {
@@ -385,17 +420,40 @@ namespace ark {
                 // simulate propagation of skeletal transforms
                 ava._propagateJointTransforms(r, p, w, pb, pt, rt, cache);
 
-                typedef Eigen::Matrix<T, 3, 1> Vec3T;
+                typedef Eigen::Matrix<T, 1, 3, Eigen::RowMajor> Vec3T;
                 typedef Eigen::Map<Vec3T> Vec3TMap;
+                typedef Eigen::Matrix<T, 1, 2, Eigen::RowMajor> Vec2T;
+                typedef Eigen::Map<Vec2T> Vec2TMap;
 
                 T * residualPtr = residual;
                 for (auto & cor : correspondences) {
                     // compute position of each point using transformed data
                     Vec3T surfPoint = ava._computePointPosition(cor.first, w, pt, cache);
                     Vec3TMap res(residualPtr);
-                    res = surfPoint - dataCloud.row(cor.second).transpose();
+                    res = surfPoint - dataCloud.row(cor.second);
                     residualPtr += NUM_POS_PARAMS;
                 }
+
+
+                //Eigen::Matrix<T, Eigen::Dynamic, 2, Eigen::RowMajor> joints2d;
+                //static const int MPI_NJOINTS = HumanDetector::OpenPoseMPIJoint::_COUNT - 1;
+
+                typedef Eigen::Map<Eigen::Matrix<T, NUM_JOINTS, 3, Eigen::RowMajor> > cloudMap;
+                cloudMap currJointPositions(pt);
+                //HumanDetector::toMPIJoints<T, cloudMap>(intrin, currJointPositions, joints2d);
+
+                for (int i = 0; i < NUM_MATCHED_JOINTS; ++i) {
+                    Vec3TMap res(residualPtr);
+                    if (std::isnan(jointsPrior.row(i).x())) {
+                        res = Vec3T::Zero();
+                    } else {
+                        res = (currJointPositions.row(MATCHED_JOINTS[i].first)
+                                - jointsPrior.row(i)) * (T)betaJ;
+                    }
+                    residualPtr += 3;
+                }
+
+
                 for (int i = 0; i < NUM_SHAPEKEYS; ++i) {
                     residualPtr[i] = w[i] * betaShape;
                 }
@@ -405,6 +463,8 @@ namespace ark {
         private:
             HumanAvatar & ava;
             const EigenCloud_T & dataCloud;
+            const EigenCloud_T & jointsPrior;
+            const cv::Vec4d & intrin;
             std::vector<std::pair<int, int>> & correspondences;
         };
 
@@ -458,31 +518,18 @@ namespace ark {
         // SECTION Ceres-solver optimization
 
         /** Fit avatar's pose and shape to the given point cloud */
-        void fit(const EigenCloud_T & data_cloud);
-
-		void fitTrack(const EigenCloud_T & data_cloud);
-
+        void fit(const EigenCloud_T & data_cloud, double deltat = -1.0, bool track = false);
+        
         /** Fit avatar's pose and shape to the given point cloud. Please use 'alignToJoints' to initialize before fitting. */
         template<class T>
-        void fit(const boost::shared_ptr<pcl::PointCloud<T> > & cloud) {
+        void fit(const boost::shared_ptr<pcl::PointCloud<T> > & cloud, double deltat = -1.0, bool track = false) {
             // store point cloud in Eigen format
             EigenCloud_T dataCloud(cloud->points.size(), 3);
             for (size_t i = 0; i < cloud->points.size(); ++i) {
-                dataCloud.row(i) = cloud->points[i].getVector3fMap().cast<double>();
+                dataCloud.row(i) = cloud->points[i].getVector3fMap().template cast<double>();
             }
-            fit(dataCloud);
+            fit(dataCloud, deltat, track);
         }
-
-		template<class T>
-        /** Track avatar's pose and shape given a new point cloud. Please use 'setJointsPrior' to update the joints prior before calling this. */
-		void fitTrack(const boost::shared_ptr<pcl::PointCloud<T> > & cloud) {
-			// store point cloud in Eigen format
-			EigenCloud_T dataCloud(cloud->points.size(), 3);
-			for (size_t i = 0; i < cloud->points.size(); ++i) {
-				dataCloud.row(i) = cloud->points[i].getVector3fMap().cast<double>();
-			}
-			fitTrack(dataCloud);
-		}
 
         /** Fit avatar's pose only. Please use 'alignToJoints' to initialize before fitting. */
         void fitPose(const EigenCloud_T & data_cloud, int max_iter = 8, int num_subiter = 6,
@@ -494,16 +541,25 @@ namespace ark {
         /** Try to fit avatar's pose parameters, so that joints are approximately aligned to the given positions. Automatically sets joints prior to joint_pos. */
         void alignToJoints(const EigenCloud_T & joint_pos);
 
-        /** Update detected joint positions for this frame (only x, y positions of joints will be used to compute the error) */
+        /** Update detected 3d joint positions for this frame */
         void updateJointsPrior(const EigenCloud_T & joint_pos);
+
+        /** Update camera intrinsics */
+        void updateCameraIntrin(const cv::Vec4d & intrin);
 
         /** Visualize the avatar's skeleton and surface in a PCL viewer
          * @param viewer PCL visualizer instance
          * @param pcl_prefix unique prefix to use for PCL id's (so that multiple avatars can be shown at once)
          * @param viewport PCL viewport ID (0 = all)
          */
-        void visualize(pcl::visualization::PCLVisualizer::Ptr & viewer = Visualizer::getPCLVisualizer(),
+        void visualize(const pcl::visualization::PCLVisualizer::Ptr & viewer = Visualizer::getPCLVisualizer(),
                        std::string pcl_prefix = "", int viewport = 0) const;
+
+        /** matched joints used for joint prior, given as paired (smpl, mpi) indices */
+        static const std::pair<int, int> MATCHED_JOINTS[];
+
+        /** number of matched joints */
+        static const int NUM_MATCHED_JOINTS;
     private:
 
         /** Assign bone/joint weights to each vertex based on distance
@@ -512,23 +568,31 @@ namespace ark {
           */
         void assignDistanceWeights(int max_vertex_bones = 4, double norm_thresh = 0.25);
 
-        /** Transform a point in initial posture space to a joint's transformed posture space,
-          * given computer position, transform vectors _pt, _cache */
+        /** Transform a point in initial world space to a joint's local coordinates,
+          * given computed joint positions _pt, spatial transforms _cache */
         template<class T, class VecT_t>
-        Eigen::Matrix<T, 3, 1> inline _toJointSpace(JointType joint_id, const VecT_t & vec, T * _pt, T * _cache) {
+        Eigen::Matrix<T, 3, 1> inline _toJointSpace(int joint_id, const VecT_t & vec, T * _pt, T * _cache) const {
             return Eigen::Map<Eigen::Matrix<T, 3, 3> >(_cache + joint_id * NUM_ROT_MAT_PARAMS) * vec
                  + Eigen::Map<const Eigen::Matrix<T, 3, 1>> (_pt + joint_id * NUM_POS_PARAMS);
         }
 
-        /** Transform a point in initial posture space to a joint's transformed posture space
+        /** Transform a point in a joint's local coordinates to world space,
+          * given computed joint positions _pt, spatial transforms _cache */
+        template<class T, class VecT_t>
+        Eigen::Matrix<T, 3, 1> inline _fromJointSpace(int joint_id, const VecT_t & vec, T * _pt, T * _cache) const {
+            return Eigen::Map<Eigen::Matrix<T, 3, 3> >(_cache + joint_id * NUM_ROT_MAT_PARAMS).inverse() * (vec
+                 - Eigen::Map<const Eigen::Matrix<T, 3, 1>> (_pt + joint_id * NUM_POS_PARAMS));
+        }
+
+        /** Transform a point in initial world space to a joint's local coordinates 
           * (using avatar's parameter vectors) */
-        Eigen::Vector3d toJointSpace(JointType joint_id, const Eigen::Vector3d & vec);
+        Eigen::Vector3d toJointSpace(int joint_id, const Eigen::Vector3d & vec);
 
         /** propagate local transforms (parameter vectors _r, _s, _p)
           * to global space transforms (_pt, _rt). Assumes joints are topologically sorted */
         template<class T>
         void _propagateJointTransforms(const T * const  _r, const T * const _p, const T * const _w, T * _pb,
-                                       T * _pt, T * _rt, T * _cache) {
+                                       T * _pt, T * _rt, T * _cache) const {
             typedef Eigen::Map<const Eigen::Matrix<T, 2, 1>> const_vec2map;
             typedef Eigen::Matrix<T, 3, 1> vec_t;
             typedef Eigen::Map<vec_t> vecmap;
@@ -544,7 +608,6 @@ namespace ark {
 
             for (size_t jid = 0; jid < joints.size(); ++jid) {
                 vecmap basePos(_pb + jid * NUM_POS_PARAMS);
-                //basePos = joints[jid]->posBase.cast<T>();
 
                 basePos = vec_t(T(0), T(0), T(0));
                 for (auto regrEntry : jointRegressor[jid]) {
@@ -557,7 +620,7 @@ namespace ark {
             }
 
             for (size_t jid = 1; jid < joints.size(); ++jid) {
-                Joint::Ptr & joint = joints[jid];
+                const Joint::Ptr & joint = joints[jid];
                 JointType parID = joint->parent->type;
 
                 const size_t ROT_IDX = jid * NUM_ROT_PARAMS, POS_IDX = jid * NUM_POS_PARAMS;
@@ -575,7 +638,7 @@ namespace ark {
         void propagateJointTransforms();
 
         template<class T>
-        inline Eigen::Matrix<T, 3, 1> _computePointPosition(size_t point_index, const T * const _w, T * _pt, T * _cache) {
+        inline Eigen::Matrix<T, 3, 1> _computePointPosition(size_t point_index, const T * const _w, T * _pt, T * _cache) const {
             const Point_T & initPt_PCL = humanPCBase->points[point_index];
             typedef Eigen::Matrix<T, 3, 1> vec_t;
             vec_t result = vec_t::Zero(), blend = initPt_PCL.getVector3fMap().cast<T>();
@@ -588,7 +651,7 @@ namespace ark {
             // linear blend skinning (LBS)
             for (const auto & bw : boneWeights[point_index]) {
                 vec_t initPt = blend - joints[bw.first]->posBase;
-                result += _toJointSpace(static_cast<JointType>(bw.first), initPt, _pt, _cache) * T(bw.second);
+                result += _toJointSpace(bw.first, initPt, _pt, _cache) * T(bw.second);
             }
             return result;
         }
@@ -615,7 +678,7 @@ namespace ark {
 
         // section DATA
         // undeformed point cloud (from when model was initially loaded)
-        boost::unique_ptr<Cloud_T> humanPCBase;
+        std::unique_ptr<Cloud_T> humanPCBase;
 
         // deformed point cloud
         Cloud_T::Ptr humanPCTransformed;
@@ -636,9 +699,11 @@ namespace ark {
           * the i-th vector contains (index, weight) of points to sum to approx position of joint i */
         std::vector<std::vector<std::pair<int, double>>> jointRegressor;
 
-        /** joint position prior (detections derived from 2D pose CNN;
-          * only x, y will be used for error term since computed depth can be inaccurate) */
+        /** joint position prior (detections derived from 2D pose CNN) */
         EigenCloud_T jointsPrior;
+
+        /** pinhole camera intrinsics for computing joint prior: (fx, cx, fy, cy) */
+        cv::Vec4d pinholeIntrin = cv::Vec4d(426.55529223, 423.28048382, 426.55654991, 245.95310243);
 
 public: // debug: public to allow displaying pose prior in PCL viewer
 
@@ -647,5 +712,6 @@ public: // debug: public to allow displaying pose prior in PCL viewer
 private:
 
         friend struct Joint;
+        friend struct HumanAvatarUKFModel;
     };
 }

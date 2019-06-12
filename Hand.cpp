@@ -55,8 +55,9 @@ namespace {
 
 namespace ark {
 
+    static const std::string SVM_PATH = "config/hand-svm";
     // Initialize the SVM hand validator
-    static const classifier::SVMHandValidator & handValidator = classifier::SVMHandValidator(SVM_PATHS);
+    static const classifier::SVMHandValidator & handValidator = classifier::SVMHandValidator(SVM_PATH);
 
     Hand::Hand() : FrameObject() { }
 
