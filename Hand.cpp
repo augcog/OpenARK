@@ -246,9 +246,9 @@ namespace ark {
         // Eliminate by wrist width
         if (wristWidth < params->wristWidthMin || wristWidth > params->wristWidthMax) {
 #ifdef DEBUG
-            std::cerr << "[Hand Debug]: OBJECT ELIMINATED BY WRIST WIDTH (" << wristWidth << "m)\n";
+            //std::cerr << "[Hand Debug]: OBJECT ELIMINATED BY WRIST WIDTH (" << wristWidth << "m)\n";
 #endif
-            return false;
+            //return false;
         }
 
         // (finished detecting wrist)
@@ -303,7 +303,7 @@ namespace ark {
                 topLeftPt, fullMapSize.width);
             if (this->svmConfidence < params->handSVMConfidenceThresh) {
                 // SVM confidence value below threshold, reverse decision & destroy the hand instance
-                return false;
+                //return false;
             }
         }
 

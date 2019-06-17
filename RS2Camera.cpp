@@ -123,6 +123,7 @@ namespace ark {
 		cv::Mat & amp_map, cv::Mat & flag_map) {
 		xyzMaps.clear();
 		rgbMaps.clear();
+		int cam_id = 0;
 		for (auto &&pipe : pipes) {
 			rs2::frameset frameset = pipe->wait_for_frames();
 			try {
@@ -132,15 +133,15 @@ namespace ark {
 					rs2::frame depth = processed.get_depth_frame();
 					memcpy(rgb_map.data, color.get_data(), 3 * width * height);
 					project(depth, color, xyz_map, rgb_map);
-					xyzMaps.emplace_back(xyz_map.clone());
-					rgbMaps.emplace_back(rgb_map.clone());
+					xyzMaps[cam_id] = xyzMap;
+					rgbMaps[cam_id] = rgbMap;
 				}
 				else {
 					rs2::frame depth = frameset.first(RS2_STREAM_DEPTH);
 					rs2::frame ir = frameset.first(RS2_STREAM_INFRARED);
 					memcpy(ir_map.data, ir.get_data(), width * height);
 					project(depth, ir, xyz_map, ir_map);
-					xyzMaps.emplace_back(xyz_map);
+					xyzMaps[cam_id] = xyzMap;
 				}
 
 			}
@@ -155,6 +156,8 @@ namespace ark {
 				badInputFlag = false;
 				return;
 			}
+			
+			++cam_id;
 		}
 		/*if (xyzMaps.size() == 2 && !xyzMaps[0].empty() && !xyzMaps[1].empty()) {
 		cv::imshow(" Depth Map 1", xyzMaps[0]);

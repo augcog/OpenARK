@@ -37,7 +37,7 @@ namespace ark {
 			std::sort(joint_files.begin(), joint_files.end());
 		}
 
-		ASSERT(depth_files.size() == rgb_files.size() && rgb_files.size() == joint_files.size());
+		//ASSERT(depth_files.size() == rgb_files.size() && rgb_files.size() == joint_files.size());
 	}
 
 	// Reading from file OpenCV

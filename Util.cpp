@@ -194,6 +194,26 @@ namespace ark {
                 sqrt(eqn[0] * eqn[0] + eqn[1] * eqn[1] + 1.0);
         }
 
+		template<class T>
+		T pointPlaneNorm(const cv::Vec<T, 3> & pt, T a, T b, T c)
+		{
+			T alpha = (a*pt[0] + b*pt[1] - pt[2] + c);
+			return alpha * alpha / (a*a + b*b + 1.0);
+		}
+
+		template float pointPlaneNorm<float>(const cv::Vec<float, 3> & pt, float a, float b, float c);
+		template double pointPlaneNorm<double>(const cv::Vec<double, 3> & pt, double a, double b, double c);
+
+		template<class T>
+		T pointPlaneNorm(const cv::Vec<T, 3> & pt, const cv::Vec<T, 3> & eqn)
+		{
+			T alpha = eqn[0] * pt[0] + eqn[1] * pt[1] - pt[2] + eqn[2];
+			return alpha * alpha / (eqn[0] * eqn[0] + eqn[1] * eqn[1] + 1.0);
+		}
+
+		template float pointPlaneNorm<float>(const cv::Vec<float, 3> & pt, const cv::Vec<float, 3> & eqn);
+		template double pointPlaneNorm<double>(const cv::Vec<double, 3> & pt, const cv::Vec<double, 3> & eqn);
+
         template float pointPlaneDistance<float>(const cv::Vec<float, 3> & pt, const cv::Vec<float, 3> & eqn);
         template double pointPlaneDistance<double>(const cv::Vec<double, 3> & pt, const cv::Vec<double, 3> & eqn);
 

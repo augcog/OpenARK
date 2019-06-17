@@ -75,31 +75,38 @@ int main() {
 	camera->beginCapture();
 
 	// Read in camera input and save it to the buffer
-	std::vector<cv::Mat> xyzMaps;
-	std::vector<cv::Mat> rgbMaps;
+	/*std::vector<cv::Mat> xyzMaps;
+	std::vector<cv::Mat> rgbMaps;*/
 	while (true)
 	{
 		++currFrame;
 
 		// get latest image from the camera
-		cv::Mat xyzMap = camera->getXYZMap();
-		cv::Mat rgbMap = camera->getRGBMap();
+		auto xyzMaps = camera->getXYZMaps();
+		auto rgbMaps = camera->getRGBMaps();
 
-		std::stringstream ss;
+		/*std::stringstream ss;
 		ss << directory_path << currFrame << ".yml";
 		std::string curr_file_name = ss.str();
 
 		xyzMaps.push_back(xyzMap);
-		rgbMaps.push_back(rgbMap);
+		rgbMaps.push_back(rgbMap);*/
 
 		// show visualizations
-		if (!xyzMap.empty()) {
-			cv::imshow(camera->getModelName() + " Depth Map", xyzMap);
-		} 
-
-		if (!rgbMap.empty()) {
-			cv::imshow(camera->getModelName() + " RGB Map", rgbMap);
+		auto it = xyzMaps.find(0);
+		if (it != xyzMaps.end() && !it->second.empty()) {
+			//cv::imshow(camera->getModelName() + " Depth Map1", it->second);
+			printf("0 here %d!\n", currFrame);
 		}
+		it = xyzMaps.find(1);
+		if (it != xyzMaps.end() && !it->second.empty()) {
+			//cv::imshow(camera->getModelName() + " Depth Map2", it->second);
+			printf("1 is here %d!\n", currFrame);
+		}
+	
+		/*if (rgbMaps.size() == 2) {
+			cv::imshow(camera->getModelName() + " RGB Map", rgbMap);
+		}*/
 		/**** End: Visualization ****/
 
 		/**** Start: Controls ****/

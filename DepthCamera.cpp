@@ -236,7 +236,7 @@ namespace ark {
         return xyzMap;
     }
 
-	const std::vector<cv::Mat> DepthCamera::getXYZMaps() const
+	const std::map<int, cv::Mat> DepthCamera::getXYZMaps() const
 	{
 		std::lock_guard<std::mutex> lock(imageMutex);
 		return xyzMaps;
@@ -268,7 +268,7 @@ namespace ark {
         return rgbMap;
     }
 
-	const std::vector<cv::Mat> DepthCamera::getRGBMaps() const {
+	const std::map<int, cv::Mat> DepthCamera::getRGBMaps() const {
 		if (!hasRGBMap()) throw;
 
 		std::lock_guard<std::mutex> lock(imageMutex);

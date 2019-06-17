@@ -1,4 +1,8 @@
 #include "stdafx.h"
+
+#include <iostream>
+#include <thread>
+
 #include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/filters/voxel_grid.h>
 #include <opencv2/dnn.hpp>
@@ -150,7 +154,7 @@ const int MAX_FEATURES = 500;
 const float GOOD_MATCH_PERCENT = 0.15f;
 
 
-void alignImages(cv::Mat &im1, cv::Mat &im2, cv::Mat &im1Reg, cv::Mat &h)
+void alignImages(cv::Mat &im1, cv::Mat &im2, cv::Mat& xyz1, cv::Mat xyz2)
 {
 
 	// Convert images to grayscale
@@ -186,7 +190,7 @@ void alignImages(cv::Mat &im1, cv::Mat &im2, cv::Mat &im1Reg, cv::Mat &h)
 	cv::imshow("matches ", imMatches);
 
 	// Extract location of good matches
-	std::vector<cv::Point2f> points1, points2;
+	std::vector<cv::Point2d> points1, points2;
 
 	for (size_t i = 0; i < matches.size(); i++)
 	{
@@ -194,31 +198,78 @@ void alignImages(cv::Mat &im1, cv::Mat &im2, cv::Mat &im1Reg, cv::Mat &h)
 		points2.push_back(keypoints2[matches[i].trainIdx].pt);
 	}
 
-	// Create partial point clounds based on matches
+	if (points1.size() != points2.size()) {
+		std::cout << "matches keypoint size mismatch." << std::endl;
+		return;
+	}
 
+	std::cout << "Num Good Matches: " << points1.size() << std::endl;
+
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in(new pcl::PointCloud<pcl::PointXYZ>());
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out(new pcl::PointCloud<pcl::PointXYZ>());
+
+	cloud_in->width = points1.size();
+	cloud_in->height = 1;
+	cloud_in->is_dense = false;
+	cloud_in->resize(cloud_in->width * cloud_in->height);
+
+	cloud_out->width = points2.size();
+	cloud_out->height = 1;
+	cloud_out->is_dense = false;
+	cloud_out->resize(cloud_out->width * cloud_out->height);
+
+	cout << xyz2.cols << " " << xyz2.rows << endl;
+	// Create partial point clounds based on matches
+	for (int i = 0; i < points1.size(); i++) {
+		std::cout << i << " point1 " << points1[i] << " point2 " << points2[i] << " map " << xyz2.at<Vec3f>(points2[i].y, points2[i].x) << endl;
+		cloud_in->points[i].x = xyz1.at<Vec3f>(points1[i].y, points1[i].x)[0];
+		cloud_in->points[i].y = xyz1.at<Vec3f>(points1[i].y, points1[i].x)[1];
+		cloud_in->points[i].z = xyz1.at<Vec3f>(points1[i].y, points1[i].x)[2];
+
+		cloud_out->points[i].x = xyz2.at<Vec3f>(points2[i].y, points2[i].x)[0];
+		cloud_out->points[i].y = xyz2.at<Vec3f>(points2[i].y, points2[i].x)[1];
+		cloud_out->points[i].z = xyz2.at<Vec3f>(points2[i].y, points2[i].x)[2];
+	}
+
+	pcl::visualization::PCLVisualizer::Ptr viewer(new pcl::visualization::PCLVisualizer("3D Viewer"));
+	viewer->setBackgroundColor(0, 0, 0);
+	
 	// Get correspondences between points
 	pcl::registration::TransformationEstimationSVD<pcl::PointXYZ, pcl::PointXYZ> TESVD;
 	pcl::registration::TransformationEstimationSVD<pcl::PointXYZ, pcl::PointXYZ>::Matrix4 transformation2;
 	TESVD.estimateRigidTransformation(*cloud_in, *cloud_out, transformation2);
 
 	// Get initialization on the full point clouds
-	pcl::transformPointCloud(*src, *icp_cloud, initial_pose);
+	auto xyz1_cloud = util::toPointCloud<pcl::PointXYZ>(xyz1);
+	auto xyz2_cloud = util::toPointCloud<pcl::PointXYZ>(xyz2);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_cloud(new pcl::PointCloud<pcl::PointXYZ>());
+	pcl::transformPointCloud(*xyz1_cloud, *transformed_cloud, transformation2);
+
+	
 
 	// Perform ICP to get the final pose
 	pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
-	icp.setInputSource(cloud_in);
-	icp.setInputTarget(cloud_out);
-	pcl::PointCloud<pcl::PointXYZ> Final;
-	icp.align(Final);
+	icp.setInputSource(xyz1_cloud);
+	icp.setInputTarget(xyz2_cloud);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr Final(new pcl::PointCloud<pcl::PointXYZ>());
+	icp.align(*Final);
 	std::cout << "has converged:" << icp.hasConverged() << " score: " <<
 		icp.getFitnessScore() << std::endl;
 	std::cout << icp.getFinalTransformation() << std::endl;
 
-	//// Find homography
-	//h = cv::findHomography(points1, points2, cv::RANSAC);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr result(new pcl::PointCloud<pcl::PointXYZ>());
+	pcl::transformPointCloud(*transformed_cloud, *result, icp.getFinalTransformation());
 
-	//// Use homography to warp image
-	//cv::warpPerspective(im1, im1Reg, h, im2.size());
+	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> c2_color(xyz2_cloud, 0, 255, 0);
+	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> c1_color(result, 255, 255, 0);
+	viewer->addPointCloud<pcl::PointXYZ>(xyz2_cloud, c2_color, "sample cloud");
+	viewer->addPointCloud<pcl::PointXYZ>(result, c1_color, "xyz1");
+	viewer->initCameraParameters();
+
+	while (!viewer->wasStopped())
+	{
+		viewer->spinOnce(100);
+	}
 }
 
 int main(int argc, char ** argv) {
@@ -236,62 +287,94 @@ int main(int argc, char ** argv) {
 												 "shape006.pcd", "shape007.pcd", "shape008.pcd", 
 												 "shape009.pcd"};
 
-    // UNCOMMENT following line to see the GUI for manipulating SMPL avatar pose, shape, etc.
+	cv::Mat rgb1, rgb2, xyz1, xyz2;
+	xyz1 = cv::imread("depth1_0401.exr", cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+	xyz2 = cv::imread("depth2_0401.exr", cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+	rgb1 = cv::imread("rgb1_0401.jpg");
+	rgb2 = cv::imread("rgb2_0401.jpg");
+
+	cv::imshow("rgb1", rgb1);
+	cv::imshow("rgb2", rgb2);
+	cv::imshow("xyz1", xyz1);
+	cv::imshow("xyz2", xyz2);
+
+	cv::Mat imReg, h;
+	alignImages(rgb1, rgb2, xyz1, xyz2);
+
+	cv::waitKey(0);
+
+	// UNCOMMENT following line to see the GUI for manipulating SMPL avatar pose, shape, etc.
     //__avatarGUI(HUMAN_MODEL_PATH, SHAPE_KEYS); return 0;
 
-	auto path = "C:\\dev\\OpenARK_dataset\\human-dance-random";
-	const auto camera = std::make_shared<RS2Camera>(true);
-	//std::shared_ptr<HumanDetector> human_detector = std::make_shared<HumanDetector>();
+	//auto path = "C:\\dev\\OpenARK_dataset\\human-dance-random";
+	//const auto camera = std::make_shared<RS2Camera>(true);
+	////std::shared_ptr<HumanDetector> human_detector = std::make_shared<HumanDetector>();
 
-	//HumanAvatar ava(HUMAN_MODEL_PATH, SHAPE_KEYS, 2);
-	//auto viewer = Visualizer::getPCLVisualizer();
-	//auto vp0 = Visualizer::createPCLViewport(0, 0, 0.7, 1), vp1 = Visualizer::createPCLViewport(0.7, 0, 1, 1);
-	int i = 0;
-	camera->beginCapture();
-	while (true)
-	{
-		/*cv::Mat xyzMap = camera->getXYZMap();
-		cv::Mat rgbMap = camera->getRGBMap();*/
+	////HumanAvatar ava(HUMAN_MODEL_PATH, SHAPE_KEYS, 2);
+	////auto viewer = Visualizer::getPCLVisualizer();
+	////auto vp0 = Visualizer::createPCLViewport(0, 0, 0.7, 1), vp1 = Visualizer::createPCLViewport(0.7, 0, 1, 1);
+	//int i = 0;
+	//camera->beginCapture();
+	//while (true)
+	//{
+	//	/*cv::Mat xyzMap = camera->getXYZMap();
+	//	cv::Mat rgbMap = camera->getRGBMap();*/
 
-		std::vector<cv::Mat> xyzMaps(camera->getXYZMaps());
-		std::vector<cv::Mat> rgbMaps(camera->getRGBMaps());
+	//	std::vector<cv::Mat> xyzMaps(camera->getXYZMaps());
+	//	std::vector<cv::Mat> rgbMaps(camera->getRGBMaps());
 
-		// show visualizations
-		if (xyzMaps.size() == 2 && !xyzMaps[0].empty() && !xyzMaps[1].empty()) {
-			cv::imshow(camera->getModelName() + " Depth Map 1", xyzMaps[0]);
-			cv::imshow(camera->getModelName() + " Depth Map 2", xyzMaps[1]);
-		}
+	//	// show visualizations
+	//	if (xyzMaps.size() == 2 && !xyzMaps[0].empty() && !xyzMaps[1].empty()) {
+	//		cv::imshow(camera->getModelName() + " Depth Map 1", xyzMaps[0]);
+	//		cv::imshow(camera->getModelName() + " Depth Map 2", xyzMaps[1]);
 
-		if (rgbMaps.size() == 2 && !rgbMaps[0].empty() && !rgbMaps[1].empty()) {
-			cv::imshow(camera->getModelName() + " RGB Map 1", rgbMaps[0]);
-			cv::imshow(camera->getModelName() + " RGB Map 2", rgbMaps[1]);
+	//		if (i > 100) {
+	//			std::stringstream ss_depth1, ss_depth2;
+	//			ss_depth1 << "depth1_" << std::setw(4) << std::setfill('0') << i << ".exr";
+	//			ss_depth2 << "depth2_" << std::setw(4) << std::setfill('0') << i << ".exr";
+	//			cv::imwrite(ss_depth1.str(), xyzMaps[0]);
+	//			cv::imwrite(ss_depth2.str(), xyzMaps[1]);
+	//		}
+	//	}
 
-			cv::Mat imReg, h;
-			// Align images
-			//cout << "Aligning images ..." << endl;
-			alignImages(rgbMaps[0], rgbMaps[1], imReg, h);
-			//cout << "Estimated homography : \n" << h << endl;
-		}
+	//	if (rgbMaps.size() == 2 && !rgbMaps[0].empty() && !rgbMaps[1].empty()) {
+	//		cv::imshow(camera->getModelName() + " RGB Map 1", rgbMaps[0]);
+	//		cv::imshow(camera->getModelName() + " RGB Map 2", rgbMaps[1]);
+	//		if (i > 100) {
+	//			std::stringstream ss_rgb1, ss_rgb2;
+	//			ss_rgb1 << "rgb1_" << std::setw(4) << std::setfill('0') << i << ".jpg";
+	//			ss_rgb2 << "rgb2_" << std::setw(4) << std::setfill('0') << i << ".jpg";
+	//			cv::imwrite(ss_rgb1.str(), rgbMaps[0]);
+	//			cv::imwrite(ss_rgb2.str(), rgbMaps[1]);
+	//		}
 
-		// Print estimated homography
-		//cout << "Estimated homography : \n" << h << endl;
+	//		cv::Mat imReg, h;
+	//		// Align images
+	//		//cout << "Aligning images ..." << endl;
+	//		//alignImages(rgbMaps[0], rgbMaps[1], imReg, h);
+	//		//cout << "Estimated homography : \n" << h << endl;
+	//	}
 
-		/**** End: Visualization ****/
+	//	// Print estimated homography
+	//	//cout << "Estimated homography : \n" << h << endl;
 
-		/**** Start: Controls ****/
-		int c = cv::waitKey(1);
+	//	/**** End: Visualization ****/
 
-		// make case insensitive
-		if (c >= 'a' && c <= 'z') c &= 0xdf;
+	//	/**** Start: Controls ****/
+	//	int c = cv::waitKey(1);
 
-		// 27 is ESC
-		if (c == 'Q' || c == 27) {
-			/*** Loop Break Condition ***/
-			break;
-		}
-		/**** End: Controls ****/
-	}
-	camera->endCapture();
+	//	// make case insensitive
+	//	if (c >= 'a' && c <= 'z') c &= 0xdf;
+
+	//	// 27 is ESC
+	//	if (c == 'Q' || c == 27) {
+	//		/*** Loop Break Condition ***/
+	//		break;
+	//	}
+	//	/**** End: Controls ****/
+	//	i++;
+	//}
+	//camera->endCapture();
 	//while (camera->hasNext()) {
 	//	camera->update();
 	//	cv::Mat xyzMap = camera->getXYZMap();

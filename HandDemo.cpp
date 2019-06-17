@@ -18,8 +18,21 @@
 
 using namespace ark;
 
+void filterByDepth(cv::Mat& xyz_map, double min_depth, double max_depth) {
+	for (int r = 0; r < xyz_map.rows; ++r)
+	{
+		cv::Vec3f * ptr = xyz_map.ptr<cv::Vec3f>(r);
+		for (int c = 0; c < xyz_map.cols; ++c)
+		{
+			if (ptr[c][2] > max_depth || ptr[c][2] < min_depth) {
+				ptr[c][0] = ptr[c][1] = ptr[c][2] = 0.0f;
+			}
+		}
+	}
+}
+
 int main() {
-    printf("Welcome to OpenARK v %s Demo\n\n", VERSION);
+    printf("Welcome to OpenARK v %s Demo!\n\n", VERSION);
     printf("CONTROLS:\nQ or ESC to quit, P to show/hide planes, H to show/hide hands, SPACE to play/pause\n\n");
     printf("VIEWER BACKGROUNDS:\n1 = RGB/IR Image, 2 = Depth Image, 3 = Normal Map, 0 = None\n\n");
     printf("HAND DETECTION OPTIONS:\nS = Enable/Disable SVM, C = Enforce/Unenforce Edge Connected Criterion\n\n");
@@ -74,6 +87,8 @@ int main() {
         // get latest image from the camera
         cv::Mat xyzMap = camera->getXYZMap();
 
+		filterByDepth(xyzMap, 0, 0.5);
+
         /**** Start: Hand/plane detection ****/
 
         // query objects in the current frame
@@ -93,7 +108,7 @@ int main() {
             planes = planeDetector->getPlanes();
 
             if (showHands) {
-                handDetector->update(*camera);
+                handDetector->update(xyzMap);
                 hands = handDetector->getHands();
             }
         }

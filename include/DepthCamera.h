@@ -168,7 +168,7 @@ namespace ark {
          */
         const cv::Mat getXYZMap() const;
 
-		const std::vector<cv::Mat> getXYZMaps() const;
+		const std::map<int, cv::Mat> getXYZMaps() const;
 
         /**
          * Get the RGB Image from this camera, if available. Else, throws an error.
@@ -176,7 +176,7 @@ namespace ark {
          */
         const cv::Mat getRGBMap() const;
 
-		const std::vector<cv::Mat> getRGBMaps() const;
+		const std::map<int, cv::Mat> getRGBMaps() const;
 
         /**
          * Get the infrared (IR) Image from this camera, if available. Else, throws an error.
@@ -212,8 +212,11 @@ namespace ark {
         typedef std::shared_ptr<DepthCamera> Ptr;
 
     protected:
-		std::vector<cv::Mat> xyzMaps;
-		std::vector<cv::Mat> rgbMaps;
+		std::map<int, cv::Mat> xyzMaps;
+		std::map<int, cv::Mat> rgbMaps;
+		/*std::vector<cv::Mat> xyzMaps;
+		std::vector<cv::Mat> rgbMaps;*/
+		
         /**
          * Matrix storing the (x,y,z) data of every point in the observable world.
          * Matrix type CV_32FC3

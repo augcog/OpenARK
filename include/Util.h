@@ -145,6 +145,24 @@ namespace ark {
         */
         template<class T> T pointPlaneDistance(const cv::Vec<T, 3> & pt, T a, T b, T c);
 
+		/**
+		* Compute the squared L2 norm between a point and a plane
+		* Where the plane is defined as: ax + by - z + c = 0
+		* @param pt the point
+		* @param eqn equation of plane in form: [a, b, c]
+		* @return squared L2 norm in m^2
+		*/
+		template<class T> T pointPlaneNorm(const cv::Vec<T, 3> & pt, const cv::Vec<T, 3> & eqn);
+
+		/**
+		* Compute the squared L2 norm (distance squared) between a point and a plane
+		* Where the plane is defined as: ax + by - z + c = 0
+		* @param pt the point
+		* @param a, b, c parameters of plane
+		* @return squared L2 norm in m^2
+		*/
+		template<class T> T pointPlaneNorm(const cv::Vec<T, 3> & pt, T a, T b, T c);
+
         /**
         * Compute the squared euclidean distance between a point and a plane
         * Where the plane is defined as: ax + by - z + c = 0

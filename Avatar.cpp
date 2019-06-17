@@ -93,10 +93,6 @@ namespace ark {
             }
         }
 
-#ifdef DEBUG
-		std::cerr << "Introns Size: " << introns.size() << endl;
-#endif
-
         // load all required shape keys
         path keyPath(model_dir); keyPath = keyPath / "shapekey";
         for (std::string k : shape_keys) {
@@ -109,9 +105,6 @@ namespace ark {
                 keyCloud.row(i) = keyPC->points[introns[i]].getVector3fMap().cast<double>();
             }
             keyClouds.push_back(keyCloud);
-#ifdef DEBUG
-			std::cerr << "Key Cloud: " << ii << endl;
-#endif
         }
 
         // read skeleton file
