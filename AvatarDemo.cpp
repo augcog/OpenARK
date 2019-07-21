@@ -23,15 +23,6 @@
 
 // OpenARK Libraries
 #include "Version.h"
-#ifdef PMDSDK_ENABLED
-#include "PMDCamera.h"
-#endif
-#ifdef RSSDK_ENABLED
-#include "SR300Camera.h"
-#endif
-#ifdef RSSDK2_ENABLED
-#include "RS2Camera.h"
-#endif
 #include "MockCamera.h"
 
 #include "Core.h"

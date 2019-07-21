@@ -23,6 +23,9 @@
 #ifdef RSSDK2_ENABLED
     #include "RS2Camera.h"
 #endif
+#ifdef AZURE_KINECT_ENABLED
+    #include "AzureKinectCamera.h"
+#endif
 
 #include "Core.h"
 #include "Visualizer.h"
@@ -43,7 +46,9 @@ int main() {
     // initialize the camera
     DepthCamera::Ptr camera;
 
-#if defined(RSSDK2_ENABLED)
+#if defined(AZURE_KINECT_ENABLED)
+    camera = std::make_shared<AzureKinectCamera>();
+#elif defined(RSSDK2_ENABLED)
     camera = std::make_shared<RS2Camera>();
 #elif defined(RSSDK_ENABLED)
     ASSERT(strcmp(OPENARK_CAMERA_TYPE, "sr300") == 0, "Unsupported RealSense camera type.");

@@ -29,7 +29,8 @@ option( BUILD_SLAM_DEMO "BUILD_SLAM_DEMO" ON)
 option( BUILD_DATA_RECORDING "BUILD_DATA_RECORDING" OFF)
 option( BUILD_TESTS "BUILD_TESTS" OFF )
 option( BUILD_UNITY_PLUGIN "BUILD_UNITY_PLUGIN" ON )
-option( USE_RSSDK2 "USE_RSSDK2" ON )
+option( USE_AZURE_KINECT_SDK "USE_AZURE_KINECT_SDK" ON )
+option( USE_RSSDK2 "USE_RSSDK2" OFF )
 option( USE_RSSDK "USE_RSSDK" OFF )
 option( USE_PMDSDK "USE_PMDSDK" OFF )
 
@@ -166,29 +167,42 @@ find_package( brisk REQUIRED )
 include_directories(${BRISK_INCLUDE_DIRS})
 message(STATUS "Found Brisk: ${BRISK_INCLUDE_DIRS} ${BRISK_LIBRARIES}")
 
+set( _FOUND_CAMERA_LIB OFF )
+set( k4a_FOUND OFF )
+if( USE_AZURE_KINECT_SDK )
+  find_package( k4a )
+  if( k4a_FOUND)
+      message( STATUS "Found k4a (Azure Kinect SDK)" )
+  endif( k4a_FOUND )
+  set( _FOUND_CAMERA_LIB ON )
+endif()
+
 set( realsense2_FOUND OFF )
-if( USE_RSSDK2 )
+if( USE_RSSDK2 OR NOT _FOUND_CAMERA_LIB )
   find_package( realsense2 )
   if( realsense2_FOUND )
        message( STATUS "Found librealsense2: ${realsense2_INCLUDE_DIR}" )
   endif( realsense2_FOUND )
-endif( USE_RSSDK2 )
+  set( _FOUND_CAMERA_LIB ON )
+endif()
 
 set( RSSDK_FOUND OFF )
-if( USE_RSSDK OR NOT realsense2_FOUND )
+if( USE_RSSDK OR NOT _FOUND_CAMERA_LIB )
   find_package( RSSDK )
   if( RSSDK_FOUND )
        message( STATUS "Found RSSDK: ${RSSDK_INCLUDE_DIR}" )
   endif( RSSDK_FOUND )
-endif( USE_RSSDK OR NOT realsense2_FOUND )
+  set( _FOUND_CAMERA_LIB ON )
+endif()
 
 set( PMDSDK_FOUND OFF )
-if( USE_PMDSDK OR ( NOT RSSDK_FOUND AND NOT realsense2_FOUND ) )
+if( USE_PMDSDK OR NOT _FOUND_CAMERA_LIB )
   find_package( PMDSDK REQUIRED )
   if( PMDSDK_FOUND )
      message( STATUS "Found PMDSDK: ${PMDSDK_INCLUDE_DIR}" )
   endif( PMDSDK_FOUND )
-endif( USE_PMDSDK OR ( NOT RSSDK_FOUND AND NOT realsense2_FOUND ) )
+  set( _FOUND_CAMERA_LIB ON )
+endif()
 
 include_directories(
   ${OpenCV_INCLUDE_DIRS}
@@ -238,7 +252,6 @@ set(
   Avatar.cpp
   glfwManager.cpp
   OkvisSLAMSystem.cpp
-  D435iCamera.cpp
 )
 
 set(
@@ -267,14 +280,12 @@ set(
   ${INCLUDE_DIR}/SLAMSystem.h
   ${INCLUDE_DIR}/OkvisSLAMSystem.h
   ${INCLUDE_DIR}/glfwManager.h
-  ${INCLUDE_DIR}/D435iCamera.h
   ${INCLUDE_DIR}/CameraSetup.h
   ${INCLUDE_DIR}/SparseMap.h
   ${INCLUDE_DIR}/PointCostSolver.h
   ${INCLUDE_DIR}/PoseGraphSolver.h
   ${INCLUDE_DIR}/Types.h
   ${INCLUDE_DIR}/CorrespondenceRansac.h
-  ${INCLUDE_DIR}/D435iCalibWriter.h
   ${INCLUDE_DIR}/UKF.h
   stdafx.h
 )
@@ -307,12 +318,20 @@ else()
     include_directories(${GLFW_INCLUDE_DIR})
 endif() 
 
+if( NOT k4a_FOUND )
+  set( _AZURE_KINECT_SDK_ "//" )
+else()
+  set( SOURCES ${SOURCES} AzureKinectCamera.cpp )
+  set( HEADERS ${HEADERS} ${INCLUDE_DIR}/AzureKinectCamera.h )
+  set( DEPENDENCIES ${DEPENDENCIES} k4a::k4a )
+endif( NOT k4a_FOUND )
+
 if( NOT realsense2_FOUND )
   set( _RSSDK2_ "//" )
 else()
   include_directories( ${realsense2_INCLUDE_DIR} )
-  set( SOURCES ${SOURCES} RS2Camera.cpp )
-  set( HEADERS ${HEADERS} ${INCLUDE_DIR}/RS2Camera.h )
+  set( SOURCES ${SOURCES} RS2Camera.cpp D435iCamera.cpp )
+  set( HEADERS ${HEADERS} ${INCLUDE_DIR}/RS2Camera.h ${INCLUDE_DIR}/D435iCamera.h ${INCLUDE_DIR}/D435iCalibWriter.h )
   set( DEPENDENCIES ${DEPENDENCIES} ${realsense2_LIBRARY} )
 endif( NOT realsense2_FOUND )
 
@@ -409,7 +428,7 @@ if( ${BUILD_AVATAR_DEMO} )
     set_target_properties( ${AVATAR_DEMO_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
 endif( ${BUILD_AVATAR_DEMO} )
 
-if( ${BUILD_SLAM_DEMO} )
+if( ${BUILD_SLAM_DEMO} AND realsense2_FOUND )
     add_executable( ${SLAM_DEMO_NAME} SlamDemo435i.cpp )
     target_include_directories( ${SLAM_DEMO_NAME} PRIVATE ${INCLUDE_DIR} )
     set_target_properties( ${SLAM_DEMO_NAME} PROPERTIES OUTPUT_NAME ${SLAM_DEMO_NAME} )
@@ -423,7 +442,7 @@ if( ${BUILD_SLAM_DEMO} )
     target_include_directories( d435i_intrinsics_writer PRIVATE ${INCLUDE_DIR} )
     target_link_libraries( d435i_intrinsics_writer ${DEPENDENCIES} ${LIB_NAME} )
     #set_target_properties( d435i_intrinsics_writer PROPERTIES OUTPUT_NAME d435i_intrinsics_writer )
-endif( ${BUILD_SLAM_DEMO} )
+endif( ${BUILD_SLAM_DEMO} AND realsense2_FOUND )
 
 if( ${BUILD_DATA_RECORDING} )
     add_executable( ${DATA_RECORDING_NAME} DataRecording.cpp )
