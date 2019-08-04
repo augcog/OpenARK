@@ -272,7 +272,8 @@ namespace ark {
             cv::resize(xyz_map_large, xyz_map, xyz_map.size(), 0., 0., CV_INTER_NN);
         }
 
-        timestamp = k4a_image_get_timestamp_usec(depth_image);
+        // get timestamp and convert to nanoseconds
+        timestamp = k4a_image_get_timestamp_usec(depth_image) * 1e3;
 
         k4a_image_release(depth_image);
         k4a_image_release(color_image);
