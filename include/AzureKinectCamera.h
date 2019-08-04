@@ -26,7 +26,7 @@ namespace ark {
         explicit AzureKinectCamera(uint32_t device_id = 0,
                                    bool wide_fov_mode = false,
                                    bool use_1080p = false,
-                                   double scale = 1.0);
+                                   double scale = 0.5);
 
         /**
         * Destructor for the Azure Kinect Camera.

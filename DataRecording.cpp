@@ -15,7 +15,7 @@
 #include <pcl/point_cloud.h>
 
 // Uncomment below define to skip recording and go straight to preprocessing step
-#define SKIP_RECORD
+//#define SKIP_RECORD
 
 // OpenARK Libraries
 #include "Version.h"
