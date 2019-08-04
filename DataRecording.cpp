@@ -14,6 +14,9 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 
+// Uncomment below define to skip recording and go straight to preprocessing step
+#define SKIP_RECORD
+
 // OpenARK Libraries
 #include "Version.h"
 #ifdef PMDSDK_ENABLED
@@ -28,9 +31,6 @@
 #ifdef AZURE_KINECT_ENABLED
 #include "AzureKinectCamera.h"
 #endif
-#ifdef MOCKCAMERA_ENABLED
-#include "MockCamera.h"
-#endif
 
 #include "opencv2/imgcodecs.hpp"
 
@@ -39,24 +39,37 @@
 #include "StreamingAverager.h"
 #include "HumanDetector.h"
 
-
 using namespace ark;
 
-int main() {
-	printf("Welcome to OpenARK v %s Demo\n\n", VERSION);
-	printf("CONTROLS:\nQ or ESC to quit, P to show/hide planes, H to show/hide hands, SPACE to play/pause\n\n");
-	printf("VIEWER BACKGROUNDS:\n1 = RGB/IR Image, 2 = Depth Image, 3 = Normal Map, 0 = None\n\n");
-	printf("HAND DETECTION OPTIONS:\nS = Enable/Disable SVM, C = Enforce/Unenforce Edge Connected Criterion\n\n");
-	printf("MISCELLANEOUS:\nA = Measure Surface Area (Of Hands and Planes)\n");
+int main(int argc, char ** argv) {
+	printf("Welcome to OpenARK v %s Data Recording Tool\n\n", VERSION);
+	printf("CONTROLS:\nQ or ESC to stop recording and begin writing dataset to disk,\nSPACE to start/pause"
+           "(warning: if pausing in the middle, may mess up imestamps)\n\n");
 
 	// seed the rng
 	srand(time(NULL));
 
+    using boost::filesystem::path;
+	const path directory_path = 
+        argc > 1 ? argv[1] :
+        "C:/dev/OpenARK_dataset/kinect-azure/human-wave/"; // modify this
+
+	path depth_path = directory_path / "depth_exr/";
+	path rgb_path = directory_path / "rgb/";
+	path timestamp_path = directory_path / "timestamp.txt";
+	path intrin_path = directory_path / "intrin.txt";
+	if (!boost::filesystem::exists(depth_path)) {
+		boost::filesystem::create_directories(depth_path);
+	} if (!boost::filesystem::exists(rgb_path)) {
+		boost::filesystem::create_directories(rgb_path);
+	}
+    cv::Vec4d intrin;
+#ifndef SKIP_RECORD
 	// initialize the camera
 	DepthCamera::Ptr camera;
 
 #if defined(AZURE_KINECT_ENABLED)
-	camera = std::make_shared<AzureKinectCamera>(true);
+	camera = std::make_shared<AzureKinectCamera>();
 #elif defined(RSSDK2_ENABLED)
 	camera = std::make_shared<RS2Camera>(true);
 #elif defined(RSSDK_ENABLED)
@@ -64,29 +77,12 @@ int main() {
 	camera = std::make_shared<SR300Camera>();
 #elif defined(PMDSDK_ENABLED)
 	camera = std::make_shared<PMDCamera>();
-#elif defined(MOCKCAMERA_ENABLED)
-	std::string path = "C:\\dev\\OpenARK_Dataset\\";
-	camera = std::make_shared<MockCamera>(path);
 #endif
 
-	// initialize parameters
-	DetectionParams::Ptr params = camera->getDefaultParams(); // default parameters for camera
-
-															  // store frame & FPS information
-	const int FPS_CYCLE_FRAMES = 8; // number of frames to average FPS over (FPS 'cycle' length)
-	using ms = std::chrono::duration<float, std::milli>;
-	using time_point = std::chrono::high_resolution_clock::time_point;
-
-	std::chrono::high_resolution_clock timer = std::chrono::high_resolution_clock();
-	time_point currCycleStartTime = timer.now(); // start time of current cycle
-
-	int currFrame = 0; // current frame number (since launch/last pause)
-	int backgroundStyle = 1; // background style: 0=none, 1=ir, 2=depth, 3=normal
-
-    // option flags
-	bool showHands = true, showPlanes = false, useSVM = true, useEdgeConn = false, showArea = false, playing = true;
-
-	const std::string directory_path = "C:\\dev\\OpenARK_dataset\\human-walk\\";
+    std::cerr << "Starting data recording, saving to: " << directory_path.string() << "\n";
+#ifndef AZURE_KINECT_ENABLED
+    auto capture_start_time = std::chrono::high_resolution_clock::now();
+#endif
 
 	// turn on the camera
 	camera->beginCapture();
@@ -94,6 +90,13 @@ int main() {
 	// Read in camera input and save it to the buffer
 	std::vector<cv::Mat> xyzMaps;
 	std::vector<cv::Mat> rgbMaps;
+    std::vector<uint64_t> timestamps;
+
+    // Pausing feature
+    bool pause = true;
+    std::cerr << "Note: paused, press space to begin recording.\n";
+
+	int currFrame = 0; // current frame number (since launch/last pause)
 	while (true)
 	{
 		++currFrame;
@@ -102,78 +105,122 @@ int main() {
 		cv::Mat xyzMap = camera->getXYZMap();
 		cv::Mat rgbMap = camera->getRGBMap();
 
-		std::stringstream ss;
-		ss << directory_path << currFrame << ".yml";
-		std::string curr_file_name = ss.str();
+		if (xyzMap.empty() || rgbMap.empty()) {
+            std::cerr << "WARNING: Empty image ignored in data recorder loop\n";
+        }
+        else {
+            if (pause) {
+                const cv::Scalar RECT_COLOR = cv::Scalar(0, 160, 255);
+                const std::string NO_SIGNAL_STR = "PAUSED";
+                const cv::Point STR_POS(rgbMap.cols / 2 - 50, rgbMap.rows / 2 + 7);
+                const int RECT_WID = 120, RECT_HI = 40;
+                cv::Rect rect(rgbMap.cols / 2 - RECT_WID / 2,
+                    rgbMap.rows / 2 - RECT_HI / 2,
+                    RECT_WID, RECT_HI);
 
-		xyzMaps.push_back(xyzMap);
-		rgbMaps.push_back(rgbMap);
+                // show 'paused' and do not record
+                cv::rectangle(rgbMap, rect, RECT_COLOR, -1);
+                cv::putText(rgbMap, NO_SIGNAL_STR, STR_POS, 0, 0.8, cv::Scalar(255, 255, 255), 1, cv::LINE_AA);
+                cv::rectangle(xyzMap, rect, RECT_COLOR / 255.0, -1);
+                cv::putText(xyzMap, NO_SIGNAL_STR, STR_POS, 0, 0.8, cv::Scalar(1.0f, 1.0f, 1.0f), 1, cv::LINE_AA);
+            }
+            else {
+                // store images
+                xyzMaps.push_back(xyzMap);
+                rgbMaps.push_back(rgbMap);
 
-		// show visualizations
-		if (!xyzMap.empty()) {
-			cv::imshow(camera->getModelName() + " Depth Map", xyzMap);
-		} 
+#ifdef AZURE_KINECT_ENABLED
+                // timestamps from camera only supported on Azure Kinect for now
+                timestamps.push_back(
+                    static_cast<AzureKinectCamera*>(camera.get())->getTimestamp());
+#else
+                // use system time for other cameras
+                auto curr_time = std::chrono::high_resolution_clock::now();
+                timestamps.push_back(
+                    std::chrono::duration_cast<std::chrono::nanoseconds>(curr_time - capture_start_time).count());
+#endif
+            }
+            // visualize
+            cv::Mat visual, rgbMapFloat;
+            rgbMap.convertTo(rgbMapFloat, CV_32FC3, 1. / 255.);
+            cv::hconcat(xyzMap, rgbMapFloat, visual);
+            const int MAX_ROWS = 380;
+            if (visual.rows > MAX_ROWS) {
+                cv::resize(visual, visual, cv::Size(MAX_ROWS * visual.cols / visual.rows, MAX_ROWS));
+            }
+            cv::imshow(camera->getModelName() + " XYZ/RGB Maps", visual);
+        }
 
-		if (!rgbMap.empty()) {
-			cv::imshow(camera->getModelName() + " RGB Map", rgbMap);
-		}
-		/**** End: Visualization ****/
+		int c = cv::waitKey(1);
 
-		/**** Start: Controls ****/
-		int c = cv::waitKey(66);
-
-		// make case insensitive
+		// make case insensitive (convert to upper)
 		if (c >= 'a' && c <= 'z') c &= 0xdf;
 
 		// 27 is ESC
 		if (c == 'Q' || c == 27) {
-			/*** Loop Break Condition ***/
 			break;
-		}
-		/**** End: Controls ****/
+        }
+        else if (c == ' ') {
+            pause = !pause;
+        }
 	}
-
 	camera->endCapture();
+    cv::destroyWindow(camera->getModelName() + " XYZ/RGB Maps");
 	
 	// Write the captured frames to disk
 	ARK_ASSERT(xyzMaps.size() == rgbMaps.size(), "Depth map and RGB map are not in sync!");
+    
+    std::ofstream timestamp_ofs(timestamp_path.string());
 
-	std::string depth_path = directory_path + "depth\\";
-	std::string rgb_path = directory_path + "rgb\\";
-	if (boost::filesystem::exists(depth_path)) {
-		boost::filesystem::create_directories(depth_path);
-	} if (boost::filesystem::exists(rgb_path)) {
-		boost::filesystem::create_directories(rgb_path);
-	}
-
+    int img_index = 0;
 	for (int i = 0; i < xyzMaps.size(); ++i) {
 		cout << "Writing " << i << " / " << xyzMaps.size() << endl;
-		std::stringstream ss_depth, ss_rgb;
-		ss_depth << directory_path << "depth\\" << "depth_" << std::setw(4) << std::setfill('0') << i << ".exr";
-		ss_rgb << directory_path << "rgb\\" << "rgb_" << std::setw(4) << std::setfill('0') << i << ".jpg";
-		cout << "Writing " << ss_depth.str() << endl;
-		cv::imwrite(ss_depth.str(), xyzMaps[i]);
-		cv::imwrite(ss_rgb.str(), rgbMaps[i]);
+        std::stringstream ss_img_id;
+        ss_img_id << std::setw(4) << std::setfill('0') << std::to_string(img_index);
+        const std::string depth_img_path = (depth_path / ("depth_" + ss_img_id.str() + ".exr")).string();
+        const std::string rgb_img_path = (rgb_path / ("rgb_" + ss_img_id.str() + ".jpg")).string();
+        cv::Mat depth; cv::extractChannel(xyzMaps[i], depth, 2);
+        if (!cv::countNonZero(depth)) {
+            std::cerr << "WARNING: depth image " << i << " is blank, skipping\n"; continue;
+        }
+		cout << "Writing " << depth_img_path << endl;
+		cv::imwrite(depth_img_path, depth);
+		cout << "Writing " << rgb_img_path << endl;
+		cv::imwrite(rgb_img_path, rgbMaps[i]);
+        timestamp_ofs << timestamps[i] << "\n"; // write timestamp
+        ++img_index;
 	}
+    timestamp_ofs.close();
 
+    // fit intrinsics from an XYZ map
+    intrin = util::getCameraIntrinFromXYZ(xyzMaps[xyzMaps.size()/2]);
+    // write intrinsics
+    std::ofstream intrin_ofs(intrin_path.string());
+    intrin_ofs <<
+        "fx " << intrin[0] << "\n" <<
+        "cx " << intrin[1] << "\n" <<
+        "fy " << intrin[2] << "\n" <<
+        "cy " << intrin[3] << "\n";
+    intrin_ofs.close();
+#endif // SKIP_RECORD
+
+    // To make sure data is good, we will load it from disk rather than reusing
 	// Read in all the rgb images
 	std::vector<std::string> rgb_files;
-	boost::filesystem::path rgb_dir(directory_path + "rgb\\");
 
-	if (is_directory(rgb_dir)) {
+	if (is_directory(rgb_path)) {
 		boost::filesystem::directory_iterator end_iter;
-		for (boost::filesystem::directory_iterator dir_itr(rgb_dir); dir_itr != end_iter; ++dir_itr) {
+		for (boost::filesystem::directory_iterator dir_itr(rgb_path); dir_itr != end_iter; ++dir_itr) {
 			const auto& next_path = dir_itr->path().generic_string();
 			rgb_files.emplace_back(next_path);
 		}
 		std::sort(rgb_files.begin(), rgb_files.end());
 	}
 	std::vector<std::string> depth_files;
-	boost::filesystem::path depth_dir(directory_path + "depth\\");
 
-	if (is_directory(depth_dir)) {
+	if (is_directory(depth_path)) {
 		boost::filesystem::directory_iterator end_iter;
-		for (boost::filesystem::directory_iterator dir_itr(depth_dir); dir_itr != end_iter; ++dir_itr) {
+		for (boost::filesystem::directory_iterator dir_itr(depth_path); dir_itr != end_iter; ++dir_itr) {
 			const auto& next_path = dir_itr->path().generic_string();
 			depth_files.emplace_back(next_path);
 		}
@@ -181,9 +228,21 @@ int main() {
 	}
 	ARK_ASSERT(depth_files.size() == rgb_files.size());
 
+    std::ifstream intrin_ifs(intrin_path.string());
+    if (intrin_ifs) {
+        // depth files are depth maps (require intrinsics to convert)
+        std::string _garbage;
+        intrin_ifs >> _garbage >> intrin[0];
+        intrin_ifs >> _garbage >> intrin[1];
+        intrin_ifs >> _garbage >> intrin[2];
+        intrin_ifs >> _garbage >> intrin[3];
+    }
+
+    // Save timestamps and joints
+
 	// Run neural network to predict where the human joints are
-	std::string joint_path = directory_path + "joint\\";
-	if (boost::filesystem::exists(joint_path)) {
+	path joint_path = directory_path / "joint/";
+	if (!boost::filesystem::exists(joint_path)) {
 		boost::filesystem::create_directories(joint_path);
 	}
 
@@ -193,9 +252,23 @@ int main() {
 		const auto rgb_filename = rgb_files[i];
 		const auto depth_filename = depth_files[i];
 		std::cout << rgb_filename << std::endl;
-		cv::Mat rgb_map_raw, rgb_map, xyz_map;
+		cv::Mat rgb_map_raw, rgb_map, xyz_map, depth;
 		rgb_map = cv::imread(rgb_filename);
-		xyz_map = cv::imread(depth_filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+		depth = cv::imread(depth_filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+
+        // depth to xyz
+        xyz_map = cv::Mat(depth.size(), CV_32FC3);
+        float * inPtr; cv::Vec3f * outPtr;
+        for (int r = 0; r < depth.rows; ++r) {
+            inPtr = depth.ptr<float>(r);
+            outPtr = xyz_map.ptr<cv::Vec3f>(r);
+            for (int c = 0; c < depth.cols; ++c) {
+                const float z = inPtr[c];
+                outPtr[c] = cv::Vec3f(
+                    (c - intrin[1]) * z / intrin[0],
+                    (r - intrin[3]) * z / intrin[2], z);
+            }
+        }
 
 		double alpha = 1.5; /*< Simple contrast control */
 		int beta = -20;       /*< Simple brightness control */
@@ -221,10 +294,11 @@ int main() {
 				cout << "No humans found" << endl;
 				continue;
 			}
+            /*
 			if (min_dist > 8 || min_dist < 1) {
-				cout << "Not in range" << endl;
+				cout << "Min distance " << min_dist << " not in range" << endl;
 				continue;
-			}
+			}*/
 			rgbJoints = human_detector->getHumanBodies()[front_id]->MPIISkeleton2D;
 			for (const auto& joint : rgbJoints) {
 				//cout << joint << endl;
@@ -234,10 +308,13 @@ int main() {
 			
 		}
 		
+        std::stringstream ss_img_id;
+        ss_img_id << std::setw(4) << std::setfill('0') << std::to_string(frame);
 		
 		std::stringstream ss_joint;
-		ss_joint << directory_path << "joint\\" << "joint_" << std::setw(4) << std::setfill('0') << frame << ".yml";
-		cv::FileStorage fs3(ss_joint.str(), cv::FileStorage::WRITE);
+        const std::string joint_file_path = (joint_path / ("joint_" + ss_img_id.str() + ".yml")).string();
+        std::cout << "Writing joints: " << joint_file_path << "\n";
+		cv::FileStorage fs3(joint_file_path, cv::FileStorage::WRITE);
 		fs3 << "joints" << rgbJoints;
 		fs3.release();
 		rgbJoints.clear();

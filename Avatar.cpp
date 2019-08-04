@@ -164,8 +164,10 @@ namespace ark {
             humanPCRaw->push_back(humanPCFull->points[i]);
         }
 
+#ifdef DEBUG
         std::cerr << "HumanPCFull Size: " << humanPCFull->size() << endl;
         std::cerr << "HumanPCRaw Size: " << humanPCRaw->size() << endl;
+#endif
 
         // coordinate compression
         for (int i = 0; i < nJoints; ++i) {

@@ -49,6 +49,13 @@ namespace ark {
             return;
         }
 
+        // Set the intrinsics
+        auto& color_cam_intrin = calibration.color_camera_calibration.intrinsics.parameters.param;
+        calib_intrin[0] = color_cam_intrin.fx;
+        calib_intrin[1] = color_cam_intrin.cx;
+        calib_intrin[2] = color_cam_intrin.fy;
+        calib_intrin[3] = color_cam_intrin.cy;
+
         width = calibration.color_camera_calibration.resolution_width;
         height = calibration.color_camera_calibration.resolution_height;
         scaled_width = width * scale;
@@ -152,6 +159,16 @@ namespace ark {
         return true;
 	}
 
+    uint64_t AzureKinectCamera::getTimestamp()
+    {
+        return timestamp;
+    }
+
+    cv::Vec4d AzureKinectCamera::getCalibIntrinsics()
+    {
+        return calib_intrin;
+    }
+
     void AzureKinectCamera::update(cv::Mat & xyz_map, cv::Mat & rgb_map, cv::Mat & ir_map,
         cv::Mat & amp_map, cv::Mat & flag_map) {
         auto device = reinterpret_cast<k4a_device_t>(this->k4a_device);
@@ -165,11 +182,11 @@ namespace ark {
             break;
         case K4A_WAIT_RESULT_TIMEOUT:
             std::cerr << "Warning: Timed out waiting for a capture from Azure Kinect\n";
-            badInput = true;
+            badInputFlag = true;
             return;
         case K4A_WAIT_RESULT_FAILED:
             std::cerr << "Warning: Failed to read a capture from Azure Kinect\n";
-            badInput = true;
+            badInputFlag = true;
             return;
         }
 
@@ -201,7 +218,12 @@ namespace ark {
             rgb_map_data[i][1] = color_data[i][1];
             rgb_map_data[i][2] = color_data[i][2];
         }
-        cv::resize(rgb_map_large, rgb_map, rgb_map.size(), 0., 0., CV_INTER_CUBIC);
+        if (scale = 1.0) {
+            rgb_map = rgb_map_large;
+        }
+        else {
+            cv::resize(rgb_map_large, rgb_map, rgb_map.size(), 0., 0., CV_INTER_CUBIC);
+        }
 
         // Align depth to color image
         k4a_image_t transformed_depth_image = NULL;
@@ -242,10 +264,19 @@ namespace ark {
                 xyz_map_data[i] = 0;
             }
         }
-        cv::resize(xyz_map_large, xyz_map, xyz_map.size(), 0., 0., CV_INTER_NN);
+
+        if (scale = 1.0) {
+            xyz_map = xyz_map_large;
+        }
+        else {
+            cv::resize(xyz_map_large, xyz_map, xyz_map.size(), 0., 0., CV_INTER_NN);
+        }
+
+        timestamp = k4a_image_get_timestamp_usec(depth_image);
 
         k4a_image_release(depth_image);
         k4a_image_release(color_image);
         k4a_image_release(transformed_depth_image);
+        k4a_capture_release(capture);
     }
 }
