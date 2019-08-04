@@ -74,8 +74,6 @@ namespace ark {
     double HumanDetector::update(cv::Mat& xyzMap, cv::Mat& rgbMap, std::vector<cv::Point>& rgbJoints, double deltat) {
         cv::Mat out;
         segmentAvatar(xyzMap, rgbJoints, out);
-        //std::cerr << out.size() << "OOO\n";
-        //cv::imshow("Segm", out);
 
         // convert to PCL point cloud
         auto humanCloudRaw = util::toPointCloud<pcl::PointXYZ>(out, true, true);
@@ -211,7 +209,9 @@ namespace ark {
             //copy the found filter
             lastHumanDetectionBox = max_rect;
         }
-        //imshow("original", original);
+#ifdef DEBUG
+        cv::imshow("original", original);
+#endif
     }
 
     void HumanDetector::detectBodyPose(const cv::Mat& frame) {
@@ -285,7 +285,9 @@ namespace ark {
             }
         }
 
-        //cv::imshow("Detected Pose", outputFrame);
+#ifdef DEBUG
+        cv::imshow("Detected Pose", outputFrame);
+#endif
     }
 
     void HumanDetector::getPersonwiseKeypoints(const std::vector<std::vector<ValidPair>>& validPairs,
@@ -530,7 +532,9 @@ namespace ark {
             image_points.push_back(landmarks[0][64]);    // Right mouth corner
         }
         else {
+#ifdef DEBUG
             cv::imshow("Facial Landmark Detection", frame);
+#endif
             return;
         }
 

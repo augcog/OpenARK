@@ -65,6 +65,13 @@ namespace ark {
         /** Shared pointer to Azure Kinect camera instance */
         typedef std::shared_ptr<AzureKinectCamera> Ptr;
 
+        /** Get the timestamp of the last image in nanoseconds */
+        uint64_t getTimestamp();
+
+        /** Get the basic calibration intrinsics
+         *  @return (fx, cx, fy, cy) */
+        cv::Vec4d getCalibIntrinsics();
+
     protected:
         /**
         * Gets the new frame from the sensor (implements functionality).
@@ -96,5 +103,9 @@ namespace ark {
 
         mutable bool defaultParamsSet = false;
         mutable DetectionParams::Ptr defaultParams;
+
+        int64_t timestamp;
+        /* (fx, cx, fy, cy) */
+        cv::Vec4d calib_intrin;
     };
 }
