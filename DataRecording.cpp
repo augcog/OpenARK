@@ -44,15 +44,14 @@ using namespace ark;
 int main(int argc, char ** argv) {
 	printf("Welcome to OpenARK v %s Data Recording Tool\n\n", VERSION);
 	printf("CONTROLS:\nQ or ESC to stop recording and begin writing dataset to disk,\nSPACE to start/pause"
-           "(warning: if pausing in the middle, may mess up imestamps)\n\n");
+           "(warning: if pausing in the middle, may mess up timestamps)\n\n");
 
 	// seed the rng
 	srand(time(NULL));
 
     using boost::filesystem::path;
 	const path directory_path = 
-        argc > 1 ? argv[1] :
-        "C:/dev/OpenARK_dataset/kinect-azure/human-wave/"; // modify this
+        argc > 1 ? argv[1] : "/my/path"; // modify this
 
 	path depth_path = directory_path / "depth_exr/";
 	path rgb_path = directory_path / "rgb/";
