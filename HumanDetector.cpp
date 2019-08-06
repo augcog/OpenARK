@@ -209,7 +209,9 @@ namespace ark {
             //copy the found filter
             lastHumanDetectionBox = max_rect;
         }
-        //imshow("original", original);
+#ifdef DEBUG
+        cv::imshow("original", original);
+#endif
     }
 
     void HumanDetector::detectBodyPose(const cv::Mat& frame) {
@@ -283,7 +285,9 @@ namespace ark {
             }
         }
 
-        //cv::imshow("Detected Pose", outputFrame);
+#ifdef DEBUG
+        cv::imshow("Detected Pose", outputFrame);
+#endif
     }
 
     void HumanDetector::getPersonwiseKeypoints(const std::vector<std::vector<ValidPair>>& validPairs,
@@ -528,7 +532,9 @@ namespace ark {
             image_points.push_back(landmarks[0][64]);    // Right mouth corner
         }
         else {
+#ifdef DEBUG
             cv::imshow("Facial Landmark Detection", frame);
+#endif
             return;
         }
 
