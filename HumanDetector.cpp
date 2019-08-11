@@ -89,7 +89,7 @@ namespace ark {
             ava->alignToJoints(xyzJoints);
         }
         toSMPLJoints(out, rgbJoints, xyzJointsSafe, false);
-        
+
         ava->updateJointsPrior(xyzJointsSafe);
         cv::Vec4d intrin = util::getCameraIntrinFromXYZ(xyzMap);
         ava->updateCameraIntrin(intrin);
@@ -616,72 +616,34 @@ namespace ark {
     void HumanDetector::segmentAvatar(const cv::Mat & xyz_map, const std::vector<cv::Point2i> & points_on_target,
         cv::Mat & out)
     {
-        // Filter Background
-        cv::Mat floodFillMap = xyz_map.clone();
-        filterByDepth(floodFillMap, 2, 4);
-        cv::Mat ground = floodFillMap.clone();
-        filterByHeight(ground, points_on_target[12].y);
+        // Fast Marching Method on Avatar
 
-        // Remove Plane
-        //auto viewer = Visualizer::getPCLVisualizer();
-        auto groundCloud = util::toPointCloud<pcl::PointXYZ>(ground);
-
-        pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
-        pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
-        // Create the segmentation object
-        pcl::SACSegmentation<pcl::PointXYZ> seg;
-        // Optional
-        seg.setOptimizeCoefficients(true);
-        // Mandatory
-        seg.setModelType(pcl::SACMODEL_PLANE);
-        seg.setMethodType(pcl::SAC_RANSAC);
-        seg.setDistanceThreshold(0.06);
-
-        seg.setInputCloud(groundCloud);
-        seg.segment(*inliers, *coefficients);
-
-        if (inliers->indices.size() == 0) {
-            PCL_ERROR("Could not estimate a planar model for the given dataset.");
-            return;
-        }
-
-        double a = coefficients->values[0];
-        double b = coefficients->values[1];
-        double c = coefficients->values[2];
-        double d = coefficients->values[3];
-
-        for (int r = 0; r < floodFillMap.rows; ++r)
+        // Pick a seed point, preferring central body parts but
+        // with a hardcoded fallback order if the CNN did not detect some of htem.
+        static constexpr int SEED_POINT_FALLBACK_ORDER[] =
         {
-            cv::Vec3f * ptr = floodFillMap.ptr<cv::Vec3f>(r);
-            for (int cc = 0; cc < floodFillMap.cols; ++cc)
-            {
-                double ax = a * ptr[cc][0];
-                double bx = b * ptr[cc][1];
-                double cx = c * ptr[cc][2];
-                double result = ax + bx + cx + d;
-                //cout << result << endl;
-                if (abs(result) < 0.06) {
-                    ptr[cc][0] = ptr[cc][1] = ptr[cc][2] = 0.0f;
-                }
-            }
+            mpi_j::CHEST,
+            mpi_j::LEFT_HIP, mpi_j::RIGHT_HIP,
+            mpi_j::NECK, mpi_j::HEAD,
+            mpi_j::LEFT_SHOULDER, mpi_j::RIGHT_SHOULDER,
+            mpi_j::LEFT_KNEE, mpi_j::RIGHT_KNEE,
+            mpi_j::LEFT_ELBOW, mpi_j::RIGHT_ELBOW,
+            mpi_j::LEFT_ANKLE, mpi_j::RIGHT_ANKLE,
+            mpi_j::LEFT_WRIST, mpi_j::RIGHT_WRIST
+        };
+        std::vector<cv::Point> seeds(1);
+        for (int i = 0; i < mpi_j::_COUNT - 1; ++i) {
+            seeds.back() = points_on_target[SEED_POINT_FALLBACK_ORDER[i]];
+            if (seeds.back().y > 0) break;
         }
 
-        // Floodfill Avatar
-
-        std::vector<Point2i> allIndices;
-        allIndices.reserve(xyz_map.cols * xyz_map.rows);
-
-        out = cv::Mat(xyz_map.rows, xyz_map.cols, CV_32FC3);
-
-        cv::Mat color(xyz_map.size(), CV_8U);
-        color = cv::Scalar(255);
-
-        for (const auto & point : points_on_target) {
-            if (point.x < 0 || color.at<unsigned char>(point) != 255) continue;
-            util::floodFill(floodFillMap, point, 0.06f,
-                &allIndices, nullptr, &out,
-                1, 0, 0.0f, &color);
-        }
+        // Segment with FMM
+        cv::Mat depth;
+        cv::extractChannel(xyz_map, depth, 2);
+        cv::Mat mask = util::fmm(depth, seeds, util::weight::LAPLACIAN, 0.018);
+        out = cv::Mat::zeros(xyz_map.size(), xyz_map.type());
+        mask.convertTo(mask, CV_8UC1);
+        xyz_map.copyTo(out, mask);
     }
 
     void HumanDetector::toSMPLJoints(const cv::Mat & xyzMap, const std::vector<cv::Point> & mpi_joints,
