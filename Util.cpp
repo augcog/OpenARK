@@ -1502,5 +1502,157 @@ namespace ark {
             }
             return false;
         }
+
+        namespace weight {
+            cv::Mat difference_weights(const cv::Mat& image, const std::vector<cv::Point>& seeds) {
+                float ref = 0.f;
+                for (const auto& seed : seeds) ref += image.at<float>(seed);
+                ref /= seeds.size();
+                cv::Mat diff_out;
+                cv::absdiff(image, ref, diff_out);
+                return diff_out;
+            }
+
+            cv::Mat gradient_weights(const cv::Mat& image, bool normalize_output, int ksize) {
+                cv::Mat dx, dy, gradient_out;
+                cv::Sobel(image, dx, image.type(), 1, 0, ksize);
+                cv::Sobel(image, dy, image.type(), 0, 1, ksize);
+                cv::sqrt(dx.mul(dx) + dy.mul(dy), gradient_out);
+                if (normalize_output) {
+                    cv::normalize(gradient_out, gradient_out, 0.0, 1.0, cv::NORM_MINMAX);
+                }
+                return gradient_out;
+            }
+
+            cv::Mat laplacian_weights(const cv::Mat& image, bool normalize_output, int ksize) {
+                cv::Mat laplacian_out;
+                cv::Laplacian(image, laplacian_out, image.type(), ksize);
+                laplacian_out = cv::abs(laplacian_out);
+                if (normalize_output) {
+                    cv::normalize(laplacian_out, laplacian_out, 0.0, 1.0, cv::NORM_MINMAX);
+                }
+                return laplacian_out;
+            }
+        }
+
+        namespace {
+            // Internal: cell for priority queue in FMM implementation
+            struct __queue_cell {
+                int id, x;
+                float dist;
+                __queue_cell() {}
+                __queue_cell(int id, int x, float dist) : id(id), x(x), dist(dist) { }
+            };
+        }
+
+        cv::Mat fmm(const cv::Mat& image,
+            const std::vector<cv::Point>& seeds,
+            weight::WeightMap weight_map_type,
+            float segmentation_threshold,
+            bool normalize_output_geodesic_distances,
+            cv::Mat output) {
+            using namespace weight;
+
+            cv::Mat image_processed;
+            switch (weight_map_type) {
+            case GRADIENT:
+                image_processed = gradient_weights(image, true);
+                break;
+            case ABSDIFF:
+                image_processed = difference_weights(image, seeds);
+                break;
+            case LAPLACIAN:
+                image_processed = laplacian_weights(image, true, 3);
+                break;
+            default:
+                // Identity
+                image_processed = image;
+            }
+
+            static constexpr float INF = std::numeric_limits<float>::max();
+            const int area = image.cols * image.rows;
+
+            if (output.empty()) {
+                output.create(image.rows, image.cols, image.type());
+            }
+            output.setTo(INF);
+
+            float* dist = reinterpret_cast<float*>(output.data);
+
+            auto __compare = [](const __queue_cell& a, const __queue_cell& b) {
+                return a.dist > b.dist;
+            };
+            std::priority_queue<__queue_cell, std::vector<__queue_cell>, decltype(__compare)>
+                              que(__compare);
+            std::vector<char> cell_status(area);
+
+            for (const auto& seed : seeds) {
+                const auto id = seed.x + seed.y * image.cols;
+                que.emplace(id, seed.x, 0.f);
+                dist[id] = 0.;
+            }
+
+            const float* image_data = reinterpret_cast<float*>(image_processed.data);
+            __queue_cell u;
+
+            auto __eikonal_update = [&u, &image, area, dist, image_data]() {
+                const float dleft  = u.x > 0                  ? dist[u.id - 1]          : INF;
+                const float dright = u.x + 1 < image.cols     ? dist[u.id + 1]          : INF;
+                const float dup    = u.id - image.cols >= 0   ? dist[u.id - image.cols] : INF;
+                const float ddown  = u.id + image.cols < area ? dist[u.id + image.cols] : INF;
+
+                const float dhoriz = std::min(dleft, dright), dvert = std::min(dup, ddown);
+
+                const float cell_val = image_data[u.id];
+                const float det = 2 * dvert*dhoriz - dvert*dvert - dhoriz*dhoriz + 2 * cell_val*cell_val;
+                if (det >= 0.) {
+                    return 0.5f * (dhoriz + dvert + std::sqrt(det));
+                }
+                else {
+                    return std::min(dhoriz, dvert) + cell_val;
+                }
+            };
+
+            constexpr char __CELL_VISITED = char(255),
+                __CELL_NOT_VISITED = char(0);
+            auto __update_cell = [area, &image, &u, image_data, &que, dist, &cell_status, &__eikonal_update,
+                __CELL_VISITED, __CELL_NOT_VISITED]() {
+                if (cell_status[u.id] == __CELL_VISITED) return;
+                const float estimate = __eikonal_update();
+                if (estimate < dist[u.id]) {
+                    dist[u.id] = estimate;
+                    if (cell_status[u.id] == __CELL_NOT_VISITED) {
+                        u.dist = estimate;
+                        que.emplace(u);
+                        if (!cell_status[u.id]) cell_status[u.id] = 1;
+                    }
+                }
+            };
+
+            while (!que.empty()) {
+                u = que.top(); que.pop();
+
+                if (cell_status[u.id] == __CELL_VISITED) continue;
+                cell_status[u.id] = __CELL_VISITED;
+
+                --u.id; --u.x;
+                if (u.x >= 0) __update_cell();
+                u.id += 2; u.x += 2;
+                if (u.x < image.cols) __update_cell();
+                --u.id; --u.x;
+
+                u.id -= image.cols;
+                if (u.id >= 0) __update_cell();
+                u.id += image.cols * 2;
+                if (u.id < area) __update_cell();
+            }
+            if (normalize_output_geodesic_distances) {
+                cv::normalize(output, output, 0.0, 1.0, cv::NORM_MINMAX);
+            }
+            if (segmentation_threshold < INF) {
+                cv::threshold(output, output, segmentation_threshold, 1.0, cv::THRESH_BINARY_INV);
+            }
+            return output;
+        }
     }
 }

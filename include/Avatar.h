@@ -318,7 +318,7 @@ namespace ark {
         class PoseCostFunctor {
         public:
             /** HYPERPARAMETERS: Weights for different cost function terms */
-            double betaJ = 30.0, betaP = 0.7; // betaICP assumed 1
+            double betaJ = 10.0, betaP = 0.2; // betaICP assumed 1
 
             PoseCostFunctor(HumanAvatar & ava, const EigenCloud_T & data_cloud,
                 std::vector<std::pair<int, int>> & correspondences, const EigenCloud_T & joints_prior,

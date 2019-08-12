@@ -628,6 +628,8 @@ namespace ark {
 
         /** Converts an xyz_map into a PCL point cloud
          * @param flip_z if true, inverts the z coordinate of each point
+         * @param flip_y if true, inverts the y coordinate of each point
+         * @param step only converts pixels at the given interval (default is every pixel0
          */
         template<class T>
         boost::shared_ptr<pcl::PointCloud<T> > toPointCloud(const cv::Mat & xyz_map, 
@@ -679,5 +681,74 @@ namespace ark {
         private:
             bool reverse = false, compare_y_then_x = false;
         };
+
+        // The following functions are adapted from https://github.com/sxyu/FMM
+        /* Pixel weight functions for segmentation */
+        namespace weight {
+            /** Weight map types */
+            enum WeightMap {
+                /** No weight map -- keep input image as is */
+                IDENTITY = 0,
+                /** Gradient magnitude */
+                GRADIENT,
+                /** Absolute intensity difference from seeds */
+                ABSDIFF,
+                /** Laplacian absolute value */
+                LAPLACIAN
+            };
+
+            /** Compute absolute grayscale intensity difference pixel weights.
+              * Parts of the image that are more different from the seed pixels will have higher
+              * weight. This is similar to Matlab's graydiffweight().
+              * This version only supports CV_32F Mat's.
+              * @param image input image
+              * @param seeds vector of seed points. The mean intensities at these points will be
+              *              the reference intensity.
+              */
+            cv::Mat difference_weights(const cv::Mat& image, const std::vector<cv::Point>& seeds);
+
+            /** Compute Sobel gradient magnitudepixel weights. Parts of the image that vary more
+              * quickly will have higher weight
+              * This is similar to Matlab's graydientweight()
+              * @param image input image
+              * @param normalize_output whether to min-max normalize output image to 0-1 range
+              * @param ksize Sobel kernel size, passed to cv::Sobel
+              */
+            cv::Mat gradient_weights(const cv::Mat & image, bool normalize_output = false, int ksize = 3);
+
+            /** Compute image Laplacian-based pixel weights
+              * @param image input image
+              * @param normalize_output whether to min-max normalize output image to 0-1 range
+              * @param ksize Laplacian kernel size, passed to cv::Laplacian
+              */
+            cv::Mat laplacian_weights(const cv::Mat& image, bool normalize_output = false, int ksize = 1);
+        }
+
+        /** Performs Sethian's Fast Marching Method on image from the given starting pixels
+          * Similar to Matlab's imsegfmm() function.
+          * @param image input image. Should be of type CV_32F.
+          * @param seeds vector of seed points to start FMM from
+          * @param weight_map_type Weight map to apply to input image before starting FMM. By default,
+          *                        no weight map is applied.
+          * @param segmentation_threshold: if specified, sets pixels with geodesic value less
+          *                                than or equal to this threshold to 1 and others to 0
+          *                                in the output image. If not given,the geodesic
+          *                                distances map will be returned.
+          * @param normalize_output_geodesic_distances: if true, normalizes geodesic distances
+          *                                             values to be in the interval [0, 1].
+          *                                             If segmentation_threshold is specified,
+          *                                             this occurs prior to segmentation.
+          *                                             Default true.
+          *  @param output: optionally, an already-allocated OpenCV Mat.
+          *                 This allows you to avoid a copy if you already have one
+          *                 allocated (that means a Mat with size, not empty). By
+          *                 default a new image is created, and this is not necessary.
+          */
+        cv::Mat fmm(const cv::Mat& image,
+            const std::vector<cv::Point>& seeds,
+            weight::WeightMap weight_map_type = weight::IDENTITY,
+            float segmentation_threshold = std::numeric_limits<float>::max(),
+            bool normalize_output_geodesic_distances = true,
+            cv::Mat output = cv::Mat());
     };
 }
