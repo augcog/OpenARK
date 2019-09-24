@@ -112,6 +112,8 @@ if(WIN32)
 endif(WIN32)
 include_directories(${GLOG_INCLUDE_DIRS})
 
+find_package( Boost REQUIRED COMPONENTS system program_options )
+
 # require DBoW2
 find_package( DBoW2 REQUIRED )
 IF( DBoW2_FOUND )
@@ -208,6 +210,7 @@ include_directories(
   ${OpenCV_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
   ${CERES_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
 )
 
 set(
@@ -221,6 +224,7 @@ set(
   ${BRISK_LIBRARIES}
   ${DBoW2_LIBRARIES}
   ${OPENGV_LIBRARIES}
+  ${Boost_LIBRARIES}
 )
 
 add_definitions(
