@@ -35,12 +35,6 @@ int main(int argc, char **argv)
 
     google::InitGoogleLogging(argv[0]);
 
-    okvis::Duration deltaT(0.0);
-    if (argc > 3)
-    {
-        deltaT = okvis::Duration(atof(argv[3]));
-    }
-
     // read configuration file
     std::string configFilename;
     if (argc > 1)
@@ -53,6 +47,12 @@ int main(int argc, char **argv)
         vocabFilename = argv[2];
     else
         vocabFilename = util::resolveRootPath("config/brisk_vocab.bn");
+
+    okvis::Duration deltaT(0.0);
+    if (argc > 3)
+    {
+        deltaT = okvis::Duration(atof(argv[3]));
+    }
 
     path dataPath{"./data_path_25-10-2019 16-47-28"};
     if (argc > 4)
