@@ -8,6 +8,7 @@
 #include <vector>
 #include <string>
 #include "Version.h"
+#include <librealsense2/rs.hpp>
 
 namespace ark {
     /**
@@ -752,3 +753,24 @@ namespace ark {
             cv::Mat output = cv::Mat());
     };
 }
+
+namespace boost
+{
+namespace serialization
+{
+
+template <class Archive>
+void serialize(Archive &ar, rs2_intrinsics &i, const unsigned int version)
+{
+    ar &i.width;
+    ar &i.height;
+    ar &i.ppx;
+    ar &i.ppy;
+    ar &i.fx;
+    ar &i.fy;
+    ar &i.model;
+    ar &i.coeffs;
+}
+
+} // namespace serialization
+} // namespace boost 

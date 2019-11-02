@@ -20,6 +20,8 @@ set( DEMO_NAME "OpenARK_hand_demo" )
 set( AVATAR_DEMO_NAME "OpenARK_avatar_demo")
 set( SLAM_DEMO_NAME "OpenARK_SLAM_demo")
 set( DATA_RECORDING_NAME "OpenARK_data_recording")
+set( SLAM_RECORDING_NAME "OpenARK_slam_recording")
+set( SLAM_REPLAYING_NAME "OpenARK_slam_replaying")
 set( TEST_NAME "OpenARK_test" )
 set( UNITY_PLUGIN_NAME "UnityPlugin" )
 
@@ -27,6 +29,8 @@ option( BUILD_HAND_DEMO "BUILD_HAND_DEMO" OFF )
 option( BUILD_AVATAR_DEMO "BUILD_AVATAR_DEMO" OFF)
 option( BUILD_SLAM_DEMO "BUILD_SLAM_DEMO" ON)
 option( BUILD_DATA_RECORDING "BUILD_DATA_RECORDING" OFF)
+option( BUILD_SLAM_RECORDING "BUILD_SLAM_RECORDING" ON)
+option( BUILD_SLAM_REPLAYING "BUILD_SLAM_REPLAYING" ON)
 option( BUILD_TESTS "BUILD_TESTS" OFF )
 option( BUILD_UNITY_PLUGIN "BUILD_UNITY_PLUGIN" OFF )
 option( USE_AZURE_KINECT_SDK "USE_AZURE_KINECT_SDK" OFF )
@@ -252,6 +256,7 @@ set(
   Avatar.cpp
   glfwManager.cpp
   OkvisSLAMSystem.cpp
+  MockD435iCamera.cpp
 )
 
 set(
@@ -287,6 +292,7 @@ set(
   ${INCLUDE_DIR}/Types.h
   ${INCLUDE_DIR}/CorrespondenceRansac.h
   ${INCLUDE_DIR}/UKF.h
+  ${INCLUDE_DIR}/MockD435iCamera.h
   stdafx.h
 )
 
@@ -452,6 +458,30 @@ if( ${BUILD_DATA_RECORDING} )
     set_target_properties( ${DATA_RECORDING_NAME} PROPERTIES OUTPUT_NAME ${DATA_RECORDING_NAME} )
     set_target_properties( ${DATA_RECORDING_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
 endif( ${BUILD_DATA_RECORDING} )
+
+if( ${BUILD_SLAM_RECORDING} )
+    add_executable( ${SLAM_RECORDING_NAME} SlamRecording.cpp )
+    target_include_directories( ${SLAM_RECORDING_NAME} PRIVATE ${INCLUDE_DIR} )
+    set_target_properties( ${SLAM_RECORDING_NAME} PROPERTIES OUTPUT_NAME ${SLAM_RECORDING_NAME} )
+    set_target_properties( ${SLAM_RECORDING_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
+    if ( MSVC )
+        target_link_libraries( ${SLAM_RECORDING_NAME} ${DEPENDENCIES} ${LIB_NAME} )
+    else()
+        target_link_libraries( ${SLAM_RECORDING_NAME} ${DEPENDENCIES} ${LIB_NAME} GLU GL glut )
+    endif ( MSVC )
+endif( ${BUILD_SLAM_RECORDING} )
+
+if( ${BUILD_SLAM_REPLAYING} )
+    add_executable( ${SLAM_REPLAYING_NAME} SlamReplaying.cpp )
+    target_include_directories( ${SLAM_REPLAYING_NAME} PRIVATE ${INCLUDE_DIR} )
+    set_target_properties( ${SLAM_REPLAYING_NAME} PROPERTIES OUTPUT_NAME ${SLAM_REPLAYING_NAME} )
+    set_target_properties( ${SLAM_REPLAYING_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
+    if ( MSVC )
+        target_link_libraries( ${SLAM_REPLAYING_NAME} ${DEPENDENCIES} ${LIB_NAME} )
+    else()
+        target_link_libraries( ${SLAM_REPLAYING_NAME} ${DEPENDENCIES} ${LIB_NAME} GLU GL glut )
+    endif ( MSVC )
+endif( ${BUILD_SLAM_REPLAYING} )
 
 # Unity plugin currently only supports Windows
 if( ${BUILD_UNITY_PLUGIN} AND MSVC )
