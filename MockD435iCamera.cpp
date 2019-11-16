@@ -59,6 +59,7 @@ bool MockD435iCamera::getImuToTime(double timestamp, std::vector<ImuPair> &data_
         allGood = allGood && std::getline(imuStream, line3);
 
         if (!allGood) {
+            std::cout << "getImuToTime: unable to read imu data.\n";
             return false;
         }
 
