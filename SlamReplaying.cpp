@@ -152,12 +152,17 @@ int main(int argc, char **argv)
             camera.update(*frame);
 
             const auto frameId = frame->frameId_;
+            if (frameId < 0) {
+                std::cout << "Data end reached\n";
+                break;
+            }
             const auto &infrared = frame->images_[0];
             const auto &infrared2 = frame->images_[1];
             const auto &rgb = frame->images_[3];
             const auto &depth = frame->images_[4];
 
 
+            std::cout << "RGB: " << rgb.total() << "\n";
             cv::imshow(std::string(camera.getModelName()) + " RGB", rgb);
             // tmp fix for the preview window in MyGUI
             cv::cvtColor(rgb, rgb, CV_RGB2BGR); 
@@ -172,8 +177,6 @@ int main(int argc, char **argv)
             //Add data to SLAM system
             printf("before slam imu\n");
             slam.PushIMU(imuData);
-            printf("after slam imu\n");
-            printf("before slam frame\n");
             slam.PushFrame(frame);
             printf("after slam frame\n");
         }
