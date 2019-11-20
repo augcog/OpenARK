@@ -10,7 +10,7 @@
 /** RealSense SDK2 Cross-Platform Depth Camera Backend **/
 namespace ark
 {
-MockD435iCamera::MockD435iCamera(path dir) : dataDir(dir), imuTxtPath(dir / "imu.txt"), intrinFilePath(dir / "intrin.bin"), timestampTxtPath(dir / "timestamp.txt"), depthDir(dir / "depth/"),
+MockD435iCamera::MockD435iCamera(path dir) : dataDir(dir), imuTxtPath(dir / "imu.txt"), metaTxtPath(dir / "meta.txt"), intrinFilePath(dir / "intrin.bin"), timestampTxtPath(dir / "timestamp.txt"), depthDir(dir / "depth/"),
                                              rgbDir(dir / "rgb/"), infraredDir(dir / "infrared/"), infrared2Dir(dir / "infrared2/"), firstFrameId(-1), startTime(0)
 {
     width = 640;
@@ -37,6 +37,8 @@ void MockD435iCamera::start()
         auto &metaStream = ifstream(metaTxtPath.string());
         std::string ph;
         metaStream >> ph >> scale;
+        std::cout << "scale: " << scale << "\n";
+        metaStream.close();
     }
 }
 
@@ -51,21 +53,15 @@ bool MockD435iCamera::getImuToTime(double timestamp, std::vector<ImuPair> &data_
     for (; !imuStream.eof() && ts < timestamp;)
     {
         // TODO: refactor
-        if (!std::getline(imuStream, line1))
-        {
-            std::cout << "Unable to read form data or data end reached\n";
+        bool allGood = true;
+        allGood = allGood && std::getline(imuStream, line1);
+        allGood = allGood && std::getline(imuStream, line2);
+        allGood = allGood && std::getline(imuStream, line3);
+
+        if (!allGood) {
             return false;
         }
-        if (!std::getline(imuStream, line2))
-        {
-            std::cout << "Unable to read form data or data end reached\n";
-            return false;
-        }
-        if (!std::getline(imuStream, line3))
-        {
-            std::cout << "Unable to read form data or data end reached\n";
-            return false;
-        }
+
         string placeholder;
         std::stringstream ss1(line1);
         std::stringstream ss2(line2);
@@ -131,6 +127,7 @@ void MockD435iCamera::update(MultiCameraFrame &frame)
     if (!std::getline(timestampStream, line))
     {
         std::cout << "Unable to read form data or data end reached\n";
+        frame.frameId_ = -1;
         return;
     }
     auto ss = std::stringstream(line);
@@ -152,7 +149,7 @@ void MockD435iCamera::update(MultiCameraFrame &frame)
     std::string fileName = fileNamess.str();
 
     std::vector<path> pathList{infraredDir, infrared2Dir, depthDir, rgbDir, depthDir};
-    frame.images_.resize(pathList.size() + 1);
+    frame.images_.resize(pathList.size());
 
     // for (auto i = 0; i < pathList.size(); i++)
     // {
@@ -168,15 +165,12 @@ void MockD435iCamera::update(MultiCameraFrame &frame)
     //boost::this_thread::sleep_for(boost::chrono::milliseconds(33));
     // TODO: not sure if this necessary
     printf("frame %d\n", frameId);
-    std::cout << "RGB Size: " << frame.images_[3].total() << " type: " << frame.images_[3].type() << "\n";
+    // std::cout << "RGB Size: " << frame.images_[3].total() << " type: " << frame.images_[3].type() << "\n";
+    // std::cout << "DEPTH Size: " << frame.images_[4].total() << " type: " << frame.images_[4].type() << "\n";
 
-    std::cout << "DEPTH Size: " << frame.images_[4].total() << " type: " << frame.images_[4].type() << "\n";
-
-    std::cout << "before project\n";
     frame.images_[2] = cv::Mat(cv::Size(width,height), CV_32FC3);
     project(frame.images_[4], frame.images_[2]);
     frame.images_[2] = frame.images_[2]*scale;
-    std::cout << "after project\n";
 
     std::cout << "Depth cloud: " << frame.images_[2].total() << "\n";
 }
