@@ -60,6 +60,10 @@ namespace ark {
                              .as<rs2::video_stream_profile>();
         depthIntrinsics = depthStream.get_intrinsics();
 
+		align_to_color = new rs2::align(RS2_STREAM_COLOR);
+
+		//cout << depthIntrinsics.ppx << " " << depthIntrinsics.ppy << " " << depthIntrinsics.fx << " " << depthIntrinsics.fy << endl;
+
         motion_pipe = std::make_shared<rs2::pipeline>();
         motion_pipe->start(motion_config);
         imuReaderThread_ = std::thread(&D435iCamera::imuReader, this);
@@ -123,7 +127,7 @@ namespace ark {
 
         try {
             // Ensure the frame has space for all images
-            frame.images_.resize(4);
+            frame.images_.resize(5);
 
             // Get frames from camera
             auto frames = pipe->wait_for_frames();
@@ -149,9 +153,17 @@ namespace ark {
             if (frame.images_[1].empty()) frame.images_[1] = cv::Mat(cv::Size(width,height), CV_8UC1);
             std::memcpy( frame.images_[1].data, infrared2.get_data(),width * height);
 
+
             if (frame.images_[2].empty()) frame.images_[2] = cv::Mat(cv::Size(width,height), CV_32FC3);
             project(depth, frame.images_[2]);
             frame.images_[2] = frame.images_[2]*scale; //depth is in mm by default
+
+			auto aligned_frames = align_to_color->process(frames);
+			auto aligned_depth = aligned_frames.get_depth_frame();
+			
+			if (frame.images_[4].empty()) frame.images_[4] = cv::Mat(cv::Size(width, height), CV_16UC1, (void*)aligned_depth.get_data(), cv::Mat::AUTO_STEP);
+			//std::memcpy(frame.images_[4].data, depth.get_data(), width * height);
+			//frame.images_[4] = frame.images_[4] * scale; //depth is in mm by default
 
             if (frame.images_[3].empty()) frame.images_[3] = cv::Mat(cv::Size(width,height), CV_8UC3);
             std::memcpy( frame.images_[3].data, color.get_data(),3 * width * height);

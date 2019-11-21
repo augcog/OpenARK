@@ -19,18 +19,19 @@ set( LIB_NAME "OpenARK" )
 set( DEMO_NAME "OpenARK_hand_demo" )
 set( AVATAR_DEMO_NAME "OpenARK_avatar_demo")
 set( SLAM_DEMO_NAME "OpenARK_SLAM_demo")
+set( 3DRECON_DATA_NAME "3dRecon_Data_Recording")
 set( DATA_RECORDING_NAME "OpenARK_data_recording")
 set( TEST_NAME "OpenARK_test" )
 set( UNITY_PLUGIN_NAME "UnityPlugin" )
 
-option( BUILD_HAND_DEMO "BUILD_HAND_DEMO" ON )
+option( BUILD_HAND_DEMO "BUILD_HAND_DEMO" OFF )
 option( BUILD_AVATAR_DEMO "BUILD_AVATAR_DEMO" OFF)
 option( BUILD_SLAM_DEMO "BUILD_SLAM_DEMO" ON)
 option( BUILD_DATA_RECORDING "BUILD_DATA_RECORDING" OFF)
 option( BUILD_TESTS "BUILD_TESTS" OFF )
-option( BUILD_UNITY_PLUGIN "BUILD_UNITY_PLUGIN" ON )
-option( USE_AZURE_KINECT_SDK "USE_AZURE_KINECT_SDK" ON )
-option( USE_RSSDK2 "USE_RSSDK2" OFF )
+option( BUILD_UNITY_PLUGIN "BUILD_UNITY_PLUGIN" OFF )
+option( USE_AZURE_KINECT_SDK "USE_AZURE_KINECT_SDK" OFF )
+option( USE_RSSDK2 "USE_RSSDK2" ON )
 option( USE_RSSDK "USE_RSSDK" OFF )
 option( USE_PMDSDK "USE_PMDSDK" OFF )
 
@@ -122,11 +123,14 @@ IF( DBoW2_FOUND )
 ENDIF( DBoW2_FOUND )
 
 # require DLoopDetector
-find_package( DLoopDetector REQUIRED )
-IF( DLoopDetector_FOUND )
-    MESSAGE( STATUS "Found DLoopDetector: ${DLoopDetector_INCLUDE_DIRS} ${DLoopDetector_LIBRARIES}" )
-   include_directories(${DLoopDetector_INCLUDE_DIRS})
-ENDIF( DLoopDetector_FOUND )
+#find_package( DLoopDetector REQUIRED )
+#IF( DLoopDetector_FOUND )
+#    MESSAGE( STATUS "Found DLoopDetector: ${DLoopDetector_INCLUDE_DIRS} ${DLoopDetector_LIBRARIES}" )
+#   include_directories(${DLoopDetector_INCLUDE_DIRS})
+#ENDIF( DLoopDetector_FOUND )
+
+SET(DLoopDetector_INCLUDE_DIR "C:/Program Files/DLoopDetector/include/DLoopDetector")
+include_directories(${DLoopDetector_INCLUDE_DIR})
 
 # require Okvis
 find_package( okvis REQUIRED )
@@ -143,6 +147,8 @@ IF(OPENGV_FOUND)
     MESSAGE(STATUS "Found OpenGV: ${OPENGV_INCLUDE_DIR} ${OPENGV_LIBRARIES}")
 ENDIF(OPENGV_FOUND)
 
+# set(LAPACK_DIR "C:/Users/OpenARK/Desktop/openark_dependencies/suitesparse-metis-for-windows-master/build/install/lib64/lapack_blas_windows")
+
 # require Ceres
 find_package( Ceres REQUIRED )
 IF(Ceres_FOUND)
@@ -151,10 +157,10 @@ ENDIF(Ceres_FOUND)
 include_directories(${CERES_INCLUDE_DIRS})
 
 # require SuiteSparse
-find_package( SuiteSparse QUIET )
-IF(SuiteSparse_FOUND)
-    MESSAGE(STATUS "Found SuiteSparse: ${SuiteSparse_INCLUDE_DIRS} ${SuiteSparse_LIBRARIES}")
-ENDIF(SuiteSparse_FOUND)
+#find_package( SuiteSparse QUIET )
+#IF(SuiteSparse_FOUND)
+#    MESSAGE(STATUS "Found SuiteSparse: ${SuiteSparse_INCLUDE_DIRS} ${SuiteSparse_LIBRARIES}")
+#ENDIF(SuiteSparse_FOUND)
 #include_directories(${SuiteSparse_INCLUDE_DIRS})
 
 find_package(OpenMP)
@@ -168,6 +174,11 @@ endif()
 find_package( brisk REQUIRED )
 include_directories(${BRISK_INCLUDE_DIRS})
 message(STATUS "Found Brisk: ${BRISK_INCLUDE_DIRS} ${BRISK_LIBRARIES}")
+
+# require Open3D
+find_package( Open3D REQUIRED )
+include_directories(${Open3D_INCLUDE_DIRS})
+message(STATUS "Found Open3D: ${Open3D_INCLUDE_DIRS} ${Open3D_LIBRARIES}")
 
 set( _FOUND_CAMERA_LIB OFF )
 set( k4a_FOUND OFF )
@@ -225,6 +236,7 @@ set(
   ${DBoW2_LIBRARIES}
   ${OPENGV_LIBRARIES}
   ${Boost_LIBRARIES}
+  ${Open3D_LIBRARIES}
 )
 
 add_definitions(
@@ -256,6 +268,7 @@ set(
   Avatar.cpp
   glfwManager.cpp
   OkvisSLAMSystem.cpp
+  SaveFrame.cpp
 )
 
 set(
@@ -291,6 +304,7 @@ set(
   ${INCLUDE_DIR}/Types.h
   ${INCLUDE_DIR}/CorrespondenceRansac.h
   ${INCLUDE_DIR}/UKF.h
+  ${INCLUDE_DIR}/SaveFrame.h
   stdafx.h
 )
 
@@ -447,6 +461,16 @@ if( ${BUILD_SLAM_DEMO} AND realsense2_FOUND )
     target_link_libraries( d435i_intrinsics_writer ${DEPENDENCIES} ${LIB_NAME} )
     #set_target_properties( d435i_intrinsics_writer PROPERTIES OUTPUT_NAME d435i_intrinsics_writer )
 endif( ${BUILD_SLAM_DEMO} AND realsense2_FOUND )
+
+add_executable( ${3DRECON_DATA_NAME} slamdemo2.cpp )
+    target_include_directories( ${3DRECON_DATA_NAME} PRIVATE ${INCLUDE_DIR} )
+    set_target_properties( ${3DRECON_DATA_NAME} PROPERTIES OUTPUT_NAME ${3DRECON_DATA_NAME} )
+    set_target_properties( ${3DRECON_DATA_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
+    if ( MSVC )
+        target_link_libraries( ${3DRECON_DATA_NAME} ${DEPENDENCIES} ${LIB_NAME} )
+    else()
+        target_link_libraries( ${3DRECON_DATA_NAME} ${DEPENDENCIES} ${LIB_NAME} GLU GL glut )
+    endif ( MSVC )
 
 if( ${BUILD_DATA_RECORDING} )
     add_executable( ${DATA_RECORDING_NAME} DataRecording.cpp )
