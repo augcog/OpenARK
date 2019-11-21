@@ -319,6 +319,37 @@ public:
 	}
 };
 
+class Mesh : public Object {
+public:
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+	std::vector<Eigen::Vector3d> vertices;
+	std::vector<Eigen::Vector3d> colors;
+	std::vector<Eigen::Vector3i> triangles;
+	void draw_obj();
+
+	Mesh(std::string name)
+	: Object(name),
+	vertices(),
+	colors(),
+	triangles(){
+	}
+
+	void update_mesh(std::vector<Eigen::Vector3d> v,
+		std::vector<Eigen::Vector3d> c,
+		std::vector<Eigen::Vector3i> t) {
+		vertices = v;
+		colors = c;
+		triangles = t;
+	}
+
+	void clear() {
+		vertices.clear();
+		colors.clear();
+		triangles.clear();
+	}
+
+};
+
 
 
 

@@ -63,7 +63,6 @@ int main(int argc, char **argv)
 
 	//Window for displaying the path
 	
-	MyGUI::CameraWindow mesh_win("Mesh Viewer", 600, 600 );
 	
 	/*
 	MyGUI::ARCameraWindow ar_win("AR Viewer", 640 * 2.5, 480 * 2.5, GL_RGB, GL_UNSIGNED_BYTE, 6.16403320e+02, 6.16171021e+02, 3.18104584e+02, 2.33643127e+02, 0.01, 100);
@@ -153,7 +152,7 @@ int main(int argc, char **argv)
 
 	slam.AddFrameAvailableHandler(saveFrameHandler, "saveframe");
 
-	open3d::integration::ScalableTSDFVolume * tsdf_volume = new open3d::integration::ScalableTSDFVolume(0.01, 0.04, open3d::integration::TSDFVolumeColorType::RGB8);
+	open3d::integration::ScalableTSDFVolume * tsdf_volume = new open3d::integration::ScalableTSDFVolume(0.05, 0.05, open3d::integration::TSDFVolumeColorType::RGB8);
 
 	auto intr = open3d::camera::PinholeCameraIntrinsic(640, 480, 612.081, 612.307, 318.254, 237.246);
 
@@ -255,13 +254,23 @@ int main(int argc, char **argv)
 
 	slam.AddFrameAvailableHandler(tsdfFrameHandler, "tsdfframe");
 
-	std::shared_ptr<open3d::geometry::TriangleMesh> vis_mesh
+	MyGUI::ObjectWindow mesh_win("Mesh Viewer", 600, 600);
+	MyGUI::Mesh mesh_obj("mesh");
 
-	FrameAvailableHandler meshHandler([&tsdf_volume, &frame_counter, &vis_mesh](MultiCameraFrame::Ptr frame) {
-		if (frame_counter % 10 == 0) {
-			cout << "updating mesh" << endl;
+	mesh_win.add_object(&mesh_obj);
+
+
+	std::shared_ptr<open3d::geometry::TriangleMesh> vis_mesh;
+
+	FrameAvailableHandler meshHandler([&tsdf_volume, &frame_counter, &vis_mesh, &mesh_obj](MultiCameraFrame::Ptr frame) {
+		if (frame_counter % 30 == 1) {
 			
 			vis_mesh = tsdf_volume->ExtractTriangleMesh();
+
+			cout << "num vertices: " << vis_mesh->vertices_.size() << endl;
+			cout << "num triangles: " << vis_mesh->triangles_.size() << endl;
+
+			mesh_obj.update_mesh(vis_mesh->vertices_, vis_mesh->vertex_colors_, vis_mesh->triangles_);
 
 		}
 		
@@ -269,7 +278,13 @@ int main(int argc, char **argv)
 	});
 
 	slam.AddFrameAvailableHandler(meshHandler, "meshupdate");
+
+	FrameAvailableHandler viewHandler([&mesh_obj, &tsdf_volume](MultiCameraFrame::Ptr frame) {
+		Eigen::Affine3d transform(frame->T_WC(3));
+		mesh_obj.set_transform(transform.inverse());
+	});
 	
+	slam.AddFrameAvailableHandler(viewHandler, "viewhandler");
 
 	// thread *app = new thread(application_thread);
 
