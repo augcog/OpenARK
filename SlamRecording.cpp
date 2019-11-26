@@ -41,8 +41,12 @@ void saveImg(int id, const cv::Mat &img, const path imgDir)
     std::stringstream fileName;
     fileName << std::setw(5) << std::setfill('0') << std::to_string(id) << ".png";
     const std::string dst = (imgDir / fileName.str()).string();
-    cout << "Writing " << dst << endl;
-    cv::imwrite(dst, img);
+    std::vector<int> compression_params;
+    compression_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
+    compression_params.push_back(0);
+    compression_params.push_back(CV_IMWRITE_PNG_STRATEGY);
+    compression_params.push_back(CV_IMWRITE_PNG_STRATEGY_HUFFMAN_ONLY);
+    cv::imwrite(dst, img, compression_params);
 }
 
 int main(int argc, char **argv)
@@ -93,26 +97,31 @@ int main(int argc, char **argv)
             meta_ofs << "depth " << camera.getDepthScale();
         }
         auto frame = std::make_shared<MultiCameraFrame>();
-        while (!quit)
+        while (true)
         {
             if (!img_queue.try_dequeue(&frame))
             {
-                boost::this_thread::sleep_for(boost::chrono::milliseconds(100));
+                if(quit)
+                    break;
+                boost::this_thread::sleep_for(boost::chrono::milliseconds(10));
                 continue;
             }
             const auto frameId = frame->frameId_;
             const auto &infrared = frame->images_[0];
             const auto &infrared2 = frame->images_[1];
             const auto &depth = frame->images_[4];
-            const auto &rgb = frame->images_[3];
+            //const auto &rgb = frame->images_[3];
 
             saveImg(frameId, infrared, infrared_path);
             saveImg(frameId, infrared2, infrared2_path);
             saveImg(frameId, depth, depth_path);
-            saveImg(frameId, rgb, rgb_path);
+            //saveImg(frameId, rgb, rgb_path);
 
             timestamp_ofs << frameId << " " << std::setprecision(15) << frame->timestamp_ << "\n";
-
+            if(!quit)
+                cout << "Writing frame: " << frameId << endl;
+            else
+                cout << "Writing leftover frame: " << frameId << endl;
             imuBuffer.clear();
             camera.getImuToTime(frame->timestamp_, imuBuffer);
             for (const auto &imuPair : imuBuffer)
@@ -134,6 +143,11 @@ int main(int argc, char **argv)
         // 4: depth raw
         auto frame = std::make_shared<MultiCameraFrame>();
         camera.update(*frame);
+
+        const auto rgb = frame->images_[3].clone();
+
+        cv::cvtColor(rgb, rgb, CV_RGB2BGR);
+        cv::imshow(camera.getModelName() + " RGB", rgb);
 
         if (paused)
         {
@@ -159,17 +173,6 @@ int main(int argc, char **argv)
         {
             img_queue.enqueue(frame);
         }
-
-        const auto frameId = frame->frameId_;
-        const auto &infrared = frame->images_[0];
-        const auto &infrared2 = frame->images_[1];
-        const auto &depth = frame->images_[4];
-        const auto &rgb = frame->images_[3];
-
-        cv::cvtColor(rgb, rgb, CV_RGB2BGR);
-        cv::imshow(camera.getModelName() + " RGB", rgb);
-        cv::imshow(camera.getModelName() + " Infrared", infrared);
-        cv::imshow(camera.getModelName() + " Depth", depth);
 
         // visualize results
         int k = cv::waitKey(1);
