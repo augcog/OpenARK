@@ -97,12 +97,15 @@ int main(int argc, char **argv)
             meta_ofs << "depth " << camera.getDepthScale();
         }
         auto frame = std::make_shared<MultiCameraFrame>();
+        auto lastImuTs = -1.0;
+        const auto timeGapReportThreshold = 1e7;
         while (true)
         {
             if (!img_queue.try_dequeue(&frame))
             {
                 if(quit)
                     break;
+                // TODO: is it this function break time continuity?
                 boost::this_thread::sleep_for(boost::chrono::milliseconds(10));
                 continue;
             }
@@ -126,7 +129,12 @@ int main(int argc, char **argv)
             camera.getImuToTime(frame->timestamp_, imuBuffer);
             for (const auto &imuPair : imuBuffer)
             {
-                imu_ofs << "ts " << std::setprecision(15) << imuPair.timestamp << "\n"
+                auto ts = imuPair.timestamp;
+                if ((ts - lastImuTs) > timeGapReportThreshold) {
+                    cout << "Timestamp gap in imu: " << (ts - lastImuTs) << " at time: " << ts << "\n";
+                }
+                lastImuTs = ts;
+                imu_ofs << "ts " << std::setprecision(15) << ts << "\n"
                         << "gy " << imuPair.gyro[0] << " " << imuPair.gyro[1] << " " << imuPair.gyro[2] << "\n"
                         << "ac " << imuPair.accel[0] << " " << imuPair.accel[1] << " " << imuPair.accel[2] << "\n";
             }
@@ -149,30 +157,7 @@ int main(int argc, char **argv)
         cv::cvtColor(rgb, rgb, CV_RGB2BGR);
         cv::imshow(camera.getModelName() + " RGB", rgb);
 
-        if (paused)
-        {
-            // clear the imu data in camera?
-            // extract all imu data ever since pause??
-            camera.getImuToTime(frame->timestamp_, imuDispose);
-            imuDispose.clear();
-            const std::string NO_SIGNAL_STR = "PAUSED";
-            const cv::Scalar RECT_COLOR = cv::Scalar(0, 160, 255);
-            const int RECT_WID = 120, RECT_HI = 40;
-
-            for (auto &img : frame->images_)
-            {
-                const cv::Point STR_POS(img.cols / 2 - 50, img.rows / 2 + 7);
-                cv::Rect rect(img.cols / 2 - RECT_WID / 2,
-                              img.rows / 2 - RECT_HI / 2,
-                              RECT_WID, RECT_HI);
-                cv::rectangle(img, rect, RECT_COLOR, -1);
-                cv::putText(img, NO_SIGNAL_STR, STR_POS, 0, 0.8, cv::Scalar(255, 255, 255), 1, cv::LINE_AA);
-            }
-        }
-        else
-        {
-            img_queue.enqueue(frame);
-        }
+        img_queue.enqueue(frame);
 
         // visualize results
         int k = cv::waitKey(1);
