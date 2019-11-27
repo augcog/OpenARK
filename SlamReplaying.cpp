@@ -79,7 +79,7 @@ int main(int argc, char **argv)
 
     //Window for displaying the path
     MyGUI::CameraWindow traj_win("Traj Viewer", 640 * 2, 480 * 2);
-    MyGUI::ARCameraWindow ar_win("AR Viewer", 640 * 2.5, 480 * 2.5, GL_RGB, GL_UNSIGNED_BYTE, 6.16403320e+02, 6.16171021e+02, 3.18104584e+02, 2.33643127e+02, 0.01, 100);
+    MyGUI::ARCameraWindow ar_win("AR Viewer", 640 * 2.5, 480 * 2.5, GL_LUMINANCE, GL_UNSIGNED_BYTE, 6.16403320e+02, 6.16171021e+02, 3.18104584e+02, 2.33643127e+02, 0.01, 100);
     traj_win.set_pos(640 * 2.5, 100);
     ar_win.set_pos(0, 100);
     MyGUI::Path path1("path1", Eigen::Vector3d(1, 0, 0));
@@ -163,17 +163,18 @@ int main(int argc, char **argv)
             const auto &depth = frame->images_[4];
 
 
-            std::cout << "RGB: " << rgb.total() << "\n";
-            cv::imshow(std::string(camera.getModelName()) + " RGB", rgb);
+            //std::cout << "RGB: " << rgb.total() << "\n";
+            //cv::imshow(std::string(camera.getModelName()) + " RGB", rgb);
             // tmp fix for the preview window in MyGUI
-            cv::cvtColor(rgb, rgb, CV_RGB2BGR); 
+            //cv::cvtColor(rgb, rgb, CV_RGB2BGR); 
             cv::imshow(std::string(camera.getModelName()) + " Infrared", infrared);
             cv::imshow(std::string(camera.getModelName()) + " Depth", depth);
             //Get or wait for IMU Data until current frame
-            std::cout << "frame size: " << rgb.total() << std::endl;
+            //std::cout << "frame size: " << rgb.total() << std::endl;
             std::vector<ImuPair> imuData;
             camera.getImuToTime(frame->timestamp_, imuData);
-            //std::cout << "numimu: " << imuData.size() << std::endl;
+            std::cout << "numimu: " << imuData.size() << std::endl;
+            std::cout << "timestamp: " << std::setprecision(15) << frame->timestamp_ << std::endl;
 
             //Add data to SLAM system
             printf("before slam imu\n");

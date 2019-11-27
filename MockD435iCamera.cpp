@@ -149,7 +149,7 @@ void MockD435iCamera::update(MultiCameraFrame &frame)
     fileNamess << std::setw(5) << std::setfill('0') << std::to_string(frameId) << ".png";
     std::string fileName = fileNamess.str();
 
-    std::vector<path> pathList{infraredDir, infrared2Dir, depthDir, rgbDir, depthDir};
+    std::vector<path> pathList{infraredDir, infrared2Dir, depthDir, infraredDir, depthDir};
     frame.images_.resize(pathList.size());
 
     // for (auto i = 0; i < pathList.size(); i++)
@@ -158,7 +158,7 @@ void MockD435iCamera::update(MultiCameraFrame &frame)
     // }
     frame.images_[0] = cv::imread((pathList[0] / fileName).string(), cv::IMREAD_GRAYSCALE | cv::IMREAD_ANYDEPTH);
     frame.images_[1] = cv::imread((pathList[1] / fileName).string(), cv::IMREAD_GRAYSCALE | cv::IMREAD_ANYDEPTH);
-    frame.images_[3] = cv::imread((pathList[3] / fileName).string(), cv::IMREAD_COLOR | cv::IMREAD_ANYDEPTH);
+    frame.images_[3] = cv::imread((pathList[3] / fileName).string(), cv::IMREAD_GRAYSCALE | cv::IMREAD_ANYDEPTH);
     frame.images_[4] = cv::imread((pathList[4] / fileName).string(), cv::IMREAD_GRAYSCALE | cv::IMREAD_ANYDEPTH);
 
     // project the point cloud at 2
