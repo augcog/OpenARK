@@ -97,13 +97,15 @@ int main(int argc, char **argv)
             meta_ofs << "depth " << camera.getDepthScale();
         }
         auto frame = std::make_shared<MultiCameraFrame>();
+        auto lastImuTs = -1.0;
+        const auto timeGapReportThreshold = 1e7;
         while (true)
         {
             if (!img_queue.try_dequeue(&frame))
             {
                 if(quit)
                     break;
-                boost::this_thread::sleep_for(boost::chrono::milliseconds(10));
+                // boost::this_thread::sleep_for(boost::chrono::milliseconds(10));
                 continue;
             }
             const auto frameId = frame->frameId_;
@@ -126,7 +128,12 @@ int main(int argc, char **argv)
             camera.getImuToTime(frame->timestamp_, imuBuffer);
             for (const auto &imuPair : imuBuffer)
             {
-                imu_ofs << "ts " << std::setprecision(15) << imuPair.timestamp << "\n"
+                auto ts = imuPair.timestamp;
+                if ((ts - lastImuTs) > timeGapReportThreshold) {
+                    cout << "Timestamp gap in imu: " << (ts - lastImuTs) << " at time: " << ts << "\n";
+                }
+                lastImuTs = ts;
+                imu_ofs << "ts " << std::setprecision(15) << ts << "\n"
                         << "gy " << imuPair.gyro[0] << " " << imuPair.gyro[1] << " " << imuPair.gyro[2] << "\n"
                         << "ac " << imuPair.accel[0] << " " << imuPair.accel[1] << " " << imuPair.accel[2] << "\n";
             }
