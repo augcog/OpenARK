@@ -189,6 +189,13 @@ int main(int argc, char **argv)
         {
             std::cout << "ex catched\n";
         }
+        const auto isReset = slam.okvis_estimator_->isReset();
+        std::cout << "slam reset? : " << isReset << "\n";
+        if (isReset) {
+            traj_win.msg_ = " *Reseting*";
+        } else {
+            traj_win.msg_ = " ";
+        }
         int k = cv::waitKey(1);
         if (k == 'q' || k == 'Q' || k == 27)
             break; // 27 is ESC
