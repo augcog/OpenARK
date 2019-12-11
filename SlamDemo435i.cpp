@@ -33,6 +33,7 @@ int main(int argc, char **argv)
     else vocabFilename = util::resolveRootPath("config/brisk_vocab.bn");
 
     OkvisSLAMSystem slam(vocabFilename, configFilename);
+    cv::FileStorage configFile(configFilename, cv::FileStorage::READ);
 
     //setup display
     if (!MyGUI::Manager::init())
@@ -44,7 +45,11 @@ int main(int argc, char **argv)
 
     printf("Camera initialization started...\n");
     fflush(stdout);
-    D435iCamera camera;
+    CameraParameter cameraParameter;
+    if (configFile["emitterPower"].isReal()) {
+        configFile["emitterPower"] >> cameraParameter.emitterPower;
+    }
+    D435iCamera camera(cameraParameter);
     camera.start();
 
     printf("Camera-IMU initialization complete\n");

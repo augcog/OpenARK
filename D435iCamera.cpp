@@ -10,22 +10,27 @@
 
 /** RealSense SDK2 Cross-Platform Depth Camera Backend **/
 namespace ark {
-    D435iCamera::D435iCamera():
-        last_ts_g(0), kill(false) {
+
+    D435iCamera::D435iCamera(): D435iCamera(CameraParameter()){}
+
+    D435iCamera::D435iCamera(const CameraParameter &parameter): 
+        cameraParameter(parameter), last_ts_g(0), kill(false) {
         //Setup camera
         //TODO: Make read from config file
         rs2::context ctx;
         device = ctx.query_devices().front();
-        width = 640;
-        height = 480;
+        width = cameraParameter.width;
+        height = cameraParameter.height;
         //Setup configuration
-        config.enable_stream(RS2_STREAM_DEPTH,-1,width, height,RS2_FORMAT_Z16,30);
-        config.enable_stream(RS2_STREAM_INFRARED, 1, width, height, RS2_FORMAT_Y8, 30);
-        config.enable_stream(RS2_STREAM_INFRARED, 2, width, height, RS2_FORMAT_Y8, 30);
-        config.enable_stream(RS2_STREAM_COLOR, -1, width, height, RS2_FORMAT_RGB8, 30);
-        motion_config.enable_stream(RS2_STREAM_ACCEL, RS2_FORMAT_MOTION_XYZ32F,250);
-        motion_config.enable_stream(RS2_STREAM_GYRO, RS2_FORMAT_MOTION_XYZ32F,200);
-        imu_rate=200; //setting imu_rate to be the gyro rate since we are using the gyro timestamps
+        const auto irDepthFps = cameraParameter.irDepthFps;
+        config.enable_stream(RS2_STREAM_DEPTH,-1,width, height,RS2_FORMAT_Z16,irDepthFps);
+        config.enable_stream(RS2_STREAM_INFRARED, 1, width, height, RS2_FORMAT_Y8, irDepthFps);
+        config.enable_stream(RS2_STREAM_INFRARED, 2, width, height, RS2_FORMAT_Y8, irDepthFps);
+        config.enable_stream(RS2_STREAM_COLOR, -1, width, height, RS2_FORMAT_RGB8, irDepthFps);
+        const auto imuFps = cameraParameter.imuFps;
+        // TODO: check if fps of acc is neccesary to be different from gyro
+        motion_config.enable_stream(RS2_STREAM_ACCEL, RS2_FORMAT_MOTION_XYZ32F,imuFps+50);
+        motion_config.enable_stream(RS2_STREAM_GYRO, RS2_FORMAT_MOTION_XYZ32F,imuFps);
         //Need to get the depth sensor specifically as it is the one that controls the sync funciton
         depth_sensor = new rs2::depth_sensor(device.first<rs2::depth_sensor>());
 
@@ -52,7 +57,7 @@ namespace ark {
     void D435iCamera::start(){
         //enable sync
         //depth_sensor->set_option(RS2_OPTION_INTER_CAM_SYNC_MODE,1);
-        //depth_sensor->set_option(RS2_OPTION_EMITTER_ENABLED, 1.f);
+        depth_sensor->set_option(RS2_OPTION_EMITTER_ENABLED, cameraParameter.emitterPower);
         //start streaming
         pipe = std::make_shared<rs2::pipeline>();
         rs2::pipeline_profile selection = pipe->start(config);
@@ -132,6 +137,7 @@ namespace ark {
     bool D435iCamera::getImuToTime(double timestamp, std::vector<ImuPair>& data_out){
         ImuPair imu_data;
         imu_data.timestamp=0;
+        float imu_rate = static_cast<float>(cameraParameter.imuFps);
         while((imu_data.timestamp+1e9/imu_rate)<timestamp){
             if(imu_queue_.try_dequeue(&imu_data)){
                 data_out.push_back(imu_data);
