@@ -32,8 +32,6 @@ namespace ark{
         std::string tcwPath;
         std::string depth_to_tcw_Path;
 
-		int frame_counter;
-
     };
 }
 

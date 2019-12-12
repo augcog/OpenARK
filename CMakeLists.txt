@@ -462,7 +462,7 @@ if( ${BUILD_SLAM_DEMO} AND realsense2_FOUND )
     #set_target_properties( d435i_intrinsics_writer PROPERTIES OUTPUT_NAME d435i_intrinsics_writer )
 endif( ${BUILD_SLAM_DEMO} AND realsense2_FOUND )
 
-add_executable( ${3DRECON_DATA_NAME} slamdemo2.cpp )
+add_executable( ${3DRECON_DATA_NAME} 3DReconDemo.cpp )
     target_include_directories( ${3DRECON_DATA_NAME} PRIVATE ${INCLUDE_DIR} )
     set_target_properties( ${3DRECON_DATA_NAME} PROPERTIES OUTPUT_NAME ${3DRECON_DATA_NAME} )
     set_target_properties( ${3DRECON_DATA_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )

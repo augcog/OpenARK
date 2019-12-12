@@ -43,22 +43,9 @@ namespace ark {
         createFolder(depthPath);
         createFolder(tcwPath);
 
-		frame_counter = 15;
-
-		//cv::namedWindow("Display window", cv::WINDOW_AUTOSIZE);
-
     }
 
     void SaveFrame::frameWrite(cv::Mat imRGB, cv::Mat depth, Eigen::Matrix4d traj, int frameId){
-
-		frame_counter++;
-
-		if (frame_counter > 2) {
-			frame_counter = 0;
-		}
-		else {
-			return;
-		}
 
         std::cout<<"frameWrite frame = "<< frameId <<std::endl;
 
@@ -66,32 +53,7 @@ namespace ark {
         cv::cvtColor(imRGB, imBGR, CV_RGB2BGR);
         cv::imwrite(rgbPath + std::to_string(frameId) + ".jpg", imBGR);
 
-		//std::cout << "rgb done" << std::endl;
-
-
-
-		//cv::imshow("Display window", depth);
-		//cv::waitKey(1);
-		
-
-
-		//cv::Mat depth255;
-        //depth.convertTo(depth255, CV_16UC1);
-
-		//cv::imshow("Display window 2", depth255);
-		//cv::waitKey(1);
-
         cv::imwrite(depthPath + std::to_string(frameId) + ".png", depth);
-
-		//cv::FileStorage fs("test.yml", cv::FileStorage::WRITE);
-		//fs << "depth" << depth255;
-		//fs.release();
-
-		//std::cout << "depth done" << std::endl;
-
-		//cv::Mat transform = cv::Mat(cv::Size(4, 4), CV_64FC1);
-
-		//cv::eigen2cv(traj, transform);
 
 		std::ofstream file(tcwPath + std::to_string(frameId) + ".txt");
 		if (file.is_open())
@@ -99,37 +61,6 @@ namespace ark {
 			file << traj.matrix() << '\n';
 		}
 		file.close();
-
-
-        //TCW is World to Camera Transform
-
-		/*cv::Mat transform  = cv::Mat(4, 4, CV_32FC1);
-		cv::OutputArray output = cv::OutputArray(transform);
-
-		std::cout << "here2" << std::endl;
-
-		cv::eigen2cv(traj, output);
-		
-		std::cout << "here1" << std::endl;
-
-        cv::FileStorage fs(tcwPath + std::to_string(frameId)+".xml",cv::FileStorage::WRITE);
-        fs << "tcw" << transform;
-        //fs << "depth" << frame.imDepth ;
-        fs.release();*/
-
-        //std::cout << "finished writing " << frameId << std::endl;
-
-
-
-        //RGB and Depth to .xml (.png preferable)
-        /*
-        cv::FileStorage fs2(depth_to_tcw_Path + std::to_string(frame.frameId)+".xml",cv::FileStorage::WRITE);
-        fs2 << "depth" << depth255;
-        // fs << "rgb" << frame.imRGB;
-        fs2.release();
-        */
-		
-
     }
 
     /*RGBDFrame SaveFrame::frameLoad(int frameId){

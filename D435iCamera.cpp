@@ -58,6 +58,8 @@ namespace ark {
         //get the depth intrinsics (needed for projection to 3d)
         auto depthStream = selection.get_stream(RS2_STREAM_DEPTH)
                              .as<rs2::video_stream_profile>();
+
+
         depthIntrinsics = depthStream.get_intrinsics();
 
 		align_to_color = new rs2::align(RS2_STREAM_COLOR);
@@ -67,6 +69,7 @@ namespace ark {
         motion_pipe = std::make_shared<rs2::pipeline>();
         motion_pipe->start(motion_config);
         imuReaderThread_ = std::thread(&D435iCamera::imuReader, this);
+
     }
 
     void D435iCamera::imuReader(){
@@ -162,12 +165,17 @@ namespace ark {
 			auto aligned_depth = aligned_frames.get_depth_frame();
 			
 			if (frame.images_[4].empty()) frame.images_[4] = cv::Mat(cv::Size(width, height), CV_16UC1, (void*)aligned_depth.get_data(), cv::Mat::AUTO_STEP);
-			//std::memcpy(frame.images_[4].data, depth.get_data(), width * height);
-			//frame.images_[4] = frame.images_[4] * scale; //depth is in mm by default
 
             if (frame.images_[3].empty()) frame.images_[3] = cv::Mat(cv::Size(width,height), CV_8UC3);
             std::memcpy( frame.images_[3].data, color.get_data(),3 * width * height);
 
+			for (int i = 0; i < width; i++) {
+				for (int k = 0; k < height; k++) {
+					if (frame.images_[4].at<uint16_t>(k, i) < 200) { //FILTER OUT ALL POINTS CLOSER THAN 20cm
+						frame.images_[4].at<uint16_t>(k, i) = 0;
+					}
+				}
+			}
 
         } catch (std::runtime_error e) {
             // Try reconnecting

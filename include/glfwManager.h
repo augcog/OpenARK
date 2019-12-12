@@ -206,6 +206,17 @@ public:
 
 };
 
+class MeshWindow : public ObjectWindow {
+public:
+	MeshWindow(std::string name, int resX, int resY) :
+		ObjectWindow(name, resX, resY) {};
+	//bool display();
+	void set_camera(Eigen::Affine3d t) {
+		transform = t;
+	}
+private:
+	Eigen::Affine3d transform;
+};
 
 class Object{
 public:
@@ -321,6 +332,7 @@ public:
 
 class Mesh : public Object {
 public:
+
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	std::vector<Eigen::Vector3d> vertices;
 	std::vector<Eigen::Vector3d> colors;
@@ -337,9 +349,13 @@ public:
 	void update_mesh(std::vector<Eigen::Vector3d> v,
 		std::vector<Eigen::Vector3d> c,
 		std::vector<Eigen::Vector3i> t) {
+		std::lock_guard<std::mutex> guard(meshLock_);
 		vertices = v;
 		colors = c;
 		triangles = t;
+
+		cout << "mesh updated" << endl;
+
 	}
 
 	void clear() {
@@ -348,13 +364,10 @@ public:
 		triangles.clear();
 	}
 
+protected:
+	std::mutex meshLock_;
+
 };
-
-
-
-
-
-
 
 
 } //MyGUI
