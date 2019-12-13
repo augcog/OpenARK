@@ -142,6 +142,7 @@ int main(int argc, char **argv)
         std::cout << "slam reset? : " << isReset << "\n";
         if (isReset) {
             traj_win.msg_ = " *Reseting*";
+            path1.clear();
         } else {
             traj_win.msg_ = " ";
         }
