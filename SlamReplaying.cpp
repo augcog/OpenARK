@@ -178,6 +178,8 @@ int main(int argc, char **argv)
             //Add data to SLAM system
             printf("before slam imu\n");
             slam.PushIMU(imuData);
+            // make it the same as real camera
+            frame->images_.resize(4);
             slam.PushFrame(frame);
             printf("after slam frame\n");
         }
@@ -193,6 +195,7 @@ int main(int argc, char **argv)
         std::cout << "slam reset? : " << isReset << "\n";
         if (isReset) {
             traj_win.msg_ = " *Reseting*";
+            path1.clear();
         } else {
             traj_win.msg_ = " ";
         }
