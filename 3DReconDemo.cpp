@@ -18,7 +18,7 @@ int main(int argc, char **argv)
 {
 
 	if (argc > 5) {
-		std::cerr << "Usage: ./" << argv[0] << " configuration-yaml-file [vocabulary-file] [skip-first-seconds]" << std::endl
+		std::cerr << "Usage: ./" << argv[0] << " configuration-yaml-file [vocabulary-file] [frames-output-folder]" << std::endl
 			<< "Args given: " << argc << std::endl;
 		return -1;
 	}
@@ -79,22 +79,23 @@ int main(int argc, char **argv)
 		cv::Mat imDepth;
 
 		frame->getImage(imRGB, 3);
-
 		frame->getImage(imDepth, 4);
-
 		Eigen::Matrix4d transform(frame->T_WC(3));
-
 
 		saveFrame->frameWrite(imRGB, imDepth, transform, frame->frameId_);
 	});
 
 	slam.AddFrameAvailableHandler(saveFrameHandler, "saveframe");
 
+
+
+
+
+
 	open3d::integration::ScalableTSDFVolume * tsdf_volume = new open3d::integration::ScalableTSDFVolume(0.015, 0.05, open3d::integration::TSDFVolumeColorType::RGB8);
 
 	//intrinsics need to be set by user (currently does not read d435i_intr.yaml)
 	auto intr = open3d::camera::PinholeCameraIntrinsic(640, 480, 612.081, 612.307, 318.254, 237.246);
-
 
 
 	FrameAvailableHandler tsdfFrameHandler([&tsdf_volume, &frame_counter, &do_integration, intr](MultiCameraFrame::Ptr frame) {
@@ -130,6 +131,8 @@ int main(int argc, char **argv)
 		}
 
 
+
+
 		auto depth_im = std::make_shared<open3d::geometry::Image>();
 		depth_im->Prepare(width, height, 1, sizeof(uint16_t));
 			
@@ -141,18 +144,20 @@ int main(int argc, char **argv)
 			}
 		}
 
-		auto rgbd_image = open3d::geometry::RGBDImage::CreateFromColorAndDepth(*color_im, *depth_im, 1000.0, 2.3, false);
 
+
+		auto rgbd_image = open3d::geometry::RGBDImage::CreateFromColorAndDepth(*color_im, *depth_im, 1000.0, 2.3, false);
 		tsdf_volume->Integrate(*rgbd_image, intr, frame->T_WC(3).inverse());
 	});
 
 	slam.AddFrameAvailableHandler(tsdfFrameHandler, "tsdfframe");
 
+
+
 	MyGUI::MeshWindow mesh_win("Mesh Viewer", 1200, 1200);
 	MyGUI::Mesh mesh_obj("mesh");
 
 	mesh_win.add_object(&mesh_obj);
-
 
 	std::shared_ptr<open3d::geometry::TriangleMesh> vis_mesh;
 
@@ -173,6 +178,8 @@ int main(int argc, char **argv)
 
 	slam.AddFrameAvailableHandler(meshHandler, "meshupdate");
 
+
+
 	FrameAvailableHandler viewHandler([&mesh_obj, &tsdf_volume, &mesh_win, &frame_counter](MultiCameraFrame::Ptr frame) {
 		Eigen::Affine3d transform(frame->T_WC(3));
 		mesh_obj.set_transform(transform.inverse());
@@ -180,7 +187,7 @@ int main(int argc, char **argv)
 	
 	slam.AddFrameAvailableHandler(viewHandler, "viewhandler");
 
-	// thread *app = new thread(application_thread);
+
 
 	cv::namedWindow("image");
 
@@ -209,11 +216,8 @@ int main(int argc, char **argv)
 
 		cv::Mat imRGB;
 		frame->getImage(imRGB, 3);
-
 		cv::Mat imBGR;
-
 		cv::cvtColor(imRGB, imBGR, CV_RGB2BGR);
-
 		cv::imshow("image", imBGR);
 
 		int k = cv::waitKey(4);
@@ -234,7 +238,7 @@ int main(int argc, char **argv)
 	cout << "getting mesh" << endl;
 
 	std::shared_ptr<open3d::geometry::TriangleMesh> write_mesh = tsdf_volume->ExtractTriangleMesh();
-	
+
 	open3d::io::WriteTriangleMeshToPLY("mesh.ply", *write_mesh, false, false, true, true, false, false);
 
 	printf("\nTerminate...\n");
