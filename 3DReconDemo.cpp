@@ -233,14 +233,8 @@ int main(int argc, char **argv)
 
 	cout << "getting mesh" << endl;
 
-	//std::shared_ptr<const open3d::geometry::Geometry> mesh = tsdf_volume->ExtractTriangleMesh();
-
 	std::shared_ptr<open3d::geometry::TriangleMesh> write_mesh = tsdf_volume->ExtractTriangleMesh();
-
-	//const std::vector<std::shared_ptr<const open3d::geometry::Geometry>> mesh_vec = { mesh };
-
-	//open3d::visualization::DrawGeometries(mesh_vec);
-
+	
 	open3d::io::WriteTriangleMeshToPLY("mesh.ply", *write_mesh, false, false, true, true, false, false);
 
 	printf("\nTerminate...\n");
