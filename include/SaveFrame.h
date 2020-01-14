@@ -7,6 +7,7 @@
 #include <string>
 
 #include <opencv2/opencv.hpp>
+#include "Types.h"
 
 
 namespace ark{
@@ -21,7 +22,7 @@ namespace ark{
 
 		void SaveFrame::frameWrite(cv::Mat imRGB, cv::Mat depth, Eigen::Matrix4d traj, int frameId);
 
-        //ark::RGBDFrame frameLoad(int frameId);
+        ark::RGBDFrame SaveFrame::frameLoad(int frameId);
 
     private:
 

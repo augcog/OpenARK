@@ -14,6 +14,59 @@
 
 using namespace ark;
 
+std::shared_ptr<open3d::geometry::RGBDImage> generateRGBDImageFromCVRGB(cv::Mat color_mat, cv::Mat depth_mat) {
+
+	int height = 480;
+	int width = 640;
+
+	auto color_im = std::make_shared<open3d::geometry::Image>();
+	color_im->Prepare(width, height, 3, sizeof(uint8_t));
+
+	uint8_t *pi = (uint8_t *)(color_im->data_.data());
+
+	for (int i = 0; i < height; i++) {
+		for (int k = 0; k < width; k++) {
+
+			cv::Vec3b pixel = color_mat.at<cv::Vec3b>(i, k);
+
+			*pi++ = pixel[0];
+			*pi++ = pixel[1];
+			*pi++ = pixel[2];
+		}
+	}
+
+
+	auto depth_im = std::make_shared<open3d::geometry::Image>();
+	depth_im->Prepare(width, height, 1, sizeof(uint16_t));
+
+	uint16_t * p = (uint16_t *)depth_im->data_.data();
+
+	for (int i = 0; i < height; i++) {
+		for (int k = 0; k < width; k++) {
+			*p++ = depth_mat.at<uint16_t>(i, k);
+		}
+	}
+
+	auto rgbd_image = open3d::geometry::RGBDImage::CreateFromColorAndDepth(*color_im, *depth_im, 1000.0, 2.3, false);
+	return rgbd_image;
+}
+
+
+//void deintegrate(int frame_id, SaveFrame * saveFrame, open3d::integration::ScalableTSDFVolume * tsdf_volume, open3d::camera::PinholeCameraIntrinsic intr) {
+//	RGBDFrame frame = saveFrame->frameLoad(frame_id);
+//
+//	if (frame.frameId == -1) {
+//		cout << "deintegration failed with frameload fail " << frame_id << endl;
+//		return;
+//	}
+//
+//	auto rgbd_image = generateRGBDImageFromCVRGB(frame.imRGB, frame.imDepth);
+//
+//	tsdf_volume->Deintegrate(rgbd_image, intr, frame.mTcw.inv());
+//
+//
+//}
+
 int main(int argc, char **argv)
 {
 
@@ -45,6 +98,9 @@ int main(int argc, char **argv)
 	if (argc > 3) frameOutput = argv[3];
 	else frameOutput = "./frames/";
 
+	cv::namedWindow("image", cv::WINDOW_AUTOSIZE);
+
+	SaveFrame * saveFrame = new SaveFrame(frameOutput);
 
 	//setup display
 	if (!MyGUI::Manager::init())
@@ -66,7 +122,6 @@ int main(int argc, char **argv)
 	int id = 0;
 
 
-	SaveFrame * saveFrame = new SaveFrame(frameOutput);
 
 	int frame_counter = 1;
 	bool do_integration = true;
@@ -95,8 +150,6 @@ int main(int argc, char **argv)
 	//intrinsics need to be set by user (currently does not read d435i_intr.yaml)
 	auto intr = open3d::camera::PinholeCameraIntrinsic(640, 480, 612.081, 612.307, 318.254, 237.246);
 
-
-
 	FrameAvailableHandler tsdfFrameHandler([&tsdf_volume, &frame_counter, &do_integration, intr](MultiCameraFrame::Ptr frame) {
 		if (!do_integration || frame_counter % 3 != 0) {
 			return;
@@ -104,11 +157,10 @@ int main(int argc, char **argv)
 
 		cout << "Integrating frame number: " << frame->frameId_ << endl;
 
-		int height = 480;
+
+		/*int height = 480;
 		int width = 640;
 
-		cv::Mat color_mat;
-		cv::Mat depth_mat;
 
 		frame->getImage(color_mat, 3);
 		frame->getImage(depth_mat, 4);
@@ -141,7 +193,12 @@ int main(int argc, char **argv)
 			}
 		}
 
-		auto rgbd_image = open3d::geometry::RGBDImage::CreateFromColorAndDepth(*color_im, *depth_im, 1000.0, 2.3, false);
+		auto rgbd_image = open3d::geometry::RGBDImage::CreateFromColorAndDepth(*color_im, *depth_im, 1000.0, 2.3, false);*/
+
+		cv::Mat color_mat;
+		cv::Mat depth_mat;
+
+		auto rgbd_image = generateRGBDImageFromCVRGB(color_mat, depth_mat);
 
 		tsdf_volume->Integrate(*rgbd_image, intr, frame->T_WC(3).inverse());
 	});

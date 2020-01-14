@@ -22,6 +22,7 @@ Esther commented
 // #include <opencv2/ximgproc.hpp>
 #include <opencv2/opencv.hpp>
 #include "SaveFrame.h"
+#include "Types.h"
 
 namespace ark {
 
@@ -63,15 +64,15 @@ namespace ark {
 		file.close();
     }
 
-    /*RGBDFrame SaveFrame::frameLoad(int frameId){
+    RGBDFrame SaveFrame::frameLoad(int frameId){
         std::cout<<"frameLoad start = "<< frameId <<std::endl;
 
-        RGBDFrame frame;
+		RGBDFrame frame;
 
         frame.frameId = frameId;
 
 
-        frame.imRGB = cv::imread(rgbPath + std::to_string(frame.frameId) + ".png",cv::IMREAD_COLOR);
+        frame.imRGB = cv::imread(rgbPath + std::to_string(frame.frameId) + ".jpg",cv::IMREAD_COLOR);
 
         cv::cvtColor(frame.imRGB, frame.imRGB, cv::COLOR_BGR2RGB);
 
@@ -87,25 +88,29 @@ namespace ark {
 
         //rgbBig.release();
  
-        cv::Mat depth255 = cv::imread(depthPath + std::to_string(frame.frameId) + ".png",-1);
+        frame.imDepth = cv::imread(depthPath + std::to_string(frame.frameId) + ".png",-1);
 
-        if(depth255.rows == 0){
+        if(frame.imDepth.rows == 0){
             std::cout<<"frameLoad depth fail = "<< frameId <<std::endl;
             frame.frameId = -1;
             return frame;
         }
 
-        depth255.convertTo(frame.imDepth, CV_32FC1);
+        //depth255.convertTo(frame.imDepth, CV_32FC1);
+		
+        //depth255.release();
 
-        depth255.release();
-
-        frame.imDepth *= 0.001;
+        //frame.imDepth *= 0.001;
         
 
         //TCW FROM XML
-        cv::FileStorage fs2(tcwPath + std::to_string(frame.frameId) + ".xml", cv::FileStorage::READ);
-        fs2["tcw"] >> frame.mTcw;
-        fs2.release();
+		std::ifstream file(tcwPath + std::to_string(frameId) + ".txt");
+		for (int i = 0; i < 4; ++i) {
+			for (int k = 0; k < 4; ++k) {
+				file >> frame.mTcw.at<float>(i,k);
+			}
+		}
+		file.close();
 
 
 
@@ -114,12 +119,11 @@ namespace ark {
             frame.frameId = -1;
             return frame;
         }
-
         
         std::cout<<"frameLoad frame = "<< frameId <<std::endl;
 
 
         return frame;
-    }*/
+    }
 
 }
