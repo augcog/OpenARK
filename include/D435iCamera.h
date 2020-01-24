@@ -54,6 +54,10 @@ namespace ark {
 
         bool getImuToTime(double timestamp, std::vector<ImuPair>& data_out);
 
+        const rs2_intrinsics &getDepthIntrinsics();
+
+        double getDepthScale();
+
     protected:
 
         /** Converts an D435 raw depth image to an ordered point cloud based on the current camera's intrinsics */

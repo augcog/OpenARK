@@ -15,6 +15,7 @@
 #include <map>
 #include <vector>
 #include <atomic>
+#include <mutex>
 
 #include <opencv2/core/core.hpp>
 
