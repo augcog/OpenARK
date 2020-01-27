@@ -3,6 +3,7 @@
 #include "D435iCamera.h"
 #include "Visualizer.h"
 
+#include <librealsense2/rs.h>
 #include <librealsense2/rs.hpp>
 #include <librealsense2/rsutil.h>
 #include <librealsense2/hpp/rs_pipeline.hpp>
@@ -59,25 +60,24 @@ namespace ark {
         auto depthStream = selection.get_stream(RS2_STREAM_DEPTH)
                              .as<rs2::video_stream_profile>();
         depthIntrinsics = depthStream.get_intrinsics();
-        auto dev = selection.get_device();
-        auto sensors = dev.query_sensors();
 
-        #ifdef RS2_OPTION_GLOBAL_TIME_ENABLED
-        for (auto sensor: sensors) {
-            sensor.set_option(RS2_OPTION_GLOBAL_TIME_ENABLED, false);
+        if (RS2_API_MAJOR_VERSION > 2 || RS2_API_MAJOR_VERSION == 2 && RS2_API_MINOR_VERSION >= 22) {
+            auto dev = selection.get_device();
+            auto sensors = dev.query_sensors();
+            for (auto sensor: sensors) {
+                sensor.set_option(RS2_OPTION_GLOBAL_TIME_ENABLED, false);
+            }
+
+            motion_pipe = std::make_shared<rs2::pipeline>();
+            rs2::pipeline_profile selection_motion = motion_pipe->start(motion_config);
+            auto dev_motion = selection_motion.get_device();
+            auto sensors_motion = dev_motion.query_sensors();
+
+            for (auto sensor: sensors_motion) {
+                sensor.set_option(RS2_OPTION_GLOBAL_TIME_ENABLED, false);
+            }
         }
-        #endif
-
-        motion_pipe = std::make_shared<rs2::pipeline>();
-        rs2::pipeline_profile selection_motion = motion_pipe->start(motion_config);
-        auto dev_motion = selection_motion.get_device();
-        auto sensors_motion = dev_motion.query_sensors();
-
-        #ifdef RS2_OPTION_GLOBAL_TIME_ENABLED
-        for (auto sensor: sensors_motion) {
-            sensor.set_option(RS2_OPTION_GLOBAL_TIME_ENABLED, false);
-        }
-        #endif
+        
 
         imuReaderThread_ = std::thread(&D435iCamera::imuReader, this);
     }
