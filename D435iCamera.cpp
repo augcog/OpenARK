@@ -3,6 +3,7 @@
 #include "D435iCamera.h"
 #include "Visualizer.h"
 
+#include <librealsense2/rs.h>
 #include <librealsense2/rs.hpp>
 #include <librealsense2/rsutil.h>
 #include <librealsense2/hpp/rs_pipeline.hpp>
@@ -58,19 +59,95 @@ namespace ark {
         //get the depth intrinsics (needed for projection to 3d)
         auto depthStream = selection.get_stream(RS2_STREAM_DEPTH)
                              .as<rs2::video_stream_profile>();
-
-
         depthIntrinsics = depthStream.get_intrinsics();
 
-		align_to_color = new rs2::align(RS2_STREAM_COLOR);
-
-		//cout << depthIntrinsics.ppx << " " << depthIntrinsics.ppy << " " << depthIntrinsics.fx << " " << depthIntrinsics.fy << endl;
-
         motion_pipe = std::make_shared<rs2::pipeline>();
-        motion_pipe->start(motion_config);
-        imuReaderThread_ = std::thread(&D435iCamera::imuReader, this);
+        rs2::pipeline_profile selection_motion = motion_pipe->start(motion_config);
 
+        if (RS2_API_MAJOR_VERSION > 2 || RS2_API_MAJOR_VERSION == 2 && RS2_API_MINOR_VERSION >= 22) {
+            
+            auto dev = selection.get_device();
+            auto sensors = dev.query_sensors();
+
+            auto dev_motion = selection_motion.get_device();
+            auto sensors_motion = dev_motion.query_sensors();
+
+            int global_time_option = -1;
+            string match = "Global Time Enabled";
+
+            for (int i = 0; i < rs2_option::RS2_OPTION_COUNT; i++) {
+                if (!strcmp(rs2_option_to_string((rs2_option)i), match.c_str())) {
+                    global_time_option = i;
+                    break;
+                }
+            }
+
+            if (global_time_option == -1) {
+                cout << "Couldn't find Global Time Enabled Option" << endl;
+            }
+
+            for (auto sensor: sensors) {
+                sensor.set_option((rs2_option)global_time_option, false);
+            }   
+
+            for (auto sensor: sensors_motion) {
+                sensor.set_option((rs2_option)global_time_option, false);
+            }
+        } 
+
+        align_to_color = new rs2::align(RS2_STREAM_COLOR);
+        imuReaderThread_ = std::thread(&D435iCamera::imuReader, this);
     }
+
+	// void D435iCamera::start(){
+ //        //enable sync
+ //        //depth_sensor->set_option(RS2_OPTION_INTER_CAM_SYNC_MODE,1);
+ //        //depth_sensor->set_option(RS2_OPTION_EMITTER_ENABLED, 1.f);
+ //        //start streaming
+ //        pipe = std::make_shared<rs2::pipeline>();
+ //        rs2::pipeline_profile selection = pipe->start(config);
+ //        //get the depth intrinsics (needed for projection to 3d)
+ //        auto depthStream = selection.get_stream(RS2_STREAM_DEPTH)
+ //                             .as<rs2::video_stream_profile>();
+ //        depthIntrinsics = depthStream.get_intrinsics();
+
+
+ //        motion_pipe = std::make_shared<rs2::pipeline>();
+ //        rs2::pipeline_profile selection_motion = motion_pipe->start(motion_config);
+       
+ //        if (RS2_API_MAJOR_VERSION > 2 || RS2_API_MAJOR_VERSION == 2 && RS2_API_MINOR_VERSION >= 22) {
+ //            auto dev = selection.get_device();
+ //            auto sensors = dev.query_sensors();
+
+ //            auto dev_motion = selection_motion.get_device();
+ //            auto sensors_motion = dev_motion.query_sensors();
+
+ //            int global_time_option = 0;
+ //            string match = "Global Time Enabled";
+
+ //            for (int i = 0; i < rs2_option::RS2_OPTION_COUNT; i++) {
+
+ //                if (!strcmp(rs2_option_to_string((rs2_option)i), match.c_str())) {
+ //                    global_time_option = i;
+ //                    break;
+ //                }
+               
+ //            }
+
+ //            for (auto sensor: sensors) {
+ //                sensor.set_option((rs2_option)global_time_option, false);
+ //            }  
+
+
+ //            for (auto sensor: sensors_motion) {
+ //                sensor.set_option((rs2_option)global_time_option, false);
+ //            }
+ //        }
+       
+ //        align_to_color = new rs2::align(RS2_STREAM_COLOR);
+ //        imuReaderThread_ = std::thread(&D435iCamera::imuReader, this);
+ //    }
+
 
     void D435iCamera::imuReader(){
         while(!kill){

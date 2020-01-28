@@ -14,7 +14,7 @@
 
 using namespace ark;
 
-std::shared_ptr<open3d::geometry::RGBDImage> generateRGBDImageFromCVRGB(cv::Mat color_mat, cv::Mat depth_mat) {
+std::shared_ptr<open3d::geometry::RGBDImage> generateRGBDImageFromCV(cv::Mat color_mat, cv::Mat depth_mat) {
 
 	int height = 480;
 	int width = 640;
@@ -51,22 +51,32 @@ std::shared_ptr<open3d::geometry::RGBDImage> generateRGBDImageFromCVRGB(cv::Mat 
 	return rgbd_image;
 }
 
+//TODO: check ScalableTSDFVolume.cpp and UniformTSDFVolume.cpp, implement deintegration
+void deintegrate(int frame_id, SaveFrame * saveFrame, open3d::integration::ScalableTSDFVolume * tsdf_volume, open3d::camera::PinholeCameraIntrinsic intr) {
+	RGBDFrame frame = saveFrame->frameLoad(frame_id);
 
-//void deintegrate(int frame_id, SaveFrame * saveFrame, open3d::integration::ScalableTSDFVolume * tsdf_volume, open3d::camera::PinholeCameraIntrinsic intr) {
-//	RGBDFrame frame = saveFrame->frameLoad(frame_id);
-//
-//	if (frame.frameId == -1) {
-//		cout << "deintegration failed with frameload fail " << frame_id << endl;
-//		return;
-//	}
-//
-//	auto rgbd_image = generateRGBDImageFromCVRGB(frame.imRGB, frame.imDepth);
-//
-//	tsdf_volume->Deintegrate(rgbd_image, intr, frame.mTcw.inv());
-//
-//
-//}
+	if (frame.frameId == -1) {
+		cout << "deintegration failed with frameload fail " << frame_id << endl;
+		return;
+	}
 
+	auto rgbd_image = generateRGBDImageFromCV(frame.imRGB, frame.imDepth);
+
+	cv::Mat pose = frame.mTcw.inv();
+
+	Eigen::Matrix4d eigen_pose;
+
+	for (int i = 0; i < 4; i++) {
+		for (int k = 0; k < 4; k++) {
+			eigen_pose(i, k) = pose.at<float>(i, k);
+		}
+	}
+
+	tsdf_volume->Deintegrate(*rgbd_image, intr, eigen_pose);
+}
+
+
+//TODO: loop closure handler calling deintegration
 int main(int argc, char **argv)
 {
 
@@ -157,13 +167,18 @@ int main(int argc, char **argv)
 
 		cout << "Integrating frame number: " << frame->frameId_ << endl;
 
+		cv::Mat color_mat;
+		cv::Mat depth_mat;
+
+
+		frame->getImage(color_mat, 3);
+		frame->getImage(depth_mat, 4);
+
 
 		/*int height = 480;
 		int width = 640;
 
 
-		frame->getImage(color_mat, 3);
-		frame->getImage(depth_mat, 4);
 
 		auto color_im = std::make_shared<open3d::geometry::Image>();
 		color_im->Prepare(width, height, 3, sizeof(uint8_t));
@@ -193,12 +208,10 @@ int main(int argc, char **argv)
 			}
 		}
 
-		auto rgbd_image = open3d::geometry::RGBDImage::CreateFromColorAndDepth(*color_im, *depth_im, 1000.0, 2.3, false);*/
+		auto rgbd_image = open3d::geometry::RGBDImage::CreateFromColorAndDepth(*color_im, *depth_im, 1000.0, 2.3, false);
+		*/
 
-		cv::Mat color_mat;
-		cv::Mat depth_mat;
-
-		auto rgbd_image = generateRGBDImageFromCVRGB(color_mat, depth_mat);
+		auto rgbd_image = generateRGBDImageFromCV(color_mat, depth_mat);
 
 		tsdf_volume->Integrate(*rgbd_image, intr, frame->T_WC(3).inverse());
 	});
