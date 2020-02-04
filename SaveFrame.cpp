@@ -48,7 +48,7 @@ namespace ark {
 
     void SaveFrame::frameWrite(cv::Mat imRGB, cv::Mat depth, Eigen::Matrix4d traj, int frameId){
 
-        std::cout<<"frameWrite frame = "<< frameId <<std::endl;
+        //std::cout<<"frameWrite frame = "<< frameId <<std::endl;
 
 		cv::Mat imBGR;
         cv::cvtColor(imRGB, imBGR, CV_RGB2BGR);

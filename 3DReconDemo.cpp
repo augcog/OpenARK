@@ -8,9 +8,11 @@
 #include "SaveFrame.h"
 #include "Types.h"
 #include "Open3D/Integration/ScalableTSDFVolume.h"
+#include "Open3D/Integration/MovingTSDFVolume.h"
 #include "Open3D/Visualization/Utility/DrawGeometry.h"
 #include "Open3D/IO/ClassIO/TriangleMeshIO.h"
 #include "Open3D/IO/ClassIO/ImageIO.h"
+#include <map>
 
 using namespace ark;
 
@@ -52,28 +54,28 @@ std::shared_ptr<open3d::geometry::RGBDImage> generateRGBDImageFromCV(cv::Mat col
 }
 
 //TODO: check ScalableTSDFVolume.cpp and UniformTSDFVolume.cpp, implement deintegration
-void deintegrate(int frame_id, SaveFrame * saveFrame, open3d::integration::ScalableTSDFVolume * tsdf_volume, open3d::camera::PinholeCameraIntrinsic intr) {
-	RGBDFrame frame = saveFrame->frameLoad(frame_id);
-
-	if (frame.frameId == -1) {
-		cout << "deintegration failed with frameload fail " << frame_id << endl;
-		return;
-	}
-
-	auto rgbd_image = generateRGBDImageFromCV(frame.imRGB, frame.imDepth);
-
-	cv::Mat pose = frame.mTcw.inv();
-
-	Eigen::Matrix4d eigen_pose;
-
-	for (int i = 0; i < 4; i++) {
-		for (int k = 0; k < 4; k++) {
-			eigen_pose(i, k) = pose.at<float>(i, k);
-		}
-	}
-
-	tsdf_volume->Deintegrate(*rgbd_image, intr, eigen_pose);
-}
+//void deintegrate(int frame_id, SaveFrame * saveFrame, open3d::integration::ScalableTSDFVolume * tsdf_volume, open3d::camera::PinholeCameraIntrinsic intr) {
+//	RGBDFrame frame = saveFrame->frameLoad(frame_id);
+//
+//	if (frame.frameId == -1) {
+//		cout << "deintegration failed with frameload fail " << frame_id << endl;
+//		return;
+//	}
+//
+//	auto rgbd_image = generateRGBDImageFromCV(frame.imRGB, frame.imDepth);
+//
+//	cv::Mat pose = frame.mTcw.inv();
+//
+//	Eigen::Matrix4d eigen_pose;
+//
+//	for (int i = 0; i < 4; i++) {
+//		for (int k = 0; k < 4; k++) {
+//			eigen_pose(i, k) = pose.at<float>(i, k);
+//		}
+//	}
+//
+//	tsdf_volume->Deintegrate(*rgbd_image, intr, eigen_pose);
+//}
 
 
 //TODO: loop closure handler calling deintegration
@@ -155,10 +157,10 @@ int main(int argc, char **argv)
 
 	slam.AddFrameAvailableHandler(saveFrameHandler, "saveframe");
 
-	open3d::integration::ScalableTSDFVolume * tsdf_volume = new open3d::integration::ScalableTSDFVolume(0.015, 0.05, open3d::integration::TSDFVolumeColorType::RGB8);
+	open3d::integration::MovingTSDFVolume * tsdf_volume = new open3d::integration::MovingTSDFVolume(0.01, 0.05, open3d::integration::TSDFVolumeColorType::RGB8, 5);
 
 	//intrinsics need to be set by user (currently does not read d435i_intr.yaml)
-	auto intr = open3d::camera::PinholeCameraIntrinsic(640, 480, 612.081, 612.307, 318.254, 237.246);
+	auto intr = open3d::camera::PinholeCameraIntrinsic(640, 480, 615.885, 616.099, 323.081, 237.475);
 
 	FrameAvailableHandler tsdfFrameHandler([&tsdf_volume, &frame_counter, &do_integration, intr](MultiCameraFrame::Ptr frame) {
 		if (!do_integration || frame_counter % 3 != 0) {
@@ -174,43 +176,6 @@ int main(int argc, char **argv)
 		frame->getImage(color_mat, 3);
 		frame->getImage(depth_mat, 4);
 
-
-		/*int height = 480;
-		int width = 640;
-
-
-
-		auto color_im = std::make_shared<open3d::geometry::Image>();
-		color_im->Prepare(width, height, 3, sizeof(uint8_t));
-
-		uint8_t *pi = (uint8_t *)(color_im->data_.data());
-
-		for (int i = 0; i < height; i++) {
-			for (int k = 0; k < width; k++) {
-					
-				cv::Vec3b pixel = color_mat.at<cv::Vec3b>(i, k);
-
-				*pi++ = pixel[0];
-				*pi++ = pixel[1];
-				*pi++ = pixel[2];
-			}
-		}
-
-
-		auto depth_im = std::make_shared<open3d::geometry::Image>();
-		depth_im->Prepare(width, height, 1, sizeof(uint16_t));
-			
-		uint16_t * p = (uint16_t *)depth_im->data_.data();
-
-		for (int i = 0; i < height; i++) {
-			for (int k = 0; k < width; k++) {
-				*p++ = depth_mat.at<uint16_t>(i, k);
-			}
-		}
-
-		auto rgbd_image = open3d::geometry::RGBDImage::CreateFromColorAndDepth(*color_im, *depth_im, 1000.0, 2.3, false);
-		*/
-
 		auto rgbd_image = generateRGBDImageFromCV(color_mat, depth_mat);
 
 		tsdf_volume->Integrate(*rgbd_image, intr, frame->T_WC(3).inverse());
@@ -224,20 +189,38 @@ int main(int argc, char **argv)
 	mesh_win.add_object(&mesh_obj);
 
 
-	std::shared_ptr<open3d::geometry::TriangleMesh> vis_mesh;
+	std::vector<std::shared_ptr<open3d::geometry::TriangleMesh>> vis_meshes;
 
-	FrameAvailableHandler meshHandler([&tsdf_volume, &frame_counter, &do_integration, &vis_mesh, &mesh_obj](MultiCameraFrame::Ptr frame) {
+	FrameAvailableHandler meshHandler([&tsdf_volume, &frame_counter, &do_integration, &vis_meshes, &mesh_obj](MultiCameraFrame::Ptr frame) {
 		if (!do_integration || frame_counter % 30 != 1) {
 			return;
 		}
 			
-			vis_mesh = tsdf_volume->ExtractTriangleMesh();
+			vis_meshes = tsdf_volume->ExtractTriangleMeshes();
 
-			cout << "num vertices: " << vis_mesh->vertices_.size() << endl;
-			cout << "num triangles: " << vis_mesh->triangles_.size() << endl;
+			std::vector<Eigen::Vector3d> vertices;
+			std::vector<Eigen::Vector3d> colors;
+			std::vector<Eigen::Vector3i> triangles;
 
-			mesh_obj.update_mesh(vis_mesh->vertices_, vis_mesh->vertex_colors_, vis_mesh->triangles_);
-		
+			int total_vertices = 0;
+			for (int i = 0; i < vis_meshes.size(); i++) {
+				std::vector<Eigen::Vector3d> tvertices = vis_meshes[i]->vertices_;
+				std::vector<Eigen::Vector3d> tcolors = vis_meshes[i]->vertex_colors_;
+				std::vector<Eigen::Vector3i> ttriangles = vis_meshes[i]->triangles_;
+
+				vertices.insert(vertices.end(), tvertices.begin(), tvertices.end());
+				colors.insert(colors.end(), tcolors.begin(), tcolors.end());
+				for (auto triangle : ttriangles) {
+					Eigen::Vector3i triangle_;
+					triangle_(0) = triangle(0) + total_vertices;
+					triangle_(1) = triangle(1) + total_vertices;
+					triangle_(2) = triangle(2) + total_vertices;
+					triangles.push_back(triangle_);
+				}
+				total_vertices = vertices.size();
+			}
+
+			mesh_obj.update_mesh(vertices, colors, triangles);
 
 	});
 
@@ -249,6 +232,31 @@ int main(int argc, char **argv)
 	});
 	
 	slam.AddFrameAvailableHandler(viewHandler, "viewhandler");
+
+	KeyFrameAvailableHandler updateKFHandler([&tsdf_volume](MultiCameraFrame::Ptr frame) {
+		MapKeyFrame::Ptr kf = frame->keyframe_;
+		tsdf_volume->set_latest_key_frame(kf->T_WS().inverse(), kf->frameId_);
+	});
+
+	slam.AddKeyFrameAvailableHandler(updateKFHandler, "updatekfhandler");
+
+	LoopClosureDetectedHandler loopHandler([&tsdf_volume, &slam](void) {
+
+		std::vector<int> frameIdOut;
+		std::vector<Eigen::Matrix4d> traj;
+
+		slam.getMappedTrajectory(frameIdOut, traj);
+
+		std::map<int, Eigen::Matrix4d> keyframemap;
+
+		for (int i = 0; i < frameIdOut.size(); i++) {
+			keyframemap.insert(std::pair<int, Eigen::Matrix4d>(frameIdOut[i], traj[i].inverse()));
+		}
+
+		tsdf_volume->update_key_frames(keyframemap);
+	});
+
+	slam.AddLoopClosureDetectedHandler(loopHandler, "loophandler");
 
 	// thread *app = new thread(application_thread);
 
@@ -303,15 +311,17 @@ int main(int argc, char **argv)
 
 	cout << "getting mesh" << endl;
 
+	//make sure to add these back later |
+
 	//std::shared_ptr<const open3d::geometry::Geometry> mesh = tsdf_volume->ExtractTriangleMesh();
 
-	std::shared_ptr<open3d::geometry::TriangleMesh> write_mesh = tsdf_volume->ExtractTriangleMesh();
+	//std::shared_ptr<open3d::geometry::TriangleMesh> write_mesh = tsdf_volume->ExtractTriangleMeshes();
 
 	//const std::vector<std::shared_ptr<const open3d::geometry::Geometry>> mesh_vec = { mesh };
 
 	//open3d::visualization::DrawGeometries(mesh_vec);
 
-	open3d::io::WriteTriangleMeshToPLY("mesh.ply", *write_mesh, false, false, true, true, false, false);
+	//open3d::io::WriteTriangleMeshToPLY("mesh.ply", *write_mesh, false, false, true, true, false, false);
 
 	printf("\nTerminate...\n");
 	// Clean up
