@@ -5,7 +5,7 @@ namespace ark {
 
     OkvisSLAMSystem::OkvisSLAMSystem(const std::string & strVocFile, const std::string & strSettingsFile) :
         start_(0.0), t_imu_(0.0), deltaT_(1.0), num_frames_(0), kill(false), 
-        sparseMap_(){
+        sparse_map_vector(), active_map_index(-1){
 
         okvis::VioParametersReader vio_parameters_reader;
         try {
@@ -19,7 +19,8 @@ namespace ark {
         //okvis::VioParameters parameters;
         vio_parameters_reader.getParameters(parameters_);
 
-        sparseMap_.setEnableLoopClosure(parameters_.loopClosureParameters.enabled,strVocFile,true, new brisk::BruteForceMatcher());
+        createNewMap();
+        getActiveMap()->setEnableLoopClosure(parameters_.loopClosureParameters.enabled,strVocFile,true, new brisk::BruteForceMatcher());
 
         //initialize Visual odometry
         okvis_estimator_ = std::make_shared<okvis::ThreadedKFVio>(parameters_);
@@ -90,6 +91,7 @@ namespace ark {
                 out_frame->T_SC_.push_back(T_SC.T());
             }
 
+            const auto sparseMap_ = getActiveMap();
             //check if keyframe
             if(frame_data.data->is_keyframe){
                 if(out_frame->keyframeId_!=out_frame->frameId_){
@@ -127,7 +129,7 @@ namespace ark {
 
 
                 // push to map
-                if(sparseMap_.addKeyframe(keyframe)){ //add keyframe returns true if a loop closure was detected
+                if(sparseMap_->addKeyframe(keyframe)){ //add keyframe returns true if a loop closure was detected
                     for (MapLoopClosureDetectedHandler::const_iterator callback_iter = mMapLoopClosureHandler.begin();
                         callback_iter != mMapLoopClosureHandler.end(); ++callback_iter) {
                         const MapLoopClosureDetectedHandler::value_type& pair = *callback_iter;
@@ -136,7 +138,7 @@ namespace ark {
                 }
             }
 
-            out_frame->keyframe_ = sparseMap_.getKeyframe(out_frame->keyframeId_);
+            out_frame->keyframe_ = sparseMap_->getKeyframe(out_frame->keyframeId_);
 
             //Notify callbacks
             if(frame_data.data->is_keyframe){
@@ -242,6 +244,12 @@ namespace ark {
         }
     }
 
+    void OkvisSLAMSystem::createNewMap() {
+        sparse_map_vector.push_back(std::make_shared<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>>());
+        // set it to the latest one
+        active_map_index = static_cast<int>(sparse_map_vector.size())-1;
+    }
+
     void OkvisSLAMSystem::display() {
         if (okvis_estimator_ == nullptr)
             return;
@@ -274,7 +282,15 @@ namespace ark {
     }
 
     void OkvisSLAMSystem::getTrajectory(std::vector<Eigen::Matrix4d>& trajOut){
-        sparseMap_.getTrajectory(trajOut);
+        getActiveMap()->getTrajectory(trajOut);
+    }
+
+    std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> OkvisSLAMSystem:: getActiveMap() {
+        if (0 <= active_map_index && active_map_index < sparse_map_vector.size()) {
+            return sparse_map_vector[active_map_index];
+        } else {
+            return nullptr;
+        }
     }
 
 
