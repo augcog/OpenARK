@@ -119,6 +119,7 @@ int main(int argc, char **argv)
     //run until display is closed
     okvis::Time start(0.0);
     int id =0;
+    bool new_map_checker = false;
     while (MyGUI::Manager::running()){
         //printf("test\n");
         //Update the display
@@ -139,7 +140,7 @@ int main(int argc, char **argv)
         slam.PushFrame(frame);
 
         const auto isReset = slam.okvis_estimator_->isReset();
-        std::cout << "slam reset? : " << isReset << "\n";
+        std::cout << "Mapnumber : " << slam.active_map_index << "\n";
         if (isReset) {
             traj_win.msg_ = " *Reseting*";
             path1.clear();

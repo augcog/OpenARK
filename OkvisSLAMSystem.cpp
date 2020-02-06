@@ -5,7 +5,7 @@ namespace ark {
 
     OkvisSLAMSystem::OkvisSLAMSystem(const std::string & strVocFile, const std::string & strSettingsFile) :
         start_(0.0), t_imu_(0.0), deltaT_(1.0), num_frames_(0), kill(false), 
-        sparse_map_vector(), active_map_index(-1){
+        sparse_map_vector(), active_map_index(-1), new_map_checker(false){
 
         okvis::VioParametersReader vio_parameters_reader;
         try {
@@ -47,9 +47,18 @@ namespace ark {
 
     void OkvisSLAMSystem::FrameConsumerLoop() {
         while (!kill) {
+             
             //Get processed frame data from OKVIS
             StampedFrameData frame_data;
             while (!frame_data_queue_.try_dequeue(&frame_data)) {
+                if(okvis_estimator_->isReset() && !new_map_checker)
+                {
+                    cout<<"Created new map"<<endl;
+                    new_map_checker = true;
+                    createNewMap();
+                }
+                else if(!okvis_estimator_->isReset())
+                    new_map_checker = false;
                 if(kill)
                     return;
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -90,8 +99,9 @@ namespace ark {
                 }
                 out_frame->T_SC_.push_back(T_SC.T());
             }
-
+           
             const auto sparseMap_ = getActiveMap();
+
             //check if keyframe
             if(frame_data.data->is_keyframe){
                 if(out_frame->keyframeId_!=out_frame->frameId_){
@@ -292,6 +302,6 @@ namespace ark {
             return nullptr;
         }
     }
-
+    
 
 } //ark

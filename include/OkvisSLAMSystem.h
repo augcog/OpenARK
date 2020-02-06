@@ -62,11 +62,18 @@ namespace ark {
 
         void getTrajectory(std::vector<Eigen::Matrix4d>& trajOut);
 
+
         ~OkvisSLAMSystem();
 
         std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> getActiveMap();
-        
+
+        int active_map_index;
+
         std::shared_ptr<okvis::ThreadedKFVio> okvis_estimator_;
+
+
+        
+
 
     protected:
         void KeyFrameConsumerLoop();
@@ -86,7 +93,7 @@ namespace ark {
         int num_frames_;
         std::atomic<bool> kill;
         std::vector<std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>>> sparse_map_vector;
-        int active_map_index;
+        bool new_map_checker;
 
     }; // OkvisSLAMSystem
 
