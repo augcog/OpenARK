@@ -572,7 +572,7 @@ void Mesh::draw_obj()
 	scene_mat = scene_mat*pose.matrix().inverse();
 	glLoadMatrixd(scene_mat.data());
 
-	Eigen::AngleAxis<double> R(pose.rotation());
+	/*Eigen::AngleAxis<double> R(pose.rotation());
 	Eigen::Translation3d T(pose.translation());
 
 
@@ -581,36 +581,65 @@ void Mesh::draw_obj()
 
 
 	glTranslated(T.x(), T.y(), T.z());
-	glRotated(R.angle() * 180 / 3.14159, R.axis().x(), R.axis().y(), R.axis().z());
+	glRotated(R.angle() * 180 / 3.14159, R.axis().x(), R.axis().y(), R.axis().z());*/
 
 
-	glDisable(GL_LIGHTING);
+	for (int i = 0; i < mesh_vertices.size(); ++i) {
+		std::vector<Eigen::Vector3d> vertices = mesh_vertices[i];
+		std::vector<Eigen::Vector3d> colors = mesh_colors[i];
+		std::vector<Eigen::Vector3i> triangles = mesh_triangles[i];
+		Eigen::Affine3d transform(mesh_transforms[i]);
 
-	glBegin(GL_TRIANGLES);
+		transform = pose*transform;
+		//mesh_transforms[i] is c->w, we need w->c
 
-	for (int i = 0; i < triangles.size(); i++) {
+		glPushMatrix();
 
-		Eigen::Vector3d vertex1 = vertices[triangles[i][0]];
-		Eigen::Vector3d vertex2 = vertices[triangles[i][1]];
-		Eigen::Vector3d vertex3 = vertices[triangles[i][2]];
-
-		Eigen::Vector3d color1 = colors[triangles[i][0]];
-		Eigen::Vector3d color2 = colors[triangles[i][1]];
-		Eigen::Vector3d color3 = colors[triangles[i][2]];
+		Eigen::AngleAxis<double> R(transform.rotation());
+		Eigen::Translation3d T(transform.translation());
 
 
-		glColor3f((color1[0] + color2[0] + color3[0]) / 3.0f,
-			(color1[1] + color2[1] + color3[1]) / 3.0f,
-			(color1[2] + color2[2] + color3[2]) / 3.0f);
+		glRotated(180, 0, 1, 0);
+		glRotated(180, 0, 0, 1);
 
-		glVertex3f(vertex1[0], vertex1[1], vertex1[2]);
-		glVertex3f(vertex2[0], vertex2[1], vertex2[2]);
-		glVertex3f(vertex3[0], vertex3[1], vertex3[2]);
+
+		glTranslated(T.x(), T.y(), T.z());
+		glRotated(R.angle() * 180 / 3.14159, R.axis().x(), R.axis().y(), R.axis().z());
+
+
+		glDisable(GL_LIGHTING);
+
+		glBegin(GL_TRIANGLES);
+
+		for (int i = 0; i < triangles.size(); i++) {
+
+			Eigen::Vector3d vertex1 = vertices[triangles[i][0]];
+			Eigen::Vector3d vertex2 = vertices[triangles[i][1]];
+			Eigen::Vector3d vertex3 = vertices[triangles[i][2]];
+
+			Eigen::Vector3d color1 = colors[triangles[i][0]];
+			Eigen::Vector3d color2 = colors[triangles[i][1]];
+			Eigen::Vector3d color3 = colors[triangles[i][2]];
+
+
+			glColor3f((color1[0] + color2[0] + color3[0]) / 3.0f,
+				(color1[1] + color2[1] + color3[1]) / 3.0f,
+				(color1[2] + color2[2] + color3[2]) / 3.0f);
+
+			glVertex3f(vertex1[0], vertex1[1], vertex1[2]);
+			glVertex3f(vertex2[0], vertex2[1], vertex2[2]);
+			glVertex3f(vertex3[0], vertex3[1], vertex3[2]);
+		}
+
+		glEnd();
+
+		glEnable(GL_LIGHTING);
+
+
+		glPopMatrix();
+
+
 	}
-
-	glEnd();
-
-	glEnable(GL_LIGHTING);
 
 }
 

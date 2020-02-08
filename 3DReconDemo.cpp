@@ -149,7 +149,7 @@ int main(int argc, char **argv)
 
 		frame->getImage(imDepth, 4);
 
-		Eigen::Matrix4d transform(frame->T_WC(3));
+		Eigen::Matrix4d transform(frame->T_WS());
 
 
 		saveFrame->frameWrite(imRGB, imDepth, transform, frame->frameId_);
@@ -157,7 +157,7 @@ int main(int argc, char **argv)
 
 	slam.AddFrameAvailableHandler(saveFrameHandler, "saveframe");
 
-	open3d::integration::MovingTSDFVolume * tsdf_volume = new open3d::integration::MovingTSDFVolume(0.01, 0.05, open3d::integration::TSDFVolumeColorType::RGB8, 5);
+	open3d::integration::MovingTSDFVolume * tsdf_volume = new open3d::integration::MovingTSDFVolume(0.025, 0.05, open3d::integration::TSDFVolumeColorType::RGB8, 2);
 
 	//intrinsics need to be set by user (currently does not read d435i_intr.yaml)
 	auto intr = open3d::camera::PinholeCameraIntrinsic(640, 480, 615.885, 616.099, 323.081, 237.475);
@@ -178,7 +178,7 @@ int main(int argc, char **argv)
 
 		auto rgbd_image = generateRGBDImageFromCV(color_mat, depth_mat);
 
-		tsdf_volume->Integrate(*rgbd_image, intr, frame->T_WC(3).inverse());
+		tsdf_volume->Integrate(*rgbd_image, intr, frame->T_WS().inverse());
 	});
 
 	slam.AddFrameAvailableHandler(tsdfFrameHandler, "tsdfframe");
@@ -188,46 +188,76 @@ int main(int argc, char **argv)
 
 	mesh_win.add_object(&mesh_obj);
 
+	std::vector<std::pair<std::shared_ptr<open3d::geometry::TriangleMesh>,
+		Eigen::Matrix4d>> vis_mesh;
 
-	std::vector<std::shared_ptr<open3d::geometry::TriangleMesh>> vis_meshes;
-
-	FrameAvailableHandler meshHandler([&tsdf_volume, &frame_counter, &do_integration, &vis_meshes, &mesh_obj](MultiCameraFrame::Ptr frame) {
-		if (!do_integration || frame_counter % 30 != 1) {
+	FrameAvailableHandler meshHandler([&tsdf_volume, &frame_counter, &do_integration, &vis_mesh, &mesh_obj](MultiCameraFrame::Ptr frame) {
+		/*if (!do_integration || frame_counter % 30 != 1) {
 			return;
-		}
+		}*/
+
+		if (frame_counter % 30 != 1)
+			return;
 			
-			vis_meshes = tsdf_volume->ExtractTriangleMeshes();
+		vis_mesh = tsdf_volume->GetTriangleMeshes();
 
-			std::vector<Eigen::Vector3d> vertices;
-			std::vector<Eigen::Vector3d> colors;
-			std::vector<Eigen::Vector3i> triangles;
+		printf("new mesh extracted, sending to mesh obj\n");
 
-			int total_vertices = 0;
-			for (int i = 0; i < vis_meshes.size(); i++) {
-				std::vector<Eigen::Vector3d> tvertices = vis_meshes[i]->vertices_;
-				std::vector<Eigen::Vector3d> tcolors = vis_meshes[i]->vertex_colors_;
-				std::vector<Eigen::Vector3i> ttriangles = vis_meshes[i]->triangles_;
+		int number_meshes = mesh_obj.get_number_meshes();
 
-				vertices.insert(vertices.end(), tvertices.begin(), tvertices.end());
-				colors.insert(colors.end(), tcolors.begin(), tcolors.end());
-				for (auto triangle : ttriangles) {
-					Eigen::Vector3i triangle_;
-					triangle_(0) = triangle(0) + total_vertices;
-					triangle_(1) = triangle(1) + total_vertices;
-					triangle_(2) = triangle(2) + total_vertices;
-					triangles.push_back(triangle_);
-				}
-				total_vertices = vertices.size();
+		//only update the active mesh
+		if (false) {
+		/*if (number_meshes == vis_mesh.size()) {*/
+			auto active_mesh = vis_mesh[vis_mesh.size() - 1];
+			mesh_obj.update_active_mesh(active_mesh.first->vertices_, active_mesh.first->vertex_colors_, active_mesh.first->triangles_, active_mesh.second);
+
+			std::vector<Eigen::Matrix4d> mesh_transforms;
+
+			for (int i = 0; i < vis_mesh.size(); ++i) {
+				mesh_transforms.push_back(vis_mesh[i].second);
+			}
+				
+			mesh_obj.update_transforms(mesh_transforms);
+		}
+		else {
+			std::vector<std::vector<Eigen::Vector3d>> mesh_vertices;
+			std::vector<std::vector<Eigen::Vector3d>> mesh_colors;
+			std::vector<std::vector<Eigen::Vector3i>> mesh_triangles;
+			std::vector<Eigen::Matrix4d> mesh_transforms;
+
+			for (int i = 0; i < vis_mesh.size(); ++i) {
+				auto mesh = vis_mesh[i];
+				mesh_vertices.push_back(mesh.first->vertices_);
+				mesh_colors.push_back(mesh.first->vertex_colors_);
+				mesh_triangles.push_back(mesh.first->triangles_);
+				mesh_transforms.push_back(mesh.second);
+
+				cout << mesh.first->vertices_.size() << endl;
+				cout << mesh.first->triangles_.size() << endl;
 			}
 
-			mesh_obj.update_mesh(vertices, colors, triangles);
+
+			mesh_obj.update_mesh_vector(mesh_vertices, mesh_colors, mesh_triangles, mesh_transforms);
+		}	
+
 
 	});
 
 	slam.AddFrameAvailableHandler(meshHandler, "meshupdate");
 
+	/*std::shared_ptr<open3d::geometry::TriangleMesh> vis_mesh;
+	FrameAvailableHandler meshHandler([&tsdf_volume, &frame_counter, &do_integration, &vis_mesh, &mesh_obj](MultiCameraFrame::Ptr frame) {
+		if (!do_integration || frame_counter % 30 != 1) {
+			return;
+		}
+		vis_mesh = tsdf_volume->ExtractCurrentTriangleMesh();
+		mesh_obj.update_mesh(vis_mesh->vertices_, vis_mesh->vertex_colors_, vis_mesh->triangles_);
+	});
+
+	slam.AddFrameAvailableHandler(meshHandler, "meshupdate");*/
+
 	FrameAvailableHandler viewHandler([&mesh_obj, &tsdf_volume, &mesh_win, &frame_counter](MultiCameraFrame::Ptr frame) {
-		Eigen::Affine3d transform(frame->T_WC(3));
+		Eigen::Affine3d transform(frame->T_WS());
 		mesh_obj.set_transform(transform.inverse());
 	});
 	
@@ -235,12 +265,14 @@ int main(int argc, char **argv)
 
 	KeyFrameAvailableHandler updateKFHandler([&tsdf_volume](MultiCameraFrame::Ptr frame) {
 		MapKeyFrame::Ptr kf = frame->keyframe_;
-		tsdf_volume->set_latest_key_frame(kf->T_WS().inverse(), kf->frameId_);
+		tsdf_volume->SetLatestKeyFrame(kf->T_WS(), kf->frameId_);
 	});
 
 	slam.AddKeyFrameAvailableHandler(updateKFHandler, "updatekfhandler");
 
 	LoopClosureDetectedHandler loopHandler([&tsdf_volume, &slam](void) {
+
+		printf("loop closure detected!!!!!!!\n");
 
 		std::vector<int> frameIdOut;
 		std::vector<Eigen::Matrix4d> traj;
@@ -250,10 +282,10 @@ int main(int argc, char **argv)
 		std::map<int, Eigen::Matrix4d> keyframemap;
 
 		for (int i = 0; i < frameIdOut.size(); i++) {
-			keyframemap.insert(std::pair<int, Eigen::Matrix4d>(frameIdOut[i], traj[i].inverse()));
+			keyframemap.insert(std::pair<int, Eigen::Matrix4d>(frameIdOut[i], traj[i]));
 		}
 
-		tsdf_volume->update_key_frames(keyframemap);
+		tsdf_volume->UpdateKeyFrames(keyframemap);
 	});
 
 	slam.AddLoopClosureDetectedHandler(loopHandler, "loophandler");
@@ -313,9 +345,7 @@ int main(int argc, char **argv)
 
 	//make sure to add these back later |
 
-	//std::shared_ptr<const open3d::geometry::Geometry> mesh = tsdf_volume->ExtractTriangleMesh();
-
-	//std::shared_ptr<open3d::geometry::TriangleMesh> write_mesh = tsdf_volume->ExtractTriangleMeshes();
+	//std::shared_ptr<open3d::geometry::TriangleMesh> write_mesh = tsdf_volume->ExtractTotalTriangleMesh();
 
 	//const std::vector<std::shared_ptr<const open3d::geometry::Geometry>> mesh_vec = { mesh };
 

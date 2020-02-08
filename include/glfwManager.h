@@ -337,6 +337,12 @@ public:
 	std::vector<Eigen::Vector3d> vertices;
 	std::vector<Eigen::Vector3d> colors;
 	std::vector<Eigen::Vector3i> triangles;
+
+	std::vector<std::vector<Eigen::Vector3d>> mesh_vertices;
+	std::vector<std::vector<Eigen::Vector3d>> mesh_colors;
+	std::vector<std::vector<Eigen::Vector3i>> mesh_triangles;
+	std::vector<Eigen::Matrix4d> mesh_transforms;
+
 	void draw_obj();
 
 	Mesh(std::string name)
@@ -356,6 +362,49 @@ public:
 
 		cout << "mesh updated" << endl;
 
+	}
+
+	void update_mesh_vector(std::vector<std::vector<Eigen::Vector3d>> mesh_vertices_toadd, 
+		std::vector<std::vector<Eigen::Vector3d>> mesh_vertex_colors_toadd,
+		std::vector<std::vector<Eigen::Vector3i>> mesh_triangles_toadd,
+		std::vector<Eigen::Matrix4d> transforms_toadd) {
+		std::lock_guard<std::mutex> guard(meshLock_);
+
+		mesh_vertices = mesh_vertices_toadd;
+		mesh_colors = mesh_vertex_colors_toadd;
+		mesh_triangles = mesh_triangles_toadd;
+		mesh_transforms = transforms_toadd;
+
+		cout << "new meshes append successfully" << endl;
+
+	}
+
+	void update_active_mesh(std::vector<Eigen::Vector3d> updated_active_vertices,
+		std::vector<Eigen::Vector3d> updated_active_colors,
+		std::vector<Eigen::Vector3i> updated_active_triangles,
+		Eigen::Matrix4d updated_active_transform) {
+		std::lock_guard<std::mutex> guard(meshLock_);
+
+		mesh_vertices.pop_back();
+		mesh_colors.pop_back();
+		mesh_triangles.pop_back();
+		mesh_transforms.pop_back();
+
+		mesh_vertices.push_back(updated_active_vertices);
+		mesh_colors.push_back(updated_active_colors);
+		mesh_triangles.push_back(updated_active_triangles);
+		mesh_transforms.push_back(updated_active_transform);
+
+	}
+
+	//transforms should be c->w
+	void update_transforms(std::vector<Eigen::Matrix4d> updated_transforms) {
+		std::lock_guard<std::mutex> guard(meshLock_);
+		mesh_transforms = updated_transforms;
+	}
+
+	int get_number_meshes() {
+		return mesh_vertices.size();
 	}
 
 	void clear() {
