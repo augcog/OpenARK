@@ -376,6 +376,10 @@ public:
 		mesh_transforms = transforms_toadd;
 
 		cout << "new meshes append successfully" << endl;
+		/*for (auto transform : mesh_transforms) {
+			
+			cout << transform.matrix() << endl;
+		}*/
 
 	}
 
@@ -401,9 +405,13 @@ public:
 	void update_transforms(std::vector<Eigen::Matrix4d> updated_transforms) {
 		std::lock_guard<std::mutex> guard(meshLock_);
 		mesh_transforms = updated_transforms;
+		/*for (auto transform : mesh_transforms) {
+			cout << transform.matrix() << endl;
+		}*/
 	}
 
 	int get_number_meshes() {
+		std::lock_guard<std::mutex> guard(meshLock_);
 		return mesh_vertices.size();
 	}
 

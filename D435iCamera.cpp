@@ -248,7 +248,7 @@ namespace ark {
 
 			for (int i = 0; i < width; i++) {
 				for (int k = 0; k < height; k++) {
-					if (frame.images_[4].at<uint16_t>(k, i) < 200) { //FILTER OUT ALL POINTS CLOSER THAN 20cm
+					if (frame.images_[4].at<uint16_t>(k, i) < 200 || frame.images_[4].at<uint16_t>(k, i) > 2400) { //FILTER OUT ALL POINTS CLOSER THAN 20cm OR FARTHER THAN 2.4M
 						frame.images_[4].at<uint16_t>(k, i) = 0;
 					}
 				}

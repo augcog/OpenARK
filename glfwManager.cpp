@@ -590,7 +590,7 @@ void Mesh::draw_obj()
 		std::vector<Eigen::Vector3i> triangles = mesh_triangles[i];
 		Eigen::Affine3d transform(mesh_transforms[i]);
 
-		transform = pose*transform;
+		transform = pose * transform;
 		//mesh_transforms[i] is c->w, we need w->c
 
 		glPushMatrix();

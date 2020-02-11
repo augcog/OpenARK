@@ -50,6 +50,8 @@ namespace ark {
 
         //std::cout<<"frameWrite frame = "<< frameId <<std::endl;
 
+		frame_ids.push_back(frameId);
+
 		cv::Mat imBGR;
         cv::cvtColor(imRGB, imBGR, CV_RGB2BGR);
         cv::imwrite(rgbPath + std::to_string(frameId) + ".jpg", imBGR);
@@ -63,6 +65,20 @@ namespace ark {
 		}
 		file.close();
     }
+
+	void SaveFrame::updateTransforms(std::map<int, Eigen::Matrix4d> transform_map) {
+
+		printf("updating transforms inside file\n");
+
+		for (int frame_id : frame_ids) {
+			std::ofstream file(tcwPath + std::to_string(frame_id) + ".txt");
+			if (file.is_open())
+			{
+				file << transform_map[frame_id].matrix() << '\n';
+			}
+			file.close();
+		}
+	}
 
     RGBDFrame SaveFrame::frameLoad(int frameId){
         std::cout<<"frameLoad start = "<< frameId <<std::endl;

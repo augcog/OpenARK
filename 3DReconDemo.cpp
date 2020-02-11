@@ -205,9 +205,9 @@ int main(int argc, char **argv)
 
 		int number_meshes = mesh_obj.get_number_meshes();
 
+		//if (false) {
 		//only update the active mesh
-		if (false) {
-		/*if (number_meshes == vis_mesh.size()) {*/
+		if (number_meshes == vis_mesh.size()) {
 			auto active_mesh = vis_mesh[vis_mesh.size() - 1];
 			mesh_obj.update_active_mesh(active_mesh.first->vertices_, active_mesh.first->vertex_colors_, active_mesh.first->triangles_, active_mesh.second);
 
@@ -232,8 +232,8 @@ int main(int argc, char **argv)
 				mesh_triangles.push_back(mesh.first->triangles_);
 				mesh_transforms.push_back(mesh.second);
 
-				cout << mesh.first->vertices_.size() << endl;
-				cout << mesh.first->triangles_.size() << endl;
+				//cout << mesh.first->vertices_.size() << endl;
+				//cout << mesh.first->triangles_.size() << endl;
 			}
 
 
@@ -270,9 +270,11 @@ int main(int argc, char **argv)
 
 	slam.AddKeyFrameAvailableHandler(updateKFHandler, "updatekfhandler");
 
-	LoopClosureDetectedHandler loopHandler([&tsdf_volume, &slam](void) {
+	LoopClosureDetectedHandler loopHandler([&tsdf_volume, &slam, &frame_counter](void) {
 
 		printf("loop closure detected!!!!!!!\n");
+		std::shared_ptr<open3d::geometry::TriangleMesh> write_mesh = tsdf_volume->ExtractTotalTriangleMesh();
+		open3d::io::WriteTriangleMeshToPLY("mesh_" + std::to_string(frame_counter) + ".ply", *write_mesh, false, false, true, true, false, false);
 
 		std::vector<int> frameIdOut;
 		std::vector<Eigen::Matrix4d> traj;
@@ -341,17 +343,32 @@ int main(int argc, char **argv)
 
 	}
 
+	cout << "updating transforms" << endl;
+
+	std::vector<int> frameIdOut;
+	std::vector<Eigen::Matrix4d> traj;
+
+	slam.getMappedTrajectory(frameIdOut, traj);
+
+	std::map<int, Eigen::Matrix4d> keyframemap;
+
+	for (int i = 0; i < frameIdOut.size(); i++) {
+		keyframemap.insert(std::pair<int, Eigen::Matrix4d>(frameIdOut[i], traj[i]));
+	}
+
+	saveFrame->updateTransforms(keyframemap);
+
 	cout << "getting mesh" << endl;
 
 	//make sure to add these back later |
 
-	//std::shared_ptr<open3d::geometry::TriangleMesh> write_mesh = tsdf_volume->ExtractTotalTriangleMesh();
+	std::shared_ptr<open3d::geometry::TriangleMesh> write_mesh = tsdf_volume->ExtractTotalTriangleMesh();
 
 	//const std::vector<std::shared_ptr<const open3d::geometry::Geometry>> mesh_vec = { mesh };
 
 	//open3d::visualization::DrawGeometries(mesh_vec);
 
-	//open3d::io::WriteTriangleMeshToPLY("mesh.ply", *write_mesh, false, false, true, true, false, false);
+	open3d::io::WriteTriangleMeshToPLY("mesh.ply", *write_mesh, false, false, true, true, false, false);
 
 	printf("\nTerminate...\n");
 	// Clean up
