@@ -126,8 +126,8 @@ ENDIF( DBoW2_FOUND )
 # require DLoopDetector
 find_package( DLoopDetector REQUIRED )
 IF( DLoopDetector_FOUND )
-    MESSAGE( STATUS "Found DLoopDetector: $ENV{DLoopDetector_INCLUDE_DIRS} ${DLoopDetector_LIBRARIES}" )
-   include_directories($ENV{DLoopDetector_INCLUDE_DIRS})
+    MESSAGE( STATUS "Found DLoopDetector: ${DLoopDetector_INCLUDE_DIRS} ${DLoopDetector_LIBRARIES}" )
+   include_directories(${DLoopDetector_INCLUDE_DIRS})
 ENDIF( DLoopDetector_FOUND )
 
 # require Okvis
@@ -136,11 +136,11 @@ include_directories(${OKVIS_INCLUDE_DIRS})
 message(STATUS "Found Okvis: ${OKVIS_INCLUDE_DIRS} ${OKVIS_LIBRARIES}")
 
 # require OpenGV (should come with Okvis)
-#if( DEFINED ENV{ARK_DEPS_DIR} )
-#   find_package( OpenGV REQUIRED NO_MODULE )
-#else()
+if( DEFINED ENV{ARK_DEPS_DIR} )
+   find_package( OpenGV REQUIRED NO_MODULE )
+else()
     find_package( OpenGV REQUIRED )
-#endif( DEFINED ENV{ARK_DEPS_DIR} )
+endif( DEFINED ENV{ARK_DEPS_DIR} )
 IF(OPENGV_FOUND)
     MESSAGE(STATUS "Found OpenGV: ${OPENGV_INCLUDE_DIR} ${OPENGV_LIBRARIES}")
 ENDIF(OPENGV_FOUND)
@@ -153,11 +153,11 @@ ENDIF(Ceres_FOUND)
 include_directories(${CERES_INCLUDE_DIRS})
 
 # require SuiteSparse
-#find_package( SuiteSparse QUIET )
-#IF(SuiteSparse_FOUND)
-#    MESSAGE(STATUS "Found SuiteSparse: ${SuiteSparse_INCLUDE_DIRS} ${SuiteSparse_LIBRARIES}")
-#ENDIF(SuiteSparse_FOUND)
-#include_directories(${SuiteSparse_INCLUDE_DIRS})
+find_package( SuiteSparse QUIET )
+IF(SuiteSparse_FOUND)
+    MESSAGE(STATUS "Found SuiteSparse: ${SuiteSparse_INCLUDE_DIRS} ${SuiteSparse_LIBRARIES}")
+ENDIF(SuiteSparse_FOUND)
+include_directories(${SuiteSparse_INCLUDE_DIRS})
 
 find_package(OpenMP)
 if (OPENMP_FOUND)
@@ -219,7 +219,7 @@ set(
   ${OpenCV_LIBRARIES}
   ${PCL_LIBRARIES}
   ${GLOG_LIBRARIES} #${CXSPARSE_LIBRARIES}
-  #${SuiteSparse_LIBRARIES}
+  ${SuiteSparse_LIBRARIES}
   ${OKVIS_LIBRARIES}
   ${CERES_LIBRARIES}
   ${BRISK_LIBRARIES}
