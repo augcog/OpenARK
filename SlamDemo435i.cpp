@@ -140,7 +140,7 @@ int main(int argc, char **argv)
         slam.PushFrame(frame);
 
         const auto isReset = slam.okvis_estimator_->isReset();
-        std::cout << "Mapnumber : " << slam.active_map_index << "\n";
+        std::cout << "Mapnumber : " << slam.getActiveMapIndex() << "\n";
         if (isReset) {
             traj_win.msg_ = " *Reseting*";
             path1.clear();

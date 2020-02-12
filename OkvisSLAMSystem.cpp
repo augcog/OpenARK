@@ -99,8 +99,6 @@ namespace ark {
                 }
                 out_frame->T_SC_.push_back(T_SC.T());
             }
-           
-            const auto sparseMap_ = getActiveMap();
 
             //check if keyframe
             if(frame_data.data->is_keyframe){
@@ -142,7 +140,14 @@ namespace ark {
                 //     cout<<"Found loop with my function"<<endl;
                 // }
                 // push to map
-                if(sparseMap_->addKeyframe(keyframe)){ //add keyframe returns true if a loop closure was detected
+                for (int i = 0; i < sparse_map_vector.size(); i++) {
+                    const auto sparseMap = sparse_map_vector[i];
+                    if (sparseMap->detectLoopClosure(keyframe)) {
+                        active_map_index = i;
+                    }
+                }
+
+                if(getActiveMap()->addKeyframe(keyframe)){ //add keyframe returns true if a loop closure was detected
                     for (MapLoopClosureDetectedHandler::const_iterator callback_iter = mMapLoopClosureHandler.begin();
                         callback_iter != mMapLoopClosureHandler.end(); ++callback_iter) {
                         const MapLoopClosureDetectedHandler::value_type& pair = *callback_iter;
@@ -151,7 +156,7 @@ namespace ark {
                 }
             }
 
-            out_frame->keyframe_ = sparseMap_->getKeyframe(out_frame->keyframeId_);
+            out_frame->keyframe_ = getActiveMap()->getKeyframe(out_frame->keyframeId_);
 
             //Notify callbacks
             if(frame_data.data->is_keyframe){
