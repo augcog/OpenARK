@@ -76,7 +76,34 @@ class SparseMap {
       return MapKeyFrame::Ptr(nullptr);
     }
   }
-  
+  bool detectLoopClosure(MapKeyFrame::Ptr kf)
+  {
+     if(useLoopClosures && kf->timestamp_-lastKfTimestamp_>0.2*1e9)
+     {
+        lastKfTimestamp_=kf->timestamp_;
+        //convert to descriptors to DBoW descriptor format
+        std::vector<cv::Mat> bowDesc;
+        kf->descriptorsAsVec(0,bowDesc);
+        DLoopDetector::DetectionResult result;
+        DBoW2::BowVector bowVec;
+        DBoW2::FeatureVector featvec;
+        detector_->detectLoop(kf->keypoints(0),bowDesc,result);
+        MapKeyFrame::Ptr loop_kf;
+        if(result.detection())
+        {
+          std::cout << result.match << " " << bowId << std::endl; 
+          loop_kf = bowFrameMap_[result.match];
+          cout << "- Loop found with image " << loop_kf->frameId_ << "!" << endl;
+          return true;
+        }
+        else
+        {
+          //We only want to record a frame if it is not matched with another image
+          //no need to duplicate
+          return false; //pose added to graph, no loop detected, nothing left to do
+        }
+      }  
+  }
   bool addKeyframe(MapKeyFrame::Ptr kf){
     //std::cout << "PROCESS KEYFRAME: " << kf->frameId_ << std::endl;
     frameMap_[kf->frameId_]=kf;

@@ -137,7 +137,10 @@ namespace ark {
                     keyframe->descriptors_[cam_idx]=frame_data.data->descriptors[cam_idx];
                 }
 
-
+                // if(sparseMap_->detectLoopClosure(keyframe))
+                // {
+                //     cout<<"Found loop with my function"<<endl;
+                // }
                 // push to map
                 if(sparseMap_->addKeyframe(keyframe)){ //add keyframe returns true if a loop closure was detected
                     for (MapLoopClosureDetectedHandler::const_iterator callback_iter = mMapLoopClosureHandler.begin();
