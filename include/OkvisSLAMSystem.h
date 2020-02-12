@@ -67,8 +67,10 @@ namespace ark {
 
         std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> getActiveMap();
 
-        int active_map_index;
 
+        int getActiveMapIndex() {
+            return active_map_index;
+        }
         std::shared_ptr<okvis::ThreadedKFVio> okvis_estimator_;
 
 
@@ -94,7 +96,7 @@ namespace ark {
         std::atomic<bool> kill;
         std::vector<std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>>> sparse_map_vector;
         bool new_map_checker;
-
+        int active_map_index;
     }; // OkvisSLAMSystem
 
 }//ark
