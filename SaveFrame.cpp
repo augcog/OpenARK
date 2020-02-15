@@ -48,8 +48,6 @@ namespace ark {
 
     void SaveFrame::frameWrite(cv::Mat imRGB, cv::Mat depth, Eigen::Matrix4d traj, int frameId){
 
-        //std::cout<<"frameWrite frame = "<< frameId <<std::endl;
-
 		frame_ids.push_back(frameId);
 
 		cv::Mat imBGR;
@@ -66,17 +64,21 @@ namespace ark {
 		file.close();
     }
 
-	void SaveFrame::updateTransforms(std::map<int, Eigen::Matrix4d> transform_map) {
+	void SaveFrame::updateTransforms(std::map<int, Eigen::Matrix4d> keyframemap) {
 
 		printf("updating transforms inside file\n");
 
 		for (int frame_id : frame_ids) {
-			std::ofstream file(tcwPath + std::to_string(frame_id) + ".txt");
-			if (file.is_open())
+
+			if (!keyframemap.count(frame_id))
+				continue;
+
+			std::ofstream file1(tcwPath + std::to_string(frame_id) + ".txt");
+			if (file1.is_open())
 			{
-				file << transform_map[frame_id].matrix() << '\n';
+				file1 << keyframemap[frame_id].matrix() << '\n';
 			}
-			file.close();
+			file1.close();
 		}
 	}
 

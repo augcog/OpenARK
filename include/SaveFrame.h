@@ -21,7 +21,7 @@ namespace ark{
         //void OnFrameAvailable(const RGBDFrame &frame);
 
 		void SaveFrame::frameWrite(cv::Mat imRGB, cv::Mat depth, Eigen::Matrix4d traj, int frameId);
-		void SaveFrame::updateTransforms(std::map<int, Eigen::Matrix4d> transform_map);
+		void SaveFrame::updateTransforms(std::map<int, Eigen::Matrix4d> keyframemap);
 
         ark::RGBDFrame SaveFrame::frameLoad(int frameId);
 
@@ -34,6 +34,7 @@ namespace ark{
         std::string tcwPath;
         std::string depth_to_tcw_Path;
 		std::vector<int> frame_ids;
+
 
     };
 }

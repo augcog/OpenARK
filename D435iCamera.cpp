@@ -14,6 +14,14 @@ namespace ark {
         last_ts_g(0), kill(false) {
         //Setup camera
         //TODO: Make read from config file
+
+
+		//rs400::advanced_mode advanced_device(camera.getDevice());
+		//auto depth_table = advanced_device.get_depth_table();
+		//depth_table.depthClampMax = 1300; // 1m30 if depth unit at 0.001
+		//advanced_device.set_depth_table(depth_table);
+
+
         rs2::context ctx;
         device = ctx.query_devices().front();
         width = 640;
@@ -30,6 +38,12 @@ namespace ark {
         depth_sensor = new rs2::depth_sensor(device.first<rs2::depth_sensor>());
 
         scale = depth_sensor->get_option(RS2_OPTION_DEPTH_UNITS);
+
+
+
+
+		//depth_sensor->set_option(RS2_OPTION_MAX_DISTANCE, 16.0f);
+			
         rs2::sensor color_sensor = device.query_sensors()[1];
 
         color_sensor.set_option(RS2_OPTION_ENABLE_AUTO_EXPOSURE,false);
@@ -60,6 +74,8 @@ namespace ark {
         auto depthStream = selection.get_stream(RS2_STREAM_DEPTH)
                              .as<rs2::video_stream_profile>();
         depthIntrinsics = depthStream.get_intrinsics();
+		colorIntrinsics = selection.get_stream(RS2_STREAM_COLOR)
+			.as<rs2::video_stream_profile>().get_intrinsics();
 
         motion_pipe = std::make_shared<rs2::pipeline>();
         rs2::pipeline_profile selection_motion = motion_pipe->start(motion_config);
@@ -98,6 +114,10 @@ namespace ark {
         align_to_color = new rs2::align(RS2_STREAM_COLOR);
         imuReaderThread_ = std::thread(&D435iCamera::imuReader, this);
     }
+
+	std::vector<float> D435iCamera::getColorIntrinsics() {
+		return std::vector<float>{colorIntrinsics.fx, colorIntrinsics.fy, colorIntrinsics.ppx, colorIntrinsics.ppy};
+	}
 
 	// void D435iCamera::start(){
  //        //enable sync
@@ -246,9 +266,12 @@ namespace ark {
             if (frame.images_[3].empty()) frame.images_[3] = cv::Mat(cv::Size(width,height), CV_8UC3);
             std::memcpy( frame.images_[3].data, color.get_data(),3 * width * height);
 
+			//FILTER OUT ALL POINTS CLOSER THAN min_dist AND FARTHER THAN max_dist
+			int min_dist = 200;
+			int max_dist = 6000;
 			for (int i = 0; i < width; i++) {
 				for (int k = 0; k < height; k++) {
-					if (frame.images_[4].at<uint16_t>(k, i) < 200 || frame.images_[4].at<uint16_t>(k, i) > 2400) { //FILTER OUT ALL POINTS CLOSER THAN 20cm OR FARTHER THAN 2.4M
+					if (frame.images_[4].at<uint16_t>(k, i) < min_dist || frame.images_[4].at<uint16_t>(k, i) > max_dist) { 
 						frame.images_[4].at<uint16_t>(k, i) = 0;
 					}
 				}

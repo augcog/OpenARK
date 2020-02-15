@@ -49,7 +49,7 @@ std::shared_ptr<open3d::geometry::RGBDImage> generateRGBDImageFromCV(cv::Mat col
 		}
 	}
 
-	auto rgbd_image = open3d::geometry::RGBDImage::CreateFromColorAndDepth(*color_im, *depth_im, 1000.0, 2.3, false);
+	auto rgbd_image = open3d::geometry::RGBDImage::CreateFromColorAndDepth(*color_im, *depth_im, 1000.0, 10.0, false);
 	return rgbd_image;
 }
 
@@ -138,10 +138,11 @@ int main(int argc, char **argv)
 	int frame_counter = 1;
 	bool do_integration = true;
 
-	FrameAvailableHandler saveFrameHandler([&saveFrame, &frame_counter, &do_integration](MultiCameraFrame::Ptr frame) {
+	KeyFrameAvailableHandler saveFrameHandler([&saveFrame, &frame_counter, &do_integration](MultiCameraFrame::Ptr frame) {
 		if (!do_integration || frame_counter % 3 != 0) {
 			return;
 		}
+
 		cv::Mat imRGB;
 		cv::Mat imDepth;
 
@@ -151,16 +152,18 @@ int main(int argc, char **argv)
 
 		Eigen::Matrix4d transform(frame->T_WS());
 
-
 		saveFrame->frameWrite(imRGB, imDepth, transform, frame->frameId_);
 	});
 
-	slam.AddFrameAvailableHandler(saveFrameHandler, "saveframe");
+	slam.AddKeyFrameAvailableHandler(saveFrameHandler, "saveframe");
 
-	open3d::integration::MovingTSDFVolume * tsdf_volume = new open3d::integration::MovingTSDFVolume(0.025, 0.05, open3d::integration::TSDFVolumeColorType::RGB8, 2);
+	float voxel_size = 0.07;
+
+	open3d::integration::MovingTSDFVolume * tsdf_volume = new open3d::integration::MovingTSDFVolume(voxel_size, voxel_size * 5, open3d::integration::TSDFVolumeColorType::RGB8, 5);
 
 	//intrinsics need to be set by user (currently does not read d435i_intr.yaml)
-	auto intr = open3d::camera::PinholeCameraIntrinsic(640, 480, 615.885, 616.099, 323.081, 237.475);
+	std::vector<float> intrinsics = camera.getColorIntrinsics();
+	auto intr = open3d::camera::PinholeCameraIntrinsic(640, 480, intrinsics[0], intrinsics[1], intrinsics[2], intrinsics[3]);
 
 	FrameAvailableHandler tsdfFrameHandler([&tsdf_volume, &frame_counter, &do_integration, intr](MultiCameraFrame::Ptr frame) {
 		if (!do_integration || frame_counter % 3 != 0) {
@@ -231,9 +234,6 @@ int main(int argc, char **argv)
 				mesh_colors.push_back(mesh.first->vertex_colors_);
 				mesh_triangles.push_back(mesh.first->triangles_);
 				mesh_transforms.push_back(mesh.second);
-
-				//cout << mesh.first->vertices_.size() << endl;
-				//cout << mesh.first->triangles_.size() << endl;
 			}
 
 
@@ -244,17 +244,6 @@ int main(int argc, char **argv)
 	});
 
 	slam.AddFrameAvailableHandler(meshHandler, "meshupdate");
-
-	/*std::shared_ptr<open3d::geometry::TriangleMesh> vis_mesh;
-	FrameAvailableHandler meshHandler([&tsdf_volume, &frame_counter, &do_integration, &vis_mesh, &mesh_obj](MultiCameraFrame::Ptr frame) {
-		if (!do_integration || frame_counter % 30 != 1) {
-			return;
-		}
-		vis_mesh = tsdf_volume->ExtractCurrentTriangleMesh();
-		mesh_obj.update_mesh(vis_mesh->vertices_, vis_mesh->vertex_colors_, vis_mesh->triangles_);
-	});
-
-	slam.AddFrameAvailableHandler(meshHandler, "meshupdate");*/
 
 	FrameAvailableHandler viewHandler([&mesh_obj, &tsdf_volume, &mesh_win, &frame_counter](MultiCameraFrame::Ptr frame) {
 		Eigen::Affine3d transform(frame->T_WS());
@@ -272,9 +261,7 @@ int main(int argc, char **argv)
 
 	LoopClosureDetectedHandler loopHandler([&tsdf_volume, &slam, &frame_counter](void) {
 
-		printf("loop closure detected!!!!!!!\n");
-		std::shared_ptr<open3d::geometry::TriangleMesh> write_mesh = tsdf_volume->ExtractTotalTriangleMesh();
-		open3d::io::WriteTriangleMeshToPLY("mesh_" + std::to_string(frame_counter) + ".ply", *write_mesh, false, false, true, true, false, false);
+		printf("loop closure detected\n");
 
 		std::vector<int> frameIdOut;
 		std::vector<Eigen::Matrix4d> traj;
@@ -292,13 +279,10 @@ int main(int argc, char **argv)
 
 	slam.AddLoopClosureDetectedHandler(loopHandler, "loophandler");
 
-	// thread *app = new thread(application_thread);
-
 	cv::namedWindow("image");
 
 	while (MyGUI::Manager::running()) {
 
-		//printf("test\n");
 		//Update the display
 		MyGUI::Manager::update();
 
@@ -307,10 +291,8 @@ int main(int argc, char **argv)
 		camera.update(*frame);
 
 		//Get or wait for IMU Data until current frame 
-		//std::cout << "frame: " << frame.timestamp_ << std::endl;
 		std::vector<ImuPair> imuData;
 		camera.getImuToTime(frame->timestamp_, imuData);
-		//std::cout << "numimu: " << imuData.size() << std::endl;
 
 		//Add data to SLAM system
 		slam.PushIMU(imuData);
@@ -328,8 +310,10 @@ int main(int argc, char **argv)
 
 		cv::imshow("image", imBGR);
 
-		int k = cv::waitKey(4);
+		int k = cv::waitKey(2);
+
 		if (k == ' ') {
+
 			do_integration = !do_integration;
 			if (do_integration) {
 				std::cout << "----INTEGRATION ENABLED----" << endl;
