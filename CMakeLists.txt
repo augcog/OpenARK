@@ -24,14 +24,14 @@ set( DATA_RECORDING_NAME "OpenARK_data_recording")
 set( TEST_NAME "OpenARK_test" )
 set( UNITY_PLUGIN_NAME "UnityPlugin" )
 
-option( BUILD_HAND_DEMO "BUILD_HAND_DEMO" OFF )
+option( BUILD_HAND_DEMO "BUILD_HAND_DEMO" ON )
 option( BUILD_AVATAR_DEMO "BUILD_AVATAR_DEMO" OFF)
 option( BUILD_SLAM_DEMO "BUILD_SLAM_DEMO" ON)
 option( BUILD_DATA_RECORDING "BUILD_DATA_RECORDING" OFF)
 option( BUILD_TESTS "BUILD_TESTS" OFF )
-option( BUILD_UNITY_PLUGIN "BUILD_UNITY_PLUGIN" OFF )
-option( USE_AZURE_KINECT_SDK "USE_AZURE_KINECT_SDK" OFF )
-option( USE_RSSDK2 "USE_RSSDK2" ON )
+option( BUILD_UNITY_PLUGIN "BUILD_UNITY_PLUGIN" ON )
+option( USE_AZURE_KINECT_SDK "USE_AZURE_KINECT_SDK" ON )
+option( USE_RSSDK2 "USE_RSSDK2" OFF )
 option( USE_RSSDK "USE_RSSDK" OFF )
 option( USE_PMDSDK "USE_PMDSDK" OFF )
 
@@ -123,14 +123,12 @@ IF( DBoW2_FOUND )
 ENDIF( DBoW2_FOUND )
 
 # require DLoopDetector
-#find_package( DLoopDetector REQUIRED )
-#IF( DLoopDetector_FOUND )
-#    MESSAGE( STATUS "Found DLoopDetector: ${DLoopDetector_INCLUDE_DIRS} ${DLoopDetector_LIBRARIES}" )
-#   include_directories(${DLoopDetector_INCLUDE_DIRS})
-#ENDIF( DLoopDetector_FOUND )
+find_package( DLoopDetector REQUIRED )
+IF( DLoopDetector_FOUND )
+    MESSAGE( STATUS "Found DLoopDetector: ${DLoopDetector_INCLUDE_DIRS} ${DLoopDetector_LIBRARIES}" )
+   include_directories(${DLoopDetector_INCLUDE_DIRS})
+ENDIF( DLoopDetector_FOUND )
 
-SET(DLoopDetector_INCLUDE_DIR "C:/Program Files/DLoopDetector/include/DLoopDetector")
-include_directories(${DLoopDetector_INCLUDE_DIR})
 
 # require Okvis
 find_package( okvis REQUIRED )
@@ -147,8 +145,6 @@ IF(OPENGV_FOUND)
     MESSAGE(STATUS "Found OpenGV: ${OPENGV_INCLUDE_DIR} ${OPENGV_LIBRARIES}")
 ENDIF(OPENGV_FOUND)
 
-# set(LAPACK_DIR "C:/Users/OpenARK/Desktop/openark_dependencies/suitesparse-metis-for-windows-master/build/install/lib64/lapack_blas_windows")
-
 # require Ceres
 find_package( Ceres REQUIRED )
 IF(Ceres_FOUND)
@@ -157,11 +153,11 @@ ENDIF(Ceres_FOUND)
 include_directories(${CERES_INCLUDE_DIRS})
 
 # require SuiteSparse
-#find_package( SuiteSparse QUIET )
-#IF(SuiteSparse_FOUND)
-#    MESSAGE(STATUS "Found SuiteSparse: ${SuiteSparse_INCLUDE_DIRS} ${SuiteSparse_LIBRARIES}")
-#ENDIF(SuiteSparse_FOUND)
-#include_directories(${SuiteSparse_INCLUDE_DIRS})
+find_package( SuiteSparse QUIET )
+IF(SuiteSparse_FOUND)
+    MESSAGE(STATUS "Found SuiteSparse: ${SuiteSparse_INCLUDE_DIRS} ${SuiteSparse_LIBRARIES}")
+ENDIF(SuiteSparse_FOUND)
+include_directories(${SuiteSparse_INCLUDE_DIRS})
 
 find_package(OpenMP)
 if (OPENMP_FOUND)
