@@ -66,7 +66,7 @@ namespace ark {
         */
         void imuReader();
 
-		std::shared_ptr<rs2::pipeline> pipe;
+        std::shared_ptr<rs2::pipeline> pipe;
         std::shared_ptr<rs2::pipeline> motion_pipe;
 		std::shared_ptr<rs2::pipeline> color_depth_pipe;
         rs2::config config;
