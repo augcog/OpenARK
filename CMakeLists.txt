@@ -174,6 +174,7 @@ message(STATUS "Found Brisk: ${BRISK_INCLUDE_DIRS} ${BRISK_LIBRARIES}")
 # require Open3D
 find_package( Open3D REQUIRED )
 include_directories(${Open3D_INCLUDE_DIRS})
+link_directories(${Open3D_LIBRARY_DIRS})
 message(STATUS "Found Open3D: ${Open3D_INCLUDE_DIRS} ${Open3D_LIBRARIES}")
 
 set( _FOUND_CAMERA_LIB OFF )
