@@ -51,6 +51,10 @@ namespace ark {
             //Get processed frame data from OKVIS
             StampedFrameData frame_data;
             while (!frame_data_queue_.try_dequeue(&frame_data)) {
+                if (okvis_estimator_->isReset()) {
+                    frame_data_queue_.clear();
+                    frame_queue_.clear();
+                }
                 if(okvis_estimator_->isReset() && !new_map_checker)
                 {
                     cout<<"Created new map"<<endl;
