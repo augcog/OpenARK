@@ -93,7 +93,11 @@ class SparseMap {
         {
           std::cout << result.match << " " << bowId << std::endl; 
           loop_kf = bowFrameMap_[result.match];
-          cout << "- Loop found with image " << loop_kf->frameId_ << "!" << endl;
+          if (loop_kf) {
+            cout << "detectLoopClosure: Loop found with image " << loop_kf->frameId_ << "!" << endl;
+          } else {
+            cout << "detectLoopClosure: Loop found and result is null\n";
+          }
           return true;
         }
         else
@@ -138,8 +142,11 @@ class SparseMap {
       {
         std::cout << result.match << " " << bowId << std::endl; 
         loop_kf = bowFrameMap_[result.match];
-        cout << "- Loop found with image " << loop_kf->frameId_ << "!"
-          << endl;
+        if (loop_kf) {
+          cout << "addKeyframe: Loop found with image " << loop_kf->frameId_ << "!" << endl;
+        } else {
+          cout << "addKeyframe: Loop found and result is null\n";
+        }
       }else{
         //We only want to record a frame if it is not matched with another image
         //no need to duplicate
