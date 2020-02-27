@@ -51,18 +51,14 @@ namespace ark {
             //Get processed frame data from OKVIS
             StampedFrameData frame_data;
             while (!frame_data_queue_.try_dequeue(&frame_data)) {
-                if (okvis_estimator_->isReset()) {
-                    frame_data_queue_.clear();
-                    frame_queue_.clear();
-                }
-                if(okvis_estimator_->isReset() && !new_map_checker)
-                {
+                if (okvis_estimator_->isReset() && !new_map_checker) {
                     cout<<"Created new map"<<endl;
                     new_map_checker = true;
                     createNewMap();
-                }
-                else if(!okvis_estimator_->isReset())
+                } else if (!okvis_estimator_->isReset() && new_map_checker) {
+                    frame_queue_.clear();
                     new_map_checker = false;
+                }
                 if(kill)
                     return;
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -311,6 +307,7 @@ namespace ark {
         if (0 <= active_map_index && active_map_index < sparse_map_vector.size()) {
             return sparse_map_vector[active_map_index];
         } else {
+            std::cout << "Null map returned \n";
             return nullptr;
         }
     }
