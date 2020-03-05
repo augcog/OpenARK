@@ -140,12 +140,14 @@ namespace ark {
                 //     cout<<"Found loop with my function"<<endl;
                 // }
                 // push to map
-                for (int i = 0; i < sparse_map_vector.size(); i++) {
-                    const auto sparseMap = sparse_map_vector[i];
-                    if (sparseMap->detectLoopClosure(keyframe)) {
-                        active_map_index = i;
-                    }
-                }
+                // only detect loop closure if it has moved a reasonable distance
+
+                // for (int i = 0; i < sparse_map_vector.size(); i++) {
+                //     const auto sparseMap = sparse_map_vector[i];
+                //     if (sparseMap->detectLoopClosure(keyframe)) {
+                //         active_map_index = i;
+                //     }
+                // }
 
                 if(getActiveMap()->addKeyframe(keyframe)){ //add keyframe returns true if a loop closure was detected
                     for (MapLoopClosureDetectedHandler::const_iterator callback_iter = mMapLoopClosureHandler.begin();
@@ -154,6 +156,7 @@ namespace ark {
                             pair.second();
                     }
                 }
+                
             }
 
             out_frame->keyframe_ = getActiveMap()->getKeyframe(out_frame->keyframeId_);

@@ -91,7 +91,7 @@ class SparseMap {
         MapKeyFrame::Ptr loop_kf;
         if(result.detection())
         {
-          std::cout << result.match << " " << bowId << std::endl; 
+          // std::cout << result.match << " " << bowId << std::endl; 
           loop_kf = bowFrameMap_[result.match];
           if (loop_kf) {
             cout << "detectLoopClosure: Loop found with image " << loop_kf->frameId_ << "!" << endl;
@@ -126,8 +126,19 @@ class SparseMap {
     currentKeyframeId = kf->frameId_;
     graph_.AddPose(kf->frameId_,kf->T_WS());
 
+    std::vector<Eigen::Matrix4d> traj;
+    getTrajectory(traj);
+    double distanceTravelled = 0;
+    // check the last 10 positions
+    for(int i=traj.size()-1; i>0 && (traj.size() - i <= 10); i--){
+        const auto &currentTranslation = traj[i].block<3,1>(0,3);
+        const auto &previousTranslation = traj[i-1].block<3,1>(0,3);
+        distanceTravelled += (currentTranslation-previousTranslation).norm();
+    }
+    bool shouldDetectLoopClosure = distanceTravelled > 0.5 && kf->timestamp_-lastKfTimestamp_>0.2*1e9;
+
     //only use one timestamp per second for loop closure
-    if(useLoopClosures && kf->timestamp_-lastKfTimestamp_>0.2*1e9){
+    if(useLoopClosures && shouldDetectLoopClosure){
       lastKfTimestamp_=kf->timestamp_;
       //convert to descriptors to DBoW descriptor format
       std::vector<cv::Mat> bowDesc;
