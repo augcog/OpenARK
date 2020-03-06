@@ -49,7 +49,8 @@ std::shared_ptr<open3d::geometry::RGBDImage> generateRGBDImageFromCV(cv::Mat col
 		}
 	}
 
-	auto rgbd_image = open3d::geometry::RGBDImage::CreateFromColorAndDepth(*color_im, *depth_im, 1000.0, 10.0, false);
+	//change the second-to-last parameter here to set maximum distance
+	auto rgbd_image = open3d::geometry::RGBDImage::CreateFromColorAndDepth(*color_im, *depth_im, 1000.0, 5.0, false);
 	return rgbd_image;
 }
 
@@ -157,7 +158,7 @@ int main(int argc, char **argv)
 
 	slam.AddKeyFrameAvailableHandler(saveFrameHandler, "saveframe");
 
-	float voxel_size = 0.07;
+	float voxel_size = 0.03;
 
 	open3d::integration::MovingTSDFVolume * tsdf_volume = new open3d::integration::MovingTSDFVolume(voxel_size, voxel_size * 5, open3d::integration::TSDFVolumeColorType::RGB8, 5);
 
@@ -195,13 +196,10 @@ int main(int argc, char **argv)
 		Eigen::Matrix4d>> vis_mesh;
 
 	FrameAvailableHandler meshHandler([&tsdf_volume, &frame_counter, &do_integration, &vis_mesh, &mesh_obj](MultiCameraFrame::Ptr frame) {
-		/*if (!do_integration || frame_counter % 30 != 1) {
+		if (!do_integration || frame_counter % 30 != 1) {
 			return;
-		}*/
+		}
 
-		if (frame_counter % 30 != 1)
-			return;
-			
 		vis_mesh = tsdf_volume->GetTriangleMeshes();
 
 		printf("new mesh extracted, sending to mesh obj\n");
