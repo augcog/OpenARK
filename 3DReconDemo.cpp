@@ -215,9 +215,18 @@ int main(int argc, char **argv)
 
 	slam.AddFrameAvailableHandler(meshHandler, "meshupdate");
 
-	FrameAvailableHandler viewHandler([&mesh_obj, &tsdf_volume, &mesh_win, &frame_counter](MultiCameraFrame::Ptr frame) {
+	FrameAvailableHandler viewHandler([&mesh_obj, &tsdf_volume, &mesh_win, &frame_counter, &do_integration](MultiCameraFrame::Ptr frame) {
 		Eigen::Affine3d transform(frame->T_WS());
 		mesh_obj.set_transform(transform.inverse());
+		if (mesh_win.clicked()) {
+			do_integration = !do_integration;
+			if (do_integration) {
+				std::cout << "----INTEGRATION ENABLED----" << endl;
+			}
+			else {
+				std::cout << "----INTEGRATION DISABLED----" << endl;
+			}
+		}
 	});
 	
 	slam.AddFrameAvailableHandler(viewHandler, "viewhandler");
@@ -281,17 +290,6 @@ int main(int argc, char **argv)
 		cv::imshow("image", imBGR);
 
 		int k = cv::waitKey(2);
-
-		if (k == ' ') {
-
-			do_integration = !do_integration;
-			if (do_integration) {
-				std::cout << "----INTEGRATION ENABLED----" << endl;
-			}
-			else {
-				std::cout << "----INTEGRATION DISABLED----" << endl;
-			}
-		}
 		
 		if (k == 'q' || k == 'Q' || k == 27) break; // 27 is ESC
 

@@ -214,8 +214,23 @@ public:
 	void set_camera(Eigen::Affine3d t) {
 		transform = t;
 	}
+	void MeshWindow::keyboard_control()
+	{
+		if (glfwGetKey(win_ptr, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+			glfwSetWindowShouldClose(win_ptr, GL_TRUE);
+		if (glfwGetMouseButton(win_ptr, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+			clicked_ = true;
+		}
+	}
+
+	bool MeshWindow::clicked() {
+		bool clicked = clicked_;
+		clicked_ = false;
+		return clicked;
+	}
 private:
 	Eigen::Affine3d transform;
+	bool clicked_ = false;
 };
 
 class Object{
