@@ -54,32 +54,6 @@ std::shared_ptr<open3d::geometry::RGBDImage> generateRGBDImageFromCV(cv::Mat col
 	return rgbd_image;
 }
 
-//TODO: check ScalableTSDFVolume.cpp and UniformTSDFVolume.cpp, implement deintegration
-//void deintegrate(int frame_id, SaveFrame * saveFrame, open3d::integration::ScalableTSDFVolume * tsdf_volume, open3d::camera::PinholeCameraIntrinsic intr) {
-//	RGBDFrame frame = saveFrame->frameLoad(frame_id);
-//
-//	if (frame.frameId == -1) {
-//		cout << "deintegration failed with frameload fail " << frame_id << endl;
-//		return;
-//	}
-//
-//	auto rgbd_image = generateRGBDImageFromCV(frame.imRGB, frame.imDepth);
-//
-//	cv::Mat pose = frame.mTcw.inv();
-//
-//	Eigen::Matrix4d eigen_pose;
-//
-//	for (int i = 0; i < 4; i++) {
-//		for (int k = 0; k < 4; k++) {
-//			eigen_pose(i, k) = pose.at<float>(i, k);
-//		}
-//	}
-//
-//	tsdf_volume->Deintegrate(*rgbd_image, intr, eigen_pose);
-//}
-
-
-//TODO: loop closure handler calling deintegration
 int main(int argc, char **argv)
 {
 
@@ -162,7 +136,6 @@ int main(int argc, char **argv)
 
 	open3d::integration::MovingTSDFVolume * tsdf_volume = new open3d::integration::MovingTSDFVolume(voxel_size, voxel_size * 5, open3d::integration::TSDFVolumeColorType::RGB8, 5);
 
-	//intrinsics need to be set by user (currently does not read d435i_intr.yaml)
 	std::vector<float> intrinsics = camera.getColorIntrinsics();
 	auto intr = open3d::camera::PinholeCameraIntrinsic(640, 480, intrinsics[0], intrinsics[1], intrinsics[2], intrinsics[3]);
 
@@ -206,8 +179,7 @@ int main(int argc, char **argv)
 
 		int number_meshes = mesh_obj.get_number_meshes();
 
-		//if (false) {
-		//only update the active mesh
+		//only update active mesh
 		if (number_meshes == vis_mesh.size()) {
 			auto active_mesh = vis_mesh[vis_mesh.size() - 1];
 			mesh_obj.update_active_mesh(active_mesh.first->vertices_, active_mesh.first->vertex_colors_, active_mesh.first->triangles_, active_mesh.second);
