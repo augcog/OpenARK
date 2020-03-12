@@ -135,10 +135,10 @@ void ImageWindow::set_image(cv::Mat image_in){
         current_image = image_in;
 }
 
-ObjectWindow::ObjectWindow(std::string name, int resX, int resY):
-Window(name,resX,resY),
-eye(Eigen::Vector3d(0,-5,30)),
-gaze(Eigen::Vector3d(0,0,0)){}
+ObjectWindow::ObjectWindow(std::string name, int resX, int resY) :
+	Window(name, resX, resY),
+	eye(Eigen::Vector3d(0, -0.1 , 0.8)),
+	gaze(Eigen::Vector3d(0,0,0)){}
 
 
 ObjectWindow::~ObjectWindow(){
@@ -166,7 +166,7 @@ bool ObjectWindow::display(){
 
 		gluLookAt(eye.x(),eye.y(),eye.z(),  // eye  
 		gaze.x(), gaze.y(), gaze.z(),      // center  
-		0.0, 1.0, 0.);      // up direction
+		0.0, 1.0, 0.0);      // up direction
 
 		for(const auto obj : objects){
 			obj.second->display();
@@ -363,17 +363,17 @@ void Object::del(){
 	}
 }
 
-void Object::display(){
-    std::lock_guard<std::mutex> guard(displayLock_);
-    if(draw){
-    	glPushMatrix();
-    	Eigen::Matrix4d scene_mat;
-    	glGetDoublev(GL_MODELVIEW_MATRIX, scene_mat.data());
-    	scene_mat = scene_mat*pose.matrix();
-    	glLoadMatrixd(scene_mat.data());
-    	draw_obj();
-    	glPopMatrix();
-    }
+void Object::display() {
+	std::lock_guard<std::mutex> guard(displayLock_);
+	if (draw) {
+		glPushMatrix();
+		Eigen::Matrix4d scene_mat;
+		glGetDoublev(GL_MODELVIEW_MATRIX, scene_mat.data());
+		scene_mat = scene_mat*pose.matrix();
+		glLoadMatrixd(scene_mat.data());
+		draw_obj();
+		glPopMatrix();
+	}
 }
 
 void Object::hide(){
@@ -561,6 +561,86 @@ void Path::draw_obj()
 
     // enable lighting back
     glEnable(GL_LIGHTING);
+}
+
+void Mesh::draw_obj()
+{
+	std::lock_guard<std::mutex> guard(meshLock_);
+
+	Eigen::Matrix4d scene_mat;
+	glGetDoublev(GL_MODELVIEW_MATRIX, scene_mat.data());
+	scene_mat = scene_mat*pose.matrix().inverse();
+	glLoadMatrixd(scene_mat.data());
+
+	/*Eigen::AngleAxis<double> R(pose.rotation());
+	Eigen::Translation3d T(pose.translation());
+
+
+	glRotated(180, 0, 1, 0);
+	glRotated(180, 0, 0, 1);
+
+
+	glTranslated(T.x(), T.y(), T.z());
+	glRotated(R.angle() * 180 / 3.14159, R.axis().x(), R.axis().y(), R.axis().z());*/
+
+
+	for (int i = 0; i < mesh_vertices.size(); ++i) {
+		std::vector<Eigen::Vector3d> vertices = mesh_vertices[i];
+		std::vector<Eigen::Vector3d> colors = mesh_colors[i];
+		std::vector<Eigen::Vector3i> triangles = mesh_triangles[i];
+		Eigen::Affine3d transform(mesh_transforms[i]);
+
+		transform = pose * transform;
+		//mesh_transforms[i] is c->w, we need w->c
+
+		glPushMatrix();
+
+		Eigen::AngleAxis<double> R(transform.rotation());
+		Eigen::Translation3d T(transform.translation());
+
+
+		glRotated(180, 0, 1, 0);
+		glRotated(180, 0, 0, 1);
+
+
+		glTranslated(T.x(), T.y(), T.z());
+		glRotated(R.angle() * 180 / 3.14159, R.axis().x(), R.axis().y(), R.axis().z());
+
+
+		glDisable(GL_LIGHTING);
+
+		glBegin(GL_TRIANGLES);
+
+		for (int i = 0; i < triangles.size(); i++) {
+
+			Eigen::Vector3d vertex1 = vertices[triangles[i][0]];
+			Eigen::Vector3d vertex2 = vertices[triangles[i][1]];
+			Eigen::Vector3d vertex3 = vertices[triangles[i][2]];
+
+			Eigen::Vector3d color1 = colors[triangles[i][0]];
+			Eigen::Vector3d color2 = colors[triangles[i][1]];
+			Eigen::Vector3d color3 = colors[triangles[i][2]];
+
+
+			glColor3f((color1[0] + color2[0] + color3[0]) / 3.0f,
+				(color1[1] + color2[1] + color3[1]) / 3.0f,
+				(color1[2] + color2[2] + color3[2]) / 3.0f);
+
+			glVertex3f(vertex1[0], vertex1[1], vertex1[2]);
+			glVertex3f(vertex2[0], vertex2[1], vertex2[2]);
+			glVertex3f(vertex3[0], vertex3[1], vertex3[2]);
+		}
+
+		glEnd();
+
+		glEnable(GL_LIGHTING);
+
+
+		glPopMatrix();
+
+
+	}
+
 }
 
 }//MyGUI

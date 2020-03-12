@@ -277,5 +277,9 @@ namespace ark {
         sparseMap_.getTrajectory(trajOut);
     }
 
+	void OkvisSLAMSystem::getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d>& trajOut) {
+		sparseMap_.getMappedTrajectory(frameIdOut, trajOut);
+	}
+
 
 } //ark

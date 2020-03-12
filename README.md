@@ -1,6 +1,6 @@
 # OpenARK
 
-OpenARK is an open-source wearable augmented reality (AR) system founded at UC Berkeley in 2016. The C++ based software offers innovative core functionalities to power a wide range of off-the-shelf AR components, including see-through glasses, depth cameras, and IMUs. The open-source platform includes higher-level modules to aid human-computer interaction, such as 3D gesture recognition, plane detection, avatar/pose tracking, and multi-user collaboration, and also contains fundamental tools such as AR-based camera calibration, depth-to-stereo, and SLAM, and it also. Currently, it supports both PMD Pico Flexx and Intel RealSense SR300 cameras. The project builds natively on both Windows and Linux.
+OpenARK is an open-source wearable augmented reality (AR) system founded at UC Berkeley in 2016. The C++ based software offers innovative core functionalities to power a wide range of off-the-shelf AR components, including see-through glasses, depth cameras, and IMUs. The open-source platform includes higher-level modules to aid human-computer interaction, such as 3D gesture recognition, plane detection, avatar/pose tracking, and multi-user collaboration, and also contains fundamental tools such as AR-based camera calibration, depth-to-stereo, and SLAM, and 3D Reconstruction. Currently, it supports both PMD Pico Flexx and Intel RealSense SR300 cameras. The project builds natively on both Windows and Linux.
 
 At a Glance
 
@@ -97,7 +97,7 @@ Code used to run the demo video is included in HandDemo.cpp. Additional sample c
 
 ## Using OpenARK SLAM
 
-Currently OpenARK only supports the Intel Realsense D435i Camera for use with OpenARK SLAM. OpenARK SLAM requires two configuration files to run, a camera intrinsicis file, and a vocab file. Examples of both files can be found in the config folder. To run the OpenARK SLAM Demo run:
+Currently OpenARK only supports the Intel Realsense D435i Camera for use with OpenARK SLAM. OpenARK SLAM requires two configuration files to run, a camera intrinsics file, and a vocab file. Examples of both files can be found in the config folder. To run the OpenARK SLAM Demo run:
 
 `OpenARK_SLAM_demo.exe <intrinsics file> <vocab file> `
 
@@ -108,6 +108,22 @@ While the vocab file provided should work for most purposes, for best performanc
 This will generate a complete intrinsics file named `<camera name>_intr.yaml`
 
 OpenARK SLAM heavily utilizes the open source packages DBoW2, Okvis, and Ceres. Please respect their Licences and credit/cite when appropriate.  
+
+## Using OpenARK 3D Reconstruction
+
+Currently OpenARK only supports the Intel Realsense D435i Camera for use with OpenARK 3D Reconstruction. OpenARK 3D Reconstruction requires two configuration files to run, a camera intrinsics file, and a vocab file. Examples of both files can be found in the config folder. It also accepts a frame output directory, which defaults to `/frames/`. To run the OpenARK 3D Reconstruction Demo run:
+
+`3dRecon_Data_Recording.exe <intrinsics file> <vocab file> <frame directory> ` 
+
+While the vocab file provided should work for most purposes, for best performance a custom intrinsics file should be generated for each camera. You can generate a custom intrinsics file for your camera by running
+
+`d435i_intrinsics_writer <camera name>` 
+
+This will generate a complete intrinsics file named `<camera name>_intr.yaml`
+
+Offline reconstruction can be performed on the recorded data output of the application using the Python script located in `/scripts/OfflineReconstruction.py`. 
+
+OpenARK 3D Reconstruction heavily utilizes the open source packages DBoW2, Okvis, Open3D, and Ceres. Please respect their Licences and credit/cite when appropriate.  
 
 ## Known issues
 
