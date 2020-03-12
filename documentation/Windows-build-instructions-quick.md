@@ -15,8 +15,10 @@ modifying system variables.
 4. Download our installer from 
 <https://github.com/sxyu/OpenARK-Deps/releases/download/0.0.1/openark-deps-vc14-win64.exe> and run it. This should install pre-built versions for all other dependencies and configure CMake automatically.
 
-5. Now clone OpenARK, `cd` into the directory in a terminal, `mkdir build && cd build` and enter `cmake .. -G"Visual Studio 14 2015 Win64"`. This will take a while the first time as it will download several large data files from Github.
+5. In order to properly run OpenARK, you need to register connected Realsense devices. Instructions can be found at <https://github.com/IntelRealSense/librealsense/blob/master/doc/installation_windows.md>. The `/scripts` directory has been included in the `librealsense2` installed in the dependency pack.
 
-6. Optionally, manually set the `OPENARK_DIR` environment variable to the project directory. This allows OpenARK binaries to find the `config` and `data` files regardless of the current working directory.
+6. Now clone OpenARK, `cd` into the directory in a terminal, `mkdir build && cd build` and enter `cmake .. -G"Visual Studio 14 2015 Win64"`. This will take a while the first time as it will download several large data files from Github.
 
-7. Open `OpenARK.sln` and build as usual. (Note that only `Release` mode is supported)
+7. Optionally, manually set the `OPENARK_DIR` environment variable to the project directory. This allows OpenARK binaries to find the `config` and `data` files regardless of the current working directory.
+
+8. Open `OpenARK.sln` and build as usual. (Note that only `Release` mode is supported)

@@ -21,14 +21,18 @@ set( AVATAR_DEMO_NAME "OpenARK_avatar_demo")
 set( SLAM_DEMO_NAME "OpenARK_SLAM_demo")
 set( 3DRECON_DATA_NAME "3dRecon_Data_Recording")
 set( DATA_RECORDING_NAME "OpenARK_data_recording")
+set( SLAM_RECORDING_NAME "OpenARK_slam_recording")
+set( SLAM_REPLAYING_NAME "OpenARK_slam_replaying")
 set( TEST_NAME "OpenARK_test" )
 set( UNITY_PLUGIN_NAME "UnityPlugin" )
 
-option( BUILD_HAND_DEMO "BUILD_HAND_DEMO" ON )
+option( BUILD_HAND_DEMO "BUILD_HAND_DEMO" OFF )
 option( BUILD_AVATAR_DEMO "BUILD_AVATAR_DEMO" OFF)
 option( BUILD_SLAM_DEMO "BUILD_SLAM_DEMO" ON)
 option( BUILD_3DRECON_DEMO "BUILD_3DRECON_DEMO" ON)
 option( BUILD_DATA_RECORDING "BUILD_DATA_RECORDING" OFF)
+option( BUILD_SLAM_RECORDING "BUILD_SLAM_RECORDING" ON)
+option( BUILD_SLAM_REPLAYING "BUILD_SLAM_REPLAYING" ON)
 option( BUILD_TESTS "BUILD_TESTS" OFF )
 option( BUILD_UNITY_PLUGIN "BUILD_UNITY_PLUGIN" ON )
 option( USE_AZURE_KINECT_SDK "USE_AZURE_KINECT_SDK" OFF )
@@ -114,8 +118,6 @@ if(WIN32)
 endif(WIN32)
 include_directories(${GLOG_INCLUDE_DIRS})
 
-find_package( Boost REQUIRED COMPONENTS system program_options )
-
 # require DBoW2
 find_package( DBoW2 REQUIRED )
 IF( DBoW2_FOUND )
@@ -138,7 +140,7 @@ message(STATUS "Found Okvis: ${OKVIS_INCLUDE_DIRS} ${OKVIS_LIBRARIES}")
 
 # require OpenGV (should come with Okvis)
 if( DEFINED ENV{ARK_DEPS_DIR} )
-    find_package( OpenGV REQUIRED NO_MODULE )
+   find_package( OpenGV REQUIRED NO_MODULE )
 else()
     find_package( OpenGV REQUIRED )
 endif( DEFINED ENV{ARK_DEPS_DIR} )
@@ -158,7 +160,7 @@ find_package( SuiteSparse QUIET )
 IF(SuiteSparse_FOUND)
     MESSAGE(STATUS "Found SuiteSparse: ${SuiteSparse_INCLUDE_DIRS} ${SuiteSparse_LIBRARIES}")
 ENDIF(SuiteSparse_FOUND)
-#include_directories(${SuiteSparse_INCLUDE_DIRS})
+include_directories(${SuiteSparse_INCLUDE_DIRS})
 
 find_package(OpenMP)
 if (OPENMP_FOUND)
@@ -219,7 +221,6 @@ include_directories(
   ${OpenCV_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
   ${CERES_INCLUDE_DIRS}
-  ${Boost_INCLUDE_DIRS}
 )
 
 set(
@@ -458,6 +459,7 @@ if( ${BUILD_SLAM_DEMO} AND realsense2_FOUND )
     target_include_directories( d435i_intrinsics_writer PRIVATE ${INCLUDE_DIR} )
     target_link_libraries( d435i_intrinsics_writer ${DEPENDENCIES} ${LIB_NAME} )
     #set_target_properties( d435i_intrinsics_writer PROPERTIES OUTPUT_NAME d435i_intrinsics_writer )
+	set_target_properties( d435i_intrinsics_writer PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
 endif( ${BUILD_SLAM_DEMO} AND realsense2_FOUND )
 
 if( ${BUILD_3DRECON_DEMO} AND realsense2_FOUND )
@@ -480,6 +482,30 @@ if( ${BUILD_DATA_RECORDING} )
     set_target_properties( ${DATA_RECORDING_NAME} PROPERTIES OUTPUT_NAME ${DATA_RECORDING_NAME} )
     set_target_properties( ${DATA_RECORDING_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
 endif( ${BUILD_DATA_RECORDING} )
+
+if( ${BUILD_SLAM_RECORDING} )
+    add_executable( ${SLAM_RECORDING_NAME} SlamRecording.cpp )
+    target_include_directories( ${SLAM_RECORDING_NAME} PRIVATE ${INCLUDE_DIR} )
+    set_target_properties( ${SLAM_RECORDING_NAME} PROPERTIES OUTPUT_NAME ${SLAM_RECORDING_NAME} )
+    set_target_properties( ${SLAM_RECORDING_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
+    if ( MSVC )
+        target_link_libraries( ${SLAM_RECORDING_NAME} ${DEPENDENCIES} ${LIB_NAME} )
+    else()
+        target_link_libraries( ${SLAM_RECORDING_NAME} ${DEPENDENCIES} ${LIB_NAME} GLU GL glut )
+    endif ( MSVC )
+endif( ${BUILD_SLAM_RECORDING} )
+
+if( ${BUILD_SLAM_REPLAYING} )
+    add_executable( ${SLAM_REPLAYING_NAME} SlamReplaying.cpp )
+    target_include_directories( ${SLAM_REPLAYING_NAME} PRIVATE ${INCLUDE_DIR} )
+    set_target_properties( ${SLAM_REPLAYING_NAME} PROPERTIES OUTPUT_NAME ${SLAM_REPLAYING_NAME} )
+    set_target_properties( ${SLAM_REPLAYING_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
+    if ( MSVC )
+        target_link_libraries( ${SLAM_REPLAYING_NAME} ${DEPENDENCIES} ${LIB_NAME} )
+    else()
+        target_link_libraries( ${SLAM_REPLAYING_NAME} ${DEPENDENCIES} ${LIB_NAME} GLU GL glut )
+    endif ( MSVC )
+endif( ${BUILD_SLAM_REPLAYING} )
 
 # Unity plugin currently only supports Windows
 if( ${BUILD_UNITY_PLUGIN} AND MSVC )
