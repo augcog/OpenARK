@@ -120,6 +120,7 @@ int main(int argc, char **argv)
     okvis::Time start(0.0);
     int id =0;
     bool new_map_checker = false;
+    int lastMapIndex = -1;
     while (MyGUI::Manager::running()){
         //printf("test\n");
         //Update the display
@@ -140,7 +141,11 @@ int main(int argc, char **argv)
         slam.PushFrame(frame);
 
         const auto isReset = slam.okvis_estimator_->isReset();
-        std::cout << "Mapnumber : " << slam.getActiveMapIndex() << "\n";
+        const auto mapIndex = slam.getActiveMapIndex();
+        if (mapIndex != lastMapIndex) {
+            lastMapIndex = mapIndex;
+            std::cout << "Mapnumber : " << mapIndex << "\n";
+        }
         if (isReset) {
             traj_win.msg_ = " *Reseting*";
             path1.clear();

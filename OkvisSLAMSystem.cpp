@@ -146,6 +146,7 @@ namespace ark {
                 //     const auto sparseMap = sparse_map_vector[i];
                 //     if (sparseMap->detectLoopClosure(keyframe)) {
                 //         active_map_index = i;
+                //         break;
                 //     }
                 // }
                 //cout<<"2:"<<keyframe->timestamp_<<endl;
