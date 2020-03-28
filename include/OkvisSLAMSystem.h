@@ -97,6 +97,7 @@ namespace ark {
         std::vector<std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>>> sparse_map_vector;
         bool new_map_checker;
         int active_map_index;
+        std::string strVocFile;
     }; // OkvisSLAMSystem
 
 }//ark

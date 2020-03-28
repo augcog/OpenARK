@@ -95,9 +95,7 @@ class SparseMap {
     //         }
     //     }
     // }
-
-    if(useLoopClosures && shouldDetectLoopClosure) {
-        lastKfTimestamp_ = kf->timestamp_;
+    if(useLoopClosures && kf->timestamp_-lastKfTimestamp_>0.2*1e9) {
         //convert to descriptors to DBoW descriptor format
         std::vector<cv::Mat> bowDesc;
         kf->descriptorsAsVec(0,bowDesc);

@@ -5,7 +5,7 @@ namespace ark {
 
     OkvisSLAMSystem::OkvisSLAMSystem(const std::string & strVocFile, const std::string & strSettingsFile) :
         start_(0.0), t_imu_(0.0), deltaT_(1.0), num_frames_(0), kill(false), 
-        sparse_map_vector(), active_map_index(-1), new_map_checker(false){
+        sparse_map_vector(), active_map_index(-1), new_map_checker(false), strVocFile(strVocFile){
 
         okvis::VioParametersReader vio_parameters_reader;
         try {
@@ -135,10 +135,10 @@ namespace ark {
                     keyframe->descriptors_[cam_idx]=frame_data.data->descriptors[cam_idx];
                 }
                 //cout<<"1:"<<keyframe->timestamp_<<endl;;
-                //if(getActiveMap()->detectLoopClosure(keyframe))
-                //{
-                //     cout<<"Found loop with my function"<<endl;
-                //}
+                if(getActiveMap()->detectLoopClosure(keyframe))
+                {
+                     cout<<"Found loop with my function"<<endl;
+                }
                 // push to map
                 // only detect loop closure if it has moved a reasonable distance
 
@@ -271,6 +271,7 @@ namespace ark {
         sparse_map_vector.push_back(std::make_shared<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>>());
         // set it to the latest one
         active_map_index = static_cast<int>(sparse_map_vector.size())-1;
+        getActiveMap()->setEnableLoopClosure(parameters_.loopClosureParameters.enabled,strVocFile,true, new brisk::BruteForceMatcher());
     }
 
     void OkvisSLAMSystem::display() {
