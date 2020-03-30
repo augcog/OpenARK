@@ -22,7 +22,7 @@ class SparseMap {
  public:
 
   SparseMap():
-  useLoopClosures(false),matcher_(nullptr),bowId(0),currentKeyframeId(-1),lastKfTimestamp_(0)
+  useLoopClosures(false),matcher_(nullptr),bowId(0),currentKeyframeId(-1),lastKfTimestamp_(0), lastKfTimestampDetect_(0)
   {
 
   }
@@ -78,24 +78,25 @@ class SparseMap {
   }
   bool detectLoopClosure(MapKeyFrame::Ptr kf)
   {
-    bool shouldDetectLoopClosure = kf->timestamp_-lastKfTimestamp_>0.2*1e9;
-    // if (shouldDetectLoopClosure) {
-    //     shouldDetectLoopClosure = false;
-    //     std::vector<Eigen::Matrix4d> traj;
-    //     getTrajectory(traj);
-    //     double distanceTravelled = 0;
-    //     // check the last 10 positions
-    //     for(int i=traj.size()-1; i>0 && (traj.size() - i <= 10); i--) {
-    //         const auto &currentTranslation = traj[i].block<3,1>(0,3);
-    //         const auto &previousTranslation = traj[i-1].block<3,1>(0,3);
-    //         distanceTravelled += (currentTranslation-previousTranslation).norm();
-    //         if (distanceTravelled >= LOOP_CLOSURE_DISTANCE_THRESHOLD) {
-    //           shouldDetectLoopClosure = true;
-    //           break;
-    //         }
-    //     }
-    // }
-    if(useLoopClosures && kf->timestamp_-lastKfTimestamp_>0.2*1e9) {
+    bool shouldDetectLoopClosure = kf->timestamp_-lastKfTimestampDetect_>0.2*1e9;
+    if (shouldDetectLoopClosure) {
+        shouldDetectLoopClosure = false;
+        std::vector<Eigen::Matrix4d> traj;
+        getTrajectory(traj);
+        double distanceTravelled = 0;
+        // check the last 10 positions
+        for(int i=traj.size()-1; i>0 && (traj.size() - i <= 10); i--) {
+            const auto &currentTranslation = traj[i].block<3,1>(0,3);
+            const auto &previousTranslation = traj[i-1].block<3,1>(0,3);
+            distanceTravelled += (currentTranslation-previousTranslation).norm();
+            if (distanceTravelled >= LOOP_CLOSURE_DISTANCE_THRESHOLD) {
+              shouldDetectLoopClosure = true;
+              break;
+            }
+        }
+    }
+    if(useLoopClosures && shouldDetectLoopClosure) {
+        lastKfTimestampDetect_ = kf->timestamp_;
         //convert to descriptors to DBoW descriptor format
         std::vector<cv::Mat> bowDesc;
         kf->descriptorsAsVec(0,bowDesc);
@@ -154,7 +155,6 @@ class SparseMap {
             3, 0.2, 50, numInliers, inliers, transformEstimate);
       if(((float)numInliers)/correspondences.size()<0.3)
       {
-          cout<<"Exiting over here in mine"<<endl;
           return false; 
       }
       return true;
@@ -182,22 +182,22 @@ class SparseMap {
     graph_.AddPose(kf->frameId_,kf->T_WS());
 
     bool shouldDetectLoopClosure = kf->timestamp_-lastKfTimestamp_>0.2*1e9;
-    // if (shouldDetectLoopClosure) {
-    //     shouldDetectLoopClosure = false;
-    //     std::vector<Eigen::Matrix4d> traj;
-    //     getTrajectory(traj);
-    //     double distanceTravelled = 0;
-    //     // check the last 10 positions
-    //     for(int i=traj.size()-1; i>0 && (traj.size() - i <= 10); i--) {
-    //         const auto &currentTranslation = traj[i].block<3,1>(0,3);
-    //         const auto &previousTranslation = traj[i-1].block<3,1>(0,3);
-    //         distanceTravelled += (currentTranslation-previousTranslation).norm();
-    //         if (distanceTravelled >= LOOP_CLOSURE_DISTANCE_THRESHOLD) {
-    //           shouldDetectLoopClosure = true;
-    //           break;
-    //         }
-    //     }
-    // }
+    if (shouldDetectLoopClosure) {
+        shouldDetectLoopClosure = false;
+        std::vector<Eigen::Matrix4d> traj;
+        getTrajectory(traj);
+        double distanceTravelled = 0;
+        // check the last 10 positions
+        for(int i=traj.size()-1; i>0 && (traj.size() - i <= 10); i--) {
+            const auto &currentTranslation = traj[i].block<3,1>(0,3);
+            const auto &previousTranslation = traj[i-1].block<3,1>(0,3);
+            distanceTravelled += (currentTranslation-previousTranslation).norm();
+            if (distanceTravelled >= LOOP_CLOSURE_DISTANCE_THRESHOLD) {
+              shouldDetectLoopClosure = true;
+              break;
+            }
+        }
+    }
 
     //only use one timestamp per second for loop closure
     if(useLoopClosures && shouldDetectLoopClosure){
@@ -271,7 +271,6 @@ class SparseMap {
             3, 0.2, 50, numInliers, inliers, transformEstimate);
       if(((float)numInliers)/correspondences.size()<0.3)
       {
-          cout<<"Exiting over here"<<endl;
           return false; 
       }
        //transform unreliable
@@ -316,6 +315,7 @@ class SparseMap {
 
   SimplePoseGraphSolver graph_;
   double lastKfTimestamp_;
+  double lastKfTimestampDetect_;
   static constexpr double LOOP_CLOSURE_DISTANCE_THRESHOLD = 0.0;
 
 
