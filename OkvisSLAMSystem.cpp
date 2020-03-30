@@ -20,7 +20,6 @@ namespace ark {
         vio_parameters_reader.getParameters(parameters_);
 
         createNewMap();
-        getActiveMap()->setEnableLoopClosure(parameters_.loopClosureParameters.enabled,strVocFile,true, new brisk::BruteForceMatcher());
 
         //initialize Visual odometry
         okvis_estimator_ = std::make_shared<okvis::ThreadedKFVio>(parameters_);
@@ -135,23 +134,25 @@ namespace ark {
                     keyframe->descriptors_[cam_idx]=frame_data.data->descriptors[cam_idx];
                 }
                 //cout<<"1:"<<keyframe->timestamp_<<endl;;
-                if(getActiveMap()->detectLoopClosure(keyframe))
-                {
-                     cout<<"Found loop with my function"<<endl;
-                }
+                // if(getActiveMap()->detectLoopClosure(keyframe))
+                // {
+                //      cout<<"Found loop with my function"<<endl;
+                // }
                 // push to map
                 // only detect loop closure if it has moved a reasonable distance
 
-                // for (int i = 0; i < sparse_map_vector.size(); i++) {
-                //     const auto sparseMap = sparse_map_vector[i];
-                //     if (sparseMap->detectLoopClosure(keyframe)) {
-                //         active_map_index = i;
-                //         break;
-                //     }
-                // }
+                for (int i = 0; i < sparse_map_vector.size()-1; i++) {
+                    const auto sparseMap = sparse_map_vector[i];
+                    if (sparseMap->detectLoopClosure(keyframe)) {
+                        active_map_index = i;
+                        // delete all the new map after active map
+                        sparse_map_vector.resize(active_map_index+1);
+                        cout << "Deleting newer maps after: " << active_map_index << endl;
+                        break;
+                    }
+                }
                 //cout<<"2:"<<keyframe->timestamp_<<endl;
                 if(getActiveMap()->addKeyframe(keyframe)){ //add keyframe returns true if a loop closure was detected
-                    cout<<"Detected Loop CLosure here as well"<<endl;
                     for (MapLoopClosureDetectedHandler::const_iterator callback_iter = mMapLoopClosureHandler.begin();
                         callback_iter != mMapLoopClosureHandler.end(); ++callback_iter) {
                         const MapLoopClosureDetectedHandler::value_type& pair = *callback_iter;
@@ -268,6 +269,9 @@ namespace ark {
     }
 
     void OkvisSLAMSystem::createNewMap() {
+        if (!sparse_map_vector.empty()) {
+            sparse_map_vector.back()->lastKfTimestamp_ = sparse_map_vector.back()->lastKfTimestampDetect_ = 0.;
+        }
         sparse_map_vector.push_back(std::make_shared<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>>());
         // set it to the latest one
         active_map_index = static_cast<int>(sparse_map_vector.size())-1;
