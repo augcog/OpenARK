@@ -134,9 +134,14 @@ namespace ark {
                     keyframe->descriptors_[cam_idx]=frame_data.data->descriptors[cam_idx];
                 }
                 //cout<<"1:"<<keyframe->timestamp_<<endl;;
-                // if(getActiveMap()->detectLoopClosure(keyframe))
+                // for (int i = 0; i < sparse_map_vector.size()-1; i++) 
                 // {
-                //      cout<<"Found loop with my function"<<endl;
+                //      cout<<"Checking Map: "<<i+1<<endl;
+                //      const auto sparseMap = sparse_map_vector[i];
+                //      if (sparseMap->detectLoopClosure(keyframe)) 
+                //      {
+                //       cout<<"Found loop with my function in Map: "<<i+1<<endl;
+                //      }
                 // }
                 // push to map
                 // only detect loop closure if it has moved a reasonable distance
@@ -144,6 +149,7 @@ namespace ark {
                 for (int i = 0; i < sparse_map_vector.size()-1; i++) {
                     const auto sparseMap = sparse_map_vector[i];
                     if (sparseMap->detectLoopClosure(keyframe)) {
+                        cout<<"Here: "<<i<<endl;
                         active_map_index = i;
                         // delete all the new map after active map
                         sparse_map_vector.resize(active_map_index+1);
