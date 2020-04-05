@@ -139,6 +139,7 @@ int main(int argc, char **argv)
     //run until display is closed
     okvis::Time start(0.0);
     camera.start();
+    int lastMapIndex = -1;
 
     while (MyGUI::Manager::running())
     {
@@ -172,27 +173,32 @@ int main(int argc, char **argv)
             //std::cout << "frame size: " << rgb.total() << std::endl;
             std::vector<ImuPair> imuData;
             camera.getImuToTime(frame->timestamp_, imuData);
-            std::cout << "numimu: " << imuData.size() << std::endl;
-            std::cout << "timestamp: " << std::setprecision(15) << frame->timestamp_ << std::endl;
+            //std::cout << "numimu: " << imuData.size() << std::endl;
+            //std::cout << "timestamp: " << std::setprecision(15) << frame->timestamp_ << std::endl;
 
             //Add data to SLAM system
-            printf("before slam imu\n");
+            //printf("before slam imu\n");
             slam.PushIMU(imuData);
             // make it the same as real camera
             frame->images_.resize(4);
             slam.PushFrame(frame);
-            printf("after slam frame\n");
+            //printf("after slam frame\n");
         }
         catch (const std::exception &e)
         {
-            std::cerr << e.what() << '\n'; // or whatever
+            std::cerr << e.what() << '\n'; 
         }
         catch (...)
         {
             std::cout << "ex catched\n";
         }
         const auto isReset = slam.okvis_estimator_->isReset();
-        std::cout << "slam reset? : " << isReset << "\n";
+        const auto mapIndex = slam.getActiveMapIndex();
+        if (mapIndex != lastMapIndex) {
+            lastMapIndex = mapIndex;
+            std::cout << "Mapnumber : " << mapIndex << "\n";
+        }
+        //std::cout << "slam reset? : " << isReset << "\n";
         if (isReset) {
             traj_win.msg_ = " *Reseting*";
             path1.clear();
