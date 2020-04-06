@@ -146,7 +146,7 @@ namespace ark {
                 // push to map
                 // only detect loop closure if it has moved a reasonable distance
 
-                for (int i = 0; i < sparse_map_vector.size()-1; i++) {
+                for (int i = 0; i < sparse_map_vector.size(); i++) {
                     const auto sparseMap = sparse_map_vector[i];
                     if (sparseMap->detectLoopClosure(keyframe)) {
                         cout<<"Here: "<<i<<endl;
@@ -155,10 +155,17 @@ namespace ark {
                         sparse_map_vector.resize(active_map_index+1);
                         cout << "Deleting newer maps after: " << active_map_index << endl;
                         break;
+                    } else {
+                        cout << "No loop in old maps: framdId: " << keyframe->frameId_ << "\n";
                     }
                 }
                 //cout<<"2:"<<keyframe->timestamp_<<endl;
-                if(getActiveMap()->addKeyframe(keyframe)){ //add keyframe returns true if a loop closure was detected
+                const auto addKeyFrameResult = getActiveMap()->addKeyframe(keyframe);
+                const auto detectLoopClosureResult = getActiveMap()->detectLoopClosure(keyframe);
+                if (addKeyFrameResult != detectLoopClosureResult) {
+                    cout << "addKeyFrameResult is different from detectLoopClosureResult!\n";
+                }
+                if (addKeyFrameResult){ //add keyframe returns true if a loop closure was detected
                     for (MapLoopClosureDetectedHandler::const_iterator callback_iter = mMapLoopClosureHandler.begin();
                         callback_iter != mMapLoopClosureHandler.end(); ++callback_iter) {
                         const MapLoopClosureDetectedHandler::value_type& pair = *callback_iter;
@@ -278,10 +285,11 @@ namespace ark {
         if (!sparse_map_vector.empty()) {
             sparse_map_vector.back()->lastKfTimestamp_ = sparse_map_vector.back()->lastKfTimestampDetect_ = 0.;
         }
-        sparse_map_vector.push_back(std::make_shared<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>>());
+        const auto newMap = std::make_shared<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>>();
+        newMap->setEnableLoopClosure(parameters_.loopClosureParameters.enabled,strVocFile,true, new brisk::BruteForceMatcher());
+        sparse_map_vector.push_back(newMap);
         // set it to the latest one
         active_map_index = static_cast<int>(sparse_map_vector.size())-1;
-        getActiveMap()->setEnableLoopClosure(parameters_.loopClosureParameters.enabled,strVocFile,true, new brisk::BruteForceMatcher());
     }
 
     void OkvisSLAMSystem::display() {

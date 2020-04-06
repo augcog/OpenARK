@@ -119,6 +119,7 @@ class SparseMap {
         }
         else
         {
+          cout << "detectLoopClosure: No detection\n";
           return false; //pose added to graph, no loop detected, nothing left to do
         }
       std::vector<cv::DMatch> matches; 
@@ -157,10 +158,12 @@ class SparseMap {
             3, 0.2, 50, numInliers, inliers, transformEstimate);
       if(((float)numInliers)/correspondences.size()<0.3)
       {
+          cout << "detectLoopClosure: No detection due to inliners\n";
           return false; 
       }
       return true;
       }  
+    cout << "detectLoopClosure: No detection due to no loop\n";
     return false;
   
       
