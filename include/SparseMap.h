@@ -119,7 +119,7 @@ class SparseMap {
         }
         else
         {
-          cout << "detectLoopClosure: No detection\n";
+          cout << "detector result staus: " << result.status << "\n";
           return false; //pose added to graph, no loop detected, nothing left to do
         }
       std::vector<cv::DMatch> matches; 
@@ -206,18 +206,28 @@ class SparseMap {
 
     //only use one timestamp per second for loop closure
     if(useLoopClosures && shouldDetectLoopClosure){
-      lastKfTimestamp_=kf->timestamp_;
+      // FIXME: set lasttimestamp
+      // lastKfTimestamp_=kf->timestamp_;
       //convert to descriptors to DBoW descriptor format
       std::vector<cv::Mat> bowDesc;
       kf->descriptorsAsVec(0,bowDesc);
 
       DLoopDetector::DetectionResult result;
+      DLoopDetector::DetectionResult queryResult;
       DBoW2::BowVector bowVec;
       DBoW2::FeatureVector featvec;
+      auto local_keypoints = kf->keypoints(0);
+      detector_->detectLoop_query(local_keypoints,bowDesc,queryResult);
       detector_->detectLoop(kf->keypoints(0),bowDesc,result);
       MapKeyFrame::Ptr loop_kf;
       //cout<<"Status:"<<result.status<<endl;
-      if(result.detection())
+      const auto queryDetectResult = queryResult.detection();
+      const auto addKfDetectResult = result.detection();
+      if (addKfDetectResult != queryDetectResult) {
+        // log
+        cout << "addKfResult: " << addKfDetectResult << " vs. queryResult: " << queryDetectResult << "\n";
+      }
+      if(addKfDetectResult)
       {
         //std::cout << result.match << " " << bowId << std::endl; 
         loop_kf = bowFrameMap_[result.match];

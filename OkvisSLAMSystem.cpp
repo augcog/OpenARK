@@ -146,7 +146,7 @@ namespace ark {
                 // push to map
                 // only detect loop closure if it has moved a reasonable distance
 
-                for (int i = 0; i < sparse_map_vector.size(); i++) {
+                for (int i = 0; i < sparse_map_vector.size()-1; i++) {
                     const auto sparseMap = sparse_map_vector[i];
                     if (sparseMap->detectLoopClosure(keyframe)) {
                         cout<<"Here: "<<i<<endl;
@@ -161,10 +161,6 @@ namespace ark {
                 }
                 //cout<<"2:"<<keyframe->timestamp_<<endl;
                 const auto addKeyFrameResult = getActiveMap()->addKeyframe(keyframe);
-                const auto detectLoopClosureResult = getActiveMap()->detectLoopClosure(keyframe);
-                if (addKeyFrameResult != detectLoopClosureResult) {
-                    cout << "addKeyFrameResult is different from detectLoopClosureResult!\n";
-                }
                 if (addKeyFrameResult){ //add keyframe returns true if a loop closure was detected
                     for (MapLoopClosureDetectedHandler::const_iterator callback_iter = mMapLoopClosureHandler.begin();
                         callback_iter != mMapLoopClosureHandler.end(); ++callback_iter) {
