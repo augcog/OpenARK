@@ -56,6 +56,10 @@ namespace ark {
 
 		std::vector<float> getColorIntrinsics();
 
+        const rs2_intrinsics &getDepthIntrinsics();
+
+        double getDepthScale();
+
     protected:
 
         /** Converts an D435 raw depth image to an ordered point cloud based on the current camera's intrinsics */
