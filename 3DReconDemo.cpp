@@ -62,6 +62,8 @@ void readConfig(std::string& recon_config) {
 
 	cv::FileStorage file(recon_config, cv::FileStorage::READ);
 
+	std::cout << "Add entries to the intr.yaml to configure 3drecon parameters." << std::endl;
+
 	if (file["3dRecon_VoxelSize"].isReal()) {
 		file["3dRecon_VoxelSize"] >> voxel_size;
   	} else {
@@ -181,7 +183,7 @@ int main(int argc, char **argv)
 
 		frame->getImage(imDepth, 4);
 
-		Eigen::Matrix4d transform(frame->T_WS());
+		Eigen::Matrix4d transform(frame->T_WC(3));
 
 		saveFrame->frameWrite(imRGB, imDepth, transform, frame->frameId_);
 	});
@@ -211,7 +213,7 @@ int main(int argc, char **argv)
 
 		auto rgbd_image = generateRGBDImageFromCV(color_mat, depth_mat);
 
-		tsdf_volume->Integrate(*rgbd_image, intr, frame->T_WS().inverse());
+		tsdf_volume->Integrate(*rgbd_image, intr, frame->T_WC(3).inverse());
 	});
 
 	slam.AddFrameAvailableHandler(tsdfFrameHandler, "tsdfframe");
@@ -272,7 +274,7 @@ int main(int argc, char **argv)
 	slam.AddFrameAvailableHandler(meshHandler, "meshupdate");
 
 	FrameAvailableHandler viewHandler([&mesh_obj, &tsdf_volume, &mesh_win, &frame_counter, &do_integration](MultiCameraFrame::Ptr frame) {
-		Eigen::Affine3d transform(frame->T_WS());
+		Eigen::Affine3d transform(frame->T_WC(3));
 		mesh_obj.set_transform(transform.inverse());
 		if (mesh_win.clicked()) {
 			do_integration = !do_integration;
