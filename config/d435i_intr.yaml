@@ -72,12 +72,12 @@ imageDelay: 0.
 displayImages: false
 useDriver: false
 enableLoopClosureDetection: 1
-3dRecon_VoxelSize: 0.01
-3dRecon_BlockSize: 0.7
-3dRecon_MaxDepth: 2.0
-3dRecon_SaveFrames: 1
-3dRecon_MeshWinWidth: 1000
-3dRecon_MeshWinHeight: 1000
+Recon_VoxelSize: 1.0000000000000000e-02
+Recon_BlockSize: 2.
+Recon_MaxDepth: 2.
+Recon_SaveFrames: 1
+Recon_MeshWinWidth: 1000
+Recon_MeshWinHeight: 1000
 publishing_options:
    publish_rate: 200
    publishLandmarks: false

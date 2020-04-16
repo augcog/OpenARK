@@ -64,45 +64,45 @@ void readConfig(std::string& recon_config) {
 
 	std::cout << "Add entries to the intr.yaml to configure 3drecon parameters." << std::endl;
 
-	if (file["3dRecon_VoxelSize"].isReal()) {
-		file["3dRecon_VoxelSize"] >> voxel_size;
+	if (file["Recon_VoxelSize"].isReal()) {
+		file["Recon_VoxelSize"] >> voxel_size;
   	} else {
 		std::cout << "option <3dRecon_VoxelSize> not found, setting to default 0.03" << std::endl;
 		voxel_size = 0.03;
 	}
 
-	if (file["3dRecon_BlockSize"].isReal()) {
-		file["3dRecon_BlockSize"] >> block_size;
+	if (file["Recon_BlockSize"].isReal()) {
+		file["Recon_BlockSize"] >> block_size;
   	} else {
 		std::cout << "option <3dRecon_BlockSize> not found, setting to default 2.0" << std::endl;
 		block_size = 2.0;
 	}
 
-	if (file["3dRecon_MaxDepth"].isReal()) {
-		file["3dRecon_MaxDepth"] >> max_depth;
+	if (file["Recon_MaxDepth"].isReal()) {
+		file["Recon_MaxDepth"] >> max_depth;
   	} else {
 		std::cout << "option <3dRecon_MaxDepth> not found, setting to default 2.5" << std::endl;
 		max_depth = 2.5;
 	}
 
-	if (file["3dRecon_SaveFrames"].isInt()) {
+	if (file["Recon_SaveFrames"].isInt()) {
 		int save;
-		file["3dRecon_SaveFrames"] >> save;
+		file["Recon_SaveFrames"] >> save;
 		save_frames = (bool)save;
   	} else {
 		std::cout << "option <3dRecon_SaveFrames> not found, setting to default true" << std::endl;
 		save_frames = true;
 	}
 
-	if (file["3dRecon_MeshWinWidth"].isInt()) {
-		file["3dRecon_MeshWinWidth"] >> mesh_view_width;
+	if (file["Recon_MeshWinWidth"].isInt()) {
+		file["Recon_MeshWinWidth"] >> mesh_view_width;
   	} else {
 		std::cout << "option <3dRecon_MeshWinWidth> not found, setting to default 1000px" << std::endl;
 		mesh_view_width = 1000;
 	}
 
-	if (file["3dRecon_MeshWinHeight"].isInt()) {
-		file["3dRecon_MeshWinHeight"] >> mesh_view_height;
+	if (file["Recon_MeshWinHeight"].isInt()) {
+		file["Recon_MeshWinHeight"] >> mesh_view_height;
   	} else {
 		std::cout << "option <3dRecon_MeshWinHeight> not found, setting to default 1000px" << std::endl;
 		mesh_view_height = 1000;
