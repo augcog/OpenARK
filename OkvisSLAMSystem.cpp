@@ -45,6 +45,7 @@ namespace ark {
     }
 
     void OkvisSLAMSystem::FrameConsumerLoop() {
+        static int called = 0;
         while (!kill) {
              
             //Get processed frame data from OKVIS
@@ -134,9 +135,14 @@ namespace ark {
                     keyframe->descriptors_[cam_idx]=frame_data.data->descriptors[cam_idx];
                 }
                 //cout<<"1:"<<keyframe->timestamp_<<endl;;
-                // if(getActiveMap()->detectLoopClosure(keyframe))
+                // for (int i = 0; i < sparse_map_vector.size()-1; i++) 
                 // {
-                //      cout<<"Found loop with my function"<<endl;
+                //      cout<<"Checking Map: "<<i+1<<endl;
+                //      const auto sparseMap = sparse_map_vector[i];
+                //      if (sparseMap->detectLoopClosure(keyframe)) 
+                //      {
+                //       cout<<"Found loop with my function in Map: "<<i+1<<endl;
+                //      }
                 // }
                 // push to map
                 // only detect loop closure if it has moved a reasonable distance
@@ -144,21 +150,29 @@ namespace ark {
                 for (int i = 0; i < sparse_map_vector.size()-1; i++) {
                     const auto sparseMap = sparse_map_vector[i];
                     if (sparseMap->detectLoopClosure(keyframe)) {
+                        cout<<"Here: "<<i<<endl;
                         active_map_index = i;
                         // delete all the new map after active map
                         sparse_map_vector.resize(active_map_index+1);
                         cout << "Deleting newer maps after: " << active_map_index << endl;
                         break;
+                    } else {
+                        cout << "No loop in old maps: framdId: " << keyframe->frameId_ << "\n";
                     }
                 }
                 //cout<<"2:"<<keyframe->timestamp_<<endl;
-                if(getActiveMap()->addKeyframe(keyframe)){ //add keyframe returns true if a loop closure was detected
+                // if (active_map_index == 0) {
+                // if (called < 20) {
+                const auto addKeyFrameResult = getActiveMap()->addKeyframe(keyframe);
+                if (addKeyFrameResult){ //add keyframe returns true if a loop closure was detected
+                    called++;
                     for (MapLoopClosureDetectedHandler::const_iterator callback_iter = mMapLoopClosureHandler.begin();
                         callback_iter != mMapLoopClosureHandler.end(); ++callback_iter) {
                         const MapLoopClosureDetectedHandler::value_type& pair = *callback_iter;
                             pair.second();
                     }
                 }
+                // }
                 
             }
 
@@ -272,10 +286,11 @@ namespace ark {
         if (!sparse_map_vector.empty()) {
             sparse_map_vector.back()->lastKfTimestamp_ = sparse_map_vector.back()->lastKfTimestampDetect_ = 0.;
         }
-        sparse_map_vector.push_back(std::make_shared<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>>());
+        const auto newMap = std::make_shared<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>>();
+        newMap->setEnableLoopClosure(parameters_.loopClosureParameters.enabled,strVocFile,true, new brisk::BruteForceMatcher());
+        sparse_map_vector.push_back(newMap);
         // set it to the latest one
         active_map_index = static_cast<int>(sparse_map_vector.size())-1;
-        getActiveMap()->setEnableLoopClosure(parameters_.loopClosureParameters.enabled,strVocFile,true, new brisk::BruteForceMatcher());
     }
 
     void OkvisSLAMSystem::display() {

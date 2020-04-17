@@ -119,7 +119,6 @@ int main(int argc, char **argv)
     //run until display is closed
     okvis::Time start(0.0);
     int id =0;
-    bool new_map_checker = false;
     int lastMapIndex = -1;
     while (MyGUI::Manager::running()){
         //printf("test\n");

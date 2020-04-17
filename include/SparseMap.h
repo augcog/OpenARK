@@ -79,29 +79,31 @@ class SparseMap {
   bool detectLoopClosure(MapKeyFrame::Ptr kf)
   {
     bool shouldDetectLoopClosure = kf->timestamp_-lastKfTimestampDetect_>0.2*1e9;
-    if (shouldDetectLoopClosure) {
-        shouldDetectLoopClosure = false;
-        std::vector<Eigen::Matrix4d> traj;
-        getTrajectory(traj);
-        double distanceTravelled = 0;
-        // check the last 10 positions
-        for(int i=traj.size()-1; i>0 && (traj.size() - i <= 10); i--) {
-            const auto &currentTranslation = traj[i].block<3,1>(0,3);
-            const auto &previousTranslation = traj[i-1].block<3,1>(0,3);
-            distanceTravelled += (currentTranslation-previousTranslation).norm();
-            if (distanceTravelled >= LOOP_CLOSURE_DISTANCE_THRESHOLD) {
-              shouldDetectLoopClosure = true;
-              break;
-            }
-        }
-    }
+    // if (shouldDetectLoopClosure) {
+    //     shouldDetectLoopClosure = false;
+    //     std::vector<Eigen::Matrix4d> traj;
+    //     getTrajectory(traj);
+    //     double distanceTravelled = 0;
+    //     // check the last 10 positions
+    //     for(int i=traj.size()-1; i>0 && (traj.size() - i <= 10); i--) {
+    //         const auto &currentTranslation = traj[i].block<3,1>(0,3);
+    //         const auto &previousTranslation = traj[i-1].block<3,1>(0,3);
+    //         distanceTravelled += (currentTranslation-previousTranslation).norm();
+    //         if (distanceTravelled >= LOOP_CLOSURE_DISTANCE_THRESHOLD) {
+    //           shouldDetectLoopClosure = true;
+    //           break;
+    //         }
+    //     }
+    // }
     if(useLoopClosures && shouldDetectLoopClosure) {
-        lastKfTimestampDetect_ = kf->timestamp_;
+        //cout<<"In here"<<endl;
+        //lastKfTimestampDetect_ = kf->timestamp_;
         //convert to descriptors to DBoW descriptor format
         std::vector<cv::Mat> bowDesc;
         kf->descriptorsAsVec(0,bowDesc);
         DLoopDetector::DetectionResult result;
         auto local_keypoints = kf->keypoints(0);
+        //cout<<"Address of Detector: "<<detector_.get()<<endl;
         detector_->detectLoop_query(local_keypoints,bowDesc,result);
         MapKeyFrame::Ptr loop_kf;
         if(result.detection())
@@ -117,6 +119,7 @@ class SparseMap {
         }
         else
         {
+          cout << "Detector result status: " << result.status << "\n";
           return false; //pose added to graph, no loop detected, nothing left to do
         }
       std::vector<cv::DMatch> matches; 
@@ -155,10 +158,12 @@ class SparseMap {
             3, 0.2, 50, numInliers, inliers, transformEstimate);
       if(((float)numInliers)/correspondences.size()<0.3)
       {
+          cout << "detectLoopClosure: No detection due to inliners\n";
           return false; 
       }
       return true;
       }  
+    cout << "detectLoopClosure: No detection due to no loop\n";
     return false;
   
       
@@ -182,37 +187,47 @@ class SparseMap {
     graph_.AddPose(kf->frameId_,kf->T_WS());
 
     bool shouldDetectLoopClosure = kf->timestamp_-lastKfTimestamp_>0.2*1e9;
-    if (shouldDetectLoopClosure) {
-        shouldDetectLoopClosure = false;
-        std::vector<Eigen::Matrix4d> traj;
-        getTrajectory(traj);
-        double distanceTravelled = 0;
-        // check the last 10 positions
-        for(int i=traj.size()-1; i>0 && (traj.size() - i <= 10); i--) {
-            const auto &currentTranslation = traj[i].block<3,1>(0,3);
-            const auto &previousTranslation = traj[i-1].block<3,1>(0,3);
-            distanceTravelled += (currentTranslation-previousTranslation).norm();
-            if (distanceTravelled >= LOOP_CLOSURE_DISTANCE_THRESHOLD) {
-              shouldDetectLoopClosure = true;
-              break;
-            }
-        }
-    }
+    // if (shouldDetectLoopClosure) {
+    //     shouldDetectLoopClosure = false;
+    //     std::vector<Eigen::Matrix4d> traj;
+    //     getTrajectory(traj);
+    //     double distanceTravelled = 0;
+    //     // check the last 10 positions
+    //     for(int i=traj.size()-1; i>0 && (traj.size() - i <= 10); i--) {
+    //         const auto &currentTranslation = traj[i].block<3,1>(0,3);
+    //         const auto &previousTranslation = traj[i-1].block<3,1>(0,3);
+    //         distanceTravelled += (currentTranslation-previousTranslation).norm();
+    //         if (distanceTravelled >= LOOP_CLOSURE_DISTANCE_THRESHOLD) {
+    //           shouldDetectLoopClosure = true;
+    //           break;
+    //         }
+    //     }
+    // }
 
     //only use one timestamp per second for loop closure
     if(useLoopClosures && shouldDetectLoopClosure){
+      // FIXME: set lasttimestamp
       lastKfTimestamp_=kf->timestamp_;
       //convert to descriptors to DBoW descriptor format
       std::vector<cv::Mat> bowDesc;
       kf->descriptorsAsVec(0,bowDesc);
 
       DLoopDetector::DetectionResult result;
+      DLoopDetector::DetectionResult queryResult;
       DBoW2::BowVector bowVec;
       DBoW2::FeatureVector featvec;
+      auto local_keypoints = kf->keypoints(0);
+      detector_->detectLoop_query(local_keypoints,bowDesc,queryResult);
       detector_->detectLoop(kf->keypoints(0),bowDesc,result);
       MapKeyFrame::Ptr loop_kf;
       //cout<<"Status:"<<result.status<<endl;
-      if(result.detection())
+      const auto queryDetectResult = queryResult.detection();
+      const auto addKfDetectResult = result.detection();
+      if (addKfDetectResult != queryDetectResult) {
+        // log
+        cout << "addKfResult: " << addKfDetectResult << " vs. queryResult: " << queryDetectResult << "\n";
+      }
+      if(addKfDetectResult)
       {
         //std::cout << result.match << " " << bowId << std::endl; 
         loop_kf = bowFrameMap_[result.match];
@@ -223,6 +238,7 @@ class SparseMap {
         }
       }else{
         // cout<<"Exiting here"<<endl;
+        // cout << "addKfResult: false\n";
         //We only want to record a frame if it is not matched with another image
         //no need to duplicate
         bowFrameMap_[bowId]=kf;
