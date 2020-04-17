@@ -291,7 +291,7 @@ int main(int argc, char **argv)
 
 	KeyFrameAvailableHandler updateKFHandler([&tsdf_volume](MultiCameraFrame::Ptr frame) {
 		MapKeyFrame::Ptr kf = frame->keyframe_;
-		tsdf_volume->SetLatestKeyFrame(kf->T_WS(), kf->frameId_);
+		tsdf_volume->SetLatestKeyFrame(kf->T_WC(3), kf->frameId_);
 	});
 
 	slam.AddKeyFrameAvailableHandler(updateKFHandler, "updatekfhandler");

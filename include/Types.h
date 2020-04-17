@@ -171,6 +171,14 @@ namespace ark{
                 return T_WS_;
         }
 
+        Eigen::Matrix4d T_WC(int index)
+        {
+            if(index>=0 && index<T_SC_.size()){
+                return T_WS()*T_SC_[index];
+            }else
+                return T_WS();
+        }
+
     };
 
     enum class FrameType { Depth, IR, RGB, XYZMap };
