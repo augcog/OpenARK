@@ -119,7 +119,7 @@ class SparseMap {
         }
         else
         {
-          cout << "detector result staus: " << result.status << "\n";
+          cout << "Detector result status: " << result.status << "\n";
           return false; //pose added to graph, no loop detected, nothing left to do
         }
       std::vector<cv::DMatch> matches; 
@@ -207,7 +207,7 @@ class SparseMap {
     //only use one timestamp per second for loop closure
     if(useLoopClosures && shouldDetectLoopClosure){
       // FIXME: set lasttimestamp
-      // lastKfTimestamp_=kf->timestamp_;
+      lastKfTimestamp_=kf->timestamp_;
       //convert to descriptors to DBoW descriptor format
       std::vector<cv::Mat> bowDesc;
       kf->descriptorsAsVec(0,bowDesc);
@@ -238,6 +238,7 @@ class SparseMap {
         }
       }else{
         // cout<<"Exiting here"<<endl;
+        // cout << "addKfResult: false\n";
         //We only want to record a frame if it is not matched with another image
         //no need to duplicate
         bowFrameMap_[bowId]=kf;

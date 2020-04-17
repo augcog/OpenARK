@@ -45,6 +45,7 @@ namespace ark {
     }
 
     void OkvisSLAMSystem::FrameConsumerLoop() {
+        static int called = 0;
         while (!kill) {
              
             //Get processed frame data from OKVIS
@@ -160,14 +161,18 @@ namespace ark {
                     }
                 }
                 //cout<<"2:"<<keyframe->timestamp_<<endl;
+                // if (active_map_index == 0) {
+                // if (called < 20) {
                 const auto addKeyFrameResult = getActiveMap()->addKeyframe(keyframe);
                 if (addKeyFrameResult){ //add keyframe returns true if a loop closure was detected
+                    called++;
                     for (MapLoopClosureDetectedHandler::const_iterator callback_iter = mMapLoopClosureHandler.begin();
                         callback_iter != mMapLoopClosureHandler.end(); ++callback_iter) {
                         const MapLoopClosureDetectedHandler::value_type& pair = *callback_iter;
                             pair.second();
                     }
                 }
+                // }
                 
             }
 
