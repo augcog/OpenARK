@@ -8,16 +8,16 @@ We recommend using Visual Studio 2015 and 64-bit Windows for OpenARK. When given
     
 2. Install cmake: https://cmake.org/download/
 
-Make sure to select “add cmake to system PATH” either for current user or all users. 
+    Make sure to select “add cmake to system PATH” either for current user or all users. 
 
 
 3. Install PCL1.8, easiest way is to use the all-in-one installer made by a kind PCL user: http://unanancyowen.com/en/pcl18/#Download
 
-Make sure to select “add PCL to system PATH” either for current user or all users.
+    Make sure to select “add PCL to system PATH” either for current user or all users.
 
-OpenNI2 will be installed as part of this installer. You will need to add the OpenNI2 dlls to the system path manually. The default location these are installed to is C:\Program Files\OpenNI2\Tools. See Step 4 in the opencv install instructions below for more details on modifying system variables. 
+    OpenNI2 will be installed as part of this installer. You will need to add the OpenNI2 dlls to the system path manually. The default location these are installed to is C:\Program Files\OpenNI2\Tools. See Step 4 in the opencv install instructions below for more details on modifying system variables. 
 
-4. *clone OpenARK repo from https://github.com/CTKnight/OpenARK/ and `git checkout multi-map`*
+4. **clone OpenARK repo from https://github.com/CTKnight/OpenARK/ and `git checkout multi-map`**
 
  
 
@@ -46,14 +46,14 @@ Install opencv 3.4 and opencv_contrib from source:
 
 2.    Download OpenCV 3.4 source from https://github.com/opencv/opencv/tree/3.4. Extract the zip folder and cd to the extracted directory
 
-3. Follow CMAKE steps above, EXCEPT replace cmake -G"Visual Studio 14 2015 Win64" .. with cmake -G"Visual Studio 14 2015 Win64" -DOPENCV_EXTRA_MODULES_PATH=<opencv_contrib>/modules -DWITH_MSMF=OFF .. 
+3. Follow CMAKE steps above, EXCEPT replace `cmake -G"Visual Studio 14 2015 Win64" ..` with `cmake -G"Visual Studio 14 2015 Win64" -DOPENCV_EXTRA_MODULES_PATH=<opencv_contrib>/modules -DWITH_MSMF=OFF ..`
     Where: <opencv_contrib> is the location you extracted the opencv_contrib zip file to.
 
 4.    Set the OpenCV enviroment variable and add it to the systems path. You can edit the environment variables using an interface by going to “Control Panel->System and Security->System->Advanced system settings->Environment Variables”. 
 
- We will need to modify two system variables in order to use OpenCV. First we want to add the system variable OpenCV_DIR and set it to “<extraction_directory>\opencv\Build\install” where <extraction_directory> is the directory you extracted OpenCV to. 
+ We will need to modify two system variables in order to use OpenCV. First we want to add the system variable OpenCV_DIR and set it to `<extraction_directory>\opencv\Build\install` where `<extraction_directory>` is the directory you extracted OpenCV to. 
 
- You will also need to add the bin directory to the PATH variable. Select the variable “Path” and add a line with the value “%OpenCV_DIR%\x64\vc14\bin”. This allows your computer to find the proper library files when running programs using OpenCV. 
+ You will also need to add the bin directory to the PATH variable. Select the variable “Path” and add a line with the value `%OpenCV_DIR%\x64\vc14\bin`. This allows your computer to find the proper library files when running programs using OpenCV. 
 
  Hit “OK” to close the Environment Variables dialog box. The variables will not be set until you do this. You will also have to reopen any open command prompt windows for the variables to be updated for that window. 
 
@@ -81,7 +81,7 @@ Install SuiteSparse:
 
 3.    You will need to add the “SuiteSparse_DIR” environment variable and set it to “<build dir from step 2>\install”
 
-4.    You will also need to add the lapack install location to your Path. Open the Path environment variable and add a new row and set it to “<build dir from step 2>\install\lib64\lapack_blas_windows”
+4.    You will also need to add the lapack install location to your Path. Open the Path environment variable and add a new row and set it to `<build dir from step 2>\install\lib64\lapack_blas_windows`
 
 Install Ceres Solver:
 
@@ -94,18 +94,22 @@ Install Boost:
 1.    Download source from (boost location). Extract zip folder and cd to the extracted directory. 
 
 2.    Set up:
- bootstrap
+    bootstrap
 
 3.    Install:
- .\b2 --toolset=msvc-14.0 --build-type=complete --prefix=C:\Boost architecture=x86 address-model=64 install
- Note: You may get an error about the msvc version not matching. If so you need to modify project-config.jam with “using msvc : 14.0 ;”
+    `.\b2 --toolset=msvc-14.0 --build-type=complete --prefix=C:\Boost architecture=x86 address-model=64 install`
+    Note: You may get an error about the msvc version not matching. If so you need to modify project-config.jam with “using msvc : 14.0 ;”
 
-4.    Boost doesn’t officially support Visual Studio 2015 (though it works fine), you need to modify $(boost install location)/include/boost-1_XX/boost/config/auto_link.hpp and change: 
- \#eleif defined(BOOST_MSVC)
- \#define BOOST_LIB_TOOLSET “vc120”
+4.    Boost doesn’t officially support Visual Studio 2015 (though it works fine), you need to modify `$(boost install location)/include/boost-1_XX/boost/config/auto_link.hpp` and change: 
+ ```
+ #eleif defined(BOOST_MSVC)
+ #define BOOST_LIB_TOOLSET “vc120”
+ ```
  to
- \#eleif defined(BOOST_MSVC)
- \#define BOOST_LIB_TOOLSET “vc140”
+ ```
+ #eleif defined(BOOST_MSVC)
+ #define BOOST_LIB_TOOLSET “vc140”
+ ```
 
 Install OpenGV:
 
@@ -113,7 +117,7 @@ Install OpenGV:
 
 2.    Follow CMAKE steps above.
 
-3.    You will need to add the environment variable “OpenGV_DIR” and set it to the install location of OpenGV (probably C:\Program Files\opengv)
+3.    You will need to add the environment variable `OpenGV_DIR` and set it to the install location of OpenGV (probably C:\Program Files\opengv)
 
 Install Brisk:
 
@@ -127,7 +131,7 @@ Install DBoW2:
 
 2.    Follow CMAKE steps above.
 
-3.    You will need to add the environment variable “DBoW2_ROOT_DIR” and set it to the install location of DBoW2 (probably C:\Program Files\DBoW2) 
+3.    You will need to add the environment variable `DBoW2_ROOT_DIR` and set it to the install location of DBoW2 (probably C:\Program Files\DBoW2) 
 
 Install DLoopDetector:
 
@@ -147,16 +151,14 @@ Install Okvis+:
 
 **Setting up the Intel Realsense D435i:**                                        
 
-1.    Follow the instructions here: https://github.com/IntelRealSense/librealsense/blob/master/doc/installation_windows.md to install librealsense. Bet sure to follow the “Enabling metadata on Windows” section as the timestamps coming from the device will be incorrect without it. (!!! remember to reset the git repo to commit ba7c2d9cd59fb1618b9dc634cff7fa6349ce8bad)
+1.    Follow the instructions here: https://github.com/IntelRealSense/librealsense/blob/master/doc/installation_windows.md to install librealsense. Bet sure to follow the “Enabling metadata on Windows” section as the timestamps coming from the device will be incorrect without it. (**remember to reset the git repo to commit ba7c2d9cd59fb1618b9dc634cff7fa6349ce8bad**)
 
 2.    Update the device firmware using the windows firmware update tool: https://downloadcenter.intel.com/download/27514/Windows-Device-Firmware-Update-Tool-for-Intel-RealSense-D400-Product-Family
 
 3.    Using the “realsense-viewer” tool (located in build/tools/realsense-viewer), ensure that all sensors are able to stream data.
 
 
-**Building OpenARK:
-
-**
+**Building OpenARK:**
 
 1.    Open a VS2015 x64 Native Tools Command Prompt
 
@@ -165,12 +167,14 @@ Install Okvis+:
 
 
 3.    make a build directory to store build files: 
-` mkdir build`
+    `mkdir build`
 
 
 4.    Generate a Visual Studio solution: 
- `cd build`
- `cmake -G"Visual Studio 14 2015 Win64" ..`
+    ```
+    cd build
+    cmake -G"Visual Studio 14 2015 Win64" ..
+    ```
 
 
 5.    You can now either open the Visual Studio Solution generated in the build directory labeled “OpenARK.sln” or continue to build using the command prompt.
@@ -181,17 +185,17 @@ Install Okvis+:
 
  Right click on the OpenARK project in the solution explorer and select “Set as Startup Project”. Build and run as usual.
 
-**Building via Command Prompt:
-** 
- `cmake --build . --config Release`
+**Building via Command Prompt:** 
+
+    `cmake --build . --config Release`
 
  **To run the OpenARK hand demo:**
-` cd Release`
- `OpenARK_hand_demo.exe`
+    `cd Release`
+    `OpenARK_hand_demo.exe`
 
 **To run the OpenARK SLAM demo:**
 
-`cd Release`
-` OpenARK_SLAM_demo.exe`
+    `cd Release`
+    `OpenARK_SLAM_demo.exe`
 
  
