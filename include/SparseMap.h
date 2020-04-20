@@ -217,16 +217,16 @@ class SparseMap {
       DBoW2::BowVector bowVec;
       DBoW2::FeatureVector featvec;
       auto local_keypoints = kf->keypoints(0);
-      detector_->detectLoop_query(local_keypoints,bowDesc,queryResult);
+      //detector_->detectLoop_query(local_keypoints,bowDesc,queryResult);
       detector_->detectLoop(kf->keypoints(0),bowDesc,result);
       MapKeyFrame::Ptr loop_kf;
       //cout<<"Status:"<<result.status<<endl;
-      const auto queryDetectResult = queryResult.detection();
+      //const auto queryDetectResult = queryResult.detection();
       const auto addKfDetectResult = result.detection();
-      if (addKfDetectResult != queryDetectResult) {
+      //if (addKfDetectResult != queryDetectResult) {
         // log
-        cout << "addKfResult: " << addKfDetectResult << " vs. queryResult: " << queryDetectResult << "\n";
-      }
+      //  cout << "addKfResult: " << addKfDetectResult << " vs. queryResult: " << queryDetectResult << "\n";
+      //}
       if(addKfDetectResult)
       {
         //std::cout << result.match << " " << bowId << std::endl; 

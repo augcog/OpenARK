@@ -149,6 +149,7 @@ namespace ark {
 
                 for (int i = 0; i < sparse_map_vector.size()-1; i++) {
                     const auto sparseMap = sparse_map_vector[i];
+                    cout<<"For map:"<<i<<endl;
                     if (sparseMap->detectLoopClosure(keyframe)) {
                         cout<<"Here: "<<i<<endl;
                         active_map_index = i;
