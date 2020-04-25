@@ -15,9 +15,13 @@ namespace ark {
     typedef std::function<void(MultiCameraFrame::Ptr)> KeyFrameAvailableHandler;
     typedef std::function<void(MultiCameraFrame::Ptr)> FrameAvailableHandler;
     typedef std::function<void(void)> LoopClosureDetectedHandler;
+    typedef std::function<void(int)> SparseMapCreationHandler;
+    typedef std::function<void(int)> SparseMapDeletionHandler;
     typedef std::unordered_map<std::string, KeyFrameAvailableHandler> MapKeyFrameAvailableHandler;
     typedef std::unordered_map<std::string, FrameAvailableHandler> MapFrameAvailableHandler;
     typedef std::unordered_map<std::string, LoopClosureDetectedHandler> MapLoopClosureDetectedHandler;
+    typedef std::unordered_map<std::string, SparseMapDeletionHandler> MapSparseMapCreationHandler;
+    typedef std::unordered_map<std::string, SparseMapDeletionHandler> MapSparseMapDeletionHandler;
 
     class SLAMSystem {
     public:
@@ -73,6 +77,30 @@ namespace ark {
                 mMapLoopClosureHandler.erase(handler);
         }
 
+        /** Add a handler that will be called each time a sparse map is deleted. */
+        virtual void AddSparseMapDeletionHandler(SparseMapDeletionHandler handler, std::string handlerName) {
+             mMapSparseMapDeletionHandler[handlerName] = handler;
+        }
+
+        /** Remove a sparse map deletion handler with the specified name. */
+        virtual void RemoveSparseMapDeletionHandler(std::string handlerName) {
+            auto handler =  mMapSparseMapDeletionHandler.find(handlerName);
+            if (handler !=  mMapSparseMapDeletionHandler.end())
+                 mMapSparseMapDeletionHandler.erase(handler);
+        }
+
+        /** Add a handler that will be called each time a sparse map is created. */
+        virtual void AddSparseMapCreationHandler(SparseMapCreationHandler handler, std::string handlerName) {
+             mMapSparseMapCreationHandler[handlerName] = handler;
+        }
+
+        /** Remove a sparse map creation handler with the specified name. */
+        virtual void RemoveSparseMapCreationHandler(std::string handlerName) {
+            auto handler =  mMapSparseMapCreationHandler.find(handlerName);
+            if (handler !=  mMapSparseMapCreationHandler.end())
+                 mMapSparseMapCreationHandler.erase(handler);
+        }
+
         /** Destructor for the SLAM system. */
         virtual ~SLAMSystem() = default;
 
@@ -80,5 +108,7 @@ namespace ark {
         MapKeyFrameAvailableHandler mMapKeyFrameAvailableHandler;
         MapFrameAvailableHandler mMapFrameAvailableHandler;
         MapLoopClosureDetectedHandler mMapLoopClosureHandler;
+        MapSparseMapCreationHandler mMapSparseMapCreationHandler;
+        MapSparseMapDeletionHandler mMapSparseMapDeletionHandler;
     };
 }
