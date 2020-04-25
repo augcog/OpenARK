@@ -57,7 +57,12 @@ namespace ark {
                     createNewMap();
                 } else if (!okvis_estimator_->isReset() && new_map_checker) {
                     frame_queue_.clear();
+                    frame_data_queue_.clear();
                     new_map_checker = false;
+                }
+                if (okvis_estimator_->isReset()) {
+                    frame_queue_.clear();
+                    frame_data_queue_.clear();
                 }
                 if(kill)
                     return;
