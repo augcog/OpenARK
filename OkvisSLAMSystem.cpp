@@ -5,7 +5,7 @@ namespace ark {
 
     OkvisSLAMSystem::OkvisSLAMSystem(const std::string & strVocFile, const std::string & strSettingsFile) :
         start_(0.0), t_imu_(0.0), deltaT_(1.0), num_frames_(0), kill(false), 
-        sparse_map_vector(), active_map_index(-1), new_map_checker(false), strVocFile(strVocFile){
+        sparse_map_vector(), active_map_index(-1), new_map_checker(false),map_timer(0), strVocFile(strVocFile){
 
         okvis::VioParametersReader vio_parameters_reader;
         try {
@@ -52,9 +52,14 @@ namespace ark {
             StampedFrameData frame_data;
             while (!frame_data_queue_.try_dequeue(&frame_data)) {
                 if (okvis_estimator_->isReset() && !new_map_checker) {
-                    cout<<"Created new map"<<endl;
-                    new_map_checker = true;
-                    createNewMap();
+                    if(map_timer >= 15)
+                    {
+                        cout<<"Created new map"<<endl;
+                        new_map_checker = true;
+                        createNewMap();
+                    }
+                    map_timer=0;
+                    
                 } else if (!okvis_estimator_->isReset() && new_map_checker) {
                     frame_queue_.clear();
                     frame_data_queue_.clear();
@@ -64,6 +69,12 @@ namespace ark {
                     frame_queue_.clear();
                     frame_data_queue_.clear();
                 }
+                else
+                {
+                    if(map_timer<=15)
+                        map_timer++;
+                }
+                
                 if(kill)
                     return;
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
