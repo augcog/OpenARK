@@ -143,7 +143,7 @@ Install DLoopDetector:
 
 Install Okvis+:
 
-1.    Download source from https://github.com/yohanmr/okvis. Extract zip folder and cd to the extracted directory. 
+1.    Clone source from https://github.com/CTKnight/okvis/. Extract zip folder and cd to the extracted directory. 
 
 2.    Follow CMAKE steps above. 
 
