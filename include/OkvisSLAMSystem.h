@@ -9,6 +9,8 @@
 #include "SingleConsumerPriorityQueue.h"
 #include <atomic>
 #include <brisk/brisk.h>
+#include <vector>
+#include <memory>
 
 namespace ark {
     /** Okvis-based SLAM system */
@@ -60,15 +62,27 @@ namespace ark {
 
         void getTrajectory(std::vector<Eigen::Matrix4d>& trajOut);
 
+
         ~OkvisSLAMSystem();
 
-        
+        std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> getActiveMap();
+
+
+        int getActiveMapIndex() {
+            return active_map_index;
+        }
         std::shared_ptr<okvis::ThreadedKFVio> okvis_estimator_;
+
+
+        
+
 
     protected:
         void KeyFrameConsumerLoop();
 
         void FrameConsumerLoop();
+
+        void createNewMap();
 
     private:
         okvis::Time start_;
@@ -80,8 +94,11 @@ namespace ark {
         std::thread frameConsumerThread_;
         int num_frames_;
         std::atomic<bool> kill;
-        SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK> sparseMap_;
-
+        std::vector<std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>>> sparse_map_vector;
+        bool new_map_checker;
+        int map_timer;
+        int active_map_index;
+        std::string strVocFile;
     }; // OkvisSLAMSystem
 
 }//ark

@@ -22,7 +22,7 @@ class SparseMap {
  public:
 
   SparseMap():
-  useLoopClosures(false),matcher_(nullptr),bowId(0),currentKeyframeId(-1),lastKfTimestamp_(0)
+  useLoopClosures(false),matcher_(nullptr),bowId(0),currentKeyframeId(-1),lastKfTimestamp_(0), lastKfTimestampDetect_(0)
   {
 
   }
@@ -76,7 +76,98 @@ class SparseMap {
       return MapKeyFrame::Ptr(nullptr);
     }
   }
+  bool detectLoopClosure(MapKeyFrame::Ptr kf)
+  {
+    bool shouldDetectLoopClosure = kf->timestamp_-lastKfTimestampDetect_>0.2*1e9;
+    // if (shouldDetectLoopClosure) {
+    //     shouldDetectLoopClosure = false;
+    //     std::vector<Eigen::Matrix4d> traj;
+    //     getTrajectory(traj);
+    //     double distanceTravelled = 0;
+    //     // check the last 10 positions
+    //     for(int i=traj.size()-1; i>0 && (traj.size() - i <= 10); i--) {
+    //         const auto &currentTranslation = traj[i].block<3,1>(0,3);
+    //         const auto &previousTranslation = traj[i-1].block<3,1>(0,3);
+    //         distanceTravelled += (currentTranslation-previousTranslation).norm();
+    //         if (distanceTravelled >= LOOP_CLOSURE_DISTANCE_THRESHOLD) {
+    //           shouldDetectLoopClosure = true;
+    //           break;
+    //         }
+    //     }
+    // }
+    if(useLoopClosures && shouldDetectLoopClosure) {
+        //cout<<"In here"<<endl;
+        //lastKfTimestampDetect_ = kf->timestamp_;
+        //convert to descriptors to DBoW descriptor format
+        std::vector<cv::Mat> bowDesc;
+        kf->descriptorsAsVec(0,bowDesc);
+        DLoopDetector::DetectionResult result;
+        auto local_keypoints = kf->keypoints(0);
+        //cout<<"Address of Detector: "<<detector_.get()<<endl;
+        detector_->detectLoop_query(local_keypoints,bowDesc,result);
+        MapKeyFrame::Ptr loop_kf;
+        if(result.detection())
+        {
+          // std::cout << result.match << " " << bowId << std::endl; 
+          loop_kf = bowFrameMap_[result.match];
+          if (loop_kf) {
+            cout << "detectLoopClosure: Loop found with image " << loop_kf->frameId_ << "!" << endl;
+          } else {
+            cout << "detectLoopClosure: Loop found and result is null\n";
+          }
+
+        }
+        else
+        {
+          cout << "Detector result status: " << result.status << "\n";
+          return false; //pose added to graph, no loop detected, nothing left to do
+        }
+      std::vector<cv::DMatch> matches; 
+      //query,train
+      matcher_->match(kf->descriptors(0),loop_kf->descriptors(0), matches);
+      std::cout << "sizes: kf: " << kf->descriptors(0).rows << " loop_kf: "
+        << loop_kf->descriptors(0).rows << " matches: " << matches.size() << std::endl;
+
+      //get feature point clouds
+      typename pcl::PointCloud<pcl::PointXYZ>::Ptr kf_feat_cloud(new pcl::PointCloud<pcl::PointXYZ>());
+      for(int i=0; i<kf->keypoints(0).size(); i++){
+        Eigen::Vector4d kp3dh_C = kf->homogeneousKeypoints3d(0)[i];
+        kf_feat_cloud->points.push_back(pcl::PointXYZ(kp3dh_C[0],kp3dh_C[1],kp3dh_C[2]));
+      } 
+      typename pcl::PointCloud<pcl::PointXYZ>::Ptr loop_kf_feat_cloud(new pcl::PointCloud<pcl::PointXYZ>());
+      for(int i=0; i<loop_kf->keypoints(0).size(); i++){
+        Eigen::Vector4d kp3dh_C = loop_kf->homogeneousKeypoints3d(0)[i];
+        loop_kf_feat_cloud->points.push_back(pcl::PointXYZ(kp3dh_C[0],kp3dh_C[1],kp3dh_C[2]));
+      }           
+
+      //convert DMatch to correspondence
+      std::vector<int> correspondences(matches.size());
+      for(int i=0; i<matches.size(); i++){
+        if(loop_kf->homogeneousKeypoints3d(0)[matches[i].queryIdx][3]!=0 && loop_kf->homogeneousKeypoints3d(0)[matches[i].trainIdx][3]!=0)
+          correspondences[matches[i].queryIdx]=matches[i].trainIdx;
+        else
+          correspondences[matches[i].queryIdx]=-1;;
+      }
+
+      int numInliers;
+      std::vector<bool> inliers;
+      Eigen::Affine3d transformEstimate;
+      //find initial transform estimate using feature points
+      CorrespondenceRansac<pcl::PointXYZ>::getInliersWithTransform(
+            kf_feat_cloud, loop_kf_feat_cloud, correspondences,
+            3, 0.2, 50, numInliers, inliers, transformEstimate);
+      if(((float)numInliers)/correspondences.size()<0.3)
+      {
+          cout << "detectLoopClosure: No detection due to inliners\n";
+          return false; 
+      }
+      return true;
+      }  
+    cout << "detectLoopClosure: No detection due to no loop\n";
+    return false;
   
+      
+  }
   bool addKeyframe(MapKeyFrame::Ptr kf){
     //std::cout << "PROCESS KEYFRAME: " << kf->frameId_ << std::endl;
     frameMap_[kf->frameId_]=kf;
@@ -95,31 +186,66 @@ class SparseMap {
     currentKeyframeId = kf->frameId_;
     graph_.AddPose(kf->frameId_,kf->T_WS());
 
+    bool shouldDetectLoopClosure = kf->timestamp_-lastKfTimestamp_>0.2*1e9;
+    // if (shouldDetectLoopClosure) {
+    //     shouldDetectLoopClosure = false;
+    //     std::vector<Eigen::Matrix4d> traj;
+    //     getTrajectory(traj);
+    //     double distanceTravelled = 0;
+    //     // check the last 10 positions
+    //     for(int i=traj.size()-1; i>0 && (traj.size() - i <= 10); i--) {
+    //         const auto &currentTranslation = traj[i].block<3,1>(0,3);
+    //         const auto &previousTranslation = traj[i-1].block<3,1>(0,3);
+    //         distanceTravelled += (currentTranslation-previousTranslation).norm();
+    //         if (distanceTravelled >= LOOP_CLOSURE_DISTANCE_THRESHOLD) {
+    //           shouldDetectLoopClosure = true;
+    //           break;
+    //         }
+    //     }
+    // }
+
     //only use one timestamp per second for loop closure
-    if(useLoopClosures && kf->timestamp_-lastKfTimestamp_>0.2*1e9){
+    if(useLoopClosures && shouldDetectLoopClosure){
+      // FIXME: set lasttimestamp
       lastKfTimestamp_=kf->timestamp_;
       //convert to descriptors to DBoW descriptor format
       std::vector<cv::Mat> bowDesc;
       kf->descriptorsAsVec(0,bowDesc);
 
       DLoopDetector::DetectionResult result;
+      DLoopDetector::DetectionResult queryResult;
       DBoW2::BowVector bowVec;
       DBoW2::FeatureVector featvec;
+      auto local_keypoints = kf->keypoints(0);
+      //detector_->detectLoop_query(local_keypoints,bowDesc,queryResult);
       detector_->detectLoop(kf->keypoints(0),bowDesc,result);
       MapKeyFrame::Ptr loop_kf;
-      if(result.detection())
+      //cout<<"Status:"<<result.status<<endl;
+      //const auto queryDetectResult = queryResult.detection();
+      const auto addKfDetectResult = result.detection();
+      //if (addKfDetectResult != queryDetectResult) {
+        // log
+      //  cout << "addKfResult: " << addKfDetectResult << " vs. queryResult: " << queryDetectResult << "\n";
+      //}
+      if(addKfDetectResult)
       {
-        std::cout << result.match << " " << bowId << std::endl; 
+        //std::cout << result.match << " " << bowId << std::endl; 
         loop_kf = bowFrameMap_[result.match];
-        cout << "- Loop found with image " << loop_kf->frameId_ << "!"
-          << endl;
+        if (loop_kf) {
+          cout << "addKeyframe: Loop found with image " << loop_kf->frameId_ << "!" << endl;
+        } else {
+          cout << "addKeyframe: Loop found and result is null\n";
+        }
       }else{
+        // cout<<"Exiting here"<<endl;
+        // cout << "addKfResult: false\n";
         //We only want to record a frame if it is not matched with another image
         //no need to duplicate
         bowFrameMap_[bowId]=kf;
         bowId++;
         return false; //pose added to graph, no loop detected, nothing left to do
       }
+      
 
       //transform estimation
       //TODO: should move to function to be set as one of a variety of methods
@@ -160,8 +286,11 @@ class SparseMap {
             kf_feat_cloud, loop_kf_feat_cloud, correspondences,
             3, 0.2, 50, numInliers, inliers, transformEstimate);
       if(((float)numInliers)/correspondences.size()<0.3)
-        return false; //transform unreliable
-      std::cout << "inliers: " << numInliers << " / " << correspondences.size() << std::endl;
+      {
+          return false; 
+      }
+       //transform unreliable
+      //std::cout << "inliers: " << numInliers << " / " << correspondences.size() << std::endl;
 
       transformEstimate = PointCostSolver<pcl::PointXYZ>::solve(kf_feat_cloud,loop_kf_feat_cloud,
                                             correspondences, inliers, transformEstimate);
@@ -202,7 +331,8 @@ class SparseMap {
 
   SimplePoseGraphSolver graph_;
   double lastKfTimestamp_;
-
+  double lastKfTimestampDetect_;
+  static constexpr double LOOP_CLOSURE_DISTANCE_THRESHOLD = 0.0;
 
 
 private: 

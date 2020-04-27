@@ -57,6 +57,7 @@ int main(int argc, char **argv)
 
     const path directory_path =
         argc > 1 ? argv[1] : std::string("./data_path_") + getTimeTag(); // modify this
+    const std::string configFilename = argc > 2 ? argv[2] : util::resolveRootPath("config/d435i_intr.yaml");
     path depth_path = directory_path / "depth/";
     path infrared_path = directory_path / "infrared/";
     path infrared2_path = directory_path / "infrared2/";
@@ -77,7 +78,12 @@ int main(int argc, char **argv)
     std::vector<MultiCameraFrame> frameList;
     std::vector<ImuPair> imuList;
 
-    D435iCamera camera;
+    cv::FileStorage configFile(configFilename, cv::FileStorage::READ);
+    CameraParameter cameraParameter;
+    if (configFile["emitterPower"].isReal()) {
+        configFile["emitterPower"] >> cameraParameter.emitterPower;
+    }
+    D435iCamera camera(cameraParameter);
     camera.start();
 
     std::vector<ImuPair> imuBuffer;
@@ -105,8 +111,7 @@ int main(int argc, char **argv)
             {
                 if(quit)
                     break;
-                // TODO: is it this function break time continuity?
-                boost::this_thread::sleep_for(boost::chrono::milliseconds(10));
+                // boost::this_thread::sleep_for(boost::chrono::milliseconds(10));
                 continue;
             }
             const auto frameId = frame->frameId_;
@@ -153,9 +158,10 @@ int main(int argc, char **argv)
         camera.update(*frame);
 
         const auto rgb = frame->images_[3].clone();
+        const auto ir1 = frame->images_[0].clone();
 
         cv::cvtColor(rgb, rgb, CV_RGB2BGR);
-        cv::imshow(camera.getModelName() + " RGB", rgb);
+        cv::imshow(camera.getModelName() + " IR", ir1);
 
         img_queue.enqueue(frame);
 

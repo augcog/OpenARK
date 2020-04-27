@@ -154,6 +154,7 @@ bool ObjectWindow::display(){
 		return false;
 	if(!glfwWindowShouldClose(win_ptr)){
 		glfwMakeContextCurrent(win_ptr);
+        glfwSetWindowTitle(win_ptr, (name_ + msg_).c_str());
 		GLint windowWidth, windowHeight;
 		glfwGetFramebufferSize(win_ptr, &windowWidth, &windowHeight);
 		glViewport(0, 0, windowWidth, windowHeight);

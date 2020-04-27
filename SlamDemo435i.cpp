@@ -33,6 +33,7 @@ int main(int argc, char **argv)
     else vocabFilename = util::resolveRootPath("config/brisk_vocab.bn");
 
     OkvisSLAMSystem slam(vocabFilename, configFilename);
+    cv::FileStorage configFile(configFilename, cv::FileStorage::READ);
 
     //setup display
     if (!MyGUI::Manager::init())
@@ -44,7 +45,11 @@ int main(int argc, char **argv)
 
     printf("Camera initialization started...\n");
     fflush(stdout);
-    D435iCamera camera;
+    CameraParameter cameraParameter;
+    if (configFile["emitterPower"].isReal()) {
+        configFile["emitterPower"] >> cameraParameter.emitterPower;
+    }
+    D435iCamera camera(cameraParameter);
     camera.start();
 
     printf("Camera-IMU initialization complete\n");
@@ -114,6 +119,7 @@ int main(int argc, char **argv)
     //run until display is closed
     okvis::Time start(0.0);
     int id =0;
+    int lastMapIndex = -1;
     while (MyGUI::Manager::running()){
         //printf("test\n");
         //Update the display
@@ -133,6 +139,18 @@ int main(int argc, char **argv)
         slam.PushIMU(imuData);
         slam.PushFrame(frame);
 
+        const auto isReset = slam.okvis_estimator_->isReset();
+        const auto mapIndex = slam.getActiveMapIndex();
+        if (mapIndex != lastMapIndex) {
+            lastMapIndex = mapIndex;
+            std::cout << "Mapnumber : " << mapIndex << "\n";
+        }
+        if (isReset) {
+            traj_win.msg_ = " *Reseting*";
+            path1.clear();
+        } else {
+            traj_win.msg_ = " ";
+        }
         int k = cv::waitKey(1);
         if (k == 'q' || k == 'Q' || k == 27) break; // 27 is ESC
 

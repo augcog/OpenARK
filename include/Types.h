@@ -308,5 +308,11 @@ namespace ark{
 
     };
 
-    
+    struct CameraParameter {
+        int width = 640;
+        int height = 480;
+        float emitterPower = 0.5f;
+        int irDepthFps = 30;
+        int imuFps = 200;
+    };
 }
