@@ -198,4 +198,10 @@ Install Okvis+:
     `cd Release`
     `OpenARK_SLAM_demo.exe`
 
- 
+**Add these lines to your intrinsics yaml file**\
+
+    ```
+    numKeypointsResetThreshold: 15
+    durationResetThreshold: 0.05
+    emitterPower: 0.
+    ```
