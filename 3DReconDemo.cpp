@@ -159,7 +159,7 @@ int main(int argc, char **argv)
 	fflush(stdout);
 
 	CameraParameter cameraParameter;
-    cameraParameter.emitterPower = 0.0f;
+    cameraParameter.emitterPower = 1.0f;
 
 	D435iCamera camera(cameraParameter);
 
