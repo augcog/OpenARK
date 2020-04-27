@@ -56,6 +56,8 @@ namespace ark {
 
         bool getImuToTime(double timestamp, std::vector<ImuPair>& data_out);
 
+        std::vector<float> getColorIntrinsics();
+
         const rs2_intrinsics &getDepthIntrinsics();
 
         double getDepthScale();
@@ -86,5 +88,8 @@ namespace ark {
         double last_ts_g;
         bool badInputFlag;
         std::atomic<bool> kill;
+
+        rs2::align * align_to_color;
+        rs2_intrinsics colorIntrinsics;
     };
 }

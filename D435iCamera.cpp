@@ -65,6 +65,8 @@ namespace ark {
         auto depthStream = selection.get_stream(RS2_STREAM_DEPTH)
                              .as<rs2::video_stream_profile>();
         depthIntrinsics = depthStream.get_intrinsics();
+        colorIntrinsics = selection.get_stream(RS2_STREAM_COLOR)
+            .as<rs2::video_stream_profile>().get_intrinsics();
 
         motion_pipe = std::make_shared<rs2::pipeline>();
         rs2::pipeline_profile selection_motion = motion_pipe->start(motion_config);
@@ -100,7 +102,12 @@ namespace ark {
             }
         } 
 
+        align_to_color = new rs2::align(RS2_STREAM_COLOR);
         imuReaderThread_ = std::thread(&D435iCamera::imuReader, this);
+    }
+
+    std::vector<float> D435iCamera::getColorIntrinsics() {
+        return std::vector<float>{colorIntrinsics.fx, colorIntrinsics.fy, colorIntrinsics.ppx, colorIntrinsics.ppy};
     }
 
     void D435iCamera::imuReader(){

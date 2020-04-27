@@ -65,6 +65,17 @@ class SparseMap {
     }
   }
 
+  void getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d>& trajOut){
+  frameIdOut.resize(frameMap_.size());
+    trajOut.resize(frameMap_.size());
+    size_t i=0;
+    for(std::map<int, MapKeyFrame::Ptr>::iterator frame = frameMap_.begin(); 
+        frame!=frameMap_.end(); frame++, i++){
+    frameIdOut[i] = frame->first;
+      trajOut[i] = frame->second->T_WC(3);
+    }
+  }
+
   MapKeyFrame::Ptr getCurrentKeyframe(){
     return getKeyframe(currentKeyframeId);
   };

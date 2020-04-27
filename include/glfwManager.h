@@ -16,6 +16,7 @@
 #include <vector>
 #include <atomic>
 #include <mutex>
+#include <set>
 
 #include <opencv2/core/core.hpp>
 
@@ -75,7 +76,6 @@ public:
 
 	Eigen::Vector3d eye;
 	Eigen::Vector3d gaze;
-	std::string msg_;
 
 	ObjectWindow(std::string name, int resX, int resY);
 
@@ -162,6 +162,7 @@ public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	CameraWindow(std::string name, int resX, int resY):
 	ObjectWindow(name,resX,resY){}
+	
 
 	void keyboard_control()
 	{
@@ -207,6 +208,32 @@ public:
 
 };
 
+class MeshWindow : public ObjectWindow {
+public:
+	MeshWindow(std::string name, int resX, int resY) :
+		ObjectWindow(name, resX, resY) {};
+	//bool display();
+	void set_camera(Eigen::Affine3d t) {
+		transform = t;
+	}
+	void MeshWindow::keyboard_control()
+	{
+		if (glfwGetKey(win_ptr, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+			glfwSetWindowShouldClose(win_ptr, GL_TRUE);
+		if (glfwGetMouseButton(win_ptr, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+			clicked_ = true;
+		}
+	}
+
+	bool MeshWindow::clicked() {
+		bool clicked = clicked_;
+		clicked_ = false;
+		return clicked;
+	}
+private:
+	Eigen::Affine3d transform;
+	bool clicked_ = false;
+};
 
 class Object{
 public:
@@ -320,11 +347,112 @@ public:
 	}
 };
 
+class Mesh : public Object {
+public:
 
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+	std::vector<Eigen::Vector3d> vertices;
+	std::vector<Eigen::Vector3d> colors;
+	std::vector<Eigen::Vector3i> triangles;
 
+	std::vector<std::vector<Eigen::Vector3d>> mesh_vertices;
+	std::vector<std::vector<Eigen::Vector3d>> mesh_colors;
+	std::vector<std::vector<Eigen::Vector3i>> mesh_triangles;
+	std::vector<int> mesh_map_indices;
+	std::vector<Eigen::Matrix4d> mesh_transforms;
 
+	//threadsafe?
+	int current_active_map;
+	std::set<int> enabled_meshes;
 
+	void draw_obj();
 
+	Mesh(std::string name)
+	: Object(name),
+	vertices(),
+	colors(),
+	triangles(){
+		current_active_map = 0;
+		enabled_meshes.insert(0);
+	}
+
+	void update_mesh(std::vector<Eigen::Vector3d> v,
+		std::vector<Eigen::Vector3d> c,
+		std::vector<Eigen::Vector3i> t) {
+		std::lock_guard<std::mutex> guard(meshLock_);
+		vertices = v;
+		colors = c;
+		triangles = t;
+
+		std::cout << "mesh updated" << std::endl;
+
+	}
+
+	void update_mesh_vector(std::vector<std::vector<Eigen::Vector3d>> mesh_vertices_toadd, 
+		std::vector<std::vector<Eigen::Vector3d>> mesh_vertex_colors_toadd,
+		std::vector<std::vector<Eigen::Vector3i>> mesh_triangles_toadd,
+		std::vector<Eigen::Matrix4d> transforms_toadd) {
+		std::lock_guard<std::mutex> guard(meshLock_);
+
+		mesh_vertices = mesh_vertices_toadd;
+		mesh_colors = mesh_vertex_colors_toadd;
+		mesh_triangles = mesh_triangles_toadd;
+		mesh_transforms = transforms_toadd;
+
+		for (int i = mesh_map_indices.size(); i < mesh_triangles.size(); ++i) {
+			mesh_map_indices.push_back(current_active_map);
+		}
+
+		std::cout << "new meshes append successfully" << std::endl;
+		/*for (auto transform : mesh_transforms) {
+			
+			cout << transform.matrix() << endl;
+		}*/
+
+	}
+
+	void update_active_mesh(std::vector<Eigen::Vector3d> updated_active_vertices,
+		std::vector<Eigen::Vector3d> updated_active_colors,
+		std::vector<Eigen::Vector3i> updated_active_triangles,
+		Eigen::Matrix4d updated_active_transform) {
+		std::lock_guard<std::mutex> guard(meshLock_);
+
+		mesh_vertices.pop_back();
+		mesh_colors.pop_back();
+		mesh_triangles.pop_back();
+		mesh_transforms.pop_back();
+
+		mesh_vertices.push_back(updated_active_vertices);
+		mesh_colors.push_back(updated_active_colors);
+		mesh_triangles.push_back(updated_active_triangles);
+		mesh_transforms.push_back(updated_active_transform);
+
+	}
+
+	//transforms should be c->w
+	void update_transforms(std::vector<Eigen::Matrix4d> updated_transforms) {
+		std::lock_guard<std::mutex> guard(meshLock_);
+		mesh_transforms = updated_transforms;
+		/*for (auto transform : mesh_transforms) {
+			cout << transform.matrix() << endl;
+		}*/
+	}
+
+	int get_number_meshes() {
+		std::lock_guard<std::mutex> guard(meshLock_);
+		return mesh_vertices.size();
+	}
+
+	void clear() {
+		vertices.clear();
+		colors.clear();
+		triangles.clear();
+	}
+
+protected:
+	std::mutex meshLock_;
+
+};
 
 
 } //MyGUI

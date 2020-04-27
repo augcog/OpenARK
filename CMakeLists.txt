@@ -22,6 +22,7 @@ set( SLAM_DEMO_NAME "OpenARK_SLAM_demo")
 set( DATA_RECORDING_NAME "OpenARK_data_recording")
 set( SLAM_RECORDING_NAME "OpenARK_slam_recording")
 set( SLAM_REPLAYING_NAME "OpenARK_slam_replaying")
+set( 3DRECON_DATA_NAME "3dRecon_Data_Recording")
 set( TEST_NAME "OpenARK_test" )
 set( UNITY_PLUGIN_NAME "UnityPlugin" )
 
@@ -31,6 +32,7 @@ option( BUILD_SLAM_DEMO "BUILD_SLAM_DEMO" ON)
 option( BUILD_DATA_RECORDING "BUILD_DATA_RECORDING" OFF)
 option( BUILD_SLAM_RECORDING "BUILD_SLAM_RECORDING" ON)
 option( BUILD_SLAM_REPLAYING "BUILD_SLAM_REPLAYING" ON)
+option( BUILD_3DRECON_DEMO "BUILD_3DRECON_DEMO" ON)
 option( BUILD_TESTS "BUILD_TESTS" OFF )
 option( BUILD_UNITY_PLUGIN "BUILD_UNITY_PLUGIN" OFF )
 option( USE_AZURE_KINECT_SDK "USE_AZURE_KINECT_SDK" OFF )
@@ -104,11 +106,22 @@ if( OpenCV_FOUND )
 endif( OpenCV_FOUND )
 
 # require glog
-if( DEFINED ENV{ARK_DEPS_DIR} )
-    find_package( Glog REQUIRED NO_MODULE )
+#if( DEFINED ENV{ARK_DEPS_DIR} )
+#    find_package( Glog REQUIRED NO_MODULE )
+#else()
+#    find_package( Glog REQUIRED )
+#endif( DEFINED ENV{ARK_DEPS_DIR} )
+
+set( GLOG_DIR "C:/Program Files/glog/lib/cmake/glog" ) 
+find_package(Glog REQUIRED)
+
+if (Glog_FOUND)
+  message( STATUS "Found GLOG" )
 else()
-    find_package( Glog REQUIRED )
-endif( DEFINED ENV{ARK_DEPS_DIR} )
+  message( STATUS "DIDNT FIND GLOG")
+endif()
+
+
 message(STATUS "Found Glog: ${GLOG_INCLUDE_DIRS} ${GLOG_LIBRARIES}")
 # fix glog windows conflicts and bugs
 if(WIN32)
@@ -123,15 +136,23 @@ IF( DBoW2_FOUND )
    include_directories(${DBoW2_INCLUDE_DIRS})
 ENDIF( DBoW2_FOUND )
 
+
+
 # require DLoopDetector
-find_package( DLoopDetector REQUIRED )
-IF( DLoopDetector_FOUND )
-    MESSAGE( STATUS "Found DLoopDetector: $ENV{DLoopDetector_INCLUDE_DIRS} ${DLoopDetector_LIBRARIES}" )
-   include_directories($ENV{DLoopDetector_INCLUDE_DIRS})
-ENDIF( DLoopDetector_FOUND )
+#find_package( DLoopDetector REQUIRED )
+#IF( DLoopDetector_FOUND )
+#    MESSAGE( STATUS "Found DLoopDetector: ${DLoopDetector_INCLUDE_DIRS} ${DLoopDetector_LIBRARIES}" )
+#   include_directories(${DLoopDetector_INCLUDE_DIRS})
+#ENDIF( DLoopDetector_FOUND )
+
+set ( DLoopDetector_INCLUDE_DIRS "C:/Program Files/DLoopDetector/include/DLoopDetector")
+include_directories(${DLoopDetector_INCLUDE_DIRS})
+MESSAGE( STATUS "Found DLoopDetector: ${DLoopDetector_INCLUDE_DIRS} ${DLoopDetector_LIBRARIES}" )
+
+set( Okvis_DIR "C:/Program Files/okvis/CMake" ) 
 
 # require Okvis
-find_package( okvis REQUIRED )
+find_package( Okvis REQUIRED )
 include_directories(${OKVIS_INCLUDE_DIRS})
 message(STATUS "Found Okvis: ${OKVIS_INCLUDE_DIRS} ${OKVIS_LIBRARIES}")
 
@@ -144,6 +165,9 @@ message(STATUS "Found Okvis: ${OKVIS_INCLUDE_DIRS} ${OKVIS_LIBRARIES}")
 IF(OPENGV_FOUND)
     MESSAGE(STATUS "Found OpenGV: ${OPENGV_INCLUDE_DIR} ${OPENGV_LIBRARIES}")
 ENDIF(OPENGV_FOUND)
+
+set( Ceres_DIR "C:/Program Files/Ceres/CMake" ) 
+set( EIGEN_INCLUDE_DIR "C:/Program Files/OpenARK-Deps/eigen3" )
 
 # require Ceres
 find_package( Ceres REQUIRED )
@@ -170,6 +194,12 @@ endif()
 find_package( brisk REQUIRED )
 include_directories(${BRISK_INCLUDE_DIRS})
 message(STATUS "Found Brisk: ${BRISK_INCLUDE_DIRS} ${BRISK_LIBRARIES}")
+
+# require Open3D
+find_package( Open3D REQUIRED )
+include_directories(${Open3D_INCLUDE_DIRS})
+link_directories(${Open3D_LIBRARY_DIRS})
+message(STATUS "Found Open3D: ${Open3D_INCLUDE_DIRS} ${Open3D_LIBRARIES}")
 
 set( _FOUND_CAMERA_LIB OFF )
 set( k4a_FOUND OFF )
@@ -225,6 +255,7 @@ set(
   ${BRISK_LIBRARIES}
   ${DBoW2_LIBRARIES}
   ${OPENGV_LIBRARIES}
+  ${Open3D_LIBRARIES}
 )
 
 add_definitions(
@@ -257,6 +288,7 @@ set(
   glfwManager.cpp
   OkvisSLAMSystem.cpp
   MockD435iCamera.cpp
+  SaveFrame.cpp
 )
 
 set(
@@ -293,6 +325,7 @@ set(
   ${INCLUDE_DIR}/CorrespondenceRansac.h
   ${INCLUDE_DIR}/UKF.h
   ${INCLUDE_DIR}/MockD435iCamera.h
+  ${INCLUDE_DIR}/SaveFrame.h
   stdafx.h
 )
 
@@ -482,6 +515,18 @@ if( ${BUILD_SLAM_REPLAYING} )
         target_link_libraries( ${SLAM_REPLAYING_NAME} ${DEPENDENCIES} ${LIB_NAME} GLU GL glut )
     endif ( MSVC )
 endif( ${BUILD_SLAM_REPLAYING} )
+
+if( ${BUILD_3DRECON_DEMO} AND realsense2_FOUND )
+    add_executable( ${3DRECON_DATA_NAME} 3DReconDemo.cpp )
+    target_include_directories( ${3DRECON_DATA_NAME} PRIVATE ${INCLUDE_DIR} )
+    set_target_properties( ${3DRECON_DATA_NAME} PROPERTIES OUTPUT_NAME ${3DRECON_DATA_NAME} )
+    set_target_properties( ${3DRECON_DATA_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
+    if ( MSVC )
+        target_link_libraries( ${3DRECON_DATA_NAME} ${DEPENDENCIES} ${LIB_NAME} )
+    else()
+        target_link_libraries( ${3DRECON_DATA_NAME} ${DEPENDENCIES} ${LIB_NAME} GLU GL glut )
+    endif ( MSVC )
+endif( ${BUILD_3DRECON_DEMO} AND realsense2_FOUND )
 
 # Unity plugin currently only supports Windows
 if( ${BUILD_UNITY_PLUGIN} AND MSVC )

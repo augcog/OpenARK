@@ -146,10 +146,10 @@ int main(int argc, char **argv)
             std::cout << "Mapnumber : " << mapIndex << "\n";
         }
         if (isReset) {
-            traj_win.msg_ = " *Reseting*";
+            //traj_win.msg_ = " *Reseting*";
             path1.clear();
         } else {
-            traj_win.msg_ = " ";
+           //traj_win.msg_ = " ";
         }
         int k = cv::waitKey(1);
         if (k == 'q' || k == 'Q' || k == 27) break; // 27 is ESC

@@ -37,7 +37,8 @@ std::string getTimeTag()
 }
 
 void saveImg(int id, const cv::Mat &img, const path imgDir)
-{
+{   
+    cout << "writing image" << endl;
     std::stringstream fileName;
     fileName << std::setw(5) << std::setfill('0') << std::to_string(id) << ".png";
     const std::string dst = (imgDir / fileName.str()).string();
