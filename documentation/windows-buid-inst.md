@@ -17,7 +17,7 @@ We recommend using Visual Studio 2015 and 64-bit Windows for OpenARK. When given
 
     OpenNI2 will be installed as part of this installer. You will need to add the OpenNI2 dlls to the system path manually. The default location these are installed to is C:\Program Files\OpenNI2\Tools. See Step 4 in the opencv install instructions below for more details on modifying system variables. 
 
-4. **clone OpenARK repo from https://github.com/CTKnight/OpenARK/ and `git checkout multi-map`**
+4. **clone OpenARK repo from https://github.com/CTKnight/OpenARK/**
 
  
 
