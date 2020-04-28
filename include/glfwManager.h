@@ -363,6 +363,7 @@ public:
 
 	//threadsafe?
 	int current_active_map;
+	int archive_index;
 	std::set<int> enabled_meshes;
 
 	void draw_obj();
@@ -373,6 +374,7 @@ public:
 	colors(),
 	triangles(){
 		current_active_map = 0;
+		archive_index = -1;
 		enabled_meshes.insert(0);
 	}
 
@@ -385,6 +387,26 @@ public:
 		triangles = t;
 
 		std::cout << "mesh updated" << std::endl;
+
+	}
+
+	void delete_meshes_after(int active_map_index) {
+		std::map<int, int> index_map;
+
+		for (int i = 0; i < mesh_map_indices.size(); i++) {
+			if (mesh_map_indices[i] <= active_map_index) {
+				continue;
+			}
+			if (index_map.count(mesh_map_indices[i]) != 0) {
+				mesh_map_indices[i] = index_map[mesh_map_indices[i]];
+			} else {
+				index_map[mesh_map_indices[i]] = archive_index;
+				mesh_map_indices[i] = archive_index;
+				archive_index--;
+			}
+		}
+
+		current_active_map = active_map_index;
 
 	}
 

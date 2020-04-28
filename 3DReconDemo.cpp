@@ -111,6 +111,26 @@ void readConfig(std::string& recon_config) {
 
 }
 
+//combines 2 meshes, places in mesh 1
+void CombineMeshes(std::shared_ptr<open3d::geometry::TriangleMesh>& output_mesh, std::shared_ptr<open3d::geometry::TriangleMesh> mesh_to_combine) {
+
+	std::vector<Eigen::Vector3d> vertices = mesh_to_combine->vertices_;
+	std::vector<Eigen::Vector3d> colors = mesh_to_combine->vertex_colors_;
+	std::vector<Eigen::Vector3i> triangles = mesh_to_combine->triangles_;
+
+	size_t tri_count = output_mesh->vertices_.size();
+
+	output_mesh->vertices_.insert(output_mesh->vertices_.end(), vertices.begin(), vertices.end());
+	output_mesh->vertex_colors_.insert(output_mesh->vertex_colors_.end(), colors.begin(), colors.end());
+	for (auto triangle : triangles) {
+		Eigen::Vector3i triangle_;
+		triangle_(0) = triangle(0) + tri_count;
+		triangle_(1) = triangle(1) + tri_count;
+		triangle_(2) = triangle(2) + tri_count;
+		output_mesh->triangles_.push_back(triangle_);
+	}
+}
+
 int main(int argc, char **argv)
 {
 
@@ -331,7 +351,7 @@ int main(int argc, char **argv)
 		cout << "i've been called deletion handler: " << active_map_index << endl;
 		tsdf_volume->StartNewBlock();
 		active_map = active_map_index;
-		mesh_obj.current_active_map = active_map_index;
+		mesh_obj.delete_meshes_after(active_map_index);
 		std::set<int> enabled_meshes;
 		for (int i = 0; i <= active_map_index; ++i) {
 			enabled_meshes.insert(i);
@@ -407,15 +427,51 @@ int main(int argc, char **argv)
 
 	cout << "getting mesh" << endl;
 
-	//make sure to add these back later |
+	std::vector<std::vector<Eigen::Vector3d>> mesh_vertices = mesh_obj.mesh_vertices;
+	std::vector<std::vector<Eigen::Vector3d>> mesh_colors = mesh_obj.mesh_colors;
+	std::vector<std::vector<Eigen::Vector3i>> mesh_triangles = mesh_obj.mesh_triangles;
+	std::vector<int> mesh_map_indices = mesh_obj.mesh_map_indices;
+	std::vector<Eigen::Matrix4d> mesh_transforms = mesh_obj.mesh_transforms;
 
-	std::shared_ptr<open3d::geometry::TriangleMesh> write_mesh = tsdf_volume->ExtractTotalTriangleMesh();
+	std::map<int, std::shared_ptr<open3d::geometry::TriangleMesh>> mesh_map;
 
-	//const std::vector<std::shared_ptr<const open3d::geometry::Geometry>> mesh_vec = { mesh };
+	for (int i = 0; i < mesh_vertices.size(); i++) {
+		auto mesh = std::make_shared<open3d::geometry::TriangleMesh>();
 
-	//open3d::visualization::DrawGeometries(mesh_vec);
+		auto vertices = mesh_vertices[i];
+		std::vector<Eigen::Vector3d> transformed_vertices;
 
-	open3d::io::WriteTriangleMeshToPLY("mesh.ply", *write_mesh, false, false, true, true, false, false);
+		for (Eigen::Vector3d vertex : vertices) {
+
+			Eigen::Vector4d v(vertex(0), vertex(1), vertex(2), 1.0);
+			v = mesh_transforms[i] * v;
+			Eigen::Vector3d transformed_v(v(0), v(1), v(2));
+
+			transformed_vertices.push_back(transformed_v);
+		}
+		mesh->vertices_ = transformed_vertices;
+		mesh->triangles_ = mesh_triangles[i];
+		mesh->vertex_colors_ = mesh_colors[i];
+
+		int index = mesh_map_indices[i];
+
+		if (mesh_map.count(index) != 0) {	
+			CombineMeshes(mesh_map[index], mesh);
+		} else {
+			mesh_map[index] = mesh;
+		}
+	}
+
+	cout << "writing meshes" << endl;
+
+	int i = 0;
+	for (auto iter = mesh_map.begin(); iter != mesh_map.end(); iter++) {
+		open3d::io::WriteTriangleMeshToPLY("mesh" + std::to_string(i++) + ".ply", *(iter->second), false, false, true, true, false, false);
+	}
+
+	//std::shared_ptr<open3d::geometry::TriangleMesh> write_mesh = tsdf_volume->ExtractTotalTriangleMesh();
+
+	//open3d::io::WriteTriangleMeshToPLY("mesh.ply", *write_mesh, false, false, true, true, false, false);
 
 	printf("\nTerminate...\n");
 	// Clean up

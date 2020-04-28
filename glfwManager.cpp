@@ -571,7 +571,7 @@ void Mesh::draw_obj()
     glGetDoublev(GL_MODELVIEW_MATRIX, scene_mat.data());
     scene_mat = scene_mat*pose.matrix().inverse();
     glLoadMatrixd(scene_mat.data());
-
+    
     /*Eigen::AngleAxis<double> R(pose.rotation());
     Eigen::Translation3d T(pose.translation());
 
