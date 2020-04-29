@@ -110,16 +110,16 @@ class SparseMap {
         {
           // std::cout << result.match << " " << bowId << std::endl; 
           loop_kf = bowFrameMap_[result.match];
-          if (loop_kf) {
-            cout << "detectLoopClosure: Loop found with image " << loop_kf->frameId_ << "!" << endl;
-          } else {
-            cout << "detectLoopClosure: Loop found and result is null\n";
-          }
+          // if (loop_kf) {
+          //   cout << "detectLoopClosure: Loop found with image " << loop_kf->frameId_ << "!" << endl;
+          // } else {
+          //   cout << "detectLoopClosure: Loop found and result is null\n";
+          // }
 
         }
         else
         {
-          cout << "Detector result status: " << result.status << "\n";
+          // cout << "Detector result status: " << result.status << "\n";
           return false; //pose added to graph, no loop detected, nothing left to do
         }
       std::vector<cv::DMatch> matches; 
@@ -158,12 +158,12 @@ class SparseMap {
             3, 0.2, 50, numInliers, inliers, transformEstimate);
       if(((float)numInliers)/correspondences.size()<0.3)
       {
-          cout << "detectLoopClosure: No detection due to inliners\n";
+          // cout << "detectLoopClosure: No detection due to inliners\n";
           return false; 
       }
       return true;
       }  
-    cout << "detectLoopClosure: No detection due to no loop\n";
+    // cout << "detectLoopClosure: No detection due to no loop\n";
     return false;
   
       
@@ -231,11 +231,11 @@ class SparseMap {
       {
         //std::cout << result.match << " " << bowId << std::endl; 
         loop_kf = bowFrameMap_[result.match];
-        if (loop_kf) {
-          cout << "addKeyframe: Loop found with image " << loop_kf->frameId_ << "!" << endl;
-        } else {
-          cout << "addKeyframe: Loop found and result is null\n";
-        }
+        // if (loop_kf) {
+        //   cout << "addKeyframe: Loop found with image " << loop_kf->frameId_ << "!" << endl;
+        // } else {
+        //   cout << "addKeyframe: Loop found and result is null\n";
+        // }
       }else{
         // cout<<"Exiting here"<<endl;
         // cout << "addKfResult: false\n";

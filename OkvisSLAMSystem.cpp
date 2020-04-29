@@ -165,16 +165,16 @@ namespace ark {
 
                 for (int i = 0; i < sparse_map_vector.size()-1; i++) {
                     const auto sparseMap = sparse_map_vector[i];
-                    cout<<"For map:"<<i<<endl;
+                    // cout<<"For map:"<<i<<endl;
                     if (sparseMap->detectLoopClosure(keyframe)) {
-                        cout<<"Here: "<<i<<endl;
+                        // cout<<"Here: "<<i<<endl;
                         active_map_index = i;
                         // delete all the new map after active map
                         sparse_map_vector.resize(active_map_index+1);
-                        cout << "Deleting newer maps after: " << active_map_index << endl;
+                        cout << "Found loop in old maps, deleting newer maps after: " << active_map_index << endl;
                         break;
                     } else {
-                        cout << "No loop in old maps: framdId: " << keyframe->frameId_ << "\n";
+                        // cout << "No loop in old maps: framdId: " << keyframe->frameId_ << "\n";
                     }
                 }
                 //cout<<"2:"<<keyframe->timestamp_<<endl;
