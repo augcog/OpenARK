@@ -150,38 +150,20 @@ namespace ark {
                     }
                     keyframe->descriptors_[cam_idx]=frame_data.data->descriptors[cam_idx];
                 }
-                //cout<<"1:"<<keyframe->timestamp_<<endl;;
-                // for (int i = 0; i < sparse_map_vector.size()-1; i++) 
-                // {
-                //      cout<<"Checking Map: "<<i+1<<endl;
-                //      const auto sparseMap = sparse_map_vector[i];
-                //      if (sparseMap->detectLoopClosure(keyframe)) 
-                //      {
-                //       cout<<"Found loop with my function in Map: "<<i+1<<endl;
-                //      }
-                // }
-                // push to map
-                // only detect loop closure if it has moved a reasonable distance
 
                 for (int i = 0; i < sparse_map_vector.size()-1; i++) {
                     const auto sparseMap = sparse_map_vector[i];
-                    // cout<<"For map:"<<i<<endl;
                     if (sparseMap->detectLoopClosure(keyframe)) {
-                        // cout<<"Here: "<<i<<endl;
                         active_map_index = i;
                         // delete all the new map after active map
                         sparse_map_vector.resize(active_map_index+1);
                         cout << "Found loop in old maps, deleting newer maps after: " << active_map_index << endl;
                         break;
-                    } else {
-                        // cout << "No loop in old maps: framdId: " << keyframe->frameId_ << "\n";
                     }
                 }
-                //cout<<"2:"<<keyframe->timestamp_<<endl;
-                // if (active_map_index == 0) {
-                // if (called < 20) {
+
                 const auto addKeyFrameResult = getActiveMap()->addKeyframe(keyframe);
-                if (addKeyFrameResult){ //add keyframe returns true if a loop closure was detected
+                if (addKeyFrameResult) { //add keyframe returns true if a loop closure was detected
                     called++;
                     for (MapLoopClosureDetectedHandler::const_iterator callback_iter = mMapLoopClosureHandler.begin();
                         callback_iter != mMapLoopClosureHandler.end(); ++callback_iter) {
@@ -189,8 +171,6 @@ namespace ark {
                             pair.second();
                     }
                 }
-                // }
-                
             }
 
             out_frame->keyframe_ = getActiveMap()->getKeyframe(out_frame->keyframeId_);

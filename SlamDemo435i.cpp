@@ -121,7 +121,6 @@ int main(int argc, char **argv)
     int id =0;
     int lastMapIndex = -1;
     while (MyGUI::Manager::running()){
-        //printf("test\n");
         //Update the display
         MyGUI::Manager::update();
 
@@ -130,10 +129,8 @@ int main(int argc, char **argv)
         camera.update(*frame);
 
         //Get or wait for IMU Data until current frame 
-        //std::cout << "frame: " << frame.timestamp_ << std::endl;
         std::vector<ImuPair> imuData;
         camera.getImuToTime(frame->timestamp_,imuData);
-        //std::cout << "numimu: " << imuData.size() << std::endl;
 
         //Add data to SLAM system
         slam.PushIMU(imuData);
