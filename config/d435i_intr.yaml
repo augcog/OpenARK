@@ -73,9 +73,9 @@ imageDelay: 0.
 displayImages: false
 useDriver: false
 enableLoopClosureDetection: 1
-numKeypointsResetThreshold: 15
-durationResetThreshold: 2.0
-emitterPower: 1.
+numKeypointsResetThreshold: 10
+durationResetThreshold: 0.5
+emitterPower: 0.
 publishing_options:
    publish_rate: 200
    publishLandmarks: false
