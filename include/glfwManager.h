@@ -376,7 +376,7 @@ public:
 		colors = c;
 		triangles = t;
 
-		cout << "mesh updated" << endl;
+		std::cout << "mesh updated" << std::endl;
 
 	}
 
@@ -391,7 +391,7 @@ public:
 		mesh_triangles = mesh_triangles_toadd;
 		mesh_transforms = transforms_toadd;
 
-		cout << "new meshes append successfully" << endl;
+		std::cout << "new meshes append successfully" << std::endl;
 		/*for (auto transform : mesh_transforms) {
 			
 			cout << transform.matrix() << endl;

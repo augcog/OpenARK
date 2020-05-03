@@ -16,6 +16,10 @@
 
 using namespace ark;
 
+float voxel_size, block_size, max_depth;
+bool save_frames;
+int mesh_view_width, mesh_view_height;
+
 std::shared_ptr<open3d::geometry::RGBDImage> generateRGBDImageFromCV(cv::Mat color_mat, cv::Mat depth_mat) {
 
 	int height = 480;
@@ -50,8 +54,60 @@ std::shared_ptr<open3d::geometry::RGBDImage> generateRGBDImageFromCV(cv::Mat col
 	}
 
 	//change the second-to-last parameter here to set maximum distance
-	auto rgbd_image = open3d::geometry::RGBDImage::CreateFromColorAndDepth(*color_im, *depth_im, 1000.0, 5.0, false);
+	auto rgbd_image = open3d::geometry::RGBDImage::CreateFromColorAndDepth(*color_im, *depth_im, 1000.0, max_depth, false);
 	return rgbd_image;
+}
+
+void readConfig(std::string& recon_config) {
+
+	cv::FileStorage file(recon_config, cv::FileStorage::READ);
+
+	std::cout << "Add entries to the intr.yaml to configure 3drecon parameters." << std::endl;
+
+	if (file["Recon_VoxelSize"].isReal()) {
+		file["Recon_VoxelSize"] >> voxel_size;
+  	} else {
+		std::cout << "option <3dRecon_VoxelSize> not found, setting to default 0.03" << std::endl;
+		voxel_size = 0.03;
+	}
+
+	if (file["Recon_BlockSize"].isReal()) {
+		file["Recon_BlockSize"] >> block_size;
+  	} else {
+		std::cout << "option <3dRecon_BlockSize> not found, setting to default 2.0" << std::endl;
+		block_size = 2.0;
+	}
+
+	if (file["Recon_MaxDepth"].isReal()) {
+		file["Recon_MaxDepth"] >> max_depth;
+  	} else {
+		std::cout << "option <3dRecon_MaxDepth> not found, setting to default 2.5" << std::endl;
+		max_depth = 2.5;
+	}
+
+	if (file["Recon_SaveFrames"].isInt()) {
+		int save;
+		file["Recon_SaveFrames"] >> save;
+		save_frames = (bool)save;
+  	} else {
+		std::cout << "option <3dRecon_SaveFrames> not found, setting to default true" << std::endl;
+		save_frames = true;
+	}
+
+	if (file["Recon_MeshWinWidth"].isInt()) {
+		file["Recon_MeshWinWidth"] >> mesh_view_width;
+  	} else {
+		std::cout << "option <3dRecon_MeshWinWidth> not found, setting to default 1000px" << std::endl;
+		mesh_view_width = 1000;
+	}
+
+	if (file["Recon_MeshWinHeight"].isInt()) {
+		file["Recon_MeshWinHeight"] >> mesh_view_height;
+  	} else {
+		std::cout << "option <3dRecon_MeshWinHeight> not found, setting to default 1000px" << std::endl;
+		mesh_view_height = 1000;
+	}
+
 }
 
 int main(int argc, char **argv)
@@ -79,11 +135,13 @@ int main(int argc, char **argv)
 	if (argc > 2) vocabFilename = argv[2];
 	else vocabFilename = util::resolveRootPath("config/brisk_vocab.bn");
 
-	OkvisSLAMSystem slam(vocabFilename, configFilename);
-
 	std::string frameOutput;
 	if (argc > 3) frameOutput = argv[3];
 	else frameOutput = "./frames/";
+
+	OkvisSLAMSystem slam(vocabFilename, configFilename);
+
+	readConfig(configFilename);
 
 	cv::namedWindow("image", cv::WINDOW_AUTOSIZE);
 
@@ -125,16 +183,16 @@ int main(int argc, char **argv)
 
 		frame->getImage(imDepth, 4);
 
-		Eigen::Matrix4d transform(frame->T_WS());
+		Eigen::Matrix4d transform(frame->T_WC(3));
 
 		saveFrame->frameWrite(imRGB, imDepth, transform, frame->frameId_);
 	});
+	
+	if (save_frames) {
+		slam.AddKeyFrameAvailableHandler(saveFrameHandler, "saveframe");
+	}
 
-	slam.AddKeyFrameAvailableHandler(saveFrameHandler, "saveframe");
-
-	float voxel_size = 0.03;
-
-	open3d::integration::MovingTSDFVolume * tsdf_volume = new open3d::integration::MovingTSDFVolume(voxel_size, voxel_size * 5, open3d::integration::TSDFVolumeColorType::RGB8, 5);
+	open3d::integration::MovingTSDFVolume * tsdf_volume = new open3d::integration::MovingTSDFVolume(voxel_size, voxel_size * 5, open3d::integration::TSDFVolumeColorType::RGB8, block_size);
 
 	std::vector<float> intrinsics = camera.getColorIntrinsics();
 	auto intr = open3d::camera::PinholeCameraIntrinsic(640, 480, intrinsics[0], intrinsics[1], intrinsics[2], intrinsics[3]);
@@ -155,12 +213,12 @@ int main(int argc, char **argv)
 
 		auto rgbd_image = generateRGBDImageFromCV(color_mat, depth_mat);
 
-		tsdf_volume->Integrate(*rgbd_image, intr, frame->T_WS().inverse());
+		tsdf_volume->Integrate(*rgbd_image, intr, frame->T_WC(3).inverse());
 	});
 
 	slam.AddFrameAvailableHandler(tsdfFrameHandler, "tsdfframe");
 
-	MyGUI::MeshWindow mesh_win("Mesh Viewer", 1200, 1200);
+	MyGUI::MeshWindow mesh_win("Mesh Viewer", mesh_view_width, mesh_view_height);
 	MyGUI::Mesh mesh_obj("mesh");
 
 	mesh_win.add_object(&mesh_obj);
@@ -216,7 +274,7 @@ int main(int argc, char **argv)
 	slam.AddFrameAvailableHandler(meshHandler, "meshupdate");
 
 	FrameAvailableHandler viewHandler([&mesh_obj, &tsdf_volume, &mesh_win, &frame_counter, &do_integration](MultiCameraFrame::Ptr frame) {
-		Eigen::Affine3d transform(frame->T_WS());
+		Eigen::Affine3d transform(frame->T_WC(3));
 		mesh_obj.set_transform(transform.inverse());
 		if (mesh_win.clicked()) {
 			do_integration = !do_integration;
@@ -233,7 +291,7 @@ int main(int argc, char **argv)
 
 	KeyFrameAvailableHandler updateKFHandler([&tsdf_volume](MultiCameraFrame::Ptr frame) {
 		MapKeyFrame::Ptr kf = frame->keyframe_;
-		tsdf_volume->SetLatestKeyFrame(kf->T_WS(), kf->frameId_);
+		tsdf_volume->SetLatestKeyFrame(kf->T_WC(3), kf->frameId_);
 	});
 
 	slam.AddKeyFrameAvailableHandler(updateKFHandler, "updatekfhandler");
