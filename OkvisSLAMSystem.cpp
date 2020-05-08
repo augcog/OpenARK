@@ -45,7 +45,7 @@ namespace ark {
     }
 
     void OkvisSLAMSystem::FrameConsumerLoop() {
-        static int called = 0;
+        bool addKeyFrameResult = false;
         while (!kill) {
              
             //Get processed frame data from OKVIS
@@ -162,15 +162,8 @@ namespace ark {
                     }
                 }
 
-                const auto addKeyFrameResult = getActiveMap()->addKeyframe(keyframe);
-                if (addKeyFrameResult) { //add keyframe returns true if a loop closure was detected
-                    called++;
-                    for (MapLoopClosureDetectedHandler::const_iterator callback_iter = mMapLoopClosureHandler.begin();
-                        callback_iter != mMapLoopClosureHandler.end(); ++callback_iter) {
-                        const MapLoopClosureDetectedHandler::value_type& pair = *callback_iter;
-                            pair.second();
-                    }
-                }
+                addKeyFrameResult = getActiveMap()->addKeyframe(keyframe);
+
             }
 
             out_frame->keyframe_ = getActiveMap()->getKeyframe(out_frame->keyframeId_);
@@ -188,6 +181,14 @@ namespace ark {
                 callback_iter != mMapFrameAvailableHandler.end(); ++callback_iter) {
                 const MapFrameAvailableHandler::value_type& pair = *callback_iter;
                 pair.second(out_frame);
+            }
+
+            if (addKeyFrameResult) { //add keyframe returns true if a loop closure was detected
+                for (MapLoopClosureDetectedHandler::const_iterator callback_iter = mMapLoopClosureHandler.begin();
+                    callback_iter != mMapLoopClosureHandler.end(); ++callback_iter) {
+                    const MapLoopClosureDetectedHandler::value_type& pair = *callback_iter;
+                        pair.second();
+                }
             }
         }
     }
