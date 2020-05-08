@@ -160,7 +160,7 @@ bool ObjectWindow::display(){
 		glViewport(0, 0, windowWidth, windowHeight);
 
 		// Draw stuff
-		glClearColor(0.0, 0.3, 0.8, 1.0);
+		glClearColor(0.0, 0.0, 0.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		glMatrixMode(GL_MODELVIEW_MATRIX);
