@@ -45,7 +45,6 @@ namespace ark {
     }
 
     void OkvisSLAMSystem::FrameConsumerLoop() {
-        bool addKeyFrameResult = false;
         while (!kill) {
              
             //Get processed frame data from OKVIS
@@ -116,6 +115,7 @@ namespace ark {
                 out_frame->T_SC_.push_back(T_SC.T());
             }
 
+            bool addKeyFrameResult = false;
             //check if keyframe
             if(frame_data.data->is_keyframe){
                 if(out_frame->keyframeId_!=out_frame->frameId_){

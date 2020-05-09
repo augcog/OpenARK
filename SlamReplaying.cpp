@@ -142,6 +142,7 @@ int main(int argc, char **argv)
     //slam.AddKeyFrameAvailableHandler(kfHandler, "saving");
 
     LoopClosureDetectedHandler loopHandler([&](void) {
+        std::cout << "LoopHandler: called\n";
         std::vector<Eigen::Matrix4d> traj;
         slam.getTrajectory(traj);
         const auto mapIndex = slam.getActiveMapIndex();
@@ -150,6 +151,7 @@ int main(int argc, char **argv)
         {
             pathMap[mapIndex]->add_node(traj[i].block<3, 1>(0, 3));
         }
+        std::cout << "LoopHandler: tajectory size: " << traj.size() << "\n";
         for (size_t i = 0; i < cubes.size(); i++)
         {
             if (K_cubes[i] != nullptr)
@@ -233,5 +235,10 @@ int main(int argc, char **argv)
     // Clean up
     slam.ShutDown();
     printf("\nExiting...\n");
+    const auto mapIndex = slam.getActiveMapIndex();
+    std::cout << "Loop Trajectory: nodes.size(): " << pathMap[mapIndex]->nodes.size() << " \n";
+    for (const auto &node: pathMap[mapIndex]->nodes) {
+        std::cout << node[0] << " " << node[1] << " " << node[2] << '\n';
+    }
     return 0;
 }
