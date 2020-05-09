@@ -92,8 +92,8 @@ class SparseMap {
       std::vector<cv::DMatch> matches; 
       //query,train
       matcher_->match(kf->descriptors(0),loop_kf->descriptors(0), matches);
-      std::cout << "sizes: kf: " << kf->descriptors(0).rows << " loop_kf: "
-        << loop_kf->descriptors(0).rows << " matches: " << matches.size() << std::endl;
+      std::cout << "detectLoopClosure: " << "sizes: kf: " << kf->descriptors(0).rows << " loop_kf: "
+        << loop_kf->descriptors(0).rows << " matches: " << matches.size() << " loop_kf id: " << loop_kf->frameId_ << std::endl;
 
       //get feature point clouds
       typename pcl::PointCloud<pcl::PointXYZ>::Ptr kf_feat_cloud(new pcl::PointCloud<pcl::PointXYZ>());
@@ -126,12 +126,16 @@ class SparseMap {
       if(((float)numInliers)/correspondences.size()<0.3) {
         return false; 
       }
+      // store the correction
+      correction = loop_kf->T_WS_ * kf->T_WS_.inverse();
       return true;
       }
     return false;
   }
   bool addKeyframe(MapKeyFrame::Ptr kf){
     //std::cout << "PROCESS KEYFRAME: " << kf->frameId_ << std::endl;
+    // apply correction
+    kf->T_WS_ = correction * kf->T_WS_;
     frameMap_[kf->frameId_]=kf;
     kf->previousKeyframeId_ = currentKeyframeId;
     kf->previousKeyframe_ = getCurrentKeyframe();
@@ -182,8 +186,8 @@ class SparseMap {
       std::vector<cv::DMatch> matches; 
       //query,train
       matcher_->match(kf->descriptors(0),loop_kf->descriptors(0), matches);
-      std::cout << "sizes: kf: " << kf->descriptors(0).rows << " loop_kf: "
-        << loop_kf->descriptors(0).rows << " matches: " << matches.size() << std::endl;
+      std::cout << "addKeyframe: " << "sizes: kf: " << kf->descriptors(0).rows << " loop_kf: "
+        << loop_kf->descriptors(0).rows << " matches: " << matches.size() << " loop_kf id: " << loop_kf->frameId_ << std::endl;
 
       //get feature point clouds
       typename pcl::PointCloud<pcl::PointXYZ>::Ptr kf_feat_cloud(new pcl::PointCloud<pcl::PointXYZ>());
@@ -241,6 +245,9 @@ class SparseMap {
   std::shared_ptr<cv::DescriptorMatcher> matcher_;
   std::map<int, MapKeyFrame::Ptr> frameMap_;
   std::map<int, MapKeyFrame::Ptr> bowFrameMap_;
+  // correction for convert an obj coordinate in other's map 
+  // because reset okvis estimator also reset coordinate system
+  Eigen::Matrix4d correction{Eigen::Matrix4d::Identity()};
 
   DBoW2::EntryId lastEntry_;
   bool useLoopClosures;
