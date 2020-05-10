@@ -154,12 +154,13 @@ bool ObjectWindow::display(){
 		return false;
 	if(!glfwWindowShouldClose(win_ptr)){
 		glfwMakeContextCurrent(win_ptr);
+        glfwSetWindowTitle(win_ptr, (name_ + msg_).c_str());
 		GLint windowWidth, windowHeight;
 		glfwGetFramebufferSize(win_ptr, &windowWidth, &windowHeight);
 		glViewport(0, 0, windowWidth, windowHeight);
 
 		// Draw stuff
-		glClearColor(0.0, 0.3, 0.8, 1.0);
+		glClearColor(0.0, 0.0, 0.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		glMatrixMode(GL_MODELVIEW_MATRIX);

@@ -288,6 +288,7 @@ CMakeFiles/
 cmake_modules/
 build/
 include/Version.h
+CmakeLists.txt
 
 # Cake - Uncomment if you are using it
 # tools/**

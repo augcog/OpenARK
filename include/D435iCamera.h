@@ -27,6 +27,8 @@ namespace ark {
         */
         explicit D435iCamera();
 
+        D435iCamera(const CameraParameter &parameter);
+
         /**
         * Destructor for the RealSense Camera.
         */
@@ -82,10 +84,10 @@ namespace ark {
         std::thread imuReaderThread_;
         single_consumer_queue<ImuPair> imu_queue_;
 
+        CameraParameter cameraParameter;
+        int width, height;
         double scale;
         double last_ts_g;
-        float imu_rate;
-        int width, height;
         bool badInputFlag;
         std::atomic<bool> kill;
 

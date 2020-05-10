@@ -78,6 +78,9 @@ Recon_MaxDepth: 2.
 Recon_SaveFrames: 1
 Recon_MeshWinWidth: 1000
 Recon_MeshWinHeight: 1000
+# numKeypointsResetThreshold: 10
+# durationResetThreshold: 0.5
+emitterPower: 1.
 publishing_options:
    publish_rate: 200
    publishLandmarks: false

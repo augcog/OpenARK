@@ -5,7 +5,7 @@ namespace ark {
 
     OkvisSLAMSystem::OkvisSLAMSystem(const std::string & strVocFile, const std::string & strSettingsFile) :
         start_(0.0), t_imu_(0.0), deltaT_(1.0), num_frames_(0), kill(false), 
-        sparseMap_(){
+        sparse_map_vector(), active_map_index(-1), new_map_checker(false),map_timer(0), strVocFile(strVocFile){
 
         okvis::VioParametersReader vio_parameters_reader;
         try {
@@ -19,7 +19,7 @@ namespace ark {
         //okvis::VioParameters parameters;
         vio_parameters_reader.getParameters(parameters_);
 
-        sparseMap_.setEnableLoopClosure(parameters_.loopClosureParameters.enabled,strVocFile,true, new brisk::BruteForceMatcher());
+        createNewMap();
 
         //initialize Visual odometry
         okvis_estimator_ = std::make_shared<okvis::ThreadedKFVio>(parameters_);
@@ -46,9 +46,34 @@ namespace ark {
 
     void OkvisSLAMSystem::FrameConsumerLoop() {
         while (!kill) {
+             
             //Get processed frame data from OKVIS
             StampedFrameData frame_data;
             while (!frame_data_queue_.try_dequeue(&frame_data)) {
+                if (okvis_estimator_->isReset() && !new_map_checker) {
+                    if(map_timer >= 15)
+                    {
+                        cout<<"Created new map"<<endl;
+                        new_map_checker = true;
+                        createNewMap();
+                    }
+                    map_timer=0;
+                    
+                } else if (!okvis_estimator_->isReset() && new_map_checker) {
+                    frame_queue_.clear();
+                    frame_data_queue_.clear();
+                    new_map_checker = false;
+                }
+                if (okvis_estimator_->isReset()) {
+                    frame_queue_.clear();
+                    frame_data_queue_.clear();
+                }
+                else
+                {
+                    if(map_timer<=15)
+                        map_timer++;
+                }
+                
                 if(kill)
                     return;
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -90,6 +115,7 @@ namespace ark {
                 out_frame->T_SC_.push_back(T_SC.T());
             }
 
+            bool addKeyFrameResult = false;
             //check if keyframe
             if(frame_data.data->is_keyframe){
                 if(out_frame->keyframeId_!=out_frame->frameId_){
@@ -125,18 +151,22 @@ namespace ark {
                     keyframe->descriptors_[cam_idx]=frame_data.data->descriptors[cam_idx];
                 }
 
-
-                // push to map
-                if(sparseMap_.addKeyframe(keyframe)){ //add keyframe returns true if a loop closure was detected
-                    for (MapLoopClosureDetectedHandler::const_iterator callback_iter = mMapLoopClosureHandler.begin();
-                        callback_iter != mMapLoopClosureHandler.end(); ++callback_iter) {
-                        const MapLoopClosureDetectedHandler::value_type& pair = *callback_iter;
-                            pair.second();
+                for (int i = 0; i < sparse_map_vector.size()-1; i++) {
+                    const auto sparseMap = sparse_map_vector[i];
+                    if (sparseMap->detectLoopClosure(keyframe)) {
+                        active_map_index = i;
+                        // delete all the new map after active map
+                        sparse_map_vector.resize(active_map_index+1);
+                        cout << "Found loop in old maps, deleting newer maps after: " << active_map_index << endl;
+                        break;
                     }
                 }
+
+                addKeyFrameResult = getActiveMap()->addKeyframe(keyframe);
+
             }
 
-            out_frame->keyframe_ = sparseMap_.getKeyframe(out_frame->keyframeId_);
+            out_frame->keyframe_ = getActiveMap()->getKeyframe(out_frame->keyframeId_);
 
             //Notify callbacks
             if(frame_data.data->is_keyframe){
@@ -151,6 +181,14 @@ namespace ark {
                 callback_iter != mMapFrameAvailableHandler.end(); ++callback_iter) {
                 const MapFrameAvailableHandler::value_type& pair = *callback_iter;
                 pair.second(out_frame);
+            }
+
+            if (addKeyFrameResult) { //add keyframe returns true if a loop closure was detected
+                for (MapLoopClosureDetectedHandler::const_iterator callback_iter = mMapLoopClosureHandler.begin();
+                    callback_iter != mMapLoopClosureHandler.end(); ++callback_iter) {
+                    const MapLoopClosureDetectedHandler::value_type& pair = *callback_iter;
+                        pair.second();
+                }
             }
         }
     }
@@ -242,6 +280,17 @@ namespace ark {
         }
     }
 
+    void OkvisSLAMSystem::createNewMap() {
+        if (!sparse_map_vector.empty()) {
+            sparse_map_vector.back()->lastKfTimestamp_ = sparse_map_vector.back()->lastKfTimestampDetect_ = 0.;
+        }
+        const auto newMap = std::make_shared<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>>();
+        newMap->setEnableLoopClosure(parameters_.loopClosureParameters.enabled,strVocFile,true, new brisk::BruteForceMatcher());
+        sparse_map_vector.push_back(newMap);
+        // set it to the latest one
+        active_map_index = static_cast<int>(sparse_map_vector.size())-1;
+    }
+
     void OkvisSLAMSystem::display() {
         if (okvis_estimator_ == nullptr)
             return;
@@ -274,12 +323,21 @@ namespace ark {
     }
 
     void OkvisSLAMSystem::getTrajectory(std::vector<Eigen::Matrix4d>& trajOut){
-        sparseMap_.getTrajectory(trajOut);
+        getActiveMap()->getTrajectory(trajOut);
     }
 
 	void OkvisSLAMSystem::getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d>& trajOut) {
 		sparseMap_.getMappedTrajectory(frameIdOut, trajOut);
 	}
 
+    std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> OkvisSLAMSystem:: getActiveMap() {
+        if (0 <= active_map_index && active_map_index < sparse_map_vector.size()) {
+            return sparse_map_vector[active_map_index];
+        } else {
+            std::cout << "Null map returned \n";
+            return nullptr;
+        }
+    }
+    
 
 } //ark

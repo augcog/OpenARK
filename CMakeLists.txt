@@ -128,8 +128,8 @@ ENDIF( DBoW2_FOUND )
 # require DLoopDetector
 find_package( DLoopDetector REQUIRED )
 IF( DLoopDetector_FOUND )
-    MESSAGE( STATUS "Found DLoopDetector: ${DLoopDetector_INCLUDE_DIRS} ${DLoopDetector_LIBRARIES}" )
-   include_directories(${DLoopDetector_INCLUDE_DIRS})
+    MESSAGE( STATUS "Found DLoopDetector: $ENV{DLoopDetector_INCLUDE_DIRS} ${DLoopDetector_LIBRARIES}" )
+   include_directories($ENV{DLoopDetector_INCLUDE_DIRS})
 ENDIF( DLoopDetector_FOUND )
 
 
