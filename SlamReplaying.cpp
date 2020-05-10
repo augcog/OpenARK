@@ -142,7 +142,6 @@ int main(int argc, char **argv)
     //slam.AddKeyFrameAvailableHandler(kfHandler, "saving");
 
     LoopClosureDetectedHandler loopHandler([&](void) {
-        std::cout << "LoopHandler: called\n";
         std::vector<Eigen::Matrix4d> traj;
         slam.getTrajectory(traj);
         const auto mapIndex = slam.getActiveMapIndex();
@@ -151,7 +150,6 @@ int main(int argc, char **argv)
         {
             pathMap[mapIndex]->add_node(traj[i].block<3, 1>(0, 3));
         }
-        std::cout << "LoopHandler: tajectory size: " << traj.size() << "\n";
         for (size_t i = 0; i < cubes.size(); i++)
         {
             if (K_cubes[i] != nullptr)
@@ -185,27 +183,17 @@ int main(int argc, char **argv)
             const auto &rgb = frame->images_[3];
             const auto &depth = frame->images_[4];
 
-
-            //std::cout << "RGB: " << rgb.total() << "\n";
-            //cv::imshow(std::string(camera.getModelName()) + " RGB", rgb);
-            // tmp fix for the preview window in MyGUI
-            //cv::cvtColor(rgb, rgb, CV_RGB2BGR); 
             cv::imshow(std::string(camera.getModelName()) + " Infrared", infrared);
             cv::imshow(std::string(camera.getModelName()) + " Depth", depth);
-            //Get or wait for IMU Data until current frame
-            //std::cout << "frame size: " << rgb.total() << std::endl;
+
             std::vector<ImuPair> imuData;
             camera.getImuToTime(frame->timestamp_, imuData);
-            // std::cout << "numimu: " << imuData.size() << std::endl;
-            // std::cout << "timestamp: " << std::setprecision(15) << frame->timestamp_ << std::endl;
 
             //Add data to SLAM system
-            // printf("before slam imu\n");
             slam.PushIMU(imuData);
             // make it the same as real camera
             frame->images_.resize(4);
             slam.PushFrame(frame);
-            // printf("after slam frame\n");
         }
         catch (const std::exception &e)
         {
@@ -235,10 +223,5 @@ int main(int argc, char **argv)
     // Clean up
     slam.ShutDown();
     printf("\nExiting...\n");
-    const auto mapIndex = slam.getActiveMapIndex();
-    std::cout << "Loop Trajectory: nodes.size(): " << pathMap[mapIndex]->nodes.size() << " \n";
-    for (const auto &node: pathMap[mapIndex]->nodes) {
-        std::cout << node[0] << " " << node[1] << " " << node[2] << '\n';
-    }
     return 0;
 }
