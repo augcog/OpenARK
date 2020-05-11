@@ -16,6 +16,28 @@ namespace ark {
 		badInputFlag = false;
 		rs2::pipeline_profile profile = pipe->start(config);
 
+		// Editing laser intensity
+		rs2::device selected_device = profile.get_device();
+		auto depth_sensor = selected_device.first<rs2::depth_sensor>();
+
+		printf("\nNote: \nSet laser power and exposure in RS2Camera.cpp \n");
+
+		if (depth_sensor.supports(RS2_OPTION_LASER_POWER)) {
+			// Use range * (percent float) to adjust range percentage wise
+			// auto range = depth_sensor.get_option_range(RS2_OPTION_LASER_POWER);
+
+			float laser_power = 225.f;
+			printf("Setting laser power to -> %f \n", laser_power);
+			depth_sensor.set_option(RS2_OPTION_LASER_POWER, laser_power);
+		}
+
+		// Editing exposure
+		if (depth_sensor.supports(RS2_OPTION_EXPOSURE)) {
+			float exposure = 6000.f;
+			printf("Setting exposure to -> %f \n", exposure);
+			depth_sensor.set_option(RS2_OPTION_EXPOSURE, exposure);
+		}
+
 		// get updated intrinsics
 		rgbIntrinsics = new rs2_intrinsics();
 		d2rExtrinsics = new rs2_extrinsics();
@@ -102,7 +124,7 @@ namespace ark {
 			}
 			else {
 				rs2::frame depth = frameset.first(RS2_STREAM_DEPTH);
-				rs2::frame ir = frameset.first(RS2_STREAM_INFRARED);
+				rs2::frame ir = frameset.get_infrared_frame(1);
 				memcpy(ir_map.data, ir.get_data(), width * height);
 				project(depth, ir, xyz_map, ir_map);
 			}
@@ -188,6 +210,6 @@ namespace ark {
 
 		config.enable_stream(RS2_STREAM_DEPTH, width, height, RS2_FORMAT_Z16);
 		if (useRGBStream) config.enable_stream(RS2_STREAM_COLOR, width, height, RS2_FORMAT_BGR8);
-		else config.enable_stream(RS2_STREAM_INFRARED, width, height, RS2_FORMAT_Y8);
+		else config.enable_stream(RS2_STREAM_INFRARED, 1, width, height, RS2_FORMAT_Y8);
 	}
 }

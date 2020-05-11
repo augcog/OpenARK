@@ -56,6 +56,8 @@ namespace ark {
 
         bool getImuToTime(double timestamp, std::vector<ImuPair>& data_out);
 
+		std::vector<float> getColorIntrinsics();
+
         const rs2_intrinsics &getDepthIntrinsics();
 
         double getDepthScale();
@@ -72,8 +74,10 @@ namespace ark {
 
         std::shared_ptr<rs2::pipeline> pipe;
         std::shared_ptr<rs2::pipeline> motion_pipe;
+		std::shared_ptr<rs2::pipeline> color_depth_pipe;
         rs2::config config;
         rs2::config motion_config;
+		rs2::config color_depth_config;
         rs2::depth_sensor* depth_sensor;
         rs2::device device;
         rs2_intrinsics depthIntrinsics;
@@ -86,5 +90,9 @@ namespace ark {
         double last_ts_g;
         bool badInputFlag;
         std::atomic<bool> kill;
+
+		rs2::align * align_to_color;
+		rs2_intrinsics colorIntrinsics;
+
     };
 }

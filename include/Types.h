@@ -159,6 +159,7 @@ namespace ark{
         }
 
         void setOptimizedTransform(const Eigen::Matrix4d& T_WS_in){
+
             T_WS_Optimized_ = T_WS_in;
             optimized_ = true;
         }
@@ -168,6 +169,14 @@ namespace ark{
                 return T_WS_Optimized_;
             }else
                 return T_WS_;
+        }
+
+        Eigen::Matrix4d T_WC(int index)
+        {
+            if(index>=0 && index<T_SC_.size()){
+                return T_WS()*T_SC_[index];
+            }else
+                return T_WS();
         }
 
     };

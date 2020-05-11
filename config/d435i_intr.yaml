@@ -2,41 +2,40 @@
 ---
 cameras:
    -
-      T_SC: [ 1., 0., 0., 5.52000012e-03, 0., 1., 0., -5.10000018e-03,
-          0., 0., 1., -1.17400000e-02, 0., 0., 0., 1. ]
+      T_SC: [ 1., 0., 0., -5.52000012e-03, 0., 1., 0., 5.10000018e-03,
+          0., 0., 1., 1.17400000e-02, 0., 0., 0., 1. ]
       image_dimension: [ 640, 480 ]
       distortion_type: radialtangential
       distortion_coefficients: [ 0., 0., 0., 0. ]
-      focal_length: [ 3.84299896e+02, 3.84299896e+02 ]
-      principal_point: [ 3.22548157e+02, 2.36944305e+02 ]
+      focal_length: [ 3.84871613e+02, 3.84871613e+02 ]
+      principal_point: [ 3.18041687e+02, 2.42361450e+02 ]
    -
-      T_SC: [ 1., 0., 0., 5.54125309e-02, 0., 1., 0., -5.10000018e-03,
-          0., 0., 1., -1.17400000e-02, 0., 0., 0., 1. ]
+      T_SC: [ 1., 0., 0., 4.45947275e-02, 0., 1., 0., 5.10000018e-03, 0.,
+          0., 1., 1.17400000e-02, 0., 0., 0., 1. ]
       image_dimension: [ 640, 480 ]
       distortion_type: radialtangential
       distortion_coefficients: [ 0., 0., 0., 0. ]
-      focal_length: [ 3.84299896e+02, 3.84299896e+02 ]
-      principal_point: [ 3.22548157e+02, 2.36944305e+02 ]
+      focal_length: [ 3.84871613e+02, 3.84871613e+02 ]
+      principal_point: [ 3.18041687e+02, 2.42361450e+02 ]
 additional_cameras:
    -
-      T_SC: [ 1., 0., 0., 5.52000012e-03, 0., 1., 0., -5.10000018e-03,
-          0., 0., 1., -1.17400000e-02, 0., 0., 0., 1. ]
+      T_SC: [ 1., 0., 0., -5.52000012e-03, 0., 1., 0., 5.10000018e-03,
+          0., 0., 1., 1.17400000e-02, 0., 0., 0., 1. ]
       image_dimension: [ 640, 480 ]
       distortion_type: radialtangential
       distortion_coefficients: [ 0., 0., 0., 0. ]
-      focal_length: [ 3.84299896e+02, 3.84299896e+02 ]
-      principal_point: [ 3.22548157e+02, 2.36944305e+02 ]
+      focal_length: [ 3.84871613e+02, 3.84871613e+02 ]
+      principal_point: [ 3.18041687e+02, 2.42361450e+02 ]
    -
-      T_SC: [ 9.99979615e-01, -1.04404474e-03, -6.30262494e-03,
-          -9.13624093e-03, 1.02622155e-03, 9.99995470e-01,
-          -2.83047254e-03, -5.11779264e-03, 6.30555162e-03,
-          2.82394676e-03, 9.99976158e-01, -1.20424125e-02, 0., 0., 0.,
-          1. ]
+      T_SC: [ 9.99995828e-01, -2.04235502e-03, 2.03182618e-03,
+          -2.03002170e-02, 2.05474463e-03, 9.99979198e-01,
+          -6.11450057e-03, 4.81690234e-03, -2.01929593e-03,
+          6.11865008e-03, 9.99979258e-01, 1.12155052e-02, 0., 0., 0., 1. ]
       image_dimension: [ 640, 480 ]
       distortion_type: radialtangential
       distortion_coefficients: [ 0., 0., 0., 0. ]
-      focal_length: [ 6.16403320e+02, 6.16171021e+02 ]
-      principal_point: [ 3.18104584e+02, 2.33643127e+02 ]
+      focal_length: [ 6.14324219e+02, 6.14504028e+02 ]
+      principal_point: [ 3.24596283e+02, 2.38833847e+02 ]
 camera_params:
    camera_rate: 30
    sigma_absolute_translation: 0.
@@ -76,6 +75,12 @@ enableLoopClosureDetection: 1
 # numKeypointsResetThreshold: 10
 # durationResetThreshold: 0.5
 emitterPower: 1.
+Recon_VoxelSize: 1.0000000000000000e-02
+Recon_BlockSize: 2.
+Recon_MaxDepth: 2.
+Recon_SaveFrames: 1
+Recon_MeshWinWidth: 1000
+Recon_MeshWinHeight: 1000
 publishing_options:
    publish_rate: 200
    publishLandmarks: false
