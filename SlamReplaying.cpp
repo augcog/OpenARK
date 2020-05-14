@@ -36,7 +36,6 @@ int main(int argc, char **argv)
     google::InitGoogleLogging(argv[0]);
 
     // read configuration file
-    // TODO: read from file or move the intr file to data folder?
     std::string configFilename;
     if (argc > 1)
         configFilename = argv[1];

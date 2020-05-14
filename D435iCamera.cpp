@@ -115,7 +115,6 @@ namespace ark {
                 sensor.set_option((rs2_option)global_time_option, false);
             }
         } 
-
         align_to_color = new rs2::align(RS2_STREAM_COLOR);
         imuReaderThread_ = std::thread(&D435iCamera::imuReader, this);
     }
