@@ -212,9 +212,9 @@ int main(int argc, char **argv)
         }
 
         if (isReset) {
-            //traj_win.msg_ = " *Reseting*";
+            traj_win.msg_ = " *Reseting*";
         } else {
-            //traj_win.msg_ = " ";
+            traj_win.msg_ = " ";
         }
         int k = cv::waitKey(1);
         if (k == 'q' || k == 'Q' || k == 27)
