@@ -157,7 +157,12 @@ namespace ark {
                         active_map_index = i;
                         // delete all the new map after active map
                         sparse_map_vector.resize(active_map_index+1);
-                        cout << "Found loop in old maps, deleting newer maps after: " << active_map_index << endl;
+                        cout << "Deleting newer maps after: " << active_map_index << endl;
+                        for (MapSparseMapDeletionHandler::const_iterator callback_iter = mMapSparseMapDeletionHandler.begin();
+                            callback_iter != mMapSparseMapDeletionHandler.end(); ++callback_iter) {
+                            const MapSparseMapDeletionHandler::value_type& pair = *callback_iter;
+                            pair.second(i);
+                        }
                         break;
                     }
                 }
@@ -289,6 +294,12 @@ namespace ark {
         sparse_map_vector.push_back(newMap);
         // set it to the latest one
         active_map_index = static_cast<int>(sparse_map_vector.size())-1;
+        for (MapSparseMapCreationHandler::const_iterator callback_iter = mMapSparseMapCreationHandler.begin();
+            callback_iter != mMapSparseMapCreationHandler.end(); ++callback_iter) {
+            const MapSparseMapCreationHandler::value_type& pair = *callback_iter;
+            pair.second(active_map_index);
+        }
+
     }
 
     void OkvisSLAMSystem::display() {
@@ -334,10 +345,10 @@ namespace ark {
             return nullptr;
         }
     }
-    
-	void OkvisSLAMSystem::getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d>& trajOut) {
-		sparseMap_.getMappedTrajectory(frameIdOut, trajOut);
-	}
 
+    void OkvisSLAMSystem::getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d>& trajOut) {
+        sparse_map_vector[active_map_index]->getMappedTrajectory(frameIdOut, trajOut);
+    }
+    
 
 } //ark

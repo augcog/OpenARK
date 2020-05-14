@@ -13,17 +13,17 @@ void (&Manager::terminate)()= glfwTerminate;
 
 
 bool Manager::running(){
-	return windows.size()>0;
+    return windows.size()>0;
 }
 
 void Manager::update(){
-	for(const auto& win : windows){
-		if(!win.second->display()){
-			break;
+    for(const auto& win : windows){
+        if(!win.second->display()){
+            break;
         }else{
             win.second->keyboard_control();
         }
-	}
+    }
     // Check for any input, or window movement
     glfwPollEvents();
 
@@ -34,19 +34,19 @@ void Manager::update(){
 
 Window::Window(std::string name, int resX, int resY):
 name_(name){
-	glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
-	win_ptr= glfwCreateWindow(resX, resY, name.c_str(), NULL, NULL);
-	if(win_ptr!=NULL){
-		glfwMakeContextCurrent(win_ptr);
+    glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
+    win_ptr= glfwCreateWindow(resX, resY, name.c_str(), NULL, NULL);
+    if(win_ptr!=NULL){
+        glfwMakeContextCurrent(win_ptr);
 
-		glEnable(GL_DEPTH_TEST); // Depth Testing
-    	glDepthFunc(GL_LEQUAL);
-    	glDisable(GL_CULL_FACE);
-    	glCullFace(GL_BACK);
+        glEnable(GL_DEPTH_TEST); // Depth Testing
+        glDepthFunc(GL_LEQUAL);
+        glDisable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
 
-    	Manager::windows[name] = this;
+        Manager::windows[name] = this;
 
-	}
+    }
 }
 
 Window::~Window(){
@@ -136,76 +136,75 @@ void ImageWindow::set_image(cv::Mat image_in){
 }
 
 ObjectWindow::ObjectWindow(std::string name, int resX, int resY) :
-	Window(name, resX, resY),
-	eye(Eigen::Vector3d(0, -0.1 , 0.8)),
-	gaze(Eigen::Vector3d(0,0,0)){}
+    Window(name, resX, resY),
+    eye(Eigen::Vector3d(0, -0.1 , 0.8)),
+    gaze(Eigen::Vector3d(0,0,0)){}
 
 
 ObjectWindow::~ObjectWindow(){
-	for(const auto obj : objects){
-		obj.second->windows.erase(name_);
-	}
+    for(const auto obj : objects){
+        obj.second->windows.erase(name_);
+    }
 }
 
 
 bool ObjectWindow::display(){
     std::lock_guard<std::mutex> guard(displayLock_);
-	if(win_ptr==NULL)
-		return false;
-	if(!glfwWindowShouldClose(win_ptr)){
-		glfwMakeContextCurrent(win_ptr);
-        glfwSetWindowTitle(win_ptr, (name_ + msg_).c_str());
-		GLint windowWidth, windowHeight;
-		glfwGetFramebufferSize(win_ptr, &windowWidth, &windowHeight);
-		glViewport(0, 0, windowWidth, windowHeight);
+    if(win_ptr==NULL)
+        return false;
+    if(!glfwWindowShouldClose(win_ptr)){
+        glfwMakeContextCurrent(win_ptr);
+        GLint windowWidth, windowHeight;
+        glfwGetFramebufferSize(win_ptr, &windowWidth, &windowHeight);
+        glViewport(0, 0, windowWidth, windowHeight);
 
 		// Draw stuff
 		glClearColor(0.0, 0.0, 0.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glMatrixMode(GL_MODELVIEW_MATRIX);
+        glMatrixMode(GL_MODELVIEW_MATRIX);
 
 		gluLookAt(eye.x(),eye.y(),eye.z(),  // eye  
 		gaze.x(), gaze.y(), gaze.z(),      // center  
 		0.0, 1.0, 0.0);      // up direction
 
-		for(const auto obj : objects){
-			obj.second->display();
-		}
+        for(const auto obj : objects){
+            obj.second->display();
+        }
 
-		glMatrixMode(GL_PROJECTION_MATRIX);
-		glLoadIdentity();
-
-
-
-		gluPerspective( 90, (double)windowHeight / (double)windowWidth, .01, 100 );
+        glMatrixMode(GL_PROJECTION_MATRIX);
+        glLoadIdentity();
 
 
 
-		// Update Screen
-		glfwSwapBuffers(win_ptr);
-		//keyboard_control();
-		return true;
+        gluPerspective( 90, (double)windowHeight / (double)windowWidth, .01, 100 );
 
-	}else{
-		Manager::windows.erase(name_);
-		for(const auto& obj : objects){
-			obj.second->windows.erase(name_);
-		}
-		glfwDestroyWindow(win_ptr);
-		win_ptr=NULL;
-		return false;
-	}
+
+
+        // Update Screen
+        glfwSwapBuffers(win_ptr);
+        //keyboard_control();
+        return true;
+
+    }else{
+        Manager::windows.erase(name_);
+        for(const auto& obj : objects){
+            obj.second->windows.erase(name_);
+        }
+        glfwDestroyWindow(win_ptr);
+        win_ptr=NULL;
+        return false;
+    }
 
 
 }
 
 void ObjectWindow::add_object(Object* obj){
     std::lock_guard<std::mutex> guard(displayLock_);
-	objects[obj->name_] = obj;
-	obj->windows[name_] = this;
+    objects[obj->name_] = obj;
+    obj->windows[name_] = this;
 }
-	
+    
 
 bool ARCameraWindow::display(){
     std::lock_guard<std::mutex> guard(displayLock_);
@@ -355,13 +354,13 @@ name_(name){
 }
 
 Object::~Object(){
-	del();
+    del();
 }
 
 void Object::del(){
-	for(const auto& win : windows ){
-		win.second->objects.erase(name_);
-	}
+    for(const auto& win : windows ){
+        win.second->objects.erase(name_);
+    }
 }
 
 void Object::display() {
@@ -394,17 +393,17 @@ void Object::draw_obj(){
 
 void Object::set_transform(Eigen::Affine3d t){
     std::lock_guard<std::mutex> guard(displayLock_);
-	pose = t;
+    pose = t;
 }
 
 void Object::translate(Eigen::Translation3d t){
     std::lock_guard<std::mutex> guard(displayLock_);
-	pose = t*pose;
+    pose = t*pose;
 }
 
 void Object::rotate(Eigen::Quaterniond q){
     std::lock_guard<std::mutex> guard(displayLock_);
-	pose = q*pose;
+    pose = q*pose;
 }
 
 void Cube::draw_obj(){
@@ -566,81 +565,92 @@ void Path::draw_obj()
 
 void Mesh::draw_obj()
 {
-	std::lock_guard<std::mutex> guard(meshLock_);
+    std::lock_guard<std::mutex> guard(meshLock_);
 
-	Eigen::Matrix4d scene_mat;
-	glGetDoublev(GL_MODELVIEW_MATRIX, scene_mat.data());
-	scene_mat = scene_mat*pose.matrix().inverse();
-	glLoadMatrixd(scene_mat.data());
-
-	/*Eigen::AngleAxis<double> R(pose.rotation());
-	Eigen::Translation3d T(pose.translation());
-
-
-	glRotated(180, 0, 1, 0);
-	glRotated(180, 0, 0, 1);
+    Eigen::Matrix4d scene_mat;
+    glGetDoublev(GL_MODELVIEW_MATRIX, scene_mat.data());
+    scene_mat = scene_mat*pose.matrix().inverse();
+    glLoadMatrixd(scene_mat.data());
+    
+    /*Eigen::AngleAxis<double> R(pose.rotation());
+    Eigen::Translation3d T(pose.translation());
 
 
-	glTranslated(T.x(), T.y(), T.z());
-	glRotated(R.angle() * 180 / 3.14159, R.axis().x(), R.axis().y(), R.axis().z());*/
+    glRotated(180, 0, 1, 0);
+    glRotated(180, 0, 0, 1);
 
 
-	for (int i = 0; i < mesh_vertices.size(); ++i) {
-		std::vector<Eigen::Vector3d> vertices = mesh_vertices[i];
-		std::vector<Eigen::Vector3d> colors = mesh_colors[i];
-		std::vector<Eigen::Vector3i> triangles = mesh_triangles[i];
-		Eigen::Affine3d transform(mesh_transforms[i]);
+    glTranslated(T.x(), T.y(), T.z());
+    glRotated(R.angle() * 180 / 3.14159, R.axis().x(), R.axis().y(), R.axis().z());*/
 
-		transform = pose * transform;
-		//mesh_transforms[i] is c->w, we need w->c
-
-		glPushMatrix();
-
-		Eigen::AngleAxis<double> R(transform.rotation());
-		Eigen::Translation3d T(transform.translation());
+    // cout << "enabled meshes : " << endl;
+    // for (auto itr = enabled_meshes.begin(); itr != enabled_meshes.end(); ++itr) 
+    // { 
+    //     cout << '\t' << *itr; 
+    // } 
+    // cout << endl; 
 
 
-		glRotated(180, 0, 1, 0);
-		glRotated(180, 0, 0, 1);
+    for (int i = 0; i < mesh_vertices.size(); ++i) {
+
+        if (enabled_meshes.count(mesh_map_indices[i]) == 0) {
+            continue;
+        }
+
+        std::vector<Eigen::Vector3d> vertices = mesh_vertices[i];
+        std::vector<Eigen::Vector3d> colors = mesh_colors[i];
+        std::vector<Eigen::Vector3i> triangles = mesh_triangles[i];
+        Eigen::Affine3d transform(mesh_transforms[i]);
+
+        transform = pose * transform;
+        //mesh_transforms[i] is c->w, we need w->c
+
+        glPushMatrix();
+
+        Eigen::AngleAxis<double> R(transform.rotation());
+        Eigen::Translation3d T(transform.translation());
 
 
-		glTranslated(T.x(), T.y(), T.z());
-		glRotated(R.angle() * 180 / 3.14159, R.axis().x(), R.axis().y(), R.axis().z());
+        glRotated(180, 0, 1, 0);
+        glRotated(180, 0, 0, 1);
 
 
-		glDisable(GL_LIGHTING);
-
-		glBegin(GL_TRIANGLES);
-
-		for (int i = 0; i < triangles.size(); i++) {
-
-			Eigen::Vector3d vertex1 = vertices[triangles[i][0]];
-			Eigen::Vector3d vertex2 = vertices[triangles[i][1]];
-			Eigen::Vector3d vertex3 = vertices[triangles[i][2]];
-
-			Eigen::Vector3d color1 = colors[triangles[i][0]];
-			Eigen::Vector3d color2 = colors[triangles[i][1]];
-			Eigen::Vector3d color3 = colors[triangles[i][2]];
+        glTranslated(T.x(), T.y(), T.z());
+        glRotated(R.angle() * 180 / 3.14159, R.axis().x(), R.axis().y(), R.axis().z());
 
 
-			glColor3f((color1[0] + color2[0] + color3[0]) / 3.0f,
-				(color1[1] + color2[1] + color3[1]) / 3.0f,
-				(color1[2] + color2[2] + color3[2]) / 3.0f);
+        glDisable(GL_LIGHTING);
 
-			glVertex3f(vertex1[0], vertex1[1], vertex1[2]);
-			glVertex3f(vertex2[0], vertex2[1], vertex2[2]);
-			glVertex3f(vertex3[0], vertex3[1], vertex3[2]);
-		}
+        glBegin(GL_TRIANGLES);
 
-		glEnd();
+        for (int i = 0; i < triangles.size(); i++) {
 
-		glEnable(GL_LIGHTING);
+            Eigen::Vector3d vertex1 = vertices[triangles[i][0]];
+            Eigen::Vector3d vertex2 = vertices[triangles[i][1]];
+            Eigen::Vector3d vertex3 = vertices[triangles[i][2]];
 
-
-		glPopMatrix();
+            Eigen::Vector3d color1 = colors[triangles[i][0]];
+            Eigen::Vector3d color2 = colors[triangles[i][1]];
+            Eigen::Vector3d color3 = colors[triangles[i][2]];
 
 
-	}
+            glColor3f((color1[0] + color2[0] + color3[0]) / 3.0f,
+                (color1[1] + color2[1] + color3[1]) / 3.0f,
+                (color1[2] + color2[2] + color3[2]) / 3.0f);
+
+            glVertex3f(vertex1[0], vertex1[1], vertex1[2]);
+            glVertex3f(vertex2[0], vertex2[1], vertex2[2]);
+            glVertex3f(vertex3[0], vertex3[1], vertex3[2]);
+        }
+
+        glEnd();
+
+        glEnable(GL_LIGHTING);
+
+
+        glPopMatrix();
+
+    }
 
 }
 

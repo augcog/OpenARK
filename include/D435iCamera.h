@@ -56,7 +56,7 @@ namespace ark {
 
         bool getImuToTime(double timestamp, std::vector<ImuPair>& data_out);
 
-		std::vector<float> getColorIntrinsics();
+        std::vector<float> getColorIntrinsics();
 
         const rs2_intrinsics &getDepthIntrinsics();
 

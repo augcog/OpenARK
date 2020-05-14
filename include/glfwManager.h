@@ -16,6 +16,7 @@
 #include <vector>
 #include <atomic>
 #include <mutex>
+#include <set>
 
 #include <opencv2/core/core.hpp>
 
@@ -162,6 +163,7 @@ public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	CameraWindow(std::string name, int resX, int resY):
 	ObjectWindow(name,resX,resY){}
+	
 
 	void keyboard_control()
 	{
@@ -357,7 +359,13 @@ public:
 	std::vector<std::vector<Eigen::Vector3d>> mesh_vertices;
 	std::vector<std::vector<Eigen::Vector3d>> mesh_colors;
 	std::vector<std::vector<Eigen::Vector3i>> mesh_triangles;
+	std::vector<int> mesh_map_indices;
 	std::vector<Eigen::Matrix4d> mesh_transforms;
+
+	//threadsafe?
+	int current_active_map;
+	int archive_index;
+	std::set<int> enabled_meshes;
 
 	void draw_obj();
 
@@ -366,6 +374,9 @@ public:
 	vertices(),
 	colors(),
 	triangles(){
+		current_active_map = 0;
+		archive_index = -1;
+		enabled_meshes.insert(0);
 	}
 
 	void update_mesh(std::vector<Eigen::Vector3d> v,
@@ -380,6 +391,26 @@ public:
 
 	}
 
+	void delete_meshes_after(int active_map_index) {
+		std::map<int, int> index_map;
+
+		for (int i = 0; i < mesh_map_indices.size(); i++) {
+			if (mesh_map_indices[i] <= active_map_index) {
+				continue;
+			}
+			if (index_map.count(mesh_map_indices[i]) != 0) {
+				mesh_map_indices[i] = index_map[mesh_map_indices[i]];
+			} else {
+				index_map[mesh_map_indices[i]] = archive_index;
+				mesh_map_indices[i] = archive_index;
+				archive_index--;
+			}
+		}
+
+		current_active_map = active_map_index;
+
+	}
+
 	void update_mesh_vector(std::vector<std::vector<Eigen::Vector3d>> mesh_vertices_toadd, 
 		std::vector<std::vector<Eigen::Vector3d>> mesh_vertex_colors_toadd,
 		std::vector<std::vector<Eigen::Vector3i>> mesh_triangles_toadd,
@@ -390,6 +421,10 @@ public:
 		mesh_colors = mesh_vertex_colors_toadd;
 		mesh_triangles = mesh_triangles_toadd;
 		mesh_transforms = transforms_toadd;
+
+		for (int i = mesh_map_indices.size(); i < mesh_triangles.size(); ++i) {
+			mesh_map_indices.push_back(current_active_map);
+		}
 
 		std::cout << "new meshes append successfully" << std::endl;
 		/*for (auto transform : mesh_transforms) {
