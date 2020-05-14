@@ -337,10 +337,6 @@ namespace ark {
         getActiveMap()->getTrajectory(trajOut);
     }
 
-    void OkvisSLAMSystem::getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d>& trajOut) {
-        sparse_map_vector[active_map_index]->getMappedTrajectory(frameIdOut, trajOut);
-    }
-
     std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> OkvisSLAMSystem:: getActiveMap() {
         if (0 <= active_map_index && active_map_index < sparse_map_vector.size()) {
             return sparse_map_vector[active_map_index];
@@ -348,6 +344,10 @@ namespace ark {
             std::cout << "Null map returned \n";
             return nullptr;
         }
+    }
+
+    void OkvisSLAMSystem::getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d>& trajOut) {
+        sparse_map_vector[active_map_index]->getMappedTrajectory(frameIdOut, trajOut);
     }
     
 

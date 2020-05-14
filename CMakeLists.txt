@@ -132,7 +132,6 @@ IF( DLoopDetector_FOUND )
    include_directories($ENV{DLoopDetector_INCLUDE_DIRS})
 ENDIF( DLoopDetector_FOUND )
 
-
 # require Okvis
 find_package( okvis REQUIRED )
 include_directories(${OKVIS_INCLUDE_DIRS})
@@ -140,7 +139,7 @@ message(STATUS "Found Okvis: ${OKVIS_INCLUDE_DIRS} ${OKVIS_LIBRARIES}")
 
 # require OpenGV (should come with Okvis)
 if( DEFINED ENV{ARK_DEPS_DIR} )
-   find_package( OpenGV REQUIRED NO_MODULE )
+  find_package( OpenGV REQUIRED NO_MODULE )
 else()
     find_package( OpenGV REQUIRED )
 endif( DEFINED ENV{ARK_DEPS_DIR} )
