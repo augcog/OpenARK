@@ -64,7 +64,6 @@ namespace ark {
 
         void getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d>& trajOut);
 
-
         ~OkvisSLAMSystem();
 
         std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> getActiveMap();

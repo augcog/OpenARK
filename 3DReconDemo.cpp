@@ -178,13 +178,8 @@ int main(int argc, char **argv)
 	printf("Camera initialization started...\n");
 	fflush(stdout);
 
-	CameraParameter cameraParameter;
-    cameraParameter.emitterPower = 1.0f;
 
-	D435iCamera camera(cameraParameter);
-
-
-	//D435iCamera camera;
+	D435iCamera camera;
 	camera.start();
 
 	printf("Camera-IMU initialization complete\n");
@@ -230,7 +225,7 @@ int main(int argc, char **argv)
 			return;
 		}
 
-		//cout << "Integrating frame number: " << frame->frameId_ << endl;
+		cout << "Integrating frame number: " << frame->frameId_ << endl;
 
 		cv::Mat color_mat;
 		cv::Mat depth_mat;
@@ -395,14 +390,14 @@ int main(int argc, char **argv)
 
 		frame_counter++;
 
-		cv::Mat ir;
-		frame->getImage(ir, 1);
+		cv::Mat imRGB;
+		frame->getImage(imRGB, 3);
 
-		//cv::Mat imBGR;
+		cv::Mat imBGR;
 
-		//cv::cvtColor(imRGB, imBGR, CV_RGB2BGR);
+		cv::cvtColor(imRGB, imBGR, CV_RGB2BGR);
 
-		cv::imshow("image", ir);
+		cv::imshow("image", imBGR);
 
 		int k = cv::waitKey(2);
 		

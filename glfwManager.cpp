@@ -158,15 +158,15 @@ bool ObjectWindow::display(){
         glfwGetFramebufferSize(win_ptr, &windowWidth, &windowHeight);
         glViewport(0, 0, windowWidth, windowHeight);
 
-        // Draw stuff
-        glClearColor(0.0, 0.3, 0.8, 1.0);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		// Draw stuff
+		glClearColor(0.0, 0.0, 0.0, 1.0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glMatrixMode(GL_MODELVIEW_MATRIX);
 
-        gluLookAt(eye.x(),eye.y(),eye.z(),  // eye  
-        gaze.x(), gaze.y(), gaze.z(),      // center  
-        0.0, 1.0, 0.0);      // up direction
+		gluLookAt(eye.x(),eye.y(),eye.z(),  // eye  
+		gaze.x(), gaze.y(), gaze.z(),      // center  
+		0.0, 1.0, 0.0);      // up direction
 
         for(const auto obj : objects){
             obj.second->display();
@@ -364,16 +364,16 @@ void Object::del(){
 }
 
 void Object::display() {
-    std::lock_guard<std::mutex> guard(displayLock_);
-    if (draw) {
-        glPushMatrix();
-        Eigen::Matrix4d scene_mat;
-        glGetDoublev(GL_MODELVIEW_MATRIX, scene_mat.data());
-        scene_mat = scene_mat*pose.matrix();
-        glLoadMatrixd(scene_mat.data());
-        draw_obj();
-        glPopMatrix();
-    }
+	std::lock_guard<std::mutex> guard(displayLock_);
+	if (draw) {
+		glPushMatrix();
+		Eigen::Matrix4d scene_mat;
+		glGetDoublev(GL_MODELVIEW_MATRIX, scene_mat.data());
+		scene_mat = scene_mat*pose.matrix();
+		glLoadMatrixd(scene_mat.data());
+		draw_obj();
+		glPopMatrix();
+	}
 }
 
 void Object::hide(){
@@ -649,7 +649,6 @@ void Mesh::draw_obj()
 
 
         glPopMatrix();
-
 
     }
 

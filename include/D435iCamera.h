@@ -74,8 +74,10 @@ namespace ark {
 
         std::shared_ptr<rs2::pipeline> pipe;
         std::shared_ptr<rs2::pipeline> motion_pipe;
+		std::shared_ptr<rs2::pipeline> color_depth_pipe;
         rs2::config config;
         rs2::config motion_config;
+		rs2::config color_depth_config;
         rs2::depth_sensor* depth_sensor;
         rs2::device device;
         rs2_intrinsics depthIntrinsics;
@@ -89,7 +91,13 @@ namespace ark {
         bool badInputFlag;
         std::atomic<bool> kill;
 
+<<<<<<< HEAD
         rs2::align * align_to_color;
         rs2_intrinsics colorIntrinsics;
+=======
+		rs2::align * align_to_color;
+		rs2_intrinsics colorIntrinsics;
+
+>>>>>>> aug_master
     };
 }

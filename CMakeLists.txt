@@ -19,6 +19,7 @@ set( LIB_NAME "OpenARK" )
 set( DEMO_NAME "OpenARK_hand_demo" )
 set( AVATAR_DEMO_NAME "OpenARK_avatar_demo")
 set( SLAM_DEMO_NAME "OpenARK_SLAM_demo")
+set( 3DRECON_DATA_NAME "3dRecon_Data_Recording")
 set( DATA_RECORDING_NAME "OpenARK_data_recording")
 set( SLAM_RECORDING_NAME "OpenARK_slam_recording")
 set( SLAM_REPLAYING_NAME "OpenARK_slam_replaying")
@@ -29,12 +30,13 @@ set( UNITY_PLUGIN_NAME "UnityPlugin" )
 option( BUILD_HAND_DEMO "BUILD_HAND_DEMO" OFF )
 option( BUILD_AVATAR_DEMO "BUILD_AVATAR_DEMO" OFF)
 option( BUILD_SLAM_DEMO "BUILD_SLAM_DEMO" ON)
+option( BUILD_3DRECON_DEMO "BUILD_3DRECON_DEMO" ON)
 option( BUILD_DATA_RECORDING "BUILD_DATA_RECORDING" OFF)
 option( BUILD_SLAM_RECORDING "BUILD_SLAM_RECORDING" ON)
 option( BUILD_SLAM_REPLAYING "BUILD_SLAM_REPLAYING" ON)
 option( BUILD_3DRECON_DEMO "BUILD_3DRECON_DEMO" ON)
 option( BUILD_TESTS "BUILD_TESTS" OFF )
-option( BUILD_UNITY_PLUGIN "BUILD_UNITY_PLUGIN" OFF )
+option( BUILD_UNITY_PLUGIN "BUILD_UNITY_PLUGIN" ON )
 option( USE_AZURE_KINECT_SDK "USE_AZURE_KINECT_SDK" OFF )
 option( USE_RSSDK2 "USE_RSSDK2" ON )
 option( USE_RSSDK "USE_RSSDK" OFF )
@@ -151,17 +153,18 @@ MESSAGE( STATUS "Found DLoopDetector: ${DLoopDetector_INCLUDE_DIRS} ${DLoopDetec
 
 set( Okvis_DIR "C:/Program Files/okvis/CMake" ) 
 
+
 # require Okvis
 find_package( Okvis REQUIRED )
 include_directories(${OKVIS_INCLUDE_DIRS})
 message(STATUS "Found Okvis: ${OKVIS_INCLUDE_DIRS} ${OKVIS_LIBRARIES}")
 
 # require OpenGV (should come with Okvis)
-#if( DEFINED ENV{ARK_DEPS_DIR} )
-#   find_package( OpenGV REQUIRED NO_MODULE )
-#else()
+if( DEFINED ENV{ARK_DEPS_DIR} )
+   find_package( OpenGV REQUIRED NO_MODULE )
+else()
     find_package( OpenGV REQUIRED )
-#endif( DEFINED ENV{ARK_DEPS_DIR} )
+endif( DEFINED ENV{ARK_DEPS_DIR} )
 IF(OPENGV_FOUND)
     MESSAGE(STATUS "Found OpenGV: ${OPENGV_INCLUDE_DIR} ${OPENGV_LIBRARIES}")
 ENDIF(OPENGV_FOUND)
@@ -177,11 +180,11 @@ ENDIF(Ceres_FOUND)
 include_directories(${CERES_INCLUDE_DIRS})
 
 # require SuiteSparse
-#find_package( SuiteSparse QUIET )
-#IF(SuiteSparse_FOUND)
-#    MESSAGE(STATUS "Found SuiteSparse: ${SuiteSparse_INCLUDE_DIRS} ${SuiteSparse_LIBRARIES}")
-#ENDIF(SuiteSparse_FOUND)
-#include_directories(${SuiteSparse_INCLUDE_DIRS})
+find_package( SuiteSparse QUIET )
+IF(SuiteSparse_FOUND)
+    MESSAGE(STATUS "Found SuiteSparse: ${SuiteSparse_INCLUDE_DIRS} ${SuiteSparse_LIBRARIES}")
+ENDIF(SuiteSparse_FOUND)
+include_directories(${SuiteSparse_INCLUDE_DIRS})
 
 find_package(OpenMP)
 if (OPENMP_FOUND)
@@ -249,12 +252,13 @@ set(
   ${OpenCV_LIBRARIES}
   ${PCL_LIBRARIES}
   ${GLOG_LIBRARIES} #${CXSPARSE_LIBRARIES}
-  #${SuiteSparse_LIBRARIES}
+  ${SuiteSparse_LIBRARIES}
   ${OKVIS_LIBRARIES}
   ${CERES_LIBRARIES}
   ${BRISK_LIBRARIES}
   ${DBoW2_LIBRARIES}
   ${OPENGV_LIBRARIES}
+  ${Boost_LIBRARIES}
   ${Open3D_LIBRARIES}
 )
 
@@ -282,12 +286,12 @@ set(
   HandDetector.cpp
   PlaneDetector.cpp
   MockCamera.cpp
+  MockD435iCamera.cpp
   HumanDetector.cpp
   HumanBody.cpp
   Avatar.cpp
   glfwManager.cpp
   OkvisSLAMSystem.cpp
-  MockD435iCamera.cpp
   SaveFrame.cpp
 )
 
@@ -310,6 +314,7 @@ set(
   ${INCLUDE_DIR}/HandDetector.h
   ${INCLUDE_DIR}/PlaneDetector.h
   ${INCLUDE_DIR}/MockCamera.h
+  ${INCLUDE_DIR}/MockD435iCamera.h
   ${INCLUDE_DIR}/HumanDetector.h
   ${INCLUDE_DIR}/HumanBody.h
   ${INCLUDE_DIR}/Avatar.h
@@ -324,7 +329,6 @@ set(
   ${INCLUDE_DIR}/Types.h
   ${INCLUDE_DIR}/CorrespondenceRansac.h
   ${INCLUDE_DIR}/UKF.h
-  ${INCLUDE_DIR}/MockD435iCamera.h
   ${INCLUDE_DIR}/SaveFrame.h
   stdafx.h
 )
@@ -483,6 +487,19 @@ if( ${BUILD_SLAM_DEMO} AND realsense2_FOUND )
     #set_target_properties( d435i_intrinsics_writer PROPERTIES OUTPUT_NAME d435i_intrinsics_writer )
 	set_target_properties( d435i_intrinsics_writer PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
 endif( ${BUILD_SLAM_DEMO} AND realsense2_FOUND )
+
+if( ${BUILD_3DRECON_DEMO} AND realsense2_FOUND )
+    add_executable( ${3DRECON_DATA_NAME} 3DReconDemo.cpp )
+    target_include_directories( ${3DRECON_DATA_NAME} PRIVATE ${INCLUDE_DIR} )
+    set_target_properties( ${3DRECON_DATA_NAME} PROPERTIES OUTPUT_NAME ${3DRECON_DATA_NAME} )
+    set_target_properties( ${3DRECON_DATA_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
+    if ( MSVC )
+        target_link_libraries( ${3DRECON_DATA_NAME} ${DEPENDENCIES} ${LIB_NAME} )
+    else()
+        target_link_libraries( ${3DRECON_DATA_NAME} ${DEPENDENCIES} ${LIB_NAME} GLU GL glut )
+    endif ( MSVC )
+endif( ${BUILD_3DRECON_DEMO} AND realsense2_FOUND )
+
 
 if( ${BUILD_DATA_RECORDING} )
     add_executable( ${DATA_RECORDING_NAME} DataRecording.cpp )

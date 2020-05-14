@@ -159,6 +159,7 @@ namespace ark{
         }
 
         void setOptimizedTransform(const Eigen::Matrix4d& T_WS_in){
+
             T_WS_Optimized_ = T_WS_in;
             optimized_ = true;
         }

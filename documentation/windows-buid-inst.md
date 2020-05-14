@@ -143,7 +143,7 @@ Install DLoopDetector:
 
 Install Okvis+:
 
-1.    Clone source from https://github.com/CTKnight/okvis/. Extract zip folder and cd to the extracted directory. 
+1.    Clone source from https://github.com/CTKnight/okvis/ and `git checkout add_reset`. Extract zip folder and cd to the extracted directory. 
 
 2.    Follow CMAKE steps above. 
 
@@ -201,7 +201,7 @@ Install Okvis+:
 **Add these lines to your intrinsics yaml file**\
 
     ```
-    numKeypointsResetThreshold: 15
-    durationResetThreshold: 0.05
+    numKeypointsResetThreshold: 10
+    durationResetThreshold: 0.5
     emitterPower: 0.
     ```

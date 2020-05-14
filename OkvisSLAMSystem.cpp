@@ -45,7 +45,6 @@ namespace ark {
     }
 
     void OkvisSLAMSystem::FrameConsumerLoop() {
-        static int called = 0;
         while (!kill) {
              
             //Get processed frame data from OKVIS
@@ -116,6 +115,7 @@ namespace ark {
                 out_frame->T_SC_.push_back(T_SC.T());
             }
 
+            bool addKeyFrameResult = false;
             //check if keyframe
             if(frame_data.data->is_keyframe){
                 if(out_frame->keyframeId_!=out_frame->frameId_){
@@ -150,24 +150,10 @@ namespace ark {
                     }
                     keyframe->descriptors_[cam_idx]=frame_data.data->descriptors[cam_idx];
                 }
-                //cout<<"1:"<<keyframe->timestamp_<<endl;;
-                // for (int i = 0; i < sparse_map_vector.size()-1; i++) 
-                // {
-                //      cout<<"Checking Map: "<<i+1<<endl;
-                //      const auto sparseMap = sparse_map_vector[i];
-                //      if (sparseMap->detectLoopClosure(keyframe)) 
-                //      {
-                //       cout<<"Found loop with my function in Map: "<<i+1<<endl;
-                //      }
-                // }
-                // push to map
-                // only detect loop closure if it has moved a reasonable distance
 
                 for (int i = 0; i < sparse_map_vector.size()-1; i++) {
                     const auto sparseMap = sparse_map_vector[i];
-                    cout<<"For map:"<<i<<endl;
                     if (sparseMap->detectLoopClosure(keyframe)) {
-                        cout<<"Here: "<<i<<endl;
                         active_map_index = i;
                         // delete all the new map after active map
                         sparse_map_vector.resize(active_map_index+1);
@@ -178,24 +164,11 @@ namespace ark {
                             pair.second(i);
                         }
                         break;
-                    } else {
-                        cout << "No loop in old maps: framdId: " << keyframe->frameId_ << "\n";
                     }
                 }
-                //cout<<"2:"<<keyframe->timestamp_<<endl;
-                // if (active_map_index == 0) {
-                // if (called < 20) {
-                const auto addKeyFrameResult = getActiveMap()->addKeyframe(keyframe);
-                if (addKeyFrameResult){ //add keyframe returns true if a loop closure was detected
-                    called++;
-                    for (MapLoopClosureDetectedHandler::const_iterator callback_iter = mMapLoopClosureHandler.begin();
-                        callback_iter != mMapLoopClosureHandler.end(); ++callback_iter) {
-                        const MapLoopClosureDetectedHandler::value_type& pair = *callback_iter;
-                            pair.second();
-                    }
-                }
-                // }
-                
+
+                addKeyFrameResult = getActiveMap()->addKeyframe(keyframe);
+
             }
 
             out_frame->keyframe_ = getActiveMap()->getKeyframe(out_frame->keyframeId_);
@@ -213,6 +186,14 @@ namespace ark {
                 callback_iter != mMapFrameAvailableHandler.end(); ++callback_iter) {
                 const MapFrameAvailableHandler::value_type& pair = *callback_iter;
                 pair.second(out_frame);
+            }
+
+            if (addKeyFrameResult) { //add keyframe returns true if a loop closure was detected
+                for (MapLoopClosureDetectedHandler::const_iterator callback_iter = mMapLoopClosureHandler.begin();
+                    callback_iter != mMapLoopClosureHandler.end(); ++callback_iter) {
+                    const MapLoopClosureDetectedHandler::value_type& pair = *callback_iter;
+                        pair.second();
+                }
             }
         }
     }
@@ -356,9 +337,15 @@ namespace ark {
         getActiveMap()->getTrajectory(trajOut);
     }
 
+<<<<<<< HEAD
     void OkvisSLAMSystem::getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d>& trajOut) {
         sparse_map_vector[active_map_index]->getMappedTrajectory(frameIdOut, trajOut);
     }
+=======
+	void OkvisSLAMSystem::getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d>& trajOut) {
+		sparseMap_.getMappedTrajectory(frameIdOut, trajOut);
+	}
+>>>>>>> aug_master
 
     std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> OkvisSLAMSystem:: getActiveMap() {
         if (0 <= active_map_index && active_map_index < sparse_map_vector.size()) {

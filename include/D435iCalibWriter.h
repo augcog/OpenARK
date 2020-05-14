@@ -161,6 +161,13 @@ namespace ark{
         << "useDriver" << "false" 
 
         << "enableLoopClosureDetection" << true
+        << "Recon_VoxelSize" << 0.01
+        << "Recon_BlockSize" << 2.0
+        << "Recon_MaxDepth" << 2.0
+        << "Recon_SaveFrames" << true
+        << "Recon_MeshWinWidth" << 1000
+        << "Recon_MeshWinHeight" << 1000
+        
         << "publishing_options" << "{"
             << "publish_rate" << 200                  // rate at which odometry updates are published only works properly if imu_rate/publish_rate is an integer!!
             << "publishLandmarks" << "false"            // select, if you want to publish landmarks at all
