@@ -33,7 +33,6 @@ option( BUILD_3DRECON_DEMO "BUILD_3DRECON_DEMO" ON)
 option( BUILD_DATA_RECORDING "BUILD_DATA_RECORDING" OFF)
 option( BUILD_SLAM_RECORDING "BUILD_SLAM_RECORDING" ON)
 option( BUILD_SLAM_REPLAYING "BUILD_SLAM_REPLAYING" ON)
-option( BUILD_3DRECON_DEMO "BUILD_3DRECON_DEMO" ON)
 option( BUILD_TESTS "BUILD_TESTS" OFF )
 option( BUILD_UNITY_PLUGIN "BUILD_UNITY_PLUGIN" ON )
 option( USE_AZURE_KINECT_SDK "USE_AZURE_KINECT_SDK" OFF )
@@ -107,22 +106,11 @@ if( OpenCV_FOUND )
 endif( OpenCV_FOUND )
 
 # require glog
-#if( DEFINED ENV{ARK_DEPS_DIR} )
-#    find_package( Glog REQUIRED NO_MODULE )
-#else()
-#    find_package( Glog REQUIRED )
-#endif( DEFINED ENV{ARK_DEPS_DIR} )
-
-set( GLOG_DIR "C:/Program Files/glog/lib/cmake/glog" ) 
-find_package(Glog REQUIRED)
-
-if (Glog_FOUND)
-  message( STATUS "Found GLOG" )
+if( DEFINED ENV{ARK_DEPS_DIR} )
+    find_package( Glog REQUIRED NO_MODULE )
 else()
-  message( STATUS "DIDNT FIND GLOG")
-endif()
-
-
+    find_package( Glog REQUIRED )
+endif( DEFINED ENV{ARK_DEPS_DIR} )
 message(STATUS "Found Glog: ${GLOG_INCLUDE_DIRS} ${GLOG_LIBRARIES}")
 # fix glog windows conflicts and bugs
 if(WIN32)
@@ -137,24 +125,16 @@ IF( DBoW2_FOUND )
    include_directories(${DBoW2_INCLUDE_DIRS})
 ENDIF( DBoW2_FOUND )
 
-
-
 # require DLoopDetector
-#find_package( DLoopDetector REQUIRED )
-#IF( DLoopDetector_FOUND )
-#    MESSAGE( STATUS "Found DLoopDetector: ${DLoopDetector_INCLUDE_DIRS} ${DLoopDetector_LIBRARIES}" )
-#   include_directories(${DLoopDetector_INCLUDE_DIRS})
-#ENDIF( DLoopDetector_FOUND )
-
-set ( DLoopDetector_INCLUDE_DIRS "C:/Program Files/DLoopDetector/include/DLoopDetector")
-include_directories(${DLoopDetector_INCLUDE_DIRS})
-MESSAGE( STATUS "Found DLoopDetector: ${DLoopDetector_INCLUDE_DIRS} ${DLoopDetector_LIBRARIES}" )
-
-set( Okvis_DIR "C:/Program Files/okvis/CMake" ) 
+find_package( DLoopDetector REQUIRED )
+IF( DLoopDetector_FOUND )
+    MESSAGE( STATUS "Found DLoopDetector: $ENV{DLoopDetector_INCLUDE_DIRS} ${DLoopDetector_LIBRARIES}" )
+   include_directories($ENV{DLoopDetector_INCLUDE_DIRS})
+ENDIF( DLoopDetector_FOUND )
 
 
 # require Okvis
-find_package( Okvis REQUIRED )
+find_package( okvis REQUIRED )
 include_directories(${OKVIS_INCLUDE_DIRS})
 message(STATUS "Found Okvis: ${OKVIS_INCLUDE_DIRS} ${OKVIS_LIBRARIES}")
 
@@ -167,9 +147,6 @@ endif( DEFINED ENV{ARK_DEPS_DIR} )
 IF(OPENGV_FOUND)
     MESSAGE(STATUS "Found OpenGV: ${OPENGV_INCLUDE_DIR} ${OPENGV_LIBRARIES}")
 ENDIF(OPENGV_FOUND)
-
-set( Ceres_DIR "C:/Program Files/Ceres/CMake" ) 
-set( EIGEN_INCLUDE_DIR "C:/Program Files/OpenARK-Deps/eigen3" )
 
 # require Ceres
 find_package( Ceres REQUIRED )
@@ -484,7 +461,7 @@ if( ${BUILD_SLAM_DEMO} AND realsense2_FOUND )
     target_include_directories( d435i_intrinsics_writer PRIVATE ${INCLUDE_DIR} )
     target_link_libraries( d435i_intrinsics_writer ${DEPENDENCIES} ${LIB_NAME} )
     #set_target_properties( d435i_intrinsics_writer PROPERTIES OUTPUT_NAME d435i_intrinsics_writer )
-	set_target_properties( d435i_intrinsics_writer PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
+  set_target_properties( d435i_intrinsics_writer PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
 endif( ${BUILD_SLAM_DEMO} AND realsense2_FOUND )
 
 if( ${BUILD_3DRECON_DEMO} AND realsense2_FOUND )

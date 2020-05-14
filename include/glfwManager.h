@@ -76,6 +76,7 @@ public:
 
 	Eigen::Vector3d eye;
 	Eigen::Vector3d gaze;
+	std::string msg_;
 
 	ObjectWindow(std::string name, int resX, int resY);
 

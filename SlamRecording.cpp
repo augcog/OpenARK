@@ -37,8 +37,7 @@ std::string getTimeTag()
 }
 
 void saveImg(int id, const cv::Mat &img, const path imgDir)
-{   
-    cout << "writing image" << endl;
+{
     std::stringstream fileName;
     fileName << std::setw(5) << std::setfill('0') << std::to_string(id) << ".png";
     const std::string dst = (imgDir / fileName.str()).string();
@@ -164,7 +163,30 @@ int main(int argc, char **argv)
         cv::cvtColor(rgb, rgb, CV_RGB2BGR);
         cv::imshow(camera.getModelName() + " IR", ir1);
 
-        img_queue.enqueue(frame);
+        if (paused)
+        {
+            // clear the imu data in camera?
+            // extract all imu data ever since pause??
+            camera.getImuToTime(frame->timestamp_, imuDispose);
+            imuDispose.clear();
+            const std::string NO_SIGNAL_STR = "PAUSED";
+            const cv::Scalar RECT_COLOR = cv::Scalar(0, 160, 255);
+            const int RECT_WID = 120, RECT_HI = 40;
+
+            for (auto &img : frame->images_)
+            {
+                const cv::Point STR_POS(img.cols / 2 - 50, img.rows / 2 + 7);
+                cv::Rect rect(img.cols / 2 - RECT_WID / 2,
+                              img.rows / 2 - RECT_HI / 2,
+                              RECT_WID, RECT_HI);
+                cv::rectangle(img, rect, RECT_COLOR, -1);
+                cv::putText(img, NO_SIGNAL_STR, STR_POS, 0, 0.8, cv::Scalar(255, 255, 255), 1, cv::LINE_AA);
+            }
+        }
+        else
+        {
+            img_queue.enqueue(frame);
+        }
 
         // visualize results
         int k = cv::waitKey(1);

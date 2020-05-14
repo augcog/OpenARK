@@ -69,7 +69,7 @@ class SparseMap {
     size_t i=0;
     for(std::map<int, MapKeyFrame::Ptr>::iterator frame = frameMap_.begin(); 
         frame!=frameMap_.end(); frame++, i++){
-    frameIdOut[i] = frame->first;
+      frameIdOut[i] = frame->first;
       trajOut[i] = frame->second->T_WC(3);
     }
   }
