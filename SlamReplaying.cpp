@@ -212,7 +212,7 @@ int main(int argc, char **argv)
         }
 
         if (isReset) {
-            traj_win.msg_ = " *Reseting*";
+            //traj_win.msg_ = " *Reseting*";
         } else {
             //traj_win.msg_ = " ";
         }

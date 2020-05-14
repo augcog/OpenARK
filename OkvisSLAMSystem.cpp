@@ -337,15 +337,9 @@ namespace ark {
         getActiveMap()->getTrajectory(trajOut);
     }
 
-<<<<<<< HEAD
     void OkvisSLAMSystem::getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d>& trajOut) {
         sparse_map_vector[active_map_index]->getMappedTrajectory(frameIdOut, trajOut);
     }
-=======
-	void OkvisSLAMSystem::getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d>& trajOut) {
-		sparseMap_.getMappedTrajectory(frameIdOut, trajOut);
-	}
->>>>>>> aug_master
 
     std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> OkvisSLAMSystem:: getActiveMap() {
         if (0 <= active_map_index && active_map_index < sparse_map_vector.size()) {

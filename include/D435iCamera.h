@@ -91,13 +91,8 @@ namespace ark {
         bool badInputFlag;
         std::atomic<bool> kill;
 
-<<<<<<< HEAD
-        rs2::align * align_to_color;
-        rs2_intrinsics colorIntrinsics;
-=======
 		rs2::align * align_to_color;
 		rs2_intrinsics colorIntrinsics;
 
->>>>>>> aug_master
     };
 }

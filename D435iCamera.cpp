@@ -115,23 +115,14 @@ namespace ark {
                 sensor.set_option((rs2_option)global_time_option, false);
             }
         } 
-<<<<<<< HEAD
 
-=======
->>>>>>> aug_master
         align_to_color = new rs2::align(RS2_STREAM_COLOR);
         imuReaderThread_ = std::thread(&D435iCamera::imuReader, this);
     }
 
-<<<<<<< HEAD
-    std::vector<float> D435iCamera::getColorIntrinsics() {
-        return std::vector<float>{colorIntrinsics.fx, colorIntrinsics.fy, colorIntrinsics.ppx, colorIntrinsics.ppy};
-    }
-=======
 	std::vector<float> D435iCamera::getColorIntrinsics() {
 		return std::vector<float>{colorIntrinsics.fx, colorIntrinsics.fy, colorIntrinsics.ppx, colorIntrinsics.ppy};
 	}
->>>>>>> aug_master
 
     void D435iCamera::imuReader(){
         while(!kill){
