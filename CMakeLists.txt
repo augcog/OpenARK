@@ -268,6 +268,7 @@ set(
   glfwManager.cpp
   OkvisSLAMSystem.cpp
   SaveFrame.cpp
+  SegmentedMesh.cpp
 )
 
 set(
@@ -305,6 +306,7 @@ set(
   ${INCLUDE_DIR}/CorrespondenceRansac.h
   ${INCLUDE_DIR}/UKF.h
   ${INCLUDE_DIR}/SaveFrame.h
+  ${INCLUDE_DIR}/SegmentedMesh.h
   stdafx.h
 )
 

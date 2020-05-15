@@ -564,36 +564,18 @@ void Path::draw_obj()
 }
 
 void Mesh::draw_obj()
-{
+{  
+
     std::lock_guard<std::mutex> guard(meshLock_);
 
     Eigen::Matrix4d scene_mat;
     glGetDoublev(GL_MODELVIEW_MATRIX, scene_mat.data());
     scene_mat = scene_mat*pose.matrix().inverse();
     glLoadMatrixd(scene_mat.data());
-    
-    /*Eigen::AngleAxis<double> R(pose.rotation());
-    Eigen::Translation3d T(pose.translation());
-
-
-    glRotated(180, 0, 1, 0);
-    glRotated(180, 0, 0, 1);
-
-
-    glTranslated(T.x(), T.y(), T.z());
-    glRotated(R.angle() * 180 / 3.14159, R.axis().x(), R.axis().y(), R.axis().z());*/
-
-    // cout << "enabled meshes : " << endl;
-    // for (auto itr = enabled_meshes.begin(); itr != enabled_meshes.end(); ++itr) 
-    // { 
-    //     cout << '\t' << *itr; 
-    // } 
-    // cout << endl; 
-
 
     for (int i = 0; i < mesh_vertices.size(); ++i) {
 
-        if (enabled_meshes.count(mesh_map_indices[i]) == 0) {
+        if (!mesh_enabled[i]) {
             continue;
         }
 
