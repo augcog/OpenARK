@@ -36,13 +36,19 @@ namespace ark {
 
         createFolder(folderPath);
 
-        rgbPath = folderPath +"RGB/";
-        depthPath = folderPath +"depth/";
-        tcwPath = folderPath +"tcw/";
+        rgbPath = folderPath + "RGB/";
+        depthPath = folderPath + "depth/";
+        tcwPath = folderPath + "tcw/";
+        mapIdLog = folderPath + "mapIdLog.txt";
 
         createFolder(rgbPath);
         createFolder(depthPath);
         createFolder(tcwPath);
+
+        std::ofstream file2(mapIdLog, std::fstream::app);
+        if (file2.is_open()) {
+            file2.close();
+        }
 
     }
 
@@ -62,6 +68,32 @@ namespace ark {
 			file << traj.matrix() << '\n';
 		}
 		file.close();
+    }
+
+    void SaveFrame::frameWriteMapped(cv::Mat imRGB, cv::Mat depth, Eigen::Matrix4d traj, int frameId, int mapId) {
+
+        frame_ids.push_back(frameId);
+
+        cv::Mat imBGR;
+        cv::cvtColor(imRGB, imBGR, CV_RGB2BGR);
+        cv::imwrite(rgbPath + std::to_string(frameId) + ".jpg", imBGR);
+
+        cv::imwrite(depthPath + std::to_string(frameId) + ".png", depth);
+
+        std::ofstream file(tcwPath + std::to_string(frameId) + ".txt");
+        if (file.is_open())
+        {
+            file << traj.matrix() << '\n';
+        }
+        file.close();
+
+        std::ofstream file2(mapIdLog, std::fstream::app);
+        if (file2.is_open())
+        {
+            file2 << frameId << " " << mapId << '\n';
+        }
+        file2.close();
+
     }
 
 	void SaveFrame::updateTransforms(std::map<int, Eigen::Matrix4d> keyframemap) {
