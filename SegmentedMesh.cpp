@@ -236,6 +236,13 @@ namespace ark {
 			mesh_enabled.clear();
 		}
 
+		//always update transforms in case of loop closure
+		mesh_transforms.clear();
+		for (int i = 0; i < completed_meshes.size(); i++) {
+			auto mesh_unit = completed_meshes[i];
+			mesh_transforms.push_back(mesh_unit->keyframe->T_WC(3));
+		}
+
 		//updated completed meshes not in the vectors
 		if (completed_meshes.size() > mesh_vertices.size()) {
 			for (int i = mesh_vertices.size(); i < completed_meshes.size(); i++) {
@@ -245,7 +252,6 @@ namespace ark {
 				mesh_vertices.push_back(mesh_unit->mesh->vertices_);
 				mesh_colors.push_back(mesh_unit->mesh->vertex_colors_);
 				mesh_triangles.push_back(mesh_unit->mesh->triangles_);
-				mesh_transforms.push_back(mesh_unit->keyframe->T_WC(3));
 
 			}
 		}
