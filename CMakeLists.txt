@@ -128,10 +128,9 @@ ENDIF( DBoW2_FOUND )
 # require DLoopDetector
 find_package( DLoopDetector REQUIRED )
 IF( DLoopDetector_FOUND )
-    MESSAGE( STATUS "Found DLoopDetector: ${DLoopDetector_INCLUDE_DIRS} ${DLoopDetector_LIBRARIES}" )
-   include_directories(${DLoopDetector_INCLUDE_DIRS})
+    MESSAGE( STATUS "Found DLoopDetector: $ENV{DLoopDetector_INCLUDE_DIRS} ${DLoopDetector_LIBRARIES}" )
+   include_directories($ENV{DLoopDetector_INCLUDE_DIRS})
 ENDIF( DLoopDetector_FOUND )
-
 
 # require Okvis
 find_package( okvis REQUIRED )
@@ -140,7 +139,7 @@ message(STATUS "Found Okvis: ${OKVIS_INCLUDE_DIRS} ${OKVIS_LIBRARIES}")
 
 # require OpenGV (should come with Okvis)
 if( DEFINED ENV{ARK_DEPS_DIR} )
-   find_package( OpenGV REQUIRED NO_MODULE )
+  find_package( OpenGV REQUIRED NO_MODULE )
 else()
     find_package( OpenGV REQUIRED )
 endif( DEFINED ENV{ARK_DEPS_DIR} )
@@ -269,6 +268,7 @@ set(
   glfwManager.cpp
   OkvisSLAMSystem.cpp
   SaveFrame.cpp
+  SegmentedMesh.cpp
 )
 
 set(
@@ -306,6 +306,7 @@ set(
   ${INCLUDE_DIR}/CorrespondenceRansac.h
   ${INCLUDE_DIR}/UKF.h
   ${INCLUDE_DIR}/SaveFrame.h
+  ${INCLUDE_DIR}/SegmentedMesh.h
   stdafx.h
 )
 
@@ -461,7 +462,7 @@ if( ${BUILD_SLAM_DEMO} AND realsense2_FOUND )
     target_include_directories( d435i_intrinsics_writer PRIVATE ${INCLUDE_DIR} )
     target_link_libraries( d435i_intrinsics_writer ${DEPENDENCIES} ${LIB_NAME} )
     #set_target_properties( d435i_intrinsics_writer PROPERTIES OUTPUT_NAME d435i_intrinsics_writer )
-	set_target_properties( d435i_intrinsics_writer PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
+    set_target_properties( d435i_intrinsics_writer PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
 endif( ${BUILD_SLAM_DEMO} AND realsense2_FOUND )
 
 if( ${BUILD_3DRECON_DEMO} AND realsense2_FOUND )

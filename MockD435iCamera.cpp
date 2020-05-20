@@ -59,6 +59,7 @@ bool MockD435iCamera::getImuToTime(double timestamp, std::vector<ImuPair> &data_
         allGood = allGood && std::getline(imuStream, line3);
 
         if (!allGood) {
+            std::cout << "getImuToTime: unable to read imu data.\n";
             return false;
         }
 
@@ -164,7 +165,7 @@ void MockD435iCamera::update(MultiCameraFrame &frame)
     // TODO: should we mock the block time as well?
     //boost::this_thread::sleep_for(boost::chrono::milliseconds(33));
     // TODO: not sure if this necessary
-    printf("frame %d\n", frameId);
+    // printf("frame %d\n", frameId);
     // std::cout << "RGB Size: " << frame.images_[3].total() << " type: " << frame.images_[3].type() << "\n";
     // std::cout << "DEPTH Size: " << frame.images_[4].total() << " type: " << frame.images_[4].type() << "\n";
 
@@ -172,7 +173,7 @@ void MockD435iCamera::update(MultiCameraFrame &frame)
     project(frame.images_[4], frame.images_[2]);
     frame.images_[2] = frame.images_[2]*scale;
 
-    std::cout << "Depth cloud: " << frame.images_[2].total() << "\n";
+    // std::cout << "Depth cloud: " << frame.images_[2].total() << "\n";
 }
 
 } // namespace ark

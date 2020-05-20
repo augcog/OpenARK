@@ -16,6 +16,8 @@
 #include <vector>
 #include <atomic>
 #include <mutex>
+#include <set>
+#include "SegmentedMesh.h"
 
 #include <opencv2/core/core.hpp>
 
@@ -75,6 +77,7 @@ public:
 
 	Eigen::Vector3d eye;
 	Eigen::Vector3d gaze;
+	std::string msg_;
 
 	ObjectWindow(std::string name, int resX, int resY);
 
@@ -350,92 +353,34 @@ class Mesh : public Object {
 public:
 
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-	std::vector<Eigen::Vector3d> vertices;
-	std::vector<Eigen::Vector3d> colors;
-	std::vector<Eigen::Vector3i> triangles;
 
 	std::vector<std::vector<Eigen::Vector3d>> mesh_vertices;
-	std::vector<std::vector<Eigen::Vector3d>> mesh_colors;
-	std::vector<std::vector<Eigen::Vector3i>> mesh_triangles;
-	std::vector<Eigen::Matrix4d> mesh_transforms;
+    std::vector<std::vector<Eigen::Vector3d>> mesh_colors;
+    std::vector<std::vector<Eigen::Vector3i>> mesh_triangles;
+    std::vector<Eigen::Matrix4d> mesh_transforms;
+    std::vector<int> mesh_enabled;
+
+	// //threadsafe?
+	// int current_active_map;
+	// int archive_index;
+	// std::set<int> enabled_meshes;
+
+	ark::SegmentedMesh * mesh_;
 
 	void draw_obj();
 
-	Mesh(std::string name)
-	: Object(name),
-	vertices(),
-	colors(),
-	triangles(){
+	Mesh(std::string name, ark::SegmentedMesh * mesh)
+	: Object(name) {
+		mesh_ = mesh;
 	}
 
-	void update_mesh(std::vector<Eigen::Vector3d> v,
-		std::vector<Eigen::Vector3d> c,
-		std::vector<Eigen::Vector3i> t) {
-		std::lock_guard<std::mutex> guard(meshLock_);
-		vertices = v;
-		colors = c;
-		triangles = t;
-
-		std::cout << "mesh updated" << std::endl;
-
-	}
-
-	void update_mesh_vector(std::vector<std::vector<Eigen::Vector3d>> mesh_vertices_toadd, 
-		std::vector<std::vector<Eigen::Vector3d>> mesh_vertex_colors_toadd,
-		std::vector<std::vector<Eigen::Vector3i>> mesh_triangles_toadd,
-		std::vector<Eigen::Matrix4d> transforms_toadd) {
+	void update_meshes() {
 		std::lock_guard<std::mutex> guard(meshLock_);
 
-		mesh_vertices = mesh_vertices_toadd;
-		mesh_colors = mesh_vertex_colors_toadd;
-		mesh_triangles = mesh_triangles_toadd;
-		mesh_transforms = transforms_toadd;
-
-		std::cout << "new meshes append successfully" << std::endl;
-		/*for (auto transform : mesh_transforms) {
-			
-			cout << transform.matrix() << endl;
-		}*/
+		mesh_->Render(mesh_vertices, mesh_colors, mesh_triangles, mesh_transforms, mesh_enabled);
 
 	}
 
-	void update_active_mesh(std::vector<Eigen::Vector3d> updated_active_vertices,
-		std::vector<Eigen::Vector3d> updated_active_colors,
-		std::vector<Eigen::Vector3i> updated_active_triangles,
-		Eigen::Matrix4d updated_active_transform) {
-		std::lock_guard<std::mutex> guard(meshLock_);
-
-		mesh_vertices.pop_back();
-		mesh_colors.pop_back();
-		mesh_triangles.pop_back();
-		mesh_transforms.pop_back();
-
-		mesh_vertices.push_back(updated_active_vertices);
-		mesh_colors.push_back(updated_active_colors);
-		mesh_triangles.push_back(updated_active_triangles);
-		mesh_transforms.push_back(updated_active_transform);
-
-	}
-
-	//transforms should be c->w
-	void update_transforms(std::vector<Eigen::Matrix4d> updated_transforms) {
-		std::lock_guard<std::mutex> guard(meshLock_);
-		mesh_transforms = updated_transforms;
-		/*for (auto transform : mesh_transforms) {
-			cout << transform.matrix() << endl;
-		}*/
-	}
-
-	int get_number_meshes() {
-		std::lock_guard<std::mutex> guard(meshLock_);
-		return mesh_vertices.size();
-	}
-
-	void clear() {
-		vertices.clear();
-		colors.clear();
-		triangles.clear();
-	}
 
 protected:
 	std::mutex meshLock_;

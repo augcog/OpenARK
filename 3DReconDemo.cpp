@@ -7,12 +7,7 @@
 #include "Util.h"
 #include "SaveFrame.h"
 #include "Types.h"
-#include "Open3D/Integration/ScalableTSDFVolume.h"
-#include "Open3D/Integration/MovingTSDFVolume.h"
-#include "Open3D/Visualization/Utility/DrawGeometry.h"
-#include "Open3D/IO/ClassIO/TriangleMeshIO.h"
-#include "Open3D/IO/ClassIO/ImageIO.h"
-#include <map>
+#include "SegmentedMesh.h"
 
 using namespace ark;
 
@@ -156,6 +151,8 @@ int main(int argc, char **argv)
 
 	printf("Camera initialization started...\n");
 	fflush(stdout);
+
+
 	D435iCamera camera;
 	camera.start();
 
@@ -170,8 +167,10 @@ int main(int argc, char **argv)
 
 	int frame_counter = 1;
 	bool do_integration = true;
+	int max_map_index = 0;
+	int current_map_index = 0;
 
-	KeyFrameAvailableHandler saveFrameHandler([&saveFrame, &frame_counter, &do_integration](MultiCameraFrame::Ptr frame) {
+	KeyFrameAvailableHandler saveFrameHandler([&saveFrame, &frame_counter, &do_integration, &current_map_index](MultiCameraFrame::Ptr frame) {
 		if (!do_integration || frame_counter % 3 != 0) {
 			return;
 		}
@@ -185,19 +184,19 @@ int main(int argc, char **argv)
 
 		Eigen::Matrix4d transform(frame->T_WC(3));
 
-		saveFrame->frameWrite(imRGB, imDepth, transform, frame->frameId_);
+		saveFrame->frameWriteMapped(imRGB, imDepth, transform, frame->frameId_, current_map_index);
 	});
 	
 	if (save_frames) {
 		slam.AddKeyFrameAvailableHandler(saveFrameHandler, "saveframe");
 	}
 
-	open3d::integration::MovingTSDFVolume * tsdf_volume = new open3d::integration::MovingTSDFVolume(voxel_size, voxel_size * 5, open3d::integration::TSDFVolumeColorType::RGB8, block_size);
+	SegmentedMesh * mesh = new SegmentedMesh(voxel_size, voxel_size * 5, open3d::integration::TSDFVolumeColorType::RGB8, block_size);
 
 	std::vector<float> intrinsics = camera.getColorIntrinsics();
 	auto intr = open3d::camera::PinholeCameraIntrinsic(640, 480, intrinsics[0], intrinsics[1], intrinsics[2], intrinsics[3]);
 
-	FrameAvailableHandler tsdfFrameHandler([&tsdf_volume, &frame_counter, &do_integration, intr](MultiCameraFrame::Ptr frame) {
+	FrameAvailableHandler tsdfFrameHandler([&mesh, &frame_counter, &do_integration, intr](MultiCameraFrame::Ptr frame) {
 		if (!do_integration || frame_counter % 3 != 0) {
 			return;
 		}
@@ -213,67 +212,31 @@ int main(int argc, char **argv)
 
 		auto rgbd_image = generateRGBDImageFromCV(color_mat, depth_mat);
 
-		tsdf_volume->Integrate(*rgbd_image, intr, frame->T_WC(3).inverse());
+		mesh->Integrate(*rgbd_image, intr, frame->T_WC(3).inverse());
 	});
 
 	slam.AddFrameAvailableHandler(tsdfFrameHandler, "tsdfframe");
 
 	MyGUI::MeshWindow mesh_win("Mesh Viewer", mesh_view_width, mesh_view_height);
-	MyGUI::Mesh mesh_obj("mesh");
+	MyGUI::Mesh mesh_obj("mesh", mesh);
 
 	mesh_win.add_object(&mesh_obj);
 
 	std::vector<std::pair<std::shared_ptr<open3d::geometry::TriangleMesh>,
 		Eigen::Matrix4d>> vis_mesh;
 
-	FrameAvailableHandler meshHandler([&tsdf_volume, &frame_counter, &do_integration, &vis_mesh, &mesh_obj](MultiCameraFrame::Ptr frame) {
+	FrameAvailableHandler meshHandler([&mesh_obj, &frame_counter, &do_integration](MultiCameraFrame::Ptr frame) {
 		if (!do_integration || frame_counter % 30 != 1) {
 			return;
 		}
 
-		vis_mesh = tsdf_volume->GetTriangleMeshes();
-
-		printf("new mesh extracted, sending to mesh obj\n");
-
-		int number_meshes = mesh_obj.get_number_meshes();
-
-		//only update active mesh
-		if (number_meshes == vis_mesh.size()) {
-			auto active_mesh = vis_mesh[vis_mesh.size() - 1];
-			mesh_obj.update_active_mesh(active_mesh.first->vertices_, active_mesh.first->vertex_colors_, active_mesh.first->triangles_, active_mesh.second);
-
-			std::vector<Eigen::Matrix4d> mesh_transforms;
-
-			for (int i = 0; i < vis_mesh.size(); ++i) {
-				mesh_transforms.push_back(vis_mesh[i].second);
-			}
-				
-			mesh_obj.update_transforms(mesh_transforms);
-		}
-		else {
-			std::vector<std::vector<Eigen::Vector3d>> mesh_vertices;
-			std::vector<std::vector<Eigen::Vector3d>> mesh_colors;
-			std::vector<std::vector<Eigen::Vector3i>> mesh_triangles;
-			std::vector<Eigen::Matrix4d> mesh_transforms;
-
-			for (int i = 0; i < vis_mesh.size(); ++i) {
-				auto mesh = vis_mesh[i];
-				mesh_vertices.push_back(mesh.first->vertices_);
-				mesh_colors.push_back(mesh.first->vertex_colors_);
-				mesh_triangles.push_back(mesh.first->triangles_);
-				mesh_transforms.push_back(mesh.second);
-			}
-
-
-			mesh_obj.update_mesh_vector(mesh_vertices, mesh_colors, mesh_triangles, mesh_transforms);
-		}	
-
+		mesh_obj.update_meshes();
 
 	});
 
 	slam.AddFrameAvailableHandler(meshHandler, "meshupdate");
 
-	FrameAvailableHandler viewHandler([&mesh_obj, &tsdf_volume, &mesh_win, &frame_counter, &do_integration](MultiCameraFrame::Ptr frame) {
+	FrameAvailableHandler viewHandler([&mesh_obj, &mesh_win, &frame_counter, &do_integration](MultiCameraFrame::Ptr frame) {
 		Eigen::Affine3d transform(frame->T_WC(3));
 		mesh_obj.set_transform(transform.inverse());
 		if (mesh_win.clicked()) {
@@ -289,32 +252,29 @@ int main(int argc, char **argv)
 	
 	slam.AddFrameAvailableHandler(viewHandler, "viewhandler");
 
-	KeyFrameAvailableHandler updateKFHandler([&tsdf_volume](MultiCameraFrame::Ptr frame) {
+	KeyFrameAvailableHandler updateKFHandler([&mesh](MultiCameraFrame::Ptr frame) {
 		MapKeyFrame::Ptr kf = frame->keyframe_;
-		tsdf_volume->SetLatestKeyFrame(kf->T_WC(3), kf->frameId_);
+		mesh->SetLatestKeyFrame(kf);
 	});
 
 	slam.AddKeyFrameAvailableHandler(updateKFHandler, "updatekfhandler");
 
-	LoopClosureDetectedHandler loopHandler([&tsdf_volume, &slam, &frame_counter](void) {
-
-		printf("loop closure detected\n");
-
-		std::vector<int> frameIdOut;
-		std::vector<Eigen::Matrix4d> traj;
-
-		slam.getMappedTrajectory(frameIdOut, traj);
-
-		std::map<int, Eigen::Matrix4d> keyframemap;
-
-		for (int i = 0; i < frameIdOut.size(); i++) {
-			keyframemap.insert(std::pair<int, Eigen::Matrix4d>(frameIdOut[i], traj[i]));
-		}
-
-		tsdf_volume->UpdateKeyFrames(keyframemap);
+	SparseMapDeletionHandler spdHandler([&mesh, &max_map_index, &current_map_index](int active_map_index) {
+		mesh->DeleteMapsAfterIndex(active_map_index);
+		mesh->StartNewBlock();
+		current_map_index = active_map_index;
 	});
 
-	slam.AddLoopClosureDetectedHandler(loopHandler, "loophandler");
+	slam.AddSparseMapDeletionHandler(spdHandler, "mesh sp deletion");
+
+	SparseMapCreationHandler spcHandler([&mesh, &max_map_index, &current_map_index](int active_map_index) {
+		mesh->SetActiveMapIndex(active_map_index);
+		mesh->StartNewBlock();
+		current_map_index = max_map_index + 1;
+		max_map_index++;
+	});
+
+	slam.AddSparseMapCreationHandler(spcHandler, "mesh sp creation");
 
 	cv::namedWindow("image");
 
@@ -363,22 +323,12 @@ int main(int argc, char **argv)
 	std::map<int, Eigen::Matrix4d> keyframemap;
 
 	for (int i = 0; i < frameIdOut.size(); i++) {
-		keyframemap.insert(std::pair<int, Eigen::Matrix4d>(frameIdOut[i], traj[i]));
+		keyframemap[frameIdOut[i]] = traj[i];
 	}
 
 	saveFrame->updateTransforms(keyframemap);
 
-	cout << "getting mesh" << endl;
-
-	//make sure to add these back later |
-
-	std::shared_ptr<open3d::geometry::TriangleMesh> write_mesh = tsdf_volume->ExtractTotalTriangleMesh();
-
-	//const std::vector<std::shared_ptr<const open3d::geometry::Geometry>> mesh_vec = { mesh };
-
-	//open3d::visualization::DrawGeometries(mesh_vec);
-
-	open3d::io::WriteTriangleMeshToPLY("mesh.ply", *write_mesh, false, false, true, true, false, false);
+	mesh->WriteMeshes();
 
 	printf("\nTerminate...\n");
 	// Clean up
