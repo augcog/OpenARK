@@ -135,7 +135,7 @@ Install DBoW2:
 
 Install DLoopDetector:
 
-1.    Download source from https://github.com/yohanmr/DLoopDetector. Extract zip folder and cd to the extracted directory. (Note: this is a fork from the original git repository with some minor modifications to support OpenARK integration).
+1.    Download source from https://github.com/joemenke/DLoopDetector. Extract zip folder and cd to the extracted directory. (Note: this is a fork from the original git repository with some minor modifications to support OpenARK integration).
 
 2.    Follow CMAKE steps above.
 
