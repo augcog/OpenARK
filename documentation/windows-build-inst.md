@@ -1,4 +1,4 @@
-**OpenARK CMAKE build instructions for Windows:**
+**OpenARK CMAKE Build Instructions for Windows:**
 
 **Prerequisites:**
 
@@ -17,34 +17,35 @@ We recommend using Visual Studio 2015 and 64-bit Windows for OpenARK. When given
 
     OpenNI2 will be installed as part of this installer. You will need to add the OpenNI2 dlls to the system path manually. The default location these are installed to is C:\Program Files\OpenNI2\Tools. See Step 4 in the opencv install instructions below for more details on modifying system variables. 
 
-4. **clone OpenARK repo from https://github.com/augcog/OpenARK/**
+4. **Clone OpenARK repo from https://github.com/augcog/OpenARK/**
 
  
 
-General CMAKE Build Instructions:
+**General CMAKE Build Instructions:**  
+Make sure to run Administrator Command Prompt throughout the build process to avoid certain privilege warnings/errors.   
+Refer to the end of this document for general troubleshooting strategies to help debug any errors you may run into.
 
 Most of the following files will follow the general CMAKE build steps shown below:
 
-1. make a build directory to store build files: 
+1. Make a build directory to store build files: 
     `mkdir build`
 
 2. Generate a Visual Studio solution: 
-    cd build
+    `cd build` and then
    ` cmake -G"Visual Studio 14 2015 Win64" ..`
-
 
 3. Build and install:
     `cmake --build . --config Release --target install`
 
  
 
- 
+**Installing All Dependencies**
 
 Install opencv 3.4 and opencv_contrib from source:
 
-1. Download opencv_contrib 3.4 source from https://github.com/opencv/opencv_contrib/tree/3.4. Extract the zip folder.
+1. Download opencv_contrib 3.4 source from https://github.com/opencv/opencv_contrib/tree/3.4. Extract the zip folder. 
 
-2.    Download OpenCV 3.4 source from https://github.com/opencv/opencv/tree/3.4. Extract the zip folder and cd to the extracted directory
+2.    Download OpenCV 3.4 source from https://github.com/opencv/opencv/tree/3.4. Extract the zip folder and cd to the extracted directory. If the latest version of OpenCV 3.4 causes an error in the build process later on, use OpenCV 3.4.8 (proven to work correctly).   
 
 3. Follow CMAKE steps above, EXCEPT replace `cmake -G"Visual Studio 14 2015 Win64" ..` with `cmake -G"Visual Studio 14 2015 Win64" -DOPENCV_EXTRA_MODULES_PATH=<opencv_contrib>/modules -DWITH_MSMF=OFF ..`
     Where: <opencv_contrib> is the location you extracted the opencv_contrib zip file to.
@@ -139,42 +140,55 @@ Install DLoopDetector:
 
 2.    Follow CMAKE steps above.
 
-3.    add enviromental variable `DLoopDetector_INCLUDE_DIRS` pointing to `${INSALL_DIR}/include/DLoopDetector`, typically it's `C:/Program Files/DLoopDetector/include/DLoopDetector`
+3.    Add enviromental variable `DLoopDetector_INCLUDE_DIRS` pointing to `${INSALL_DIR}/include/DLoopDetector`, typically it's `C:/Program Files/DLoopDetector/include/DLoopDetector`
 
 Install Okvis+:
 
-1.    Clone source from https://github.com/joemenke/okvis/ and `git checkout add_reset`. Extract zip folder and cd to the extracted directory. 
+1.    Clone source from https://github.com/joemenke/okvis/. Cd to the directory. 
 
 2.    Follow CMAKE steps above. 
 
+Install Open3D:
+
+1. Download source from https://github.com/intel-isl/Open3D. Extract the zip folder and cd to the extracted directory.
+
+2. Follow CMAKE steps above, ADD “–parallel <number of cores>” to step 2 of the CMAKE build instructions. This will improve Open3D’s performance.
  
 
 **Setting up the Intel Realsense D435i:**                                        
 
-1.    Follow the instructions here: https://github.com/IntelRealSense/librealsense/blob/master/doc/installation_windows.md to install librealsense. Bet sure to follow the “Enabling metadata on Windows” section as the timestamps coming from the device will be incorrect without it. (**remember to reset the git repo to commit ba7c2d9cd59fb1618b9dc634cff7fa6349ce8bad**)
+1.    Follow the instructions here: https://github.com/IntelRealSense/librealsense/blob/master/doc/installation_windows.md to prepare to install librealsense. Bet sure to follow the “Enabling metadata on Windows” section as the timestamps coming from the device will be incorrect without it. 
 
-2.    Update the device firmware using the windows firmware update tool: https://downloadcenter.intel.com/download/27514/Windows-Device-Firmware-Update-Tool-for-Intel-RealSense-D400-Product-Family
+2. Clone source from https://github.com/IntelRealSense/librealsense and `git checkout ba7c2d9cd59fb1618b9dc634cff7fa6349ce8bad`. Cd to the directory.
 
-3.    Using the “realsense-viewer” tool (located in build/tools/realsense-viewer), ensure that all sensors are able to stream data.
+3. Follow CMAKE steps above.
+
+4. You will need to add the environment variable `realsense2_DIR` and set it to the install location of realsense2 (probably C:\Program Files\librealsense\lib\cmake\realsense2) 
+
+5.  You will also need to add the bin directory to the PATH variable. Select the variable “Path” and add a line with the value `C:\Program Files\librealsense2\bin`
+
+5.    Update the device firmware using the windows firmware update tool: https://downloadcenter.intel.com/download/27514/Windows-Device-Firmware-Update-Tool-for-Intel-RealSense-D400-Product-Family
+
+6.    Using the “realsense-viewer” tool (located in build/tools/realsense-viewer), ensure that all sensors are able to stream data.
 
 
 **Building OpenARK:**
 
-1.    Open a VS2015 x64 Native Tools Command Prompt
+1.    Open an Administrator Command Prompt or a VS2015 x64 Native Tools Command Prompt
 
 
-2.    cd to the directory to which you have downloaded the OpenARK source code
+2.    Cd to the directory to which you have downloaded the OpenARK source code
 
 
-3.    make a build directory to store build files: 
+3.    Make a build directory to store build files: 
     `mkdir build`
 
 
 4.    Generate a Visual Studio solution: 
-    ```
-    cd build
-    cmake -G"Visual Studio 14 2015 Win64" ..
-    ```
+    
+    `cd build`
+    `cmake -G"Visual Studio 14 2015 Win64" ..`
+    
 
 
 5.    You can now either open the Visual Studio Solution generated in the build directory labeled “OpenARK.sln” or continue to build using the command prompt.
@@ -198,10 +212,36 @@ Install Okvis+:
     `cd Release`
     `OpenARK_SLAM_demo.exe`
 
-**Add these lines to your intrinsics yaml file**\
+**Add these lines to your intrinsics yaml file**
 
     ```
     numKeypointsResetThreshold: 10
     durationResetThreshold: 0.5
     emitterPower: 0.
     ```
+
+**General Debugging Strategies:**
+
+**Types of Potential Errors:**
+
+1. Unable to find a file/path/directory for a previously installed package/dependency:
+
+It is likely that one of your environment variables has been set incorrectly.
+
+a. Check environment variables and make sure that the variables are specified to the correct directories in accordance with the instructions. If you need to make any changes, make sure to close any current session of command prompt and start up a new one after modifying environment variables.
+
+b. If this still doesn't work, there is a manual workaround: open CMakeList.txt, navigate to the erroring lines specified in the stack trace, and replace the automatic script for locating the directory with the manual path directory itself.
+
+2. Error for a package relates to an earlier package/dependency from previous steps in the installation process:
+
+It is likely that the package/dependency has not been installed correctly earlier in the installation process.
+
+a. Locate erroring earlier package and delete entire build folder. Rerun CMake steps on this earlier pacakge.
+
+b. Navigate back to current package. Delete CMakeCache.txt in build folder. Rerurn CMake on this current package.
+
+3. Other errors:
+
+a. Check on stackoverflow/other online resources for help.
+
+b. Open an issue and ask us for help!
