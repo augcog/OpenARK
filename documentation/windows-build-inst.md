@@ -150,7 +150,7 @@ Install Okvis+:
 
 Install Open3D:
 
-1. Download source from https://github.com/intel-isl/Open3D. Extract the zip folder and cd to the extracted directory.
+1. Call git clone --recursive on the repo from https://github.com/intel-isl/Open3D. Extract the zip folder and cd to the extracted directory.
 
 2. Follow CMAKE steps above, ADD “–parallel <number of cores>” to step 2 of the CMAKE build instructions. This will improve Open3D’s performance.
  
