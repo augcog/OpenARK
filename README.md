@@ -32,7 +32,7 @@ Instructions are available in the following documents:
 - Windows: [documentation/Windows-build-instructions.pdf](https://github.com/augcog/OpenARK/blob/master/documentation/Windows-build-instructions.pdf)
 
   **New** a dependency pack installer is now available, which accelerates the setup process. Please read
-  [documentation/Windows-build-instructions-quick.md](https://github.com/augcog/OpenARK/blob/master/documentation/Windows-build-instructions-quick.md) for instructions. The installer may be found at <https://github.com/sxyu/OpenARK-Deps/releases/download/0.0.1/openark-deps-vc14-win64.exe>.
+  [documentation/Windows-build-instructions-quick.md](https://github.com/augcog/OpenARK/blob/master/documentation/Windows-build-instructions-quick.md) for instructions. The installer may be found [here](https://drive.google.com/file/d/1-o5Ng3iprLhUJgY2QZpWQwwnAPl4u0jp/view?usp=sharing).
 
 - Linux: [documentation/Linux-build-instructions.md](https://github.com/augcog/OpenARK/blob/master/documentation/Linux-build-instructions.md)
 
