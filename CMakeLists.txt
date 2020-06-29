@@ -128,9 +128,15 @@ ENDIF( DBoW2_FOUND )
 # require DLoopDetector
 find_package( DLoopDetector REQUIRED )
 IF( DLoopDetector_FOUND )
-    MESSAGE( STATUS "Found DLoopDetector: $ENV{DLoopDetector_INCLUDE_DIRS} ${DLoopDetector_LIBRARIES}" )
-   include_directories($ENV{DLoopDetector_INCLUDE_DIRS})
+    MESSAGE( STATUS "Found DLoopDetector: $ENV{DLoopDetector_INCLUDE_DIRS} ${DLoopDetector_LIBRARIES} ${DLoopDetector_INCLUDE_DIRS}" )
 ENDIF( DLoopDetector_FOUND )
+
+if( DEFINED ENV{ARK_DEPS_DIR} )
+  include_directories(${DLoopDetector_INCLUDE_DIRS})
+else()
+  include_directories($ENV{DLoopDetector_INCLUDE_DIRS})
+endif( DEFINED ENV{ARK_DEPS_DIR} )
+
 
 # require Okvis
 find_package( okvis REQUIRED )
