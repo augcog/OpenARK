@@ -1,0 +1,54 @@
+Notes
+
+The included dependencies are built for Visual Studio 2015 (vc14) win64, which you can download from Microsoft.
+
+Due to size, PCL is not included. Please separately install it from:
+https://github.com/PointCloudLibrary/pcl/releases/download/pcl-1.8.1/PCL-1.8.1-AllInOne-msvc2015-win64.exe
+
+Make sure to select the option to add PCL to PATH. Boost and OpenNI will also be installed as part of this.
+
+*** 
+
+This dependency pack contains the following:
+Brisk, Ceres, DBoW2, DLib, DLoopDetector, eigen3, glog, librealsense2, okvis, OpenCV + contrib, OpenGV, SuiteSparse 
+After installing this, build OpenARK using CMake as usual.
+
+***
+
+LICENSE
+
+OpenARK: Open Source Augmented Reality Kit
+
+Copyright 2017-19 FHL Vive Center for Enhanced Reality/UC Regents
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+***
+
+Licenses for OpenARK Dependencies
+
+DBoW2 and DLoopDetector are used with some modifications and are BSD Licenced
+OKVis, Brisk, OpenGV are used with some modifications and are BSD Licenced
+OpenCV along with OpenCV_contrib are BSD licenced
+PCL is BSD licenced 
+Ceres solver is BSD Licenced
+Eigen > 3.11 is MPL2 Licenced
+Glog is Apache 2.0 Licenced
+Librealsense is Apache 2.0 Licenced
+GLFW is zlib/libpng Licenced
+Note: if you wish to use the SMPL model for the Avatar demo, please refer to the SMPL website for licence and restrictions: http://smpl.is.tue.mpg.de/license_body
+
+*** 
+
+Dependency pack compiled by Alex Yu: https://github.com/sxyu
+Installer project is also licensed under Apache 2.0. The text of the short license is visible above.

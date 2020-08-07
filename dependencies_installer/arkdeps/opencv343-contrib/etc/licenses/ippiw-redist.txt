@@ -1,0 +1,68 @@
+This text file is the file (e.g., redist.txt, etc) specified in the
+accompanying End User License Agreement for the Intel(R) Software Development
+Products ("Agreement"). All capitalized terms used but not defined in this
+text file have the same meaning as specified in the Agreement.
+
+The Redistributables files are listed below, and are subject to all of the
+terms and conditions of the Agreement, including without limitation
+Section 2.1.A.(4).
+
+Also included as Redistributables are executables and shared and static
+libraries you create by linking your program with libraries provided by Intel
+as part of the Materials for this product but which are not listed in this
+redist.txt file ("Libraries"); provided that you do not redistribute those
+Intel provided libraries or any other portion of those Intel provided
+libraries in any other way.
+
+
+YOU MAY NOT REDISTRIBUTE THESE MATERIALS UNDER AN EVALUATION LICENSE
+
+List of Redistributables:
+.\include\iw_config.h
+.\include\iw_own.h
+.\include\iw_owni.h
+.\include\iw\iw.h
+.\include\iw\iw_core.h
+.\include\iw\iw_image.h
+.\include\iw\iw_image_color.h
+.\include\iw\iw_image_filter.h
+.\include\iw\iw_image_op.h
+.\include\iw\iw_image_transform.h
+.\include\iw\iw_ll.h
+.\include\iw\iw_version.h
+.\include\iw++\iw.hpp
+.\include\iw++\iw_core.hpp
+.\include\iw++\iw_image.hpp
+.\include\iw++\iw_image_color.hpp
+.\include\iw++\iw_image_filter.hpp
+.\include\iw++\iw_image_op.hpp
+.\include\iw++\iw_image_transform.hpp
+.\src\iw_core.c
+.\src\iw_image.c
+.\src\iw_image_color_convert_all.c
+.\src\iw_image_color_convert_rgbs.c
+.\src\iw_image_filter_bilateral.c
+.\src\iw_image_filter_box.c
+.\src\iw_image_filter_canny.c
+.\src\iw_image_filter_gaussian.c
+.\src\iw_image_filter_general.c
+.\src\iw_image_filter_laplacian.c
+.\src\iw_image_filter_morphology.c
+.\src\iw_image_filter_scharr.c
+.\src\iw_image_filter_sobel.c
+.\src\iw_image_op_copy.c
+.\src\iw_image_op_copy_channel.c
+.\src\iw_image_op_copy_make_border.c
+.\src\iw_image_op_copy_merge.c
+.\src\iw_image_op_copy_split.c
+.\src\iw_image_op_scale.c
+.\src\iw_image_op_set.c
+.\src\iw_image_op_set_channel.c
+.\src\iw_image_op_swap_channels.c
+.\src\iw_image_transform_mirror.c
+.\src\iw_image_transform_resize.c
+.\src\iw_image_transform_rotate.c
+.\src\iw_image_transform_warpaffine.c
+.\src\iw_own.c
+
+* Other names and brands may be claimed as the property of others.

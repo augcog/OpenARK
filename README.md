@@ -32,7 +32,7 @@ Instructions are available in the following documents:
 - Windows: [documentation/Windows-build-instructions.pdf](https://github.com/augcog/OpenARK/blob/master/documentation/Windows-build-instructions.pdf)
 
   **New** a dependency pack installer is now available, which accelerates the setup process. Please read
-  [documentation/Windows-build-instructions-quick.md](https://github.com/augcog/OpenARK/blob/master/documentation/Windows-build-instructions-quick.md) for instructions. The installer may be found [here](https://drive.google.com/file/d/1-o5Ng3iprLhUJgY2QZpWQwwnAPl4u0jp/view?usp=sharing).
+  [documentation/Windows-build-instructions-quick.md](https://github.com/augcog/OpenARK/blob/master/documentation/Windows-build-instructions-quick.md) for instructions. The installer may be found [here](https://drive.google.com/file/d/1ef9PmvhlJGX5BH8LLcKaQxrY8PpTbcaW/view?usp=sharing).
 
 - Linux: [documentation/Linux-build-instructions.md](https://github.com/augcog/OpenARK/blob/master/documentation/Linux-build-instructions.md)
 
@@ -63,23 +63,23 @@ Here is the outline of a program for performing hand detection:
 int main() {
     ark::DepthCamera & camera = ark::SR300Camera(); // OpenARK camera backend
     ark::HandDetector detector(); // OpenARK hand detector; also see PlaneDetector
-    
+
     // start the camera; alternatively, call nextFrame() manually inside the loop (slower)
-    camera.beginCapture(); 
+    camera.beginCapture();
     ...
     while (true) {
         cv::imshow("XYZ Map", camera.getXYZMap());
 
         detector.update(camera);
         std::vector<ark::Hand::Ptr> hands = detector.getHands();
-        
+
         // do something with the hands detected
         ...
-        
+
         // quit when q is pressed
         if (cv::waitKey(1) == 'q') break;
     }
-    
+
     ...
     // automatically stops capture on exit
 }
@@ -103,7 +103,7 @@ Currently OpenARK only supports the Intel Realsense D435i Camera for use with Op
 
 While the vocab file provided should work for most purposes, for best performance a custom intrinsics file should be generated for each camera. You can generate a custom intrinsics file for your camera by running
 
-`d435i_intrinsics_writer <camera name>` 
+`d435i_intrinsics_writer <camera name>`
 
 This will generate a complete intrinsics file named `<camera name>_intr.yaml`
 
@@ -113,15 +113,15 @@ OpenARK SLAM heavily utilizes the open source packages DBoW2, Okvis, and Ceres. 
 
 Currently OpenARK only supports the Intel Realsense D435i Camera for use with OpenARK 3D Reconstruction. OpenARK 3D Reconstruction requires two configuration files to run, a camera intrinsics file, and a vocab file. Examples of both files can be found in the config folder. It also accepts a frame output directory, which defaults to `/frames/`. To run the OpenARK 3D Reconstruction Demo run:
 
-`3dRecon_Data_Recording.exe <intrinsics file> <vocab file> <frame directory> ` 
+`3dRecon_Data_Recording.exe <intrinsics file> <vocab file> <frame directory> `
 
 While the vocab file provided should work for most purposes, for best performance a custom intrinsics file should be generated for each camera. You can generate a custom intrinsics file for your camera by running
 
-`d435i_intrinsics_writer <camera name>` 
+`d435i_intrinsics_writer <camera name>`
 
 This will generate a complete intrinsics file named `<camera name>_intr.yaml`
 
-Offline reconstruction can be performed on the recorded data output of the application using the Python script located in `/scripts/OfflineReconstruction.py`. 
+Offline reconstruction can be performed on the recorded data output of the application using the Python script located in `/scripts/OfflineReconstruction.py`.
 
 OpenARK 3D Reconstruction heavily utilizes the open source packages DBoW2, Okvis, Open3D, and Ceres. Please respect their Licences and credit/cite when appropriate.  
 
