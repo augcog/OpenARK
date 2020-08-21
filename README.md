@@ -34,7 +34,7 @@ Instructions are available in the following documents:
   **New** a dependency pack installer is now available, which accelerates the setup process. Please read
   [documentation/Windows-build-instructions-quick.md](https://github.com/augcog/OpenARK/blob/master/documentation/Windows-build-instructions-quick.md) for instructions. The installer may be found [here](https://drive.google.com/file/d/1ef9PmvhlJGX5BH8LLcKaQxrY8PpTbcaW/view?usp=sharing).
 
-- Linux: [documentation/Linux-build-instructions.md](https://github.com/augcog/OpenARK/blob/master/documentation/Linux-build-instructions.md)
+- Linux: [documentation/Linux-build-instructions.md](https://github.com/augcog/OpenARK/blob/master/documentation/Ubuntu-18-build-instructions.md)
 
 **To use the avatar module/demo**: you will need to download the SMPL model files manually. The instructions are in [data/avatar-model/README.md](https://github.com/augcog/OpenARK/blob/master/data/avatar-model/README.md).
 You may also download the dataset sample by running `data/avatar-dataset/download.sh`.
