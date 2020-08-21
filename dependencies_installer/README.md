@@ -9,6 +9,8 @@ python gen_list_files_for_nsis.py "../arkdeps" install_list.nsh uninstall_list.n
 3) Use [NSIS](https://nsis.sourceforge.io) to compile `main.nsi`. The [EnVar](https://nsis.sourceforge.io/EnVar_plug-in) NSIS plugin is required.
 `"C:\Program Files (x86)\NSIS\makensis.exe" /DINST_LIST=install_list.nsh /DUNINST_LIST=uninstall_list.nsh /DFILE_LIST=file_list.nsh main_log.nsi`
 
+The created installer will appear in the creation folder.
+
 
 ### Contents
 Due to size, PCL is not included. Please download it from:
@@ -29,6 +31,7 @@ This dependency pack contains the following:
 - OpenCV + contrib
 - OpenGV
 - SuiteSparse
+- Open3D
 
 ## Details
 
