@@ -13,7 +13,7 @@ Files\OpenNI2\Tools. See Step 4 in the opencv install instructions below for mor
 modifying system variables.
 
 4. Download our installer from
-[here](https://drive.google.com/file/d/1ef9PmvhlJGX5BH8LLcKaQxrY8PpTbcaW/view?usp=sharing) and run it. This should install pre-built versions for all other dependencies and configure CMake automatically.
+[here](../openark-deps-vc14-win64.exe) and run it. This should install pre-built versions for all other dependencies and configure CMake automatically.
 
 5. In order to properly run OpenARK, you need to register connected Realsense devices. Instructions can be found at <https://github.com/IntelRealSense/librealsense/blob/master/doc/installation_windows.md>. The `/scripts` directory has been included in the `librealsense2` installed in the dependency pack.
 
