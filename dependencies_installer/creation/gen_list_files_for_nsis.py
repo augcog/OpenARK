@@ -16,8 +16,8 @@ import sys, os, glob
 # templates for the output
 inst_dir_tpl  = '  SetOutPath "$INSTDIR%s"'
 inst_file_tpl = '  File "%s"'
-uninst_file_tpl = '  Delete "$INSTDIR%s"'
-uninst_dir_tpl  = '  RMDir "$INSTDIR%s"'
+uninst_file_tpl = '  Delete "$INSTDIR\%s"'
+uninst_dir_tpl  = '  RMDir "$INSTDIR\%s"'
 uninst_dir_rec_tpl = '  RMDir /r "$INSTDIR\%s"'
 file_list_tpl = '  MessageBox MB_OK "$INSTDIR\%s"'
 
@@ -48,7 +48,6 @@ ih= open_file_for_writing(inst_list)
 uh= open_file_for_writing(uninst_list)
 fl = open_file_for_writing(file_list)
 
-stack_of_visited = []
 counter_files = 0
 counter_dirs = 0
 print("Generating the install & uninstall list of files")
@@ -63,38 +62,36 @@ for path, dirnames, filenames in os.walk(source_dir):
             print("  ", file=uh)
             print(file_list_tpl % d, file=fl)
             print("  ", file=fl)
+        for f in filenames:
+            print(uninst_file_tpl % f, file=uh)
+            print("  ", file=uh)
+            print(uninst_file_tpl % f, file=fl)
+            print("  ", file=fl)
 
 
     counter_dirs += 1
     my_dir = path
-    if len(dirnames) == 0:
-        relative_path = path[len("../arkdeps"):]
-        print(inst_dir_tpl % relative_path, file=ih)
+    relative_path = path[len("../arkdeps"):]
+    print(inst_dir_tpl % relative_path, file=ih)
+    print("  ", file=ih)
+    for f in filenames:
+        my_file = os.path.join(my_dir, f)
+        print(inst_file_tpl % my_file, file=ih)
         print("  ", file=ih)
-        stack_of_visited.append( ('folder', path, my_dir) )
-        for f in filenames:
-            my_file = os.path.join(my_dir, f)
-            print(inst_file_tpl % my_file, file=ih)
-            print("  ", file=ih)
-            counter_files += 1
-            stack_of_visited.append( ('file', my_file, my_dir) )
+        counter_files += 1
+    # if len(dirnames) == 0:
+    #     relative_path = path[len("../arkdeps"):]
+    #     print(inst_dir_tpl % relative_path, file=ih)
+    #     print("  ", file=ih)
+    #     for f in filenames:
+    #         my_file = os.path.join(my_dir, f)
+    #         print(inst_file_tpl % my_file, file=ih)
+    #         print("  ", file=ih)
+    #         counter_files += 1
 
 ih.close()
 print("Install list done")
 print("  ", counter_files, "files in", counter_dirs, "dirs")
-
-# stack_of_visited.reverse()
-# # Now build the uninstall list
-# for (type, my_file_or_dir, my_dir) in stack_of_visited:
-#     if type == 'file':
-#         file_name = my_file_or_dir[len('../arkdeps'):]
-#         print(uninst_file_tpl % file_name, file=uh)
-#         print(file_list_tpl % file_name, file=fl)
-#     else:
-#         dir_name = my_file_or_dir[len('../arkdeps'):]
-#         print(uninst_dir_tpl % dir_name, file=uh)
-#         print(file_list_tpl % dir_name, file=fl)
-#     print("  ", file=uh)
 
 # now close everything
 uh.close()
