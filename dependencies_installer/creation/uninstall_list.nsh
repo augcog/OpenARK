@@ -30,5 +30,3 @@
   
   Delete "$INSTDIR\CMakeLists.txt"
   
-  Delete "$INSTDIR\Uninstall.exe"
-  

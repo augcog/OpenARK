@@ -4,8 +4,6 @@
   
   File "../arkdeps\CMakeLists.txt"
   
-  File "../arkdeps\Uninstall.exe"
-  
   SetOutPath "$INSTDIR\bin"
   
   File "../arkdeps\bin\libblas.dll"

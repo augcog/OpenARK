@@ -88,7 +88,7 @@ SectionEnd
 ;
 ;--------------------------------
 
-Function un.SafeUninstall
+Section "Uninstall"
   MessageBox MB_OK "OpenARK installed files that will be uninstalled: "
   !include ${FILE_LIST}
 
@@ -116,10 +116,6 @@ Function un.SafeUninstall
 
   EnVar::SetHKCU
   EnVar::DeleteValue "PATH" "$INSTDIR\bin"
-FunctionEnd
-
-Section "Uninstall"
-  Call un.SafeUninstall
 SectionEnd ; Uninstall
 
 ;--------------------------------
