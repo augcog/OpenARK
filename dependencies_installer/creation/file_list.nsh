@@ -14,8 +14,6 @@
   
   MessageBox MB_OK "$INSTDIR\glog"
   
-  MessageBox MB_OK "$INSTDIR\IIS Express"
-  
   MessageBox MB_OK "$INSTDIR\librealsense2"
   
   MessageBox MB_OK "$INSTDIR\okvis"
@@ -29,4 +27,6 @@
   MessageBox MB_OK "$INSTDIR\suitesparse"
   
   Delete "$INSTDIR\CMakeLists.txt"
+  
+  Delete "$INSTDIR\Uninstall.exe"
   

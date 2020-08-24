@@ -16,8 +16,6 @@
   
   RMDir /r "$INSTDIR\glog"
   
-  RMDir /r "$INSTDIR\IIS Express"
-  
   RMDir /r "$INSTDIR\librealsense2"
   
   RMDir /r "$INSTDIR\okvis"
@@ -31,4 +29,6 @@
   RMDir /r "$INSTDIR\suitesparse"
   
   Delete "$INSTDIR\CMakeLists.txt"
+  
+  Delete "$INSTDIR\Uninstall.exe"
   

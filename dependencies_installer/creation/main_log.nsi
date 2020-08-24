@@ -76,7 +76,7 @@ Section "install" ;Installation info
   ;SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
 
   EnVar::SetHKCU
-  EnVar::AddValue "PATH" "$INSTDIR\extra\bin"
+  EnVar::AddValue "PATH" "$INSTDIR\bin"
 
   WriteUninstaller "$INSTDIR\Uninstall.exe"
 
@@ -88,7 +88,7 @@ SectionEnd
 ;
 ;--------------------------------
 
-Section "Uninstall"
+Function un.SafeUninstall
   MessageBox MB_OK "OpenARK installed files that will be uninstalled: "
   !include ${FILE_LIST}
 
@@ -115,8 +115,11 @@ Section "Uninstall"
   ;SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
 
   EnVar::SetHKCU
-  EnVar::DeleteValue "PATH" "$INSTDIR\extra\bin"
+  EnVar::DeleteValue "PATH" "$INSTDIR\bin"
+FunctionEnd
 
+Section "Uninstall"
+  Call un.SafeUninstall
 SectionEnd ; Uninstall
 
 ;--------------------------------
