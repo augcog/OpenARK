@@ -4,8 +4,8 @@ Code for creating the [OpenARK](https://github.com/augcog/openark) dependency pa
 
 To create the installer:
 1) Put all dependencies in `../arkdeps` directory (relative to the repo root)
-2) Call python script to generate install_list, uninstall_list, and file_list logs.
-`"python gen_list_files_for_nsis.py "../arkdeps" install_list.nsh uninstall_list.nsh file_list.nsh"`
+2) Call python script from inside the creation directory to generate install_list, uninstall_list, and file_list logs.
+`python gen_list_files_for_nsis.py "../arkdeps" install_list.nsh uninstall_list.nsh file_list.nsh`
 3) Use [NSIS](https://nsis.sourceforge.io) to compile `main.nsi`. The [EnVar](https://nsis.sourceforge.io/EnVar_plug-in) NSIS plugin is required.
 `"C:\Program Files (x86)\NSIS\makensis.exe" /DINST_LIST=install_list.nsh /DUNINST_LIST=uninstall_list.nsh /DFILE_LIST=file_list.nsh main_log.nsi`
 
