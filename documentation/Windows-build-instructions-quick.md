@@ -21,4 +21,30 @@ modifying system variables.
 
 7. Optionally, manually set the `OPENARK_DIR` environment variable to the project directory. This allows OpenARK binaries to find the `config` and `data` files regardless of the current working directory.
 
-8. Open `OpenARK.sln` and build as usual. (Note that only `Release` mode is supported)
+8. You can now either open the Visual Studio Solution generated in the build directory labeled “OpenARK.sln” or continue to build using the command prompt (Note that only `Release` mode is supported)
+
+**Building via Visual Studio:**
+
+
+ Right click on the OpenARK project in the solution explorer and select “Set as Startup Project”. Build and run as usual.
+
+**Building via Command Prompt:** 
+
+    `cmake --build . --config Release`
+
+ **To run the OpenARK hand demo:**
+    `cd Release`
+    `OpenARK_hand_demo.exe`
+
+**To run the OpenARK SLAM demo:**
+
+    `cd Release`
+    `OpenARK_SLAM_demo.exe`
+
+**Add these lines to your intrinsics yaml file**
+
+    ```
+    numKeypointsResetThreshold: 10
+    durationResetThreshold: 0.5
+    emitterPower: 0.
+    ```
