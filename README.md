@@ -29,12 +29,14 @@ Software
 
 Instructions are available in the following documents:
 
-- Windows: [documentation/Windows-build-instructions.pdf](https://github.com/augcog/OpenARK/blob/master/documentation/Windows-build-instructions.pdf)
+- Windows:
 
-  **New** a dependency pack installer is now available, which accelerates the setup process. Please read
+  **New:** a dependency pack installer is now available, which accelerates the setup process. Please read
   [documentation/Windows-build-instructions-quick.md](https://github.com/augcog/OpenARK/blob/master/documentation/Windows-build-instructions-quick.md) for instructions. The installer may be found [here](openark-deps-vc14-win64.exe).
   
-  [This Youtube build tutorial](https://youtu.be/TXrE0LIOlJA) can help guide guide you through the install process, though the written instructions will be updated more frequently.
+  **New:** [This Youtube build tutorial](https://youtu.be/TXrE0LIOlJA) can help guide guide you through the accelerated install process, though the written instructions will be updated more frequently.
+  
+  Building from source without dependency pack installer: [documentation/Windows-build-instructions.pdf](https://github.com/augcog/OpenARK/blob/master/documentation/Windows-build-instructions.pdf)
 
 - Linux: [documentation/Linux-build-instructions.md](https://github.com/augcog/OpenARK/blob/master/documentation/Ubuntu-18-build-instructions.md)
 
@@ -145,4 +147,4 @@ The Center for Augmented Cognition welcomes interested industry partners to join
 ## Credits and references
 
 [Bill Zhou](http://www.billzhou.me/), [Allen Y. Yang](https://people.eecs.berkeley.edu/~yang/), [S. Shankar Sastry](http://robotics.eecs.berkeley.edu/~sastry/), [Will Huang](https://www.linkedin.com/in/hwjwill/), [Larry Yang](https://www.linkedin.com/in/larry-yang-33bab1aa/), [Eric Nguyen](https://www.linkedin.com/in/eric-nguyen-71577678/), Michelli Ni, [Peter Li](https://www.linkedin.com/in/peter-li-a770ab88/), [Jessica Jiang](https://github.com/jessicajiang), [Mona Jalal](http://monajalal.com/), [Joseph Menke](https://people.eecs.berkeley.edu/~joemenke/),
-Lawrence Chen, Kuan Lu, Rachel Lee, Justin Yang, [Alex Yu](https://alexyu.net).
+Lawrence Chen, Kuan Lu, Rachel Lee, Justin Yang, [Alex Yu](https://alexyu.net), Adam Chang, Woojin Ko
