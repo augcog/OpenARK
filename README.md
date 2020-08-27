@@ -34,7 +34,7 @@ Instructions are available in the following documents:
   **New:** a dependency pack installer is now available, which accelerates the setup process. Please read
   [documentation/Windows-build-instructions-quick.md](https://github.com/augcog/OpenARK/blob/master/documentation/Windows-build-instructions-quick.md) for instructions. The installer may be found [here](openark-deps-vc14-win64.exe).
   
-  **New:** This Youtube build tutorial can help guide guide you through the accelerated install process, though the written instructions will be updated more frequently.
+  **New:** This Youtube build tutorial below can help guide you through the accelerated install process, though the written instructions will be updated more frequently.
   
   [![Alt text](https://img.youtube.com/vi/TXrE0LIOlJA/0.jpg)](https://www.youtube.com/watch?v=TXrE0LIOlJA)
   
