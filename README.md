@@ -6,7 +6,7 @@ At a Glance
 
   - **Technology stack**: C++, OpenCV, PCL, Boost, Intel RealSense SDK (1 or 2) / PMD SDK
   - **Status**:  Beta 0.9.3
-  - **Application Demo**: [Vimeo](https://vimeo.com/251436256)
+  - **Application Demos**: [Vive Center](https://vivecenter.berkeley.edu/research1/openark/)
 
 ## Dependencies
 Hardware
