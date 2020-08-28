@@ -1,12 +1,14 @@
-# OpenARK
+# OpenARK Dependencies Installer Creation Branch
+This branch should be identical to master except that it has a dependencies_installer folder. Enter this folder for a more detailed README on creating/updating the dependencies installer that expedites the build from source process.
 
+# OpenARK
 OpenARK is an open-source wearable augmented reality (AR) system founded at UC Berkeley in 2016. The C++ based software offers innovative core functionalities to power a wide range of off-the-shelf AR components, including see-through glasses, depth cameras, and IMUs. The open-source platform includes higher-level modules to aid human-computer interaction, such as 3D gesture recognition, plane detection, avatar/pose tracking, and multi-user collaboration, and also contains fundamental tools such as AR-based camera calibration, depth-to-stereo, and SLAM, and 3D Reconstruction. Currently, it supports both PMD Pico Flexx and Intel RealSense SR300 cameras. The project builds natively on both Windows and Linux.
 
 At a Glance
 
   - **Technology stack**: C++, OpenCV, PCL, Boost, Intel RealSense SDK (1 or 2) / PMD SDK
   - **Status**:  Beta 0.9.3
-  - **Application Demo**: [Vimeo](https://vimeo.com/251436256)
+  - **Application Demos**: [Vive Center](https://vivecenter.berkeley.edu/research1/openark/)
 
 ## Dependencies
 Hardware
@@ -29,10 +31,16 @@ Software
 
 Instructions are available in the following documents:
 
-- Windows: [documentation/Windows-build-instructions.pdf](https://github.com/augcog/OpenARK/blob/master/documentation/Windows-build-instructions.pdf)
+- Windows:
 
-  **New** a dependency pack installer is now available, which accelerates the setup process. Please read
+  **New:** a dependency pack installer is now available, which accelerates the setup process. Please read
   [documentation/Windows-build-instructions-quick.md](https://github.com/augcog/OpenARK/blob/master/documentation/Windows-build-instructions-quick.md) for instructions. The installer may be found [here](openark-deps-vc14-win64.exe).
+  
+  **New:** This Youtube build tutorial below can help guide you through the accelerated install process, though the written instructions will be updated more frequently.
+  
+  [![Alt text](https://img.youtube.com/vi/TXrE0LIOlJA/0.jpg)](https://www.youtube.com/watch?v=TXrE0LIOlJA)
+  
+  Building from source without dependency pack installer: [documentation/Windows-build-instructions.pdf](https://github.com/augcog/OpenARK/blob/master/documentation/Windows-build-instructions.pdf)
 
 - Linux: [documentation/Linux-build-instructions.md](https://github.com/augcog/OpenARK/blob/master/documentation/Ubuntu-18-build-instructions.md)
 
@@ -143,4 +151,4 @@ The Center for Augmented Cognition welcomes interested industry partners to join
 ## Credits and references
 
 [Bill Zhou](http://www.billzhou.me/), [Allen Y. Yang](https://people.eecs.berkeley.edu/~yang/), [S. Shankar Sastry](http://robotics.eecs.berkeley.edu/~sastry/), [Will Huang](https://www.linkedin.com/in/hwjwill/), [Larry Yang](https://www.linkedin.com/in/larry-yang-33bab1aa/), [Eric Nguyen](https://www.linkedin.com/in/eric-nguyen-71577678/), Michelli Ni, [Peter Li](https://www.linkedin.com/in/peter-li-a770ab88/), [Jessica Jiang](https://github.com/jessicajiang), [Mona Jalal](http://monajalal.com/), [Joseph Menke](https://people.eecs.berkeley.edu/~joemenke/),
-Lawrence Chen, Kuan Lu, Rachel Lee, Justin Yang, [Alex Yu](https://alexyu.net).
+Lawrence Chen, Kuan Lu, Rachel Lee, Justin Yang, [Alex Yu](https://alexyu.net), Adam Chang, Woojin Ko.
