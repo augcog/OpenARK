@@ -42,7 +42,7 @@ unset(_expectedTargets)
 
 
 # The installation prefix configured by this project.
-set(_IMPORT_PREFIX "C:/Program Files/okvis")
+set(_IMPORT_PREFIX "${OKVIS_CMAKE_DIR}/../")
 
 # Create imported target okvis_util
 add_library(okvis_util STATIC IMPORTED)
