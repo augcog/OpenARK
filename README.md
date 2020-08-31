@@ -36,7 +36,7 @@ Instructions are available in the following documents:
   
   **New:** Click below for the Youtube build tutorial that can help guide you through the accelerated install process, though the written instructions will be updated more frequently.
   
-  [![OpenArk Windows Installation Instructions](https://img.youtube.com/vi/EPWCvhgbDUo/0.jpg)](https://www.youtube.com/watch?v=EPWCvhgbDUo "OpenArk Windows Installation Instructions")
+  [![OpenArk Windows Installation Instructions](OpenARKTitlePage.png)](https://www.youtube.com/watch?v=EPWCvhgbDUo "OpenArk Windows Installation Instructions")
   
   Building from source without dependency pack installer: [documentation/Windows-build-instructions.pdf](https://github.com/augcog/OpenARK/blob/master/documentation/Windows-build-instructions.pdf)
 
