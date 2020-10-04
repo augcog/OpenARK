@@ -317,7 +317,7 @@ namespace ark {
 			}
 		}
 
-		cout << "writing meshes" << endl;
+                std::cout << "writing meshes" << std::endl;
 
 		int i = 0;
 		for (auto iter = mesh_map.begin(); iter != mesh_map.end(); iter++) {

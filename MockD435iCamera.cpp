@@ -28,13 +28,13 @@ void MockD435iCamera::start()
     imuStream = ifstream(imuTxtPath.string());
     timestampStream = ifstream(timestampTxtPath.string());
     {
-        auto &intrinStream = ifstream(intrinFilePath.string());
+        auto intrinStream = ifstream(intrinFilePath.string());
         boost::archive::text_iarchive ia(intrinStream);
         ia >> depthIntrinsics;
 
         std::cout << "depthIntrin: fx: " << depthIntrinsics.fx << " fy: " << depthIntrinsics.fy << " ppx: " << depthIntrinsics.ppx << " ppy: " << depthIntrinsics.ppy << '\n';
 
-        auto &metaStream = ifstream(metaTxtPath.string());
+        auto metaStream = ifstream(metaTxtPath.string());
         std::string ph;
         metaStream >> ph >> scale;
         std::cout << "scale: " << scale << "\n";

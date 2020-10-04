@@ -218,7 +218,7 @@ public:
 	void set_camera(Eigen::Affine3d t) {
 		transform = t;
 	}
-	void MeshWindow::keyboard_control()
+        void keyboard_control()
 	{
 		if (glfwGetKey(win_ptr, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 			glfwSetWindowShouldClose(win_ptr, GL_TRUE);
@@ -227,7 +227,7 @@ public:
 		}
 	}
 
-	bool MeshWindow::clicked() {
+        bool clicked() {
 		bool clicked = clicked_;
 		clicked_ = false;
 		return clicked;

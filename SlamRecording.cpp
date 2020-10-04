@@ -88,8 +88,8 @@ int main(int argc, char **argv)
 
     std::vector<ImuPair> imuBuffer;
     std::vector<ImuPair> imuDispose;
-    std::atomic_bool paused = true;
-    std::atomic_bool quit = false;
+    std::atomic_bool paused = {true};
+    std::atomic_bool quit = {false};
     single_consumer_queue<std::shared_ptr<MultiCameraFrame>> img_queue;
     std::thread writingThread([&]() {
         std::ofstream imu_ofs(imu_path.string());

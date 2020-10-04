@@ -14,7 +14,7 @@ Esther commented
 #include <mutex>
 #include <iostream>
 #include <fstream>
-#include <direct.h>
+#include <boost/filesystem.hpp>
 
 //#include <MathUtils.h>
 //#include <pcl/filters/statistical_outlier_removal.h>
@@ -27,8 +27,8 @@ Esther commented
 namespace ark {
 
     void createFolder(std::string folderPath){
-		mkdir(folderPath.c_str());
-		std::cout << folderPath << "dir made" << std::endl;
+        boost::filesystem::create_directories(folderPath.c_str());
+        std::cout << folderPath << "dir made" << std::endl;
     }
 
 

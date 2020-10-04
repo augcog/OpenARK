@@ -4,9 +4,9 @@
 #include "Open3D/Visualization/Utility/DrawGeometry.h"
 #include "Open3D/IO/ClassIO/TriangleMeshIO.h"
 #include "Open3D/IO/ClassIO/ImageIO.h"
-#include "Open3D/geometry/PointCloud.h"
-#include "Open3D/geometry/TriangleMesh.h"
-#include "Open3D/camera/PinholeCameraIntrinsic.h"
+#include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/Camera/PinholeCameraIntrinsic.h"
 #include "Types.h"
 #include <map>
 #include <set>
