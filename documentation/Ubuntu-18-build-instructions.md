@@ -31,7 +31,7 @@ For conciseness, in all sections below "build with CMake" will mean
 
 ```sh
 mkdir build && cd build
-cmake -DCMAKE_BUILD_TYPE=Release ..
+cmake -D CMAKE_BUILD_TYPE=Release ..
 make -j4
 sudo make install
 ```
