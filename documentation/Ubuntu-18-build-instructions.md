@@ -26,7 +26,6 @@ sudo update-alternatives --set gcc "/usr/bin/gcc-5"
 ```
 
 ### NOTE: CMake Builds
-
 For conciseness, in all sections below "build with CMake" will mean
 
 ```sh
@@ -35,13 +34,17 @@ cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j4
 sudo make install
 ```
-
+or a one-liner for cmake build
+```sh
+mkdir build && cd build && cmake -D CMAKE_BUILD_TYPE=RELEASE .. && make -j4 && sudo make install
+```
 Note that this installs the library. You may replace '4' in step 3 with any number of threads. The build process should not take too long.
 
 ### Installing PCL
+[Package: libpcl-dev (1.8.1+dfsg1-2ubuntu2)](https://packages.ubuntu.com/bionic/libpcl-dev)
 
 ```sh
-sudo apt install libpcl-*
+sudo apt -y install libpcl-*
 ```
 
 
@@ -52,6 +55,7 @@ sudo apt install libsuitesparse-dev
 ```
 
 ### Installing OpenCV with Contrib
+OpenCV 3.4.6, OpenCV_Contrib 3.4.6 and [Package: libopencv-dev (3.2.0+dfsg-4ubuntu0.1 and others)](https://packages.ubuntu.com/bionic/libopencv-dev)
 
 1. Install prerequisites:
 
@@ -65,7 +69,7 @@ sudo apt -y install libvorbis-dev libxvidcore-dev v4l-utils
 sudo apt -y install liblapacke-dev libopenblas-dev libgdal-dev checkinstall
 sudo apt -y install libssl-dev libopenexr-dev openexr
 sudo apt -y install libprotobuf-dev protobuf-compiler
-sudo apt -y install libgoogle-glog libgoogle-glog-dev libgflags-dev
+sudo apt -y install libgoogle-glog-dev libgflags-dev
 sudo apt -y install libgphoto2-dev libeigen3-dev libhdf5-dev doxygen
 sudo apt -y install libgtk2.0-dev
 sudo apt -y install libglfw3 libglfw3-dev
@@ -92,13 +96,13 @@ sudo make install
 ```
 Again, -j4 may be replaced with any number of threads.
 
-### Installing Ceres
+### Installing Ceres 1.14.0 from source
 
-1. `wget -O ceres114.tar.gz https://github.com/ceres-solver/ceres-solver/archive/1.14.0.tar.gz && tar -xf ceres114.tar.gz && cd ceres-solver-1.14.0
+1. `wget -O ceres114.tar.gz https://github.com/ceres-solver/ceres-solver/archive/1.14.0.tar.gz && tar -xf ceres114.tar.gz && cd ceres-solver-1.14.0`
 
 2. Build with CMake and install
 
-### Intalling OpenGV
+### Intalling OpenGV 1.0
 
 1. `git clone https://github.com/laurentkneip/opengv && cd opengv`
 
@@ -110,21 +114,50 @@ Again, -j4 may be replaced with any number of threads.
 
 2. Build with CMake and install
 
-### Installing DBoW2 with Brisk Descriptors
+### Installing DBoW2 with Brisk Descriptors, Custom Version
 
-1. `git clone https://github.com/joemenke/DBoW2_Mod && cd DBoW2_Mod`. Note that this repository is modified to support Brisk descriptors.
+1. `git clone https://github.com/joemenke/DBoW2_Mod && cd DBoW2_Mod`. 
+Note that this repository is a modified version of DBoW2_Mod to support Brisk descriptors.
 
 2. Build with CMake and install
 
-### Installing DLoopDetector
+### Installing DLoopDetector, Custom Version
 
 1. `git clone https://github.com/joemenke/DLoopDetector && cd DLoopDetector`
+Note that this repository is a modified version of DLoopDetector.
 
 2. Build with CMake and install
 
-### Installing Okvis+
+### Installing [Open3D 0.8.0, Custom Version](https://github.com/adamchang2000/Open3D)
+Note that this is a modified version of Open3D 0.8.0
 
-1. `git clone https://github.com/joemenke/okvis && cd okvis`. Note that this is a modified version of Okvis.
+1. `git clone --recursive https://github.com/adamchang2000/Open3D.git && cd Open3D`
+Note that this repository is a modified version of Open3D.
+
+2. Delete MovingTSDFVolume.cpp and MovingTSDFVolume.h in // this to be deleted later when Open3D is updated.
+
+2. Make the following changes to CMakeLists.txt of Open3D // this to be deleted later when Open3D is updated.
+```sh
+Change:
+get_filename_component(PACKAGE_PREFIX_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../" ABSOLUTE)
+To:
+get_filename_component(PACKAGE_PREFIX_DIR "${CMAKE_CURRENT_LIST_DIR}/../../" ABSOLUTE)
+Change:
+set(Open3D_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR}/include;${PACKAGE_PREFIX_DIR}/include/Open3D/3rdparty/Eigen;/usr/include/libdrm;/usr/include;${PACKAGE_PREFIX_DIR}/include/Open3D/3rdparty/fmt/include;${PACKAGE_PREFIX_DIR}/include/Open3D/3rdparty/fmt/include/format.h";${PACKAGE_PREFIX_DIR}/include/Open3D/3rdparty/fmt/include/)
+TO:
+set(Open3D_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR}/include;${PACKAGE_PREFIX_DIR}/3rdparty/Eigen;/usr/include/libdrm;/usr/include;${PACKAGE_PREFIX_DIR}/3rdparty/fmt/include;${PACKAGE_PREFIX_DIR}/3rdparty/fmt/include/format.h")
+```
+
+2. Add this following line in CMakeLists.txt of OpenARK: // this to be deleted later when OpenARK's CMakeLists.txt is updated.
+`set(ENV{Open3D_DIR} "/home/[path_between_home_and_Open3D]/Open3D/build/CMakeFiles")`
+
+2. 
+2. Build with CMake and install
+
+### Installing Okvis+ 
+
+1. `git clone https://github.com/joemenke/okvis && cd okvis`
+Note that this is a modified version of Okvis.
 
 2. Build with CMake and install
 
@@ -148,6 +181,54 @@ Optional: As a sanity check, plugin your RealSense camera (SR300 or D400) and ru
 1. Clone our repository: `git clone https://github.com/augcog/OpenARK`, or download the latest release.
 
 2. `cd OpenARK && mkdir build && cd build` to create build directory.
+
+2. Added the following lines in CMakeLists.txt of OpenARK // this to be deleted later when OpenARK's CMakeLists.txt is updated.
+``` sh
+set(ENV{DLoopDetector_INCLUDE_DIRS} "/usr/local/include/DLoopDetector")
+set(ENV{Open3D_DIR} "/home/[path_between_home_and_Open3D]/Open3D/build/CMakeFiles")
+``` 
+
+2. Do the following things before cmake build. // this to be deleted later when OpenARK's codes are updated.
+``` sh
+Open OpenARK/MockD435iCamera.cpp and delete & on the LHS of line 31:30 and 37:28
+Open OpenARK/SaveFrame.cpp and change line 17 to #include <boost/filesystem.hpp> 
+Open OpenARK/SaveFrame.cpp and change mkdir(folderPath.c_str()); to boost::filesystem::create_directories(folderPath.c_str());
+Open OpenARK/saveFrame.cpp and delete “SaveFrame::” part on line 23,24,25,27 in SaveFrame.h file
+
+Open OpenARK/include/SegmentedMesh.h and 
+Change:
+#include "Open3D/geometry/PointCloud.h"
+#include "Open3D/geometry/TriangleMesh.h"
+To: 
+#include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/TriangleMesh.h"
+
+Open OpenARK/include/SegmentedMesh.h:9:50 and 
+Change:
+#include "Open3D/camera/PinholeCameraIntrinsic.h"
+To: 
+#include "Open3D/Camera/PinholeCameraIntrinsic.h"
+
+Open OpenARK/SegmentedMesh.cpp:320:3 and change
+From line 320 : cout << "writing meshes" << endl;
+To line 320:     std::cout << "writing meshes" << std::endl;
+
+Open OpenARK/include/glfwManager.h and change
+From : line 221 : void MeshWindow::set_camera(Eigen::Affine3d t) {
+To   : line 221 : void set_camera(Eigen::Affine3d t) {
+
+From : line 230 : MeshWindow::bool clicked() {
+To   : line 230 : bool clicked() {
+
+Open OpenARK/SlamRecording.cpp:91:31 and change
+From :
+Line 91: std::atomic_bool paused = true;
+Line 92: std::atomic_bool quit = false;    
+
+To : line 91, 92:
+Line 91: std::atomic_bool paused = {true};
+Line 92: std::atomic_e bool quit = {false};
+```
 
 3. `cmake .. -DCMAKE_BUILD_TYPE=Release` to run CMake. librealsense2 will be enabled by default. You can add `-DBUILD_AVATAR_DEMO` to build the avatar demo in addition to hand and SLAM, `-DBUILD_DATA_RECORDING` to build the data recording tool, and `-BUILD_TESTS` to build hand tests. `-DBUILD_UNITY_PLUGIN` is not available on Linux at the moment.
 
