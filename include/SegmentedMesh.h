@@ -22,7 +22,7 @@ namespace ark {
 		SegmentedMesh(double voxel_length,
 			double sdf_trunc,
 			open3d::integration::TSDFVolumeColorType color_type,
-			double block_length);
+			double block_length, bool blocking = true);
 
 		//~SegmentedMesh();
 
@@ -63,6 +63,7 @@ namespace ark {
 		double sdf_trunc_;
 		double voxel_length_;
 		open3d::integration::TSDFVolumeColorType color_type_;
+		bool blocking_;
 
 
 	private:

@@ -5,11 +5,12 @@ namespace ark {
 	SegmentedMesh::SegmentedMesh(double voxel_length,
 	               double sdf_trunc,
 	               open3d::integration::TSDFVolumeColorType color_type,
-	               double block_length)
+	               double block_length, bool blocking)
 	:	block_length_(block_length),
 		voxel_length_(voxel_length),
 		sdf_trunc_(sdf_trunc),
-		color_type_(color_type){
+		color_type_(color_type),
+		blocking_(blocking){
 			Eigen::Vector3i * temp = &current_block;
 			temp = NULL;
 			active_volume = new open3d::integration::ScalableTSDFVolume(voxel_length_,
@@ -31,25 +32,53 @@ namespace ark {
 			return;
 		}
 
-		UpdateActiveVolume(extrinsic);
 
 		Eigen::Matrix4d transform_kf_coords = Eigen::Matrix4d::Identity();
-		transform_kf_coords = extrinsic * active_volume_keyframe->T_WC(3); //F_WS.inverse()*K_WS --- F_WS*K_WS.inverse() 
+		
+		if (blocking_) {
+
+			if (active_volume_keyframe == NULL) {
+				std::cout << "Error: No keyframes have been passed in for the blocking algorithm, either call SetLatestKeyFrame or set blocking to false." << std::endl;
+				return;
+			}
+
+			UpdateActiveVolume(extrinsic);
+			transform_kf_coords = extrinsic * active_volume_keyframe->T_WC(3); //F_WS.inverse()*K_WS --- F_WS*K_WS.inverse() 
+		} else {
+			transform_kf_coords = extrinsic;
+		}
 		
 		active_volume->Integrate(image, intrinsic, transform_kf_coords);
-
 	}
 
 	void SegmentedMesh::StartNewBlock() {
+
+		if (!blocking_) {
+			std::cout << "Error: Attempted to start new block but blocking was disabled" << std::endl;
+			return;
+		}
+
 		start_new_block = true;
 	}
 
 
 	void SegmentedMesh::SetActiveMapIndex(int map_index) {
+
+		if (!blocking_) {
+			std::cout << "Error: Attempted to set active map index but blocking was disabled" << std::endl;
+			return;
+		}
+
 		active_map_index = map_index;
 	}
 
 	void SegmentedMesh::DeleteMapsAfterIndex(int map_index) {
+
+		if (!blocking_) {
+			std::cout << "Error: Attempted to delete maps after index but blocking was disabled" << std::endl;
+			return;
+		}
+
 		std::map<int, int> index_map;
 
 		for (int i = 0; i < completed_meshes.size(); i++) {
@@ -69,6 +98,11 @@ namespace ark {
 	}
 
 	void SegmentedMesh::UpdateActiveVolume(Eigen::Matrix4d extrinsic) {
+
+		if (!blocking_) {
+			std::cout << "Error: Attempted to update active volume but blocking was disabled" << std::endl;
+			return;
+		}
 
 		//locate which block we are in, origin = center of block (l/2, l/2, l/2)
 		auto block_loc = LocateBlock(Eigen::Vector3d(extrinsic(0, 3) - block_length_ / 2, extrinsic(1, 3) - block_length_ / 2, extrinsic(2, 3) - block_length_ / 2));
@@ -127,6 +161,12 @@ namespace ark {
 
 	// running pointer of current keyframe
 	void SegmentedMesh::SetLatestKeyFrame(MapKeyFrame::Ptr frame) {
+
+		if (!blocking_) {
+			std::cout << "Error: Attempted to update latest keyframe but blocking was disabled" << std::endl;
+			return;
+		}
+
 		latest_keyframe = frame;
 
 		if (active_volume_keyframe == NULL) {
@@ -138,13 +178,21 @@ namespace ark {
 	//returns a vector of mesh in its own local coords and associated viewing transform (including active volume)
 	std::vector<std::pair<std::shared_ptr<open3d::geometry::TriangleMesh>, Eigen::Matrix4d>> SegmentedMesh::GetTriangleMeshes() {
 		std::vector<std::pair<std::shared_ptr<open3d::geometry::TriangleMesh>, Eigen::Matrix4d>> ret;
-		for (auto completed_mesh : completed_meshes) {
-			ret.push_back(std::pair<std::shared_ptr<open3d::geometry::TriangleMesh>, Eigen::Matrix4d>(completed_mesh->mesh, completed_mesh->keyframe->T_WC(3)));
+		if (blocking_) {
+			
+			for (auto completed_mesh : completed_meshes) {
+				ret.push_back(std::pair<std::shared_ptr<open3d::geometry::TriangleMesh>, Eigen::Matrix4d>(completed_mesh->mesh, completed_mesh->keyframe->T_WC(3)));
+			}
+
+			ret.push_back(std::pair<std::shared_ptr<open3d::geometry::TriangleMesh>, Eigen::Matrix4d>(ExtractCurrentTriangleMesh(), active_volume_keyframe->T_WC(3)));
+			
+		} else {
+			ret.push_back(std::pair<std::shared_ptr<open3d::geometry::TriangleMesh>, Eigen::Matrix4d>(ExtractCurrentTriangleMesh(), Eigen::Matrix4d::Identity()));
 		}
 
-		ret.push_back(std::pair<std::shared_ptr<open3d::geometry::TriangleMesh>, Eigen::Matrix4d>(ExtractCurrentTriangleMesh(), active_volume_keyframe->T_WC(3)));
-
 		return ret;
+
+			
 	}
 
 
@@ -155,47 +203,51 @@ namespace ark {
 
 			printf("extracting triangle meshes\n");
 
-			auto mesh_output = std::make_shared<open3d::geometry::TriangleMesh>();
+			if (blocking_) {
+				auto mesh_output = std::make_shared<open3d::geometry::TriangleMesh>();
 
-			for (auto mesh_unit : completed_meshes) {
-				
-				//printf("adding a mesh\n");
+				for (auto mesh_unit : completed_meshes) {
+					
+					//printf("adding a mesh\n");
 
-				auto completed_mesh = mesh_unit->mesh;
-				auto transformed_mesh = std::make_shared<open3d::geometry::TriangleMesh>();
+					auto completed_mesh = mesh_unit->mesh;
+					auto transformed_mesh = std::make_shared<open3d::geometry::TriangleMesh>();
 
-				auto vertices = completed_mesh->vertices_;
-				std::vector<Eigen::Vector3d> transformed_vertices;
+					auto vertices = completed_mesh->vertices_;
+					std::vector<Eigen::Vector3d> transformed_vertices;
 
-				for (Eigen::Vector3d vertex : vertices) {
+					for (Eigen::Vector3d vertex : vertices) {
 
-					Eigen::Vector4d v(vertex(0), vertex(1), vertex(2), 1.0);
-					v = mesh_unit->keyframe->T_WC(3) * v;
-					Eigen::Vector3d transformed_v(v(0), v(1), v(2));
+						Eigen::Vector4d v(vertex(0), vertex(1), vertex(2), 1.0);
+						v = mesh_unit->keyframe->T_WC(3) * v;
+						Eigen::Vector3d transformed_v(v(0), v(1), v(2));
 
-					transformed_vertices.push_back(transformed_v);
+						transformed_vertices.push_back(transformed_v);
+					}
+
+					transformed_mesh->vertices_ = transformed_vertices;
+					transformed_mesh->vertex_colors_ = completed_mesh->vertex_colors_;
+					transformed_mesh->triangles_ = completed_mesh->triangles_;
+
+					CombineMeshes(mesh_output, transformed_mesh);
+
 				}
 
-				transformed_mesh->vertices_ = transformed_vertices;
-				transformed_mesh->vertex_colors_ = completed_mesh->vertex_colors_;
-				transformed_mesh->triangles_ = completed_mesh->triangles_;
+				
+				auto mesh = active_volume->ExtractTriangleMesh();
+				for (int i = 0; i < mesh->vertices_.size(); ++i) {
+					Eigen::Vector4d v(mesh->vertices_[i](0), mesh->vertices_[i](1), mesh->vertices_[i](2), 1.0);
+					v = active_volume_keyframe->T_WC(3) * v;
+					Eigen::Vector3d transformed_v(v(0), v(1), v(2));
+					mesh->vertices_[i] = transformed_v;
+				}
 
-				CombineMeshes(mesh_output, transformed_mesh);
+				CombineMeshes(mesh_output, mesh);
 
+				return mesh_output;
+			} else {
+				return ExtractCurrentTriangleMesh();
 			}
-
-			
-			auto mesh = active_volume->ExtractTriangleMesh();
-			for (int i = 0; i < mesh->vertices_.size(); ++i) {
-				Eigen::Vector4d v(mesh->vertices_[i](0), mesh->vertices_[i](1), mesh->vertices_[i](2), 1.0);
-				v = active_volume_keyframe->T_WC(3) * v;
-				Eigen::Vector3d transformed_v(v(0), v(1), v(2));
-				mesh->vertices_[i] = transformed_v;
-			}
-
-			CombineMeshes(mesh_output, mesh);
-
-			return mesh_output;
 	}
 
 	std::shared_ptr<open3d::geometry::TriangleMesh>
@@ -211,7 +263,14 @@ namespace ark {
 	}
 
 	std::vector<int> SegmentedMesh::get_kf_ids() {
+
 		std::vector<int> t;
+
+		if (!blocking_) {
+			std::cout << "Error: Tried to retrieve keyframe id's but blocking disabled" << std::endl;
+			return t;
+		}
+
 		for (auto mesh_unit : completed_meshes) {
 			t.push_back(mesh_unit->keyframe->frameId_);
 		}
@@ -222,106 +281,132 @@ namespace ark {
 	void SegmentedMesh::Render(std::vector<std::vector<Eigen::Vector3d>> &mesh_vertices, std::vector<std::vector<Eigen::Vector3d>> &mesh_colors, 
 		std::vector<std::vector<Eigen::Vector3i>> &mesh_triangles, std::vector<Eigen::Matrix4d> &mesh_transforms, std::vector<int> &mesh_enabled) {
 
-		//don't have any key frames, don't have any blocks
-		if (active_volume_keyframe == NULL) {
-			return;
-		}
+		if (blocking_) {
+			//don't have any key frames, don't have any blocks
+			if (active_volume_keyframe == NULL) {
+				return;
+			}
 
-		//clear out active mesh, clear mesh enabled, only run if vectors are populated
-		if (mesh_vertices.size() > 0) {
-			mesh_vertices.pop_back();
-			mesh_colors.pop_back();
-			mesh_triangles.pop_back();
-			mesh_transforms.pop_back();
-			mesh_enabled.clear();
-		}
+			//clear out active mesh, clear mesh enabled, only run if vectors are populated
+			if (mesh_vertices.size() > 0) {
+				mesh_vertices.pop_back();
+				mesh_colors.pop_back();
+				mesh_triangles.pop_back();
+				mesh_transforms.pop_back();
+				mesh_enabled.clear();
+			}
 
-		//always update transforms in case of loop closure
-		mesh_transforms.clear();
-		for (int i = 0; i < completed_meshes.size(); i++) {
-			auto mesh_unit = completed_meshes[i];
-			mesh_transforms.push_back(mesh_unit->keyframe->T_WC(3));
-		}
-
-		//updated completed meshes not in the vectors
-		if (completed_meshes.size() > mesh_vertices.size()) {
-			for (int i = mesh_vertices.size(); i < completed_meshes.size(); i++) {
-
+			//always update transforms in case of loop closure
+			mesh_transforms.clear();
+			for (int i = 0; i < completed_meshes.size(); i++) {
 				auto mesh_unit = completed_meshes[i];
-
-				mesh_vertices.push_back(mesh_unit->mesh->vertices_);
-				mesh_colors.push_back(mesh_unit->mesh->vertex_colors_);
-				mesh_triangles.push_back(mesh_unit->mesh->triangles_);
-
+				mesh_transforms.push_back(mesh_unit->keyframe->T_WC(3));
 			}
-		}
 
-		auto mesh = active_volume->ExtractTriangleMesh();
+			//updated completed meshes not in the vectors
+			if (completed_meshes.size() > mesh_vertices.size()) {
+				for (int i = mesh_vertices.size(); i < completed_meshes.size(); i++) {
 
-		mesh_vertices.push_back(mesh->vertices_);
-		mesh_colors.push_back(mesh->vertex_colors_);
-		mesh_triangles.push_back(mesh->triangles_);
-		mesh_transforms.push_back(active_volume_keyframe->T_WC(3));
+					auto mesh_unit = completed_meshes[i];
 
+					mesh_vertices.push_back(mesh_unit->mesh->vertices_);
+					mesh_colors.push_back(mesh_unit->mesh->vertex_colors_);
+					mesh_triangles.push_back(mesh_unit->mesh->triangles_);
 
-		for (int i = 0; i < completed_meshes.size(); i++) {
-			if (completed_meshes[i]->mesh_map_index == active_map_index) {
-				mesh_enabled.push_back(1);
-			} else {
-				mesh_enabled.push_back(0);
+				}
 			}
-		}
 
-		//active volume is always visible
-		mesh_enabled.push_back(1);
+			auto mesh = active_volume->ExtractTriangleMesh();
+
+			mesh_vertices.push_back(mesh->vertices_);
+			mesh_colors.push_back(mesh->vertex_colors_);
+			mesh_triangles.push_back(mesh->triangles_);
+			mesh_transforms.push_back(active_volume_keyframe->T_WC(3));
+
+
+			for (int i = 0; i < completed_meshes.size(); i++) {
+				if (completed_meshes[i]->mesh_map_index == active_map_index) {
+					mesh_enabled.push_back(1);
+				} else {
+					mesh_enabled.push_back(0);
+				}
+			}
+
+			//active volume is always visible
+			mesh_enabled.push_back(1);
+
+		} else {
+			auto mesh = active_volume->ExtractTriangleMesh();
+
+			//clear out active mesh, clear mesh enabled, only run if vectors are populated
+			if (mesh_vertices.size() > 0) {
+				mesh_vertices.pop_back();
+				mesh_colors.pop_back();
+				mesh_triangles.pop_back();
+				mesh_transforms.pop_back();
+				mesh_enabled.clear();
+			}
+
+			mesh_vertices.push_back(mesh->vertices_);
+			mesh_colors.push_back(mesh->vertex_colors_);
+			mesh_triangles.push_back(mesh->triangles_);
+			mesh_transforms.push_back(Eigen::Matrix4d::Identity());
+			mesh_enabled.push_back(1);
+		}
 
 	}
 
 	void SegmentedMesh::WriteMeshes() {
 
-		//extract active volume
-		auto completed_mesh = std::make_shared<MeshUnit>();
+		if (blocking_) {
+			//extract active volume
+			auto completed_mesh = std::make_shared<MeshUnit>();
 
-		auto mesh = active_volume->ExtractTriangleMesh();
-		completed_mesh->mesh = mesh;
-		completed_mesh->keyframe = active_volume_keyframe;
-		completed_mesh->block_loc = current_block;
-		completed_mesh->mesh_map_index = active_volume_map_index;
-		completed_meshes.push_back(completed_mesh);
+			auto mesh = active_volume->ExtractTriangleMesh();
+			completed_mesh->mesh = mesh;
+			completed_mesh->keyframe = active_volume_keyframe;
+			completed_mesh->block_loc = current_block;
+			completed_mesh->mesh_map_index = active_volume_map_index;
+			completed_meshes.push_back(completed_mesh);
 
-		std::map<int, std::shared_ptr<open3d::geometry::TriangleMesh>> mesh_map;
+			std::map<int, std::shared_ptr<open3d::geometry::TriangleMesh>> mesh_map;
 
-		for (int i = 0; i < completed_meshes.size(); i++) {
-			auto mesh = completed_meshes[i]->mesh;
+			for (int i = 0; i < completed_meshes.size(); i++) {
+				auto mesh = completed_meshes[i]->mesh;
 
-			std::vector<Eigen::Vector3d> vertices = mesh->vertices_;
-			std::vector<Eigen::Vector3d> transformed_vertices;
+				std::vector<Eigen::Vector3d> vertices = mesh->vertices_;
+				std::vector<Eigen::Vector3d> transformed_vertices;
 
-			for (Eigen::Vector3d vertex : vertices) {
+				for (Eigen::Vector3d vertex : vertices) {
 
-				Eigen::Vector4d v(vertex(0), vertex(1), vertex(2), 1.0);
-				v = completed_meshes[i]->keyframe->T_WC(3) * v;
-				Eigen::Vector3d transformed_v(v(0), v(1), v(2));
+					Eigen::Vector4d v(vertex(0), vertex(1), vertex(2), 1.0);
+					v = completed_meshes[i]->keyframe->T_WC(3) * v;
+					Eigen::Vector3d transformed_v(v(0), v(1), v(2));
 
-				transformed_vertices.push_back(transformed_v);
+					transformed_vertices.push_back(transformed_v);
+				}
+
+				mesh->vertices_ = transformed_vertices;
+
+				int index = completed_meshes[i]->mesh_map_index;
+
+				if (mesh_map.count(index) != 0) {	
+					CombineMeshes(mesh_map[index], mesh);
+				} else {
+					mesh_map[index] = mesh;
+				}
 			}
 
-			mesh->vertices_ = transformed_vertices;
+			cout << "writing meshes" << endl;
 
-			int index = completed_meshes[i]->mesh_map_index;
-
-			if (mesh_map.count(index) != 0) {	
-				CombineMeshes(mesh_map[index], mesh);
-			} else {
-				mesh_map[index] = mesh;
+			int i = 0;
+			for (auto iter = mesh_map.begin(); iter != mesh_map.end(); iter++) {
+				open3d::io::WriteTriangleMeshToPLY("mesh" + std::to_string(i++) + ".ply", *(iter->second), false, false, true, true, false, false);
 			}
-		}
 
-		cout << "writing meshes" << endl;
-
-		int i = 0;
-		for (auto iter = mesh_map.begin(); iter != mesh_map.end(); iter++) {
-			open3d::io::WriteTriangleMeshToPLY("mesh" + std::to_string(i++) + ".ply", *(iter->second), false, false, true, true, false, false);
+		} else {
+			auto mesh = active_volume->ExtractTriangleMesh();
+			open3d::io::WriteTriangleMeshToPLY("mesh.ply", *mesh, false, false, true, true, false, false);
 		}
 	}
 
