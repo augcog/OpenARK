@@ -48,8 +48,8 @@ sudo apt -y install libpcl-*
 ```
 
 
-### Installing SuiteSparse
-
+### Installing [SuiteSparse 5.1.2](https://packages.ubuntu.com/bionic/libsuitesparse-dev)
+You might not want to get this if you are going to run Ceres without Suitesparse.
 ```sh
 sudo apt install libsuitesparse-dev
 ```
@@ -97,12 +97,19 @@ sudo make install
 Again, -j4 may be replaced with any number of threads.
 
 ### Installing Ceres 1.14.0 from source
+1. If you want to build Ceres without Suitesparse, then change the "option(SUITESPARSE "Enable SuiteSparse." ON)" To OFF in the Ceres CMakeLists.txt. 
+2. Ceres uses the Eigen Library, add_definitions(-DEIGEN_DONT_ALIGN=1) in CMakeLists.txt if necessary.
 
 1. `wget -O ceres114.tar.gz https://github.com/ceres-solver/ceres-solver/archive/1.14.0.tar.gz && tar -xf ceres114.tar.gz && cd ceres-solver-1.14.0`
 
 2. Build with CMake and install
-
+### Installing [Ceres 1.13.0 package](https://packages.ubuntu.com/source/bionic/ceres-solver)
+ceres-solver depends on [libceres-dev](https://packages.ubuntu.com/bionic/libceres-dev) and [libsuitesparse-dev](https://packages.ubuntu.com/bionic/libsuitesparse-dev)
+```
+sudo apt -y install ceres-solver
+```
 ### Intalling OpenGV 1.0
+OpenGV uses the Eigen Library, add_definitions(-DEIGEN_DONT_ALIGN=1) in CMakeLists.txt if necessary.
 
 1. `git clone https://github.com/laurentkneip/opengv && cd opengv`
 
