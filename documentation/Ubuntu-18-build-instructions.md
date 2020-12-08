@@ -12,7 +12,7 @@ sudo apt -y install g++ build-essential cmake cmake-gui git-core
 sudo apt -y install pkg-config unzip ffmpeg qtbase5-dev python-dev python3-dev python-numpy python3-numpy
 sudo apt -y install mpi-default-dev openmpi-bin openmpi-common libusb-1.0-0-dev libqhull* libusb-dev libgtest-dev
 sudo apt -y install freeglut3-dev pkg-config libxmu-dev libxi-dev libphonon-dev libphonon-dev phonon-backend-gstreamer
-sudo apt -y install phonon-backend-vlc graphviz mono-complete qt-sdk libflann-dev
+sudo apt -y install phonon-backend-vlc graphviz mono-complete libflann-dev
 ```
 
 2. `g++ --version` to check the g++ version. If it is less than 5, use the below commands to update GCC to version 5:
