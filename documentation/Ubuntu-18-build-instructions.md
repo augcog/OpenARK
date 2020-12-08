@@ -144,6 +144,7 @@ Note that this repository is a modified version of DLoopDetector.
 Note that this is a modified version of Open3D 0.8.0
 
 1. `git clone --recursive https://github.com/moonwonlee/Open3D.git && cd Open3D`
+or get `git clone --recursive https://github.com/moonwonlee/Open3D.git && cd Open3D`, go to src/Open3D/ and delete MovingTSDFVolume.cpp and MovingTSDFVolume.h in // this to be deleted later when Open3D is updated.
 
 2. Build with CMake 
 
@@ -170,6 +171,16 @@ Note that this is a modified version of Okvis.
 
 2. Build with CMake and install
 
+3. Verify Okvis+ by running the demo application
+You will find a demo application in okvis_apps. It can process datasets in the ASL/ETH format.
+
+In order to run a minimal working example, follow the steps below:
+
+1. Download a dataset of your choice from http://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets. Assuming you downloaded MH_01_easy/. You will find a corresponding calibration / estimator configuration in the config folder.
+
+2. Run the app as
+ `./okvis_app_synchronous path/to/okvis/config/config_fpga_p2_euroc.yaml path/to/MH_01_easy/mav0/`
+ 
 ### Installing librealsense2
 
 OpenARK currently supports Intel's new RealSense cross-platform SDK (librealsense2): <https://github.com/IntelRealSense/librealsense/> on Linux.
