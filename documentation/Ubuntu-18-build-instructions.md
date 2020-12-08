@@ -40,8 +40,7 @@ mkdir build && cd build && cmake -D CMAKE_BUILD_TYPE=RELEASE .. && make -j4 && s
 ```
 Note that this installs the library. You may replace '4' in step 3 with any number of threads. The build process should not take too long.
 
-### Installing PCL
-[Package: libpcl-dev (1.8.1+dfsg1-2ubuntu2)](https://packages.ubuntu.com/bionic/libpcl-dev)
+### Installing PCL, [Package: libpcl-dev (1.8.1+dfsg1-2ubuntu2)](https://packages.ubuntu.com/bionic/libpcl-dev)
 
 ```sh
 sudo apt -y install libpcl-*
@@ -49,12 +48,14 @@ sudo apt -y install libpcl-*
 
 
 ### Installing [SuiteSparse 5.1.2](https://packages.ubuntu.com/bionic/libsuitesparse-dev)
+
 You might not want to get this if you are going to run Ceres without Suitesparse.
 ```sh
 sudo apt install libsuitesparse-dev
 ```
 
 ### Installing OpenCV with Contrib
+
 OpenCV 3.4.6, OpenCV_Contrib 3.4.6 and [Package: libopencv-dev (3.2.0+dfsg-4ubuntu0.1 and others)](https://packages.ubuntu.com/bionic/libopencv-dev)
 
 1. Install prerequisites:
@@ -97,19 +98,23 @@ sudo make install
 Again, -j4 may be replaced with any number of threads.
 
 ### Installing Ceres 1.14.0 from source
-1. If you want to build Ceres without Suitesparse, then change the "option(SUITESPARSE "Enable SuiteSparse." ON)" To OFF in the Ceres CMakeLists.txt. 
-2. Ceres uses the Eigen Library, add_definitions(-DEIGEN_DONT_ALIGN=1) in CMakeLists.txt if necessary.
+
+1. If you want to build Ceres without Suitesparse, then change the `option(SUITESPARSE "Enable SuiteSparse." ON)` To `OFF` in the Ceres CMakeLists.txt. 
+2. Ceres uses the Eigen Library, `add_definitions(-DEIGEN_DONT_ALIGN=1)` in CMakeLists.txt if necessary.
 
 1. `wget -O ceres114.tar.gz https://github.com/ceres-solver/ceres-solver/archive/1.14.0.tar.gz && tar -xf ceres114.tar.gz && cd ceres-solver-1.14.0`
 
 2. Build with CMake and install
+
 ### Installing [Ceres 1.13.0 package](https://packages.ubuntu.com/source/bionic/ceres-solver)
+
 ceres-solver depends on [libceres-dev](https://packages.ubuntu.com/bionic/libceres-dev) and [libsuitesparse-dev](https://packages.ubuntu.com/bionic/libsuitesparse-dev)
 ```
 sudo apt -y install ceres-solver
 ```
 ### Intalling OpenGV 1.0
-OpenGV uses the Eigen Library, add_definitions(-DEIGEN_DONT_ALIGN=1) in CMakeLists.txt if necessary.
+
+OpenGV uses the Eigen Library, `add_definitions(-DEIGEN_DONT_ALIGN=1)` in CMakeLists.txt if necessary.
 
 1. `git clone https://github.com/laurentkneip/opengv && cd opengv`
 
@@ -139,8 +144,9 @@ Note that this repository is a modified version of DLoopDetector.
 Note that this is a modified version of Open3D 0.8.0
 
 1. `git clone --recursive https://github.com/moonwonlee/Open3D.git && cd Open3D`
-Note that this repository is a modified version of Open3D.
+
 2. Build with CMake 
+
 3. Make the following changes to Open3DConfig.cmake in Open3D/build/CMakeFiles // this to be deleted later when Open3D is updated.
 ```sh
 Change:
@@ -153,11 +159,11 @@ set(Open3D_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR}/include;${PACKAGE_PREFIX_DIR}/inc
 TO:
 set(Open3D_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR}/include;${PACKAGE_PREFIX_DIR}/3rdparty/Eigen;/usr/include/libdrm;/usr/include;${PACKAGE_PREFIX_DIR}/3rdparty/fmt/include;${PACKAGE_PREFIX_DIR}/3rdparty/fmt/include/format.h")
 ```
-4. Add this following line in CMakeLists.txt of OpenARK: // this to be deleted later when OpenARK's CMakeLists.txt is updated.
-`set(ENV{Open3D_DIR} "/home/[path_between_home_and_Open3D]/Open3D/build/CMakeFiles")`
-5. Build with CMake and install
+
+4. make -j4 && sudo make install
 
 ### Installing Okvis+ 
+Okvis+ uses the Eigen Library, `add_definitions(-DEIGEN_DONT_ALIGN=1)` in CMakeLists.txt if necessary.
 
 1. `git clone https://github.com/joemenke/okvis && cd okvis`
 Note that this is a modified version of Okvis.
@@ -180,18 +186,19 @@ sudo apt -y install librealsense2-dkms librealsense2-utils librealsense2-dev lib
 Optional: As a sanity check, plugin your RealSense camera (SR300 or D400) and run `rs-capture` to see if streams appear.
 
 ### Bulding OpenARK
+OpenARK uses the Eigen Library, `add_definitions(-DEIGEN_DONT_ALIGN=1)` in CMakeLists.txt if necessary.
 
 1. Clone our repository: `git clone https://github.com/augcog/OpenARK`, or download the latest release.
 
 2. `cd OpenARK && mkdir build && cd build` to create build directory.
 
-2. Added the following lines in CMakeLists.txt of OpenARK // this to be deleted later when OpenARK's CMakeLists.txt is updated.
+3. Add the following lines in CMakeLists.txt of OpenARK // this to be deleted later when OpenARK's CMakeLists.txt is updated.
 ``` sh
 set(ENV{DLoopDetector_INCLUDE_DIRS} "/usr/local/include/DLoopDetector")
 set(ENV{Open3D_DIR} "/home/[path_between_home_and_Open3D]/Open3D/build/CMakeFiles")
 ``` 
 
-2. Do the following things before cmake build. // this to be deleted later when OpenARK's codes are updated.
+4. Do the following things before cmake build. // this to be deleted later when OpenARK's codes are updated.
 ``` sh
 Open OpenARK/MockD435iCamera.cpp and delete & on the LHS of line 31:30 and 37:28
 Open OpenARK/SaveFrame.cpp and change line 17 to #include <boost/filesystem.hpp> 
@@ -233,10 +240,10 @@ Line 91: std::atomic_bool paused = {true};
 Line 92: std::atomic_e bool quit = {false};
 ```
 
-3. `cmake .. -DCMAKE_BUILD_TYPE=Release` to run CMake. librealsense2 will be enabled by default. You can add `-DBUILD_AVATAR_DEMO` to build the avatar demo in addition to hand and SLAM, `-DBUILD_DATA_RECORDING` to build the data recording tool, and `-BUILD_TESTS` to build hand tests. `-DBUILD_UNITY_PLUGIN` is not available on Linux at the moment.
+5. `cmake .. -DCMAKE_BUILD_TYPE=Release` to run CMake. librealsense2 will be enabled by default. You can add `-DBUILD_AVATAR_DEMO` to build the avatar demo in addition to hand and SLAM, `-DBUILD_DATA_RECORDING` to build the data recording tool, and `-BUILD_TESTS` to build hand tests. `-DBUILD_UNITY_PLUGIN` is not available on Linux at the moment.
 
-4. `make -j4` to build.
+6. `make -j4` to build.
 
-5. As a final sanity check, try running the demo executable in the build directory: `./OpenARK-Hand-Demo`. You should see the hand detection and depth image windows. If you only see one window, drag it and see if the other is behind it. The static library is named: `libopenark_0_9_3.a`.
+7. As a final sanity check, try running the demo executable in the build directory: `./OpenARK-Hand-Demo`. You should see the hand detection and depth image windows. If you only see one window, drag it and see if the other is behind it. The static library is named: `libopenark_0_9_3.a`.
 
 
