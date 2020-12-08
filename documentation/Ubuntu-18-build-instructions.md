@@ -110,7 +110,7 @@ Again, -j4 may be replaced with any number of threads.
 
 ceres-solver depends on [libceres-dev](https://packages.ubuntu.com/bionic/libceres-dev) and [libsuitesparse-dev](https://packages.ubuntu.com/bionic/libsuitesparse-dev)
 ```
-sudo apt -y install ceres-solver
+sudo apt -y install libceres-dev
 ```
 ### Intalling OpenGV 1.0
 
@@ -182,19 +182,21 @@ In order to run a minimal working example, follow the steps below:
  `./okvis_app_synchronous path/to/okvis/config/config_fpga_p2_euroc.yaml path/to/mav0/`
  
 ### Installing librealsense2
-
-OpenARK currently supports Intel's new RealSense cross-platform SDK (librealsense2): <https://github.com/IntelRealSense/librealsense/> on Linux.
-
-We can now install Intel's packages directly: 
+Follow this : https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md
+or here is summary.
 ``` sh
-sudo apt-key adv --keyserver keys.gnupg.net --recv-key C8B3A55A6F3EFCDE || sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key C8B3A55A6F3EFCDE
+sudo apt-key adv --keyserver keys.gnupg.net --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE || sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE
 sudo add-apt-repository "deb http://realsense-hw-public.s3.amazonaws.com/Debian/apt-repo bionic main" -u
 sudo apt update
-sudo apt -y install librealsense2-dkms librealsense2-utils librealsense2-dev librealsense2-dbg
+sudo apt-get install librealsense2-dkms librealsense2-utils librealsense2-dev librealsense2-dbg
 ```
 (If using Ubuntu 16, replace `bionic` on the second line with `xenial`)
 
-Optional: As a sanity check, plugin your RealSense camera (SR300 or D400) and run `rs-capture` to see if streams appear.
+Optional: As a sanity check, 
+1. Connect the Intel RealSense depth camera and run: realsense-viewer to verify the installation.
+2. plugin your RealSense camera (SR300 or D400) and run `rs-capture` to see if streams appear.
+3. Verify that the kernel is updated :
+`modinfo uvcvideo | grep "version:" should include realsense string`
 
 ### Bulding OpenARK
 OpenARK uses the Eigen Library, `add_definitions(-DEIGEN_DONT_ALIGN=1)` in CMakeLists.txt if necessary.
