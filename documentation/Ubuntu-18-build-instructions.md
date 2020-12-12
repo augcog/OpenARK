@@ -148,7 +148,7 @@ or get `git clone --recursive https://github.com/adamchang2000/Open3D.git && cd 
 
 2. Build with CMake 
 
-3. Make the following changes to Open3DConfig.cmake in Open3D/build/CMakeFiles // this to be deleted later when Open3D is updated.
+3. Make the following changes to Open3DConfig.cmake in Open3D/build/CMakeFiles // this to be deleted later when Open3D is updated or OpenARK CMakeLists.txt is updated.
 ```sh
 Change:
 From : get_filename_component(PACKAGE_PREFIX_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../" ABSOLUTE)
@@ -198,7 +198,7 @@ Optional: As a sanity check,
 3. Verify that the kernel is updated :
 `modinfo uvcvideo | grep "version:" should include realsense string`
 
-### Bulding OpenARK
+### Installing and Building OpenARK
 OpenARK uses the Eigen Library, `add_definitions(-DEIGEN_DONT_ALIGN=1)` in CMakeLists.txt if necessary.
 
 1. Clone our repository: `git clone https://github.com/augcog/OpenARK`, or download the latest release.
