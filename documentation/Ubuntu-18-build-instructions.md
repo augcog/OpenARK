@@ -144,24 +144,24 @@ Note that this repository is a modified version of DLoopDetector.
 Note that this is a modified version of Open3D 0.8.0
 
 1. `git clone --recursive https://github.com/moonwonlee/Open3D.git && cd Open3D`
-or get `git clone --recursive https://github.com/moonwonlee/Open3D.git && cd Open3D`, go to src/Open3D/ and delete MovingTSDFVolume.cpp and MovingTSDFVolume.h in // this to be deleted later when Open3D is updated.
+or get `git clone --recursive https://github.com/adamchang2000/Open3D.git && cd Open3D`, go to src/Open3D/ and delete MovingTSDFVolume.cpp and MovingTSDFVolume.h in // this to be deleted later when Open3D is updated.
 
 2. Build with CMake 
 
 3. Make the following changes to Open3DConfig.cmake in Open3D/build/CMakeFiles // this to be deleted later when Open3D is updated.
 ```sh
 Change:
-get_filename_component(PACKAGE_PREFIX_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../" ABSOLUTE)
-To:
-get_filename_component(PACKAGE_PREFIX_DIR "${CMAKE_CURRENT_LIST_DIR}/../../" ABSOLUTE)
+From : get_filename_component(PACKAGE_PREFIX_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../" ABSOLUTE)
+To   : get_filename_component(PACKAGE_PREFIX_DIR "${CMAKE_CURRENT_LIST_DIR}/../../" ABSOLUTE)
   
 Change:
+From:
 set(Open3D_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR}/include;${PACKAGE_PREFIX_DIR}/include/Open3D/3rdparty/Eigen;/usr/include/libdrm;/usr/include;${PACKAGE_PREFIX_DIR}/include/Open3D/3rdparty/fmt/include;${PACKAGE_PREFIX_DIR}/include/Open3D/3rdparty/fmt/include/format.h";${PACKAGE_PREFIX_DIR}/include/Open3D/3rdparty/fmt/include/)
-TO:
+To:
 set(Open3D_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR}/include;${PACKAGE_PREFIX_DIR}/3rdparty/Eigen;/usr/include/libdrm;/usr/include;${PACKAGE_PREFIX_DIR}/3rdparty/fmt/include;${PACKAGE_PREFIX_DIR}/3rdparty/fmt/include/format.h")
 ```
 
-4. make -j4 && sudo make install
+4. `make -j4 && sudo make install`
 
 ### Installing Okvis+ 
 Okvis+ uses the Eigen Library, `add_definitions(-DEIGEN_DONT_ALIGN=1)` in CMakeLists.txt if necessary.
@@ -218,23 +218,21 @@ Open OpenARK/SaveFrame.cpp and change line 17 to #include <boost/filesystem.hpp>
 Open OpenARK/SaveFrame.cpp and change mkdir(folderPath.c_str()); to boost::filesystem::create_directories(folderPath.c_str());
 Open OpenARK/saveFrame.cpp and delete “SaveFrame::” part on line 23,24,25,27 in SaveFrame.h file
 
-Open OpenARK/include/SegmentedMesh.h and 
-Change:
+Open OpenARK/include/SegmentedMesh.h and change
+From :
 #include "Open3D/geometry/PointCloud.h"
 #include "Open3D/geometry/TriangleMesh.h"
 To: 
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Geometry/TriangleMesh.h"
 
-Open OpenARK/include/SegmentedMesh.h:9:50 and 
-Change:
-#include "Open3D/camera/PinholeCameraIntrinsic.h"
-To: 
-#include "Open3D/Camera/PinholeCameraIntrinsic.h"
+Open OpenARK/include/SegmentedMesh.h:9:50 and change
+From : Line 9 : #include "Open3D/camera/PinholeCameraIntrinsic.h"
+To   : Line 9 : #include "Open3D/Camera/PinholeCameraIntrinsic.h"
 
 Open OpenARK/SegmentedMesh.cpp:320:3 and change
-From line 320 : cout << "writing meshes" << endl;
-To line 320:     std::cout << "writing meshes" << std::endl;
+From : line 320 : cout << "writing meshes" << endl;
+To   : line 320:  std::cout << "writing meshes" << std::endl;
 
 Open OpenARK/include/glfwManager.h and change
 From : line 221 : void MeshWindow::set_camera(Eigen::Affine3d t) {
