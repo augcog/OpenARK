@@ -157,6 +157,27 @@ int main(int argc, char **argv)
         }
     });
     slam.AddLoopClosureDetectedHandler(loopHandler, "trajectoryUpdate");
+
+    SparseMapDeletionHandler deletionHandler([&](int currentIndex) {
+        auto it = pathMap.cbegin();
+        while(it != pathMap.cend()) {
+            auto curr = it++;
+            curr->second->clear();
+        }
+        lastMapIndex_path = currentIndex;
+        for (size_t i = 0; i <= currentIndex; i++)
+        {
+            std::vector<Eigen::Matrix4d> traj;
+            slam.getMap(i)->getTrajectory(traj);
+            pathMap[i]->clear();
+            for (size_t j = 0; j < traj.size(); j++)
+            {
+                pathMap[i]->add_node(traj[j].block<3, 1>(0, 3));
+            }
+        }
+    });
+    slam.AddSparseMapDeletionHandler(deletionHandler, "trajectoryReset");
+
     //run until display is closed
     okvis::Time start(0.0);
     camera.start();

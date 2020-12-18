@@ -74,9 +74,13 @@ namespace ark {
         }
         std::shared_ptr<okvis::ThreadedKFVio> okvis_estimator_;
 
-
-        
-
+        std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> getMap(int index) {
+            if (0 <= index && index < sparse_map_vector.size()) {
+                return sparse_map_vector[index];
+            } else {
+                return nullptr;
+            }
+        }
 
     protected:
         void KeyFrameConsumerLoop();
@@ -85,6 +89,17 @@ namespace ark {
 
         void createNewMap();
 
+        void setEnableLoopClosure(bool enableUseLoopClosures, std::string vocabPath,
+                bool binaryVocab, cv::DescriptorMatcher* matcher);
+
+        bool detectLoopClosure(MapKeyFrame::Ptr kf, MapKeyFrame::Ptr &loop_kf,
+                Eigen::Affine3d &transformEstimate);
+
+        std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> mergeMaps(
+                std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> olderMap,
+                std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> currentMap,
+                MapKeyFrame::Ptr kf, MapKeyFrame::Ptr loop_kf, Eigen::Affine3d &transformEstimate);
+        
     private:
         okvis::Time start_;
         okvis::Time t_imu_;
@@ -100,6 +115,18 @@ namespace ark {
         int map_timer;
         int active_map_index;
         std::string strVocFile;
+
+        bool useLoopClosures_;
+        std::shared_ptr<DLoopDetector::TemplatedLoopDetector<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK> >detector_;
+        std::shared_ptr<DBoW2::TemplatedVocabulary<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK> >vocab_;
+        std::shared_ptr<cv::DescriptorMatcher> matcher_;
+        std::map<int, MapKeyFrame::Ptr> bowFrameMap_;
+        int bowId_;
+        double lastLoopClosureTimestamp_;
+        // correction for convert an obj coordinate in other's map 
+        // because reset okvis estimator also reset coordinate system
+        Eigen::Matrix4d correction_{Eigen::Matrix4d::Identity()};
+
     }; // OkvisSLAMSystem
 
 }//ark

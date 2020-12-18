@@ -17,11 +17,13 @@ namespace ark {
     typedef std::function<void(void)> LoopClosureDetectedHandler;
     typedef std::function<void(int)> SparseMapCreationHandler;
     typedef std::function<void(int)> SparseMapDeletionHandler;
+    typedef std::function<void(int)> SparseMapMergeHandler;
     typedef std::unordered_map<std::string, KeyFrameAvailableHandler> MapKeyFrameAvailableHandler;
     typedef std::unordered_map<std::string, FrameAvailableHandler> MapFrameAvailableHandler;
     typedef std::unordered_map<std::string, LoopClosureDetectedHandler> MapLoopClosureDetectedHandler;
-    typedef std::unordered_map<std::string, SparseMapDeletionHandler> MapSparseMapCreationHandler;
+    typedef std::unordered_map<std::string, SparseMapCreationHandler> MapSparseMapCreationHandler;
     typedef std::unordered_map<std::string, SparseMapDeletionHandler> MapSparseMapDeletionHandler;
+    typedef std::unordered_map<std::string, SparseMapMergeHandler> MapSparseMapMergeHandler;
 
     class SLAMSystem {
     public:
@@ -89,6 +91,18 @@ namespace ark {
                  mMapSparseMapDeletionHandler.erase(handler);
         }
 
+        /** Add a handler that will be called each time two sparse maps are merged. */
+        virtual void AddSparseMapMergeHandler(SparseMapMergeHandler handler, std::string handlerName) {
+             mMapSparseMapMergeHandler[handlerName] = handler;
+        }
+
+        /** Remove a sparse map merge handler with the specified name. */
+        virtual void RemoveSparseMapMergeHandler(std::string handlerName) {
+            auto handler =  mMapSparseMapMergeHandler.find(handlerName);
+            if (handler !=  mMapSparseMapMergeHandler.end())
+                 mMapSparseMapMergeHandler.erase(handler);
+        }
+
         /** Add a handler that will be called each time a sparse map is created. */
         virtual void AddSparseMapCreationHandler(SparseMapCreationHandler handler, std::string handlerName) {
              mMapSparseMapCreationHandler[handlerName] = handler;
@@ -110,5 +124,6 @@ namespace ark {
         MapLoopClosureDetectedHandler mMapLoopClosureHandler;
         MapSparseMapCreationHandler mMapSparseMapCreationHandler;
         MapSparseMapDeletionHandler mMapSparseMapDeletionHandler;
+        MapSparseMapMergeHandler mMapSparseMapMergeHandler;
     };
 }
