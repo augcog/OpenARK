@@ -163,7 +163,7 @@ int main(int argc, char **argv)
     });
     slam.AddLoopClosureDetectedHandler(loopHandler, "trajectoryUpdate");
 
-    SparseMapMergeHandler mergeHandler([&](int currentIndex) {
+    SparseMapMergeHandler mergeHandler([&](int deletedIndex, int currentIndex) {
         auto it = pathMap.cbegin();
         while(it != pathMap.cend()) {
             auto curr = it++;
