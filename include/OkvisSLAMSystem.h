@@ -127,6 +127,8 @@ namespace ark {
         // because reset okvis estimator also reset coordinate system
         Eigen::Matrix4d correction_{Eigen::Matrix4d::Identity()};
 
+        static const int kMapCreationCooldownFrames_ = 90;
+
     }; // OkvisSLAMSystem
 
 }//ark

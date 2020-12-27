@@ -53,7 +53,7 @@ namespace ark {
             StampedFrameData frame_data;
             while (!frame_data_queue_.try_dequeue(&frame_data)) {
                 if (okvis_estimator_->isReset() && !new_map_checker) {
-                    if(map_timer >= 45)
+                    if(map_timer >= kMapCreationCooldownFrames_)
                     {
                         cout<<"Created new map"<<endl;
                         new_map_checker = true;
@@ -72,7 +72,7 @@ namespace ark {
                 }
                 else
                 {
-                    if(map_timer<=45)
+                    if(map_timer<=kMapCreationCooldownFrames_)
                         map_timer++;
                 }
                 
@@ -117,7 +117,7 @@ namespace ark {
                 out_frame->T_SC_.push_back(T_SC.T());
             }
 
-            bool addKeyFrameResult = false;
+            bool loopClosureDetected = false;
             bool mapsMerged = false;
             int merged_map_index = -1;
             //check if keyframe
@@ -161,17 +161,18 @@ namespace ark {
                 Eigen::Affine3d transformEstimate;
                 if (detectLoopClosure(keyframe, loop_kf, transformEstimate)) {
                     //cout << "Loop closure detected" << endl;
-                    addKeyFrameResult = true;
+                    loopClosureDetected = true;
                     for (int i = 0; i < sparse_map_vector.size()-1; i++) {
                         if (sparse_map_vector[i] == nullptr)
                             continue;
                         auto sparseMap = sparse_map_vector[i];
                         if (sparseMap->getKeyframe(loop_kf->frameId_) != nullptr) {
-                            //cout << "MapMerge: " << i << " with " << active_map_index << " and " << keyframe->frameId_ << " with " << loop_kf->frameId_ << endl;
+                            cout << "MapMerge: " << i << " with " << active_map_index << " and " << keyframe->frameId_ << " with " << loop_kf->frameId_ << endl;
                             sparse_map_vector[active_map_index] = mergeMaps(
                                     sparseMap, getActiveMap(), keyframe, loop_kf, transformEstimate);
                             sparse_map_vector.erase(sparse_map_vector.begin() + i);
                             active_map_index = sparse_map_vector.size() - 1;
+                            merged_map_index = i;
                             mapsMerged = true;
                             merged_map_index = i;
                             break;
@@ -188,11 +189,6 @@ namespace ark {
 
             //Notify callbacks
             if (mapsMerged) {
-                // for (MapSparseMapDeletionHandler::const_iterator callback_iter = mMapSparseMapDeletionHandler.begin();
-                //         callback_iter != mMapSparseMapDeletionHandler.end(); ++callback_iter) {
-                //     const MapSparseMapDeletionHandler::value_type& pair = *callback_iter;
-                //     pair.second(i);
-                // }
                 for (MapSparseMapMergeHandler::const_iterator callback_iter = mMapSparseMapMergeHandler.begin();
                         callback_iter != mMapSparseMapMergeHandler.end(); ++callback_iter) {
                     const MapSparseMapMergeHandler::value_type& pair = *callback_iter;
@@ -214,7 +210,7 @@ namespace ark {
                 pair.second(out_frame);
             }
 
-            if (addKeyFrameResult) { //add keyframe returns true if a loop closure was detected
+            if (loopClosureDetected) {
                 for (MapLoopClosureDetectedHandler::const_iterator callback_iter = mMapLoopClosureHandler.begin();
                     callback_iter != mMapLoopClosureHandler.end(); ++callback_iter) {
                     const MapLoopClosureDetectedHandler::value_type& pair = *callback_iter;
@@ -473,27 +469,9 @@ namespace ark {
 		}
         mapB->graph_.constraintMutex.unlock();
 
-        //adding current keyframe to mapB
+        //adding current keyframe to mapB and optimizing pose graph
         kf->T_WS_ = kfCorrection * kf->T_WS_;
-        mapB->frameMap_[kf->frameId_]=kf;
-        kf->previousKeyframeId_ = mapB->currentKeyframeId;
-        kf->previousKeyframe_ = mapB->getCurrentKeyframe();
-        Eigen::Matrix4d T_K1K2; 
-        if(kf->previousKeyframe_.get()!=nullptr){
-            T_K1K2 = kf->previousKeyframe_->T_WS_.inverse()*kf->T_WS_;
-            mapB->graph_.AddConstraint(kf->previousKeyframeId_,kf->frameId_,T_K1K2);
-            kf->setOptimizedTransform(kf->previousKeyframe_->T_WS()*T_K1K2);
-        }
-        mapB->currentKeyframeId = kf->frameId_;
-        mapB->graph_.AddPose(kf->frameId_,kf->T_WS());
-
-        //optimize pose graph
-        mapB->graph_.AddConstraint(kf->frameId_,loop_kf->frameId_, T_KfKloop);
-        mapB->graph_.optimize();
-        for(std::map<int, MapKeyFrame::Ptr>::iterator frame=mapB->frameMap_.begin();
-            frame!=mapB->frameMap_.end(); frame++){
-            frame->second->setOptimizedTransform(mapB->graph_.getTransformById(frame->first));
-        }
+        mapB->addKeyframe(kf, loop_kf, transformEstimate);
 
         return mapB;
     }

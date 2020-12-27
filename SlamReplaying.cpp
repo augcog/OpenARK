@@ -93,6 +93,8 @@ int main(int argc, char **argv)
     std::vector<Eigen::Matrix4d> T_K_cubes;
     std::vector<MapKeyFrame::Ptr> K_cubes;
 
+    const bool hideInactiveMaps = true;
+
     int lastMapIndex_path = 0;
     //Recieves output from SLAM system and displays to the screen
     FrameAvailableHandler handler([&](MultiCameraFrame::Ptr frame) {
@@ -115,6 +117,9 @@ int main(int argc, char **argv)
             }
         }
         if (lastMapIndex_path != mapIndex) {
+            if (hideInactiveMaps) {
+                pathMap[lastMapIndex_path]->clear();
+            }
             lastMapIndex_path = mapIndex;
         }
         pathMap[mapIndex]->add_node(transform.translation());
@@ -158,7 +163,7 @@ int main(int argc, char **argv)
     });
     slam.AddLoopClosureDetectedHandler(loopHandler, "trajectoryUpdate");
 
-    SparseMapDeletionHandler deletionHandler([&](int currentIndex) {
+    SparseMapMergeHandler mergeHandler([&](int deletedIndex, int currentIndex) {
         auto it = pathMap.cbegin();
         while(it != pathMap.cend()) {
             auto curr = it++;
@@ -170,13 +175,14 @@ int main(int argc, char **argv)
             std::vector<Eigen::Matrix4d> traj;
             slam.getMap(i)->getTrajectory(traj);
             pathMap[i]->clear();
-            for (size_t j = 0; j < traj.size(); j++)
-            {
-                pathMap[i]->add_node(traj[j].block<3, 1>(0, 3));
+            if (!hideInactiveMaps || i == currentIndex) {
+                for (size_t j = 0; j < traj.size(); j++) {
+                    pathMap[i]->add_node(traj[j].block<3, 1>(0, 3));
+                }
             }
         }
     });
-    slam.AddSparseMapDeletionHandler(deletionHandler, "trajectoryReset");
+    slam.AddSparseMapMergeHandler(mergeHandler, "trajectoryReset");
 
     //run until display is closed
     okvis::Time start(0.0);
