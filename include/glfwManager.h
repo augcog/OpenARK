@@ -378,7 +378,6 @@ public:
 		std::lock_guard<std::mutex> guard(meshLock_);
 
 		mesh_->Render(mesh_vertices, mesh_colors, mesh_triangles, mesh_transforms, mesh_enabled);
-
 	}
 
 

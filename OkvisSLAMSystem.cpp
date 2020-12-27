@@ -174,6 +174,7 @@ namespace ark {
                             active_map_index = sparse_map_vector.size() - 1;
                             merged_map_index = i;
                             mapsMerged = true;
+                            merged_map_index = i;
                             break;
                         }
                     }

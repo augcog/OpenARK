@@ -1,5 +1,7 @@
 #pragma once
 
+#include "CameraSetup.h"
+#include "OkvisSLAMSystem.h"
 #include "Open3D/Integration/ScalableTSDFVolume.h"
 #include "Open3D/Visualization/Utility/DrawGeometry.h"
 #include "Open3D/IO/ClassIO/TriangleMeshIO.h"
@@ -8,21 +10,24 @@
 #include "Open3D/geometry/TriangleMesh.h"
 #include "Open3D/camera/PinholeCameraIntrinsic.h"
 #include "Types.h"
+#include "SaveFrame.h"
 #include <map>
 #include <set>
 #include <unordered_map>
 #include <mutex>
 #include <chrono>
+#include <sys/stat.h>
 
 namespace ark {
+
+	std::shared_ptr<open3d::geometry::RGBDImage> generateRGBDImageFromCV(cv::Mat color_mat, cv::Mat depth_mat, double max_depth);
 
 	class SegmentedMesh {
 
 	public:
-		SegmentedMesh(double voxel_length,
-			double sdf_trunc,
-			open3d::integration::TSDFVolumeColorType color_type,
-			double block_length);
+		SegmentedMesh(std::string& recon_config, OkvisSLAMSystem& slam, CameraSetup* camera, bool blocking = true);
+		SegmentedMesh(std::string& recon_config);
+		SegmentedMesh();
 
 		//~SegmentedMesh();
 
@@ -53,25 +58,32 @@ namespace ark {
 		std::vector<int> get_kf_ids();
 		void StartNewBlock();
 		void SetActiveMapIndex(int map_index);
-		void DeleteMapsAfterIndex(int map_index);
+		//void DeleteMapsAfterIndex(int map_index);
 		void Render(std::vector<std::vector<Eigen::Vector3d>> &mesh_vertices, std::vector<std::vector<Eigen::Vector3d>> &mesh_colors, 
 		std::vector<std::vector<Eigen::Vector3i>> &mesh_triangles, std::vector<Eigen::Matrix4d> &mesh_transforms, std::vector<int> &mesh_enabled);
 		void WriteMeshes();
 
-	public:
-		double block_length_;
-		double sdf_trunc_;
-		double voxel_length_;
-		open3d::integration::TSDFVolumeColorType color_type_;
+		void SetIntegrationEnabled(bool enabled);
 
+	public:
+		open3d::integration::TSDFVolumeColorType color_type_ = open3d::integration::TSDFVolumeColorType::RGB8;
+		int save_frame_stride_ = 3;
+		int integration_frame_stride_ = 3;
+		int extraction_frame_stride_ = 30;
+
+		int camera_height_, camera_width_;
 
 	private:
+		//setup sets up all callbacks
+		void Setup(OkvisSLAMSystem& slam, CameraSetup* camera);
+
 		Eigen::Vector3i LocateBlock(const Eigen::Vector3d &point) {
 			return Eigen::Vector3i((int)std::floor(point(0) / block_length_),
 				(int)std::floor(point(1) / block_length_),
 				(int)std::floor(point(2) / block_length_));
 		}
 
+		void readConfig(std::string& recon_config);
 		void UpdateActiveVolume(Eigen::Matrix4d extrinsic);
 		void CombineMeshes(std::shared_ptr<open3d::geometry::TriangleMesh>& output_mesh, std::shared_ptr<open3d::geometry::TriangleMesh> mesh_to_combine);
 
@@ -89,15 +101,21 @@ namespace ark {
 
 		MapKeyFrame::Ptr latest_keyframe;
 		int active_map_index = 0;
-		int archive_index = -1;
 
 		bool start_new_block = false;
 
-		//temp for debug purposes
-		int counter = 0;
+		int frame_counter_ = 1;
 
 		std::chrono::system_clock::time_point latest_loop_closure = std::chrono::system_clock::now();
 		float time_threshold = 1.0;
+
+
+		double block_length_;
+		double sdf_trunc_;
+		double voxel_length_;
+		bool blocking_;
+		double max_depth_;
+		bool do_integration_;
 
 	protected:
 		std::mutex keyFrameLock;
