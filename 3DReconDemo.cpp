@@ -259,13 +259,13 @@ int main(int argc, char **argv)
 
 	slam.AddKeyFrameAvailableHandler(updateKFHandler, "updatekfhandler");
 
-	SparseMapDeletionHandler spdHandler([&mesh, &max_map_index, &current_map_index](int active_map_index) {
+	SparseMapMergeHandler spdHandler([&mesh, &max_map_index, &current_map_index](int deleted_map_index, int active_map_index) {
 		mesh->DeleteMapsAfterIndex(active_map_index);
 		mesh->StartNewBlock();
 		current_map_index = active_map_index;
 	});
 
-	slam.AddSparseMapDeletionHandler(spdHandler, "mesh sp deletion");
+	slam.AddSparseMapMergeHandler(spdHandler, "mesh sp deletion");
 
 	SparseMapCreationHandler spcHandler([&mesh, &max_map_index, &current_map_index](int active_map_index) {
 		mesh->SetActiveMapIndex(active_map_index);
