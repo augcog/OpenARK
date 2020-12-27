@@ -16,13 +16,13 @@ namespace ark {
     typedef std::function<void(MultiCameraFrame::Ptr)> FrameAvailableHandler;
     typedef std::function<void(void)> LoopClosureDetectedHandler;
     typedef std::function<void(int)> SparseMapCreationHandler;
-    typedef std::function<void(int)> SparseMapDeletionHandler;
-    typedef std::function<void(int)> SparseMapMergeHandler;
+    //typedef std::function<void(int)> SparseMapDeletionHandler;
+    typedef std::function<void(int, int)> SparseMapMergeHandler;
     typedef std::unordered_map<std::string, KeyFrameAvailableHandler> MapKeyFrameAvailableHandler;
     typedef std::unordered_map<std::string, FrameAvailableHandler> MapFrameAvailableHandler;
     typedef std::unordered_map<std::string, LoopClosureDetectedHandler> MapLoopClosureDetectedHandler;
     typedef std::unordered_map<std::string, SparseMapCreationHandler> MapSparseMapCreationHandler;
-    typedef std::unordered_map<std::string, SparseMapDeletionHandler> MapSparseMapDeletionHandler;
+    //typedef std::unordered_map<std::string, SparseMapDeletionHandler> MapSparseMapDeletionHandler;
     typedef std::unordered_map<std::string, SparseMapMergeHandler> MapSparseMapMergeHandler;
 
     class SLAMSystem {
@@ -80,16 +80,16 @@ namespace ark {
         }
 
         /** Add a handler that will be called each time a sparse map is deleted. */
-        virtual void AddSparseMapDeletionHandler(SparseMapDeletionHandler handler, std::string handlerName) {
-             mMapSparseMapDeletionHandler[handlerName] = handler;
-        }
+        // virtual void AddSparseMapDeletionHandler(SparseMapDeletionHandler handler, std::string handlerName) {
+        //      mMapSparseMapDeletionHandler[handlerName] = handler;
+        // }
 
-        /** Remove a sparse map deletion handler with the specified name. */
-        virtual void RemoveSparseMapDeletionHandler(std::string handlerName) {
-            auto handler =  mMapSparseMapDeletionHandler.find(handlerName);
-            if (handler !=  mMapSparseMapDeletionHandler.end())
-                 mMapSparseMapDeletionHandler.erase(handler);
-        }
+        // /** Remove a sparse map deletion handler with the specified name. */
+        // virtual void RemoveSparseMapDeletionHandler(std::string handlerName) {
+        //     auto handler =  mMapSparseMapDeletionHandler.find(handlerName);
+        //     if (handler !=  mMapSparseMapDeletionHandler.end())
+        //          mMapSparseMapDeletionHandler.erase(handler);
+        // }
 
         /** Add a handler that will be called each time two sparse maps are merged. */
         virtual void AddSparseMapMergeHandler(SparseMapMergeHandler handler, std::string handlerName) {
@@ -123,7 +123,7 @@ namespace ark {
         MapFrameAvailableHandler mMapFrameAvailableHandler;
         MapLoopClosureDetectedHandler mMapLoopClosureHandler;
         MapSparseMapCreationHandler mMapSparseMapCreationHandler;
-        MapSparseMapDeletionHandler mMapSparseMapDeletionHandler;
+        //MapSparseMapDeletionHandler mMapSparseMapDeletionHandler;
         MapSparseMapMergeHandler mMapSparseMapMergeHandler;
     };
 }

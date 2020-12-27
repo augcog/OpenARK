@@ -2,24 +2,188 @@
 
 namespace ark {
 
-	SegmentedMesh::SegmentedMesh(double voxel_length,
-	               double sdf_trunc,
-	               open3d::integration::TSDFVolumeColorType color_type,
-	               double block_length, bool blocking)
-	:	block_length_(block_length),
-		voxel_length_(voxel_length),
-		sdf_trunc_(sdf_trunc),
-		color_type_(color_type),
-		blocking_(blocking){
-			Eigen::Vector3i * temp = &current_block;
-			temp = NULL;
-			active_volume = new open3d::integration::ScalableTSDFVolume(voxel_length_,
-	               sdf_trunc_,
-	               color_type_);
+	std::shared_ptr<open3d::geometry::RGBDImage> generateRGBDImageFromCV(cv::Mat color_mat, cv::Mat depth_mat, double max_depth, int width, int height) {
+
+		auto color_im = std::make_shared<open3d::geometry::Image>();
+		color_im->Prepare(width, height, 3, sizeof(uint8_t));
+
+		uint8_t *pi = (uint8_t *)(color_im->data_.data());
+
+		for (int i = 0; i < height; i++) {
+			for (int k = 0; k < width; k++) {
+
+				cv::Vec3b pixel = color_mat.at<cv::Vec3b>(i, k);
+
+				*pi++ = pixel[0];
+				*pi++ = pixel[1];
+				*pi++ = pixel[2];
+			}
 		}
+
+
+		auto depth_im = std::make_shared<open3d::geometry::Image>();
+		depth_im->Prepare(width, height, 1, sizeof(uint16_t));
+
+		uint16_t * p = (uint16_t *)depth_im->data_.data();
+
+		for (int i = 0; i < height; i++) {
+			for (int k = 0; k < width; k++) {
+				*p++ = depth_mat.at<uint16_t>(i, k);
+			}
+		}
+
+		//change the second-to-last parameter here to set maximum distance
+		auto rgbd_image = open3d::geometry::RGBDImage::CreateFromColorAndDepth(*color_im, *depth_im, 1000.0, max_depth, false);
+		return rgbd_image;
+	}
+
+	void SegmentedMesh::readConfig(std::string& recon_config) {
+
+		cv::FileStorage file;
+
+		struct stat buffer;
+		if (stat (recon_config.c_str(), &buffer) == 0) {
+			file =  cv::FileStorage(recon_config, cv::FileStorage::READ);
+		} else {
+			file =  cv::FileStorage();
+		}
+
+		std::cout << "Add entries to the intr.yaml to configure 3drecon parameters." << std::endl;
+
+		if (file["Recon_VoxelSize"].isReal()) {
+			file["Recon_VoxelSize"] >> voxel_length_;
+	  	} else {
+			std::cout << "option <Recon_VoxelSize> not found, setting to default 0.03" << std::endl;
+			voxel_length_ = 0.03;
+		}
+
+		if (file["Recon_SDFTruncate"].isReal()) {
+			file["Recon_SDFTruncate"] >> sdf_trunc_;
+		} else {
+			std::cout << "option <Recon_SDFTruncate> not found, setting to default voxel size * 5" << std::endl;
+			sdf_trunc_ = voxel_length_ * 5.;
+		}
+
+		if (file["Recon_BlockSize"].isReal()) {
+			file["Recon_BlockSize"] >> block_length_;
+	  	} else {
+			std::cout << "option <Recon_BlockSize> not found, setting to default 2.0" << std::endl;
+			block_length_ = 2.0;
+		}
+
+		if (file["Recon_MaxDepth"].isReal()) {
+			file["Recon_MaxDepth"] >> max_depth_;
+	  	} else {
+			std::cout << "option <Recon_MaxDepth> not found, setting to default 2.5" << std::endl;
+			max_depth_ = 2.5;
+		}
+	}
+
+	SegmentedMesh::SegmentedMesh(std::string& recon_config, OkvisSLAMSystem& slam, CameraSetup* camera, bool blocking/*= true*/) :
+		blocking_(blocking) {
+		readConfig(recon_config);
+		this->Setup(slam, camera);
+		blocking_ = true;
+		Eigen::Vector3i * temp = &current_block;
+		temp = NULL;
+		active_volume = new open3d::integration::ScalableTSDFVolume(voxel_length_,
+               sdf_trunc_,      
+				color_type_);
+		do_integration_ = true;
+	}
+
+	SegmentedMesh::SegmentedMesh(std::string& recon_config) {
+		readConfig(recon_config);
+		blocking_ = false;
+		active_volume = new open3d::integration::ScalableTSDFVolume(voxel_length_,
+               sdf_trunc_,      
+				color_type_);
+		do_integration_ = true;
+	}
+
+	SegmentedMesh::SegmentedMesh() {
+		readConfig(std::string(""));
+		blocking_ = false;
+		active_volume = new open3d::integration::ScalableTSDFVolume(voxel_length_,
+               sdf_trunc_,      
+				color_type_);
+		do_integration_ = true;
+	}
+
+	void SegmentedMesh::Setup(OkvisSLAMSystem& slam, CameraSetup* camera) {
+
+		FrameAvailableHandler updateFrameCounter([&, this] (MultiCameraFrame::Ptr frame) {
+			if (this->frame_counter_ > 1000000) {
+				this->frame_counter_ = 0;
+			}
+			this->frame_counter_++;
+		});
+
+		slam.AddFrameAvailableHandler(updateFrameCounter, "update frame counter");
+
+
+		KeyFrameAvailableHandler updateKFHandler([&, this](MultiCameraFrame::Ptr frame) {
+			MapKeyFrame::Ptr kf = frame->keyframe_;
+			this->SetLatestKeyFrame(kf);
+		});
+
+		slam.AddKeyFrameAvailableHandler(updateKFHandler, "updatekfhandler");
+
+		SparseMapCreationHandler spcHandler([&, this](int active_map_index) {
+			this->SetActiveMapIndex(active_map_index);
+			this->StartNewBlock();
+		});
+
+		slam.AddSparseMapCreationHandler(spcHandler, "mesh sp creation");
+
+		SparseMapMergeHandler spmHandler([&, this](int merged_map_index, int active_map_index) {
+			for (auto completed_mesh : completed_meshes) {
+				if (completed_mesh->mesh_map_index == merged_map_index) {
+					completed_mesh->mesh_map_index = active_map_index;
+				}
+			}
+			this->SetActiveMapIndex(active_map_index);
+			this->StartNewBlock();
+		});
+
+		slam.AddSparseMapMergeHandler(spmHandler, "mesh merge");
+
+		std::vector<float> intrinsics = camera->getColorIntrinsics();
+		auto size = camera->getImageSize();
+
+		auto intr = open3d::camera::PinholeCameraIntrinsic(size.width, size.height, intrinsics[0], intrinsics[1], intrinsics[2], intrinsics[3]);
+
+		this->camera_width_ = size.width;
+		this->camera_height_ = size.height;
+
+		FrameAvailableHandler tsdfFrameHandler([&, this, intr](MultiCameraFrame::Ptr frame) {
+			if (!this->do_integration_ || this->frame_counter_ % this->integration_frame_stride_ != 0) {
+				return;
+			}
+
+			std::cout << "Integrating frame number: " << frame->frameId_ << std::endl;
+
+			cv::Mat color_mat;
+			cv::Mat depth_mat;
+
+
+			frame->getImage(color_mat, 3);
+			frame->getImage(depth_mat, 4);
+
+			auto rgbd_image = generateRGBDImageFromCV(color_mat, depth_mat, this->max_depth_, this->camera_width_, this->camera_height_);
+
+			this->Integrate(*rgbd_image, intr, frame->T_WC(3).inverse());
+		});
+
+		slam.AddFrameAvailableHandler(tsdfFrameHandler, "tsdfframe");
+	}
 
 	void SegmentedMesh::Reset() {
 		active_volume->Reset();
+	}
+
+	void SegmentedMesh::SetIntegrationEnabled(bool enabled) {
+		this->do_integration_ = enabled;
 	}
 
 	void SegmentedMesh::Integrate(
@@ -31,7 +195,6 @@ namespace ark {
 			printf("too recent of a loop closure, skipping integration.\n");
 			return;
 		}
-
 
 		Eigen::Matrix4d transform_kf_coords = Eigen::Matrix4d::Identity();
 		
@@ -67,31 +230,6 @@ namespace ark {
 		if (!blocking_) {
 			std::cout << "Error: Attempted to set active map index but blocking was disabled" << std::endl;
 			return;
-		}
-
-		active_map_index = map_index;
-	}
-
-	void SegmentedMesh::DeleteMapsAfterIndex(int map_index) {
-
-		if (!blocking_) {
-			std::cout << "Error: Attempted to delete maps after index but blocking was disabled" << std::endl;
-			return;
-		}
-
-		std::map<int, int> index_map;
-
-		for (int i = 0; i < completed_meshes.size(); i++) {
-			if (completed_meshes[i]->mesh_map_index <= active_map_index) {
-				continue;
-			}
-			if (index_map.count(completed_meshes[i]->mesh_map_index) != 0) {
-				completed_meshes[i]->mesh_map_index = index_map[completed_meshes[i]->mesh_map_index];
-			} else {
-				index_map[completed_meshes[i]->mesh_map_index] = archive_index;
-				completed_meshes[i]->mesh_map_index = archive_index;
-				archive_index--;
-			}
 		}
 
 		active_map_index = map_index;
@@ -282,6 +420,7 @@ namespace ark {
 		std::vector<std::vector<Eigen::Vector3i>> &mesh_triangles, std::vector<Eigen::Matrix4d> &mesh_transforms, std::vector<int> &mesh_enabled) {
 
 		if (blocking_) {
+
 			//don't have any key frames, don't have any blocks
 			if (active_volume_keyframe == NULL) {
 				return;
@@ -353,7 +492,6 @@ namespace ark {
 			mesh_transforms.push_back(Eigen::Matrix4d::Identity());
 			mesh_enabled.push_back(1);
 		}
-
 	}
 
 	void SegmentedMesh::WriteMeshes() {
@@ -396,8 +534,6 @@ namespace ark {
 					mesh_map[index] = mesh;
 				}
 			}
-
-			cout << "writing meshes" << endl;
 
 			int i = 0;
 			for (auto iter = mesh_map.begin(); iter != mesh_map.end(); iter++) {

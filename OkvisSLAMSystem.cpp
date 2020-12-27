@@ -119,6 +119,7 @@ namespace ark {
 
             bool addKeyFrameResult = false;
             bool mapsMerged = false;
+            int merged_map_index = -1;
             //check if keyframe
             if(frame_data.data->is_keyframe){
                 if(out_frame->keyframeId_!=out_frame->frameId_){
@@ -172,6 +173,7 @@ namespace ark {
                             sparse_map_vector.erase(sparse_map_vector.begin() + i);
                             active_map_index = sparse_map_vector.size() - 1;
                             mapsMerged = true;
+                            merged_map_index = i;
                             break;
                         }
                     }
@@ -186,15 +188,15 @@ namespace ark {
 
             //Notify callbacks
             if (mapsMerged) {
-                for (MapSparseMapDeletionHandler::const_iterator callback_iter = mMapSparseMapDeletionHandler.begin();
-                        callback_iter != mMapSparseMapDeletionHandler.end(); ++callback_iter) {
-                    const MapSparseMapDeletionHandler::value_type& pair = *callback_iter;
-                    pair.second(active_map_index);
-                }
+                // for (MapSparseMapDeletionHandler::const_iterator callback_iter = mMapSparseMapDeletionHandler.begin();
+                //         callback_iter != mMapSparseMapDeletionHandler.end(); ++callback_iter) {
+                //     const MapSparseMapDeletionHandler::value_type& pair = *callback_iter;
+                //     pair.second(i);
+                // }
                 for (MapSparseMapMergeHandler::const_iterator callback_iter = mMapSparseMapMergeHandler.begin();
                         callback_iter != mMapSparseMapMergeHandler.end(); ++callback_iter) {
                     const MapSparseMapMergeHandler::value_type& pair = *callback_iter;
-                    pair.second(active_map_index);
+                    pair.second(merged_map_index, active_map_index);
                 }
             }
 
