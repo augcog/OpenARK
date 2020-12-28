@@ -58,22 +58,28 @@ namespace ark {
 		std::vector<int> get_kf_ids();
 		void StartNewBlock();
 		void SetActiveMapIndex(int map_index);
-		//void DeleteMapsAfterIndex(int map_index);
-		void Render(std::vector<std::vector<Eigen::Vector3d>> &mesh_vertices, std::vector<std::vector<Eigen::Vector3d>> &mesh_colors, 
-		std::vector<std::vector<Eigen::Vector3i>> &mesh_triangles, std::vector<Eigen::Matrix4d> &mesh_transforms, std::vector<int> &mesh_enabled);
+
+		std::tuple<std::shared_ptr<std::vector<std::vector<Eigen::Vector3d>>>, std::shared_ptr<std::vector<std::vector<Eigen::Vector3d>>>,
+		std::shared_ptr<std::vector<std::vector<Eigen::Vector3i>>>, std::shared_ptr<std::vector<Eigen::Matrix4d>>, std::shared_ptr<std::vector<int>>> GetOutputVectors();
+
+		void AddRenderMutex(std::mutex* render_mutex, std::string render_mutex_key);
+		void RemoveRenderMutex(std::string render_mutex_key);
 		void WriteMeshes();
 
 		void SetIntegrationEnabled(bool enabled);
 
 	public:
 		open3d::integration::TSDFVolumeColorType color_type_ = open3d::integration::TSDFVolumeColorType::RGB8;
-		int save_frame_stride_ = 3;
 		int integration_frame_stride_ = 3;
-		int extraction_frame_stride_ = 30;
+		int extraction_frame_stride_ = 60;
 
 		int camera_height_, camera_width_;
 
 	private:
+
+		//initialize
+		void Initialize(std::string& recon_config, bool blocking);
+
 		//setup sets up all callbacks
 		void Setup(OkvisSLAMSystem& slam, CameraSetup* camera);
 
@@ -86,6 +92,7 @@ namespace ark {
 		void readConfig(std::string& recon_config);
 		void UpdateActiveVolume(Eigen::Matrix4d extrinsic);
 		void CombineMeshes(std::shared_ptr<open3d::geometry::TriangleMesh>& output_mesh, std::shared_ptr<open3d::geometry::TriangleMesh> mesh_to_combine);
+		void UpdateOutputVectors();
 
 
 		//stores triangles meshes of completed reconstructed blocks
@@ -116,6 +123,14 @@ namespace ark {
 		bool blocking_;
 		double max_depth_;
 		bool do_integration_;
+
+		std::shared_ptr<std::vector<std::vector<Eigen::Vector3d>>> mesh_vertices;
+		std::shared_ptr<std::vector<std::vector<Eigen::Vector3d>>> mesh_colors;
+		std::shared_ptr<std::vector<std::vector<Eigen::Vector3i>>> mesh_triangles;
+		std::shared_ptr<std::vector<Eigen::Matrix4d>> mesh_transforms;
+		std::shared_ptr<std::vector<int>> mesh_enabled;
+
+		std::unordered_map<std::string, std::mutex *> render_mutexes;
 
 	protected:
 		std::mutex keyFrameLock;

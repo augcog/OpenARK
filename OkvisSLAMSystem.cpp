@@ -507,6 +507,10 @@ namespace ark {
         return okvis_estimator_ == nullptr;
     }
 
+    void OkvisSLAMSystem::getActiveFrames(std::vector<int>& frame_ids){
+        getActiveMap()->getFrames(frame_ids);
+    }
+
     void OkvisSLAMSystem::getTrajectory(std::vector<Eigen::Matrix4d>& trajOut){
         getActiveMap()->getTrajectory(trajOut);
     }

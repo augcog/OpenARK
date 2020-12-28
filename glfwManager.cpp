@@ -573,16 +573,16 @@ void Mesh::draw_obj()
     scene_mat = scene_mat*pose.matrix().inverse();
     glLoadMatrixd(scene_mat.data());
 
-    for (int i = 0; i < mesh_vertices.size(); ++i) {
+    for (int i = 0; i < mesh_vertices->size(); ++i) {
 
-        if (!mesh_enabled[i]) {
+        if (!(*mesh_enabled)[i]) {
             continue;
         }
 
-        std::vector<Eigen::Vector3d> vertices = mesh_vertices[i];
-        std::vector<Eigen::Vector3d> colors = mesh_colors[i];
-        std::vector<Eigen::Vector3i> triangles = mesh_triangles[i];
-        Eigen::Affine3d transform(mesh_transforms[i]);
+        std::vector<Eigen::Vector3d> vertices = (*mesh_vertices)[i];
+        std::vector<Eigen::Vector3d> colors = (*mesh_colors)[i];
+        std::vector<Eigen::Vector3i> triangles = (*mesh_triangles)[i];
+        Eigen::Affine3d transform((*mesh_transforms)[i]);
 
         transform = pose * transform;
         //mesh_transforms[i] is c->w, we need w->c

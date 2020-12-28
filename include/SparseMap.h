@@ -27,6 +27,11 @@ class SparseMap {
 
   }
 
+  void getFrames(std::vector<int>& frame_ids){
+    for (auto frame : frameMap_) {
+      frame_ids.push_back(frame.first);
+    }
+  }
 
   void getTrajectory(std::vector<Eigen::Matrix4d>& trajOut){
     trajOut.resize(frameMap_.size());
