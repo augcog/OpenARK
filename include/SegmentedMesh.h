@@ -59,8 +59,10 @@ namespace ark {
 		void StartNewBlock();
 		void SetActiveMapIndex(int map_index);
 
-		std::tuple<std::shared_ptr<std::vector<std::vector<Eigen::Vector3d>>>, std::shared_ptr<std::vector<std::vector<Eigen::Vector3d>>>,
-		std::shared_ptr<std::vector<std::vector<Eigen::Vector3i>>>, std::shared_ptr<std::vector<Eigen::Matrix4d>>, std::shared_ptr<std::vector<int>>> GetOutputVectors();
+		std::tuple<std::shared_ptr<std::vector<std::vector<Eigen::Vector3d>>>, 
+			std::shared_ptr<std::vector<std::vector<Eigen::Vector3d>>>,
+			std::shared_ptr<std::vector<std::vector<Eigen::Vector3i>>>, 
+			std::shared_ptr<std::vector<Eigen::Matrix4d>>, std::shared_ptr<std::vector<int>>> GetOutputVectors();
 
 		void AddRenderMutex(std::mutex* render_mutex, std::string render_mutex_key);
 		void RemoveRenderMutex(std::string render_mutex_key);

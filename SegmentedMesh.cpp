@@ -291,8 +291,10 @@ namespace ark {
 		UpdateOutputVectors();
 	}
 
-	std::tuple<std::shared_ptr<std::vector<std::vector<Eigen::Vector3d>>>, std::shared_ptr<std::vector<std::vector<Eigen::Vector3d>>>,
-	std::shared_ptr<std::vector<std::vector<Eigen::Vector3i>>>, std::shared_ptr<std::vector<Eigen::Matrix4d>>, std::shared_ptr<std::vector<int>>> SegmentedMesh::GetOutputVectors() {
+	std::tuple<std::shared_ptr<std::vector<std::vector<Eigen::Vector3d>>>, 
+			std::shared_ptr<std::vector<std::vector<Eigen::Vector3d>>>,
+			std::shared_ptr<std::vector<std::vector<Eigen::Vector3i>>>, 
+			std::shared_ptr<std::vector<Eigen::Matrix4d>>, std::shared_ptr<std::vector<int>>> SegmentedMesh::GetOutputVectors() {
 		return std::make_tuple(mesh_vertices, mesh_colors, mesh_triangles, mesh_transforms, mesh_enabled);
 	}
 
