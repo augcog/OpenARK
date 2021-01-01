@@ -50,6 +50,10 @@ class SparseMap {
     }
   }
 
+  int getNumKeyframes() {
+    return frameMap_.size();
+  }
+
   MapKeyFrame::Ptr getCurrentKeyframe(){
     return getKeyframe(currentKeyframeId);
   };

@@ -159,7 +159,8 @@ namespace ark {
                 keyframe->T_WS_ = correction_ * keyframe->T_WS_;
                 MapKeyFrame::Ptr loop_kf = nullptr;
                 Eigen::Affine3d transformEstimate;
-                if (detectLoopClosure(keyframe, loop_kf, transformEstimate)) {
+                if (getActiveMap()->getNumKeyframes() >= kMinimumKeyframes_
+                        && detectLoopClosure(keyframe, loop_kf, transformEstimate)) {
                     //cout << "Loop closure detected" << endl;
                     loopClosureDetected = true;
                     for (int i = 0; i < sparse_map_vector.size()-1; i++) {
@@ -174,7 +175,6 @@ namespace ark {
                             active_map_index = sparse_map_vector.size() - 1;
                             merged_map_index = i;
                             mapsMerged = true;
-                            merged_map_index = i;
                             break;
                         }
                     }
@@ -309,6 +309,12 @@ namespace ark {
 
     void OkvisSLAMSystem::createNewMap() {
         const auto newMap = std::make_shared<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>>();
+
+        // delete current map if it's too small
+        if (sparse_map_vector.size() != 0 && getActiveMap()->getNumKeyframes() < kMinimumKeyframes_) {
+            sparse_map_vector.erase(sparse_map_vector.begin() + active_map_index);
+        }
+
         sparse_map_vector.push_back(newMap);
         correction_ = Eigen::Matrix4d::Identity();
         // set it to the latest one
@@ -430,20 +436,19 @@ namespace ark {
         Eigen::Matrix4d correction;
         Eigen::Matrix4d kfCorrection;
         Eigen::Matrix4d T_KfKloop = kf->T_SC_[2]*transformEstimate.inverse().matrix()*kf->T_SC_[2].inverse();
-        if (false && olderMap->frameMap_.size() > currentMap->frameMap_.size()) {
-            //TODO - this case is a work in progress - not yet compatible with SlamReplaying.cpp and SlamDemo435i.cpp
+        if (olderMap->getNumKeyframes() > currentMap->getNumKeyframes()) {
             //merge current map into older map
             mapA = currentMap;
             mapB = olderMap;
-            correction = T_KfKloop * loop_kf->T_WS() * kf->T_WS().inverse();
+            correction = loop_kf->T_WS() * (kf->T_WS() * T_KfKloop).inverse();
             kfCorrection = correction;
             correction_ = correction * correction_;
-            
+            mapB->currentKeyframeId = mapA->currentKeyframeId;
         } else {
             //merge older map into current map
             mapA = olderMap;
             mapB = currentMap;
-            correction = kf->T_WS() * (T_KfKloop * loop_kf->T_WS()).inverse();
+            correction = kf->T_WS() * T_KfKloop * loop_kf->T_WS().inverse();
             kfCorrection = Eigen::Matrix4d::Identity();
         }
 
@@ -451,6 +456,7 @@ namespace ark {
         for (auto framePair = mapA->frameMap_.begin(); framePair != mapA->frameMap_.end(); framePair++) {
             auto frame = framePair->second;
             frame->setOptimizedTransform(correction * frame->T_WS());
+            frame->T_WS_ = correction * frame->T_WS_;
             mapB->frameMap_[frame->frameId_] = frame;
 		}
 
