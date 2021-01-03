@@ -106,16 +106,6 @@ int main(int argc, char **argv)
             pathMap[mapIndex] = new MyGUI::Path{name, Eigen::Vector3d(1, 0, 0)};
             traj_win.add_object(pathMap[mapIndex]);
         }
-        if (mapIndex < lastMapIndex_path) {
-            // pathMap[lastMapIndex_path]->clear();
-            auto it = pathMap.cbegin();
-            while(it != pathMap.cend()) {
-                auto curr = it++;
-                if (it->first > mapIndex) {
-                    it->second->clear();
-                }
-            }
-        }
         if (lastMapIndex_path != mapIndex) {
             if (hideInactiveMaps) {
                 pathMap[lastMapIndex_path]->clear();
@@ -164,25 +154,15 @@ int main(int argc, char **argv)
     slam.AddLoopClosureDetectedHandler(loopHandler, "trajectoryUpdate");
 
     SparseMapMergeHandler mergeHandler([&](int deletedIndex, int currentIndex) {
-        auto it = pathMap.cbegin();
-        while(it != pathMap.cend()) {
-            auto curr = it++;
-            curr->second->clear();
-        }
-        lastMapIndex_path = currentIndex;
-        for (size_t i = 0; i <= currentIndex; i++)
-        {
-            std::vector<Eigen::Matrix4d> traj;
-            slam.getMap(i)->getTrajectory(traj);
-            pathMap[i]->clear();
-            if (!hideInactiveMaps || i == currentIndex) {
-                for (size_t j = 0; j < traj.size(); j++) {
-                    pathMap[i]->add_node(traj[j].block<3, 1>(0, 3));
-                }
-            }
+        pathMap[deletedIndex]->clear();
+        std::vector<Eigen::Matrix4d> traj;
+        slam.getMap(currentIndex)->getTrajectory(traj);
+        pathMap[currentIndex]->clear();
+        for (size_t i = 0; i < traj.size(); i++) {
+            pathMap[currentIndex]->add_node(traj[i].block<3, 1>(0, 3));
         }
     });
-    slam.AddSparseMapMergeHandler(mergeHandler, "trajectoryReset");
+    slam.AddSparseMapMergeHandler(mergeHandler, "mergeUpdate");
 
     //run until display is closed
     okvis::Time start(0.0);

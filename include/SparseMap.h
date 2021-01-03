@@ -100,9 +100,6 @@ class SparseMap {
 
 
   std::map<int, MapKeyFrame::Ptr> frameMap_;
-  // correction for convert an obj coordinate in other's map 
-  // because reset okvis estimator also reset coordinate system
-  Eigen::Matrix4d correction{Eigen::Matrix4d::Identity()};
 
   DBoW2::EntryId lastEntry_;
   int currentKeyframeId;

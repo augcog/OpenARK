@@ -77,10 +77,10 @@ namespace ark {
         std::shared_ptr<okvis::ThreadedKFVio> okvis_estimator_;
 
         std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> getMap(int index) {
-            if (0 <= index && index < sparse_map_vector.size()) {
-                return sparse_map_vector[index];
-            } else {
+            if (sparse_maps_.find(index) == sparse_maps_.end()) {
                 return nullptr;
+            } else {
+                return sparse_maps_[index];
             }
         }
 
@@ -112,10 +112,11 @@ namespace ark {
         std::thread frameConsumerThread_;
         int num_frames_;
         std::atomic<bool> kill;
-        std::vector<std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>>> sparse_map_vector;
+        std::map<int, std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>>> sparse_maps_;
         bool new_map_checker;
         int map_timer;
         int active_map_index;
+        int map_id_counter_;
         std::string strVocFile;
 
         bool useLoopClosures_;

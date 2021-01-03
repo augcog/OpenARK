@@ -5,8 +5,8 @@ namespace ark {
 
     OkvisSLAMSystem::OkvisSLAMSystem(const std::string & strVocFile, const std::string & strSettingsFile) :
         start_(0.0), t_imu_(0.0), deltaT_(1.0), num_frames_(0), kill(false), 
-        sparse_map_vector(), active_map_index(-1), new_map_checker(false),map_timer(0), strVocFile(strVocFile),
-        matcher_(nullptr), bowId_(0), lastLoopClosureTimestamp_(0) {
+        sparse_maps_(), active_map_index(-1), map_id_counter_(0), new_map_checker(false),map_timer(0),
+        strVocFile(strVocFile), matcher_(nullptr), bowId_(0), lastLoopClosureTimestamp_(0) {
 
         okvis::VioParametersReader vio_parameters_reader;
         try {
@@ -119,7 +119,7 @@ namespace ark {
 
             bool loopClosureDetected = false;
             bool mapsMerged = false;
-            int merged_map_index = -1;
+            int deleted_map_index = -1;
             //check if keyframe
             if(frame_data.data->is_keyframe){
                 if(out_frame->keyframeId_!=out_frame->frameId_){
@@ -163,17 +163,25 @@ namespace ark {
                         && detectLoopClosure(keyframe, loop_kf, transformEstimate)) {
                     //cout << "Loop closure detected" << endl;
                     loopClosureDetected = true;
-                    for (int i = 0; i < sparse_map_vector.size()-1; i++) {
-                        if (sparse_map_vector[i] == nullptr)
+                    for (auto it = sparse_maps_.begin(); it != sparse_maps_.end(); it++) {
+                        int mapId = it->first;
+                        auto sparseMap = it->second;
+                        if (mapId == active_map_index)
                             continue;
-                        auto sparseMap = sparse_map_vector[i];
+                        
                         if (sparseMap->getKeyframe(loop_kf->frameId_) != nullptr) {
-                            cout << "MapMerge: " << i << " with " << active_map_index << " and " << keyframe->frameId_ << " with " << loop_kf->frameId_ << endl;
-                            sparse_map_vector[active_map_index] = mergeMaps(
-                                    sparseMap, getActiveMap(), keyframe, loop_kf, transformEstimate);
-                            sparse_map_vector.erase(sparse_map_vector.begin() + i);
-                            active_map_index = sparse_map_vector.size() - 1;
-                            merged_map_index = i;
+                            cout << "MapMerge: maps " << mapId << " with " << active_map_index <<
+                                    " and frames " << keyframe->frameId_ << " with " << loop_kf->frameId_ << endl;
+                            auto mergedMap = mergeMaps(sparseMap, getActiveMap(), keyframe, loop_kf, transformEstimate);
+                            if (mergedMap == sparseMap) {
+                                sparse_maps_.erase(active_map_index);
+                                deleted_map_index = active_map_index;
+                                active_map_index = mapId;
+                            } else {
+                                sparse_maps_.erase(mapId);
+                                deleted_map_index = mapId;
+                            }
+                            
                             mapsMerged = true;
                             break;
                         }
@@ -192,7 +200,7 @@ namespace ark {
                 for (MapSparseMapMergeHandler::const_iterator callback_iter = mMapSparseMapMergeHandler.begin();
                         callback_iter != mMapSparseMapMergeHandler.end(); ++callback_iter) {
                     const MapSparseMapMergeHandler::value_type& pair = *callback_iter;
-                    pair.second(merged_map_index, active_map_index);
+                    pair.second(deleted_map_index, active_map_index);
                 }
             }
 
@@ -311,14 +319,14 @@ namespace ark {
         const auto newMap = std::make_shared<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>>();
 
         // delete current map if it's too small
-        if (sparse_map_vector.size() != 0 && getActiveMap()->getNumKeyframes() < kMinimumKeyframes_) {
-            sparse_map_vector.erase(sparse_map_vector.begin() + active_map_index);
+        if (sparse_maps_.size() != 0 && getActiveMap()->getNumKeyframes() < kMinimumKeyframes_) {
+            sparse_maps_.erase(active_map_index);
         }
 
-        sparse_map_vector.push_back(newMap);
+        sparse_maps_[map_id_counter_] = newMap;
+        active_map_index = map_id_counter_;
+        map_id_counter_ ++;
         correction_ = Eigen::Matrix4d::Identity();
-        // set it to the latest one
-        active_map_index = static_cast<int>(sparse_map_vector.size())-1;
         for (MapSparseMapCreationHandler::const_iterator callback_iter = mMapSparseMapCreationHandler.begin();
             callback_iter != mMapSparseMapCreationHandler.end(); ++callback_iter) {
             const MapSparseMapCreationHandler::value_type& pair = *callback_iter;
@@ -522,17 +530,17 @@ namespace ark {
     }
 
     std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> OkvisSLAMSystem:: getActiveMap() {
-        if (0 <= active_map_index && active_map_index < sparse_map_vector.size()) {
-            return sparse_map_vector[active_map_index];
-        } else {
+        if (sparse_maps_.find(active_map_index) == sparse_maps_.end()) {
             std::cout << "Null map returned \n";
             return nullptr;
+        } else {
+            return sparse_maps_[active_map_index];
         }
     }
 
     void OkvisSLAMSystem::getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d>& trajOut) {
-        for (int i = 0; i < sparse_map_vector.size(); i++) {    
-            sparse_map_vector[i]->getMappedTrajectory(frameIdOut, trajOut);
+        for (auto it = sparse_maps_.begin(); it != sparse_maps_.end(); it++) {
+            it->second->getMappedTrajectory(frameIdOut, trajOut);
         }
     }
     
