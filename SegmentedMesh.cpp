@@ -141,20 +141,20 @@ namespace ark {
 
 		slam.AddKeyFrameAvailableHandler(updateKFHandler, "updatekfhandler");
 
-		SparseMapCreationHandler spcHandler([&, this](int active_map_index) {
-			this->SetActiveMapIndex(active_map_index);
+		SparseMapCreationHandler spcHandler([&, this](int map_index) {
+			this->SetActiveMapIndex(map_index);
 			this->StartNewBlock();
 		});
 
 		slam.AddSparseMapCreationHandler(spcHandler, "mesh sp creation");
 
-		SparseMapMergeHandler spmHandler([&, this](int merged_map_index, int active_map_index) {
+		SparseMapMergeHandler spmHandler([&, this](int deleted_map_index, int merged_map_index) {
 			for (auto completed_mesh : completed_meshes) {
-				if (completed_mesh->mesh_map_index == merged_map_index) {
-					completed_mesh->mesh_map_index = active_map_index;
+				if (completed_mesh->mesh_map_index == deleted_map_index) {
+					completed_mesh->mesh_map_index = merged_map_index;
 				}
 			}
-			this->SetActiveMapIndex(active_map_index);
+			this->SetActiveMapIndex(merged_map_index);
 			this->StartNewBlock();
 		});
 
