@@ -79,35 +79,43 @@ namespace ark {
 		}
 	}
 
-	SegmentedMesh::SegmentedMesh(std::string& recon_config, OkvisSLAMSystem& slam, CameraSetup* camera, bool blocking/*= true*/) :
-		blocking_(blocking) {
-		readConfig(recon_config);
+	SegmentedMesh::SegmentedMesh(std::string& recon_config, OkvisSLAMSystem& slam, CameraSetup* camera, bool blocking/*= true*/) {
 		this->Setup(slam, camera);
-		blocking_ = true;
-		Eigen::Vector3i * temp = &current_block;
-		temp = NULL;
-		active_volume = new open3d::integration::ScalableTSDFVolume(voxel_length_,
-               sdf_trunc_,      
-				color_type_);
-		do_integration_ = true;
+		Initialize(recon_config, blocking);
 	}
 
 	SegmentedMesh::SegmentedMesh(std::string& recon_config) {
-		readConfig(recon_config);
-		blocking_ = false;
-		active_volume = new open3d::integration::ScalableTSDFVolume(voxel_length_,
-               sdf_trunc_,      
-				color_type_);
-		do_integration_ = true;
+		Initialize(recon_config, false);
 	}
 
 	SegmentedMesh::SegmentedMesh() {
-		readConfig(std::string(""));
-		blocking_ = false;
+		Initialize(std::string(""), false);
+	}
+
+	void SegmentedMesh::Initialize(std::string& recon_config, bool blocking) {
+		readConfig(recon_config);
+		blocking_ = blocking;
+		if (blocking) {
+			Eigen::Vector3i * temp = &current_block;
+			temp = NULL;
+		}
 		active_volume = new open3d::integration::ScalableTSDFVolume(voxel_length_,
                sdf_trunc_,      
 				color_type_);
 		do_integration_ = true;
+
+		std::vector<std::vector<Eigen::Vector3d>> mesh_vertices_vec;
+		std::vector<std::vector<Eigen::Vector3d>> mesh_colors_vec;
+		std::vector<std::vector<Eigen::Vector3i>> mesh_triangles_vec;
+		std::vector<Eigen::Matrix4d> mesh_transforms_vec;
+		std::vector<int> mesh_enabled_vec;
+
+		this->mesh_vertices = std::make_shared<std::vector<std::vector<Eigen::Vector3d>>>(mesh_vertices_vec);
+		this->mesh_colors = std::make_shared<std::vector<std::vector<Eigen::Vector3d>>>(mesh_colors_vec);
+		this->mesh_triangles = std::make_shared<std::vector<std::vector<Eigen::Vector3i>>>(mesh_triangles_vec);
+		this->mesh_transforms = std::make_shared<std::vector<Eigen::Matrix4d>>(mesh_transforms_vec);
+		this->mesh_enabled = std::make_shared<std::vector<int>>(mesh_enabled_vec);
+
 	}
 
 	void SegmentedMesh::Setup(OkvisSLAMSystem& slam, CameraSetup* camera) {
@@ -117,6 +125,10 @@ namespace ark {
 				this->frame_counter_ = 0;
 			}
 			this->frame_counter_++;
+
+			if (this->do_integration_ && this->frame_counter_ % this->extraction_frame_stride_ == 0) {
+				this->UpdateOutputVectors();
+			}
 		});
 
 		slam.AddFrameAvailableHandler(updateFrameCounter, "update frame counter");
@@ -129,20 +141,20 @@ namespace ark {
 
 		slam.AddKeyFrameAvailableHandler(updateKFHandler, "updatekfhandler");
 
-		SparseMapCreationHandler spcHandler([&, this](int active_map_index) {
-			this->SetActiveMapIndex(active_map_index);
+		SparseMapCreationHandler spcHandler([&, this](int map_index) {
+			this->SetActiveMapIndex(map_index);
 			this->StartNewBlock();
 		});
 
 		slam.AddSparseMapCreationHandler(spcHandler, "mesh sp creation");
 
-		SparseMapMergeHandler spmHandler([&, this](int merged_map_index, int active_map_index) {
+		SparseMapMergeHandler spmHandler([&, this](int deleted_map_index, int merged_map_index) {
 			for (auto completed_mesh : completed_meshes) {
-				if (completed_mesh->mesh_map_index == merged_map_index) {
-					completed_mesh->mesh_map_index = active_map_index;
+				if (completed_mesh->mesh_map_index == deleted_map_index) {
+					completed_mesh->mesh_map_index = merged_map_index;
 				}
 			}
-			this->SetActiveMapIndex(active_map_index);
+			this->SetActiveMapIndex(merged_map_index);
 			this->StartNewBlock();
 		});
 
@@ -275,6 +287,15 @@ namespace ark {
 		active_volume_map_index = active_map_index;
 
 		current_block = block_loc;
+
+		UpdateOutputVectors();
+	}
+
+	std::tuple<std::shared_ptr<std::vector<std::vector<Eigen::Vector3d>>>, 
+			std::shared_ptr<std::vector<std::vector<Eigen::Vector3d>>>,
+			std::shared_ptr<std::vector<std::vector<Eigen::Vector3i>>>, 
+			std::shared_ptr<std::vector<Eigen::Matrix4d>>, std::shared_ptr<std::vector<int>>> SegmentedMesh::GetOutputVectors() {
+		return std::make_tuple(mesh_vertices, mesh_colors, mesh_triangles, mesh_transforms, mesh_enabled);
 	}
 
 	//combines 2 meshes, places in mesh 1
@@ -415,9 +436,24 @@ namespace ark {
 		return t;
 	}
 
-	//only updates the active mesh
-	void SegmentedMesh::Render(std::vector<std::vector<Eigen::Vector3d>> &mesh_vertices, std::vector<std::vector<Eigen::Vector3d>> &mesh_colors, 
-		std::vector<std::vector<Eigen::Vector3i>> &mesh_triangles, std::vector<Eigen::Matrix4d> &mesh_transforms, std::vector<int> &mesh_enabled) {
+
+	void SegmentedMesh::AddRenderMutex(std::mutex* render_mutex, std::string render_mutex_key) {
+		render_mutexes.insert(std::pair<std::string, std::mutex*>(render_mutex_key, render_mutex));
+	}
+
+	void SegmentedMesh::RemoveRenderMutex(std::string render_mutex_key) {
+		auto iter = this->render_mutexes.find(render_mutex_key);
+		if (iter != this->render_mutexes.end()) {
+			this->render_mutexes.erase(iter);
+		}
+	}
+
+
+	void SegmentedMesh::UpdateOutputVectors() {
+
+		for (auto render_mutex : render_mutexes) {
+			std::lock_guard<std::mutex> guard(*(render_mutex.second));
+		}
 
 		if (blocking_) {
 
@@ -427,70 +463,70 @@ namespace ark {
 			}
 
 			//clear out active mesh, clear mesh enabled, only run if vectors are populated
-			if (mesh_vertices.size() > 0) {
-				mesh_vertices.pop_back();
-				mesh_colors.pop_back();
-				mesh_triangles.pop_back();
-				mesh_transforms.pop_back();
-				mesh_enabled.clear();
+			if (mesh_vertices->size() > 0) {
+				mesh_vertices->pop_back();
+				mesh_colors->pop_back();
+				mesh_triangles->pop_back();
+				mesh_transforms->pop_back();
+				mesh_enabled->clear();
 			}
 
 			//always update transforms in case of loop closure
-			mesh_transforms.clear();
+			mesh_transforms->clear();
 			for (int i = 0; i < completed_meshes.size(); i++) {
 				auto mesh_unit = completed_meshes[i];
-				mesh_transforms.push_back(mesh_unit->keyframe->T_WC(3));
+				mesh_transforms->push_back(mesh_unit->keyframe->T_WC(3));
 			}
 
 			//updated completed meshes not in the vectors
-			if (completed_meshes.size() > mesh_vertices.size()) {
-				for (int i = mesh_vertices.size(); i < completed_meshes.size(); i++) {
+			if (completed_meshes.size() > mesh_vertices->size()) {
+				for (int i = mesh_vertices->size(); i < completed_meshes.size(); i++) {
 
 					auto mesh_unit = completed_meshes[i];
 
-					mesh_vertices.push_back(mesh_unit->mesh->vertices_);
-					mesh_colors.push_back(mesh_unit->mesh->vertex_colors_);
-					mesh_triangles.push_back(mesh_unit->mesh->triangles_);
+					mesh_vertices->push_back(mesh_unit->mesh->vertices_);
+					mesh_colors->push_back(mesh_unit->mesh->vertex_colors_);
+					mesh_triangles->push_back(mesh_unit->mesh->triangles_);
 
 				}
 			}
 
 			auto mesh = active_volume->ExtractTriangleMesh();
 
-			mesh_vertices.push_back(mesh->vertices_);
-			mesh_colors.push_back(mesh->vertex_colors_);
-			mesh_triangles.push_back(mesh->triangles_);
-			mesh_transforms.push_back(active_volume_keyframe->T_WC(3));
+			mesh_vertices->push_back(mesh->vertices_);
+			mesh_colors->push_back(mesh->vertex_colors_);
+			mesh_triangles->push_back(mesh->triangles_);
+			mesh_transforms->push_back(active_volume_keyframe->T_WC(3));
 
 
 			for (int i = 0; i < completed_meshes.size(); i++) {
 				if (completed_meshes[i]->mesh_map_index == active_map_index) {
-					mesh_enabled.push_back(1);
+					mesh_enabled->push_back(1);
 				} else {
-					mesh_enabled.push_back(0);
+					mesh_enabled->push_back(0);
 				}
 			}
 
 			//active volume is always visible
-			mesh_enabled.push_back(1);
+			mesh_enabled->push_back(1);
 
 		} else {
 			auto mesh = active_volume->ExtractTriangleMesh();
 
 			//clear out active mesh, clear mesh enabled, only run if vectors are populated
-			if (mesh_vertices.size() > 0) {
-				mesh_vertices.pop_back();
-				mesh_colors.pop_back();
-				mesh_triangles.pop_back();
-				mesh_transforms.pop_back();
-				mesh_enabled.clear();
+			if (mesh_vertices->size() > 0) {
+				mesh_vertices->pop_back();
+				mesh_colors->pop_back();
+				mesh_triangles->pop_back();
+				mesh_transforms->pop_back();
+				mesh_enabled->clear();
 			}
 
-			mesh_vertices.push_back(mesh->vertices_);
-			mesh_colors.push_back(mesh->vertex_colors_);
-			mesh_triangles.push_back(mesh->triangles_);
-			mesh_transforms.push_back(Eigen::Matrix4d::Identity());
-			mesh_enabled.push_back(1);
+			mesh_vertices->push_back(mesh->vertices_);
+			mesh_colors->push_back(mesh->vertex_colors_);
+			mesh_triangles->push_back(mesh->triangles_);
+			mesh_transforms->push_back(Eigen::Matrix4d::Identity());
+			mesh_enabled->push_back(1);
 		}
 	}
 
@@ -545,6 +581,5 @@ namespace ark {
 			open3d::io::WriteTriangleMeshToPLY("mesh.ply", *mesh, false, false, true, true, false, false);
 		}
 	}
-
 
 }

@@ -74,28 +74,13 @@ int main(int argc, char **argv)
 
 	int frame_counter = 1;
 	bool do_integration = true;
-	int current_map_index = 0;
 
-	SegmentedMesh * mesh = new SegmentedMesh(configFilename, slam, &camera, false);
+	SegmentedMesh * mesh = new SegmentedMesh(configFilename, slam, &camera);
 
 	MyGUI::MeshWindow mesh_win("Mesh Viewer", mesh_view_width, mesh_view_height);
 	MyGUI::Mesh mesh_obj("mesh", mesh);
 
 	mesh_win.add_object(&mesh_obj);
-
-	std::vector<std::pair<std::shared_ptr<open3d::geometry::TriangleMesh>,
-		Eigen::Matrix4d>> vis_mesh;
-
-	FrameAvailableHandler meshHandler([&mesh_obj, &frame_counter, &do_integration](MultiCameraFrame::Ptr frame) {
-		if (!do_integration || frame_counter % 30 != 1) {
-			return;
-		}
-
-		mesh_obj.update_meshes();
-
-	});
-
-	slam.AddFrameAvailableHandler(meshHandler, "meshupdate");
 
 	FrameAvailableHandler viewHandler([&mesh, &mesh_obj, &mesh_win, &do_integration](MultiCameraFrame::Ptr frame) {
 		Eigen::Affine3d transform(frame->T_WC(3));
@@ -117,7 +102,7 @@ int main(int argc, char **argv)
 	slam.AddFrameAvailableHandler(viewHandler, "viewhandler");
 
 	if (save_frames) {
-		KeyFrameAvailableHandler saveFrameHandler([&saveFrame, &frame_counter, &do_integration, &current_map_index](MultiCameraFrame::Ptr frame) {
+		KeyFrameAvailableHandler saveFrameHandler([&saveFrame, &frame_counter, &do_integration](MultiCameraFrame::Ptr frame) {
 			if (!do_integration || frame_counter % 3 != 0) {
 				return;
 			}
@@ -130,7 +115,7 @@ int main(int argc, char **argv)
 
 			Eigen::Matrix4d transform(frame->T_WC(3));
 
-			saveFrame->frameWriteMapped(imRGB, imDepth, transform, frame->frameId_, current_map_index);
+			saveFrame->frameWrite(imRGB, imDepth, transform, frame->frameId_);
 		});
 	
 		slam.AddKeyFrameAvailableHandler(saveFrameHandler, "saveframe");
@@ -147,14 +132,13 @@ int main(int argc, char **argv)
 		MultiCameraFrame::Ptr frame(new MultiCameraFrame);
 		camera.update(*frame);
 
-		//Get or wait for IMU Data until current frame 
+		//Get or wait for IMU Data
 		std::vector<ImuPair> imuData;
 		camera.getImuToTime(frame->timestamp_, imuData);
 
 		//Add data to SLAM system
 		slam.PushIMU(imuData);
 		slam.PushFrame(frame);
-
 
 		frame_counter++;
 
@@ -181,12 +165,14 @@ int main(int argc, char **argv)
 	slam.getMappedTrajectory(frameIdOut, traj);
 
 	std::map<int, Eigen::Matrix4d> keyframemap;
-
 	for (int i = 0; i < frameIdOut.size(); i++) {
 		keyframemap[frameIdOut[i]] = traj[i];
 	}
-
 	saveFrame->updateTransforms(keyframemap);
+
+	std::vector<int> active_frames;
+	slam.getActiveFrames(active_frames);
+	saveFrame->writeActiveFrames(active_frames);
 
 	mesh->WriteMeshes();
 

@@ -354,11 +354,11 @@ public:
 
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-	std::vector<std::vector<Eigen::Vector3d>> mesh_vertices;
-    std::vector<std::vector<Eigen::Vector3d>> mesh_colors;
-    std::vector<std::vector<Eigen::Vector3i>> mesh_triangles;
-    std::vector<Eigen::Matrix4d> mesh_transforms;
-    std::vector<int> mesh_enabled;
+	std::shared_ptr<std::vector<std::vector<Eigen::Vector3d>>> mesh_vertices;
+    std::shared_ptr<std::vector<std::vector<Eigen::Vector3d>>> mesh_colors;
+    std::shared_ptr<std::vector<std::vector<Eigen::Vector3i>>> mesh_triangles;
+    std::shared_ptr<std::vector<Eigen::Matrix4d>> mesh_transforms;
+    std::shared_ptr<std::vector<int>> mesh_enabled;
 
 	// //threadsafe?
 	// int current_active_map;
@@ -372,12 +372,16 @@ public:
 	Mesh(std::string name, ark::SegmentedMesh * mesh)
 	: Object(name) {
 		mesh_ = mesh;
-	}
 
-	void update_meshes() {
-		std::lock_guard<std::mutex> guard(meshLock_);
+		mesh_->AddRenderMutex(&meshLock_, "mesh visualizer");
 
-		mesh_->Render(mesh_vertices, mesh_colors, mesh_triangles, mesh_transforms, mesh_enabled);
+		auto mesh_output = mesh_->GetOutputVectors();
+
+		mesh_vertices = std::get<0>(mesh_output);
+		mesh_colors = std::get<1>(mesh_output);
+		mesh_triangles = std::get<2>(mesh_output);
+		mesh_transforms = std::get<3>(mesh_output);
+		mesh_enabled = std::get<4>(mesh_output);
 	}
 
 
