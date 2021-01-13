@@ -205,12 +205,19 @@ OpenARK uses the Eigen Library, `add_definitions(-DEIGEN_DONT_ALIGN=1)` in CMake
 
 2. `cd OpenARK && mkdir build && cd build` to create build directory.
 
-3. Add the following lines in CMakeLists.txt of OpenARK // this to be deleted later when OpenARK's CMakeLists.txt is updated.
+3.1 Add the following lines in CMakeLists.txt of OpenARK // this to be deleted later when OpenARK's CMakeLists.txt is updated.
 ``` sh
 set(ENV{DLoopDetector_INCLUDE_DIRS} "/usr/local/include/DLoopDetector")
 set(ENV{Open3D_DIR} "/home/[path_between_home_and_Open3D]/Open3D/build/CMakeFiles")
 ``` 
-
+3.2 Fix the following lines in CMAkeLists.txt of OpenARK // this to be deleted later when OpenARK's CMakeLists.txt is updated.
+``` sh
+  From: find_package( OpenGV REQUIRED NO_MODULE )
+  To  : find_package( opengv REQUIRED NO_MODULE )
+  
+  From: find_package( OpenGV REQUIRED )
+  To  : find_package( opengv REQUIRED )
+``` 
 4. Do the following things before cmake build. // this to be deleted later when OpenARK's codes are updated.
 ``` sh
 Open OpenARK/MockD435iCamera.cpp and delete & on the LHS of line 31:30 and 37:28
