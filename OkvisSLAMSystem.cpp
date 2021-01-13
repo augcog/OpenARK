@@ -5,7 +5,8 @@ namespace ark {
 
     OkvisSLAMSystem::OkvisSLAMSystem(const std::string & strVocFile, const std::string & strSettingsFile) :
         start_(0.0), t_imu_(0.0), deltaT_(1.0), num_frames_(0), kill(false), 
-        sparse_map_vector(), active_map_index(-1), new_map_checker(false),map_timer(0), strVocFile(strVocFile){
+        sparse_maps_(), active_map_index(-1), map_id_counter_(0), new_map_checker(false),map_timer(0),
+        strVocFile(strVocFile), matcher_(nullptr), bowId_(0), lastLoopClosureTimestamp_(0) {
 
         okvis::VioParametersReader vio_parameters_reader;
         try {
@@ -19,6 +20,7 @@ namespace ark {
         //okvis::VioParameters parameters;
         vio_parameters_reader.getParameters(parameters_);
 
+        setEnableLoopClosure(parameters_.loopClosureParameters.enabled,strVocFile,true, new brisk::BruteForceMatcher());
         createNewMap();
 
         //initialize Visual odometry
@@ -51,7 +53,7 @@ namespace ark {
             StampedFrameData frame_data;
             while (!frame_data_queue_.try_dequeue(&frame_data)) {
                 if (okvis_estimator_->isReset() && !new_map_checker) {
-                    if(map_timer >= 15)
+                    if(map_timer >= kMapCreationCooldownFrames_)
                     {
                         cout<<"Created new map"<<endl;
                         new_map_checker = true;
@@ -70,7 +72,7 @@ namespace ark {
                 }
                 else
                 {
-                    if(map_timer<=15)
+                    if(map_timer<=kMapCreationCooldownFrames_)
                         map_timer++;
                 }
                 
@@ -115,7 +117,9 @@ namespace ark {
                 out_frame->T_SC_.push_back(T_SC.T());
             }
 
-            bool addKeyFrameResult = false;
+            bool loopClosureDetected = false;
+            bool mapsMerged = false;
+            int deleted_map_index = -1;
             //check if keyframe
             if(frame_data.data->is_keyframe){
                 if(out_frame->keyframeId_!=out_frame->frameId_){
@@ -151,29 +155,55 @@ namespace ark {
                     keyframe->descriptors_[cam_idx]=frame_data.data->descriptors[cam_idx];
                 }
 
-                for (int i = 0; i < sparse_map_vector.size()-1; i++) {
-                    const auto sparseMap = sparse_map_vector[i];
-                    if (sparseMap->detectLoopClosure(keyframe)) {
-                        active_map_index = i;
-                        // delete all the new map after active map
-                        sparse_map_vector.resize(active_map_index+1);
-                        cout << "Deleting newer maps after: " << active_map_index << endl;
-                        for (MapSparseMapDeletionHandler::const_iterator callback_iter = mMapSparseMapDeletionHandler.begin();
-                            callback_iter != mMapSparseMapDeletionHandler.end(); ++callback_iter) {
-                            const MapSparseMapDeletionHandler::value_type& pair = *callback_iter;
-                            pair.second(i);
+                // apply correction
+                keyframe->T_WS_ = correction_ * keyframe->T_WS_;
+                MapKeyFrame::Ptr loop_kf = nullptr;
+                Eigen::Affine3d transformEstimate;
+                if (getActiveMap()->getNumKeyframes() >= kMinimumKeyframes_
+                        && detectLoopClosure(keyframe, loop_kf, transformEstimate)) {
+                    //cout << "Loop closure detected" << endl;
+                    loopClosureDetected = true;
+                    for (auto it = sparse_maps_.begin(); it != sparse_maps_.end(); it++) {
+                        int mapId = it->first;
+                        auto sparseMap = it->second;
+                        if (mapId == active_map_index)
+                            continue;
+                        
+                        if (sparseMap->getKeyframe(loop_kf->frameId_) != nullptr) {
+                            cout << "MapMerge: maps " << mapId << " with " << active_map_index <<
+                                    " and frames " << keyframe->frameId_ << " with " << loop_kf->frameId_ << endl;
+                            auto mergedMap = mergeMaps(sparseMap, getActiveMap(), keyframe, loop_kf, transformEstimate);
+                            if (mergedMap == sparseMap) {
+                                sparse_maps_.erase(active_map_index);
+                                deleted_map_index = active_map_index;
+                                active_map_index = mapId;
+                            } else {
+                                sparse_maps_.erase(mapId);
+                                deleted_map_index = mapId;
+                            }
+                            
+                            mapsMerged = true;
+                            break;
                         }
-                        break;
                     }
                 }
-
-                addKeyFrameResult = getActiveMap()->addKeyframe(keyframe);
-
+                
+                if (!mapsMerged) {
+                    getActiveMap()->addKeyframe(keyframe, loop_kf, transformEstimate);
+                }
             }
 
             out_frame->keyframe_ = getActiveMap()->getKeyframe(out_frame->keyframeId_);
 
             //Notify callbacks
+            if (mapsMerged) {
+                for (MapSparseMapMergeHandler::const_iterator callback_iter = mMapSparseMapMergeHandler.begin();
+                        callback_iter != mMapSparseMapMergeHandler.end(); ++callback_iter) {
+                    const MapSparseMapMergeHandler::value_type& pair = *callback_iter;
+                    pair.second(deleted_map_index, active_map_index);
+                }
+            }
+
             if(frame_data.data->is_keyframe){
                 for (MapKeyFrameAvailableHandler::const_iterator callback_iter = mMapKeyFrameAvailableHandler.begin();
                     callback_iter != mMapKeyFrameAvailableHandler.end(); ++callback_iter) {
@@ -188,7 +218,7 @@ namespace ark {
                 pair.second(out_frame);
             }
 
-            if (addKeyFrameResult) { //add keyframe returns true if a loop closure was detected
+            if (loopClosureDetected) {
                 for (MapLoopClosureDetectedHandler::const_iterator callback_iter = mMapLoopClosureHandler.begin();
                     callback_iter != mMapLoopClosureHandler.end(); ++callback_iter) {
                     const MapLoopClosureDetectedHandler::value_type& pair = *callback_iter;
@@ -286,20 +316,178 @@ namespace ark {
     }
 
     void OkvisSLAMSystem::createNewMap() {
-        if (!sparse_map_vector.empty()) {
-            sparse_map_vector.back()->lastKfTimestamp_ = sparse_map_vector.back()->lastKfTimestampDetect_ = 0.;
-        }
         const auto newMap = std::make_shared<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>>();
-        newMap->setEnableLoopClosure(parameters_.loopClosureParameters.enabled,strVocFile,true, new brisk::BruteForceMatcher());
-        sparse_map_vector.push_back(newMap);
-        // set it to the latest one
-        active_map_index = static_cast<int>(sparse_map_vector.size())-1;
+
+        // delete current map if it's too small
+        if (sparse_maps_.size() != 0 && getActiveMap()->getNumKeyframes() < kMinimumKeyframes_) {
+            sparse_maps_.erase(active_map_index);
+        }
+
+        sparse_maps_[map_id_counter_] = newMap;
+        active_map_index = map_id_counter_;
+        map_id_counter_ ++;
+        correction_ = Eigen::Matrix4d::Identity();
         for (MapSparseMapCreationHandler::const_iterator callback_iter = mMapSparseMapCreationHandler.begin();
             callback_iter != mMapSparseMapCreationHandler.end(); ++callback_iter) {
             const MapSparseMapCreationHandler::value_type& pair = *callback_iter;
             pair.second(active_map_index);
         }
+    }
 
+    void OkvisSLAMSystem::setEnableLoopClosure(bool enableUseLoopClosures = false, std::string vocabPath = "",
+            bool binaryVocab = true, cv::DescriptorMatcher* matcher = nullptr) {
+        matcher_.reset(matcher);
+        useLoopClosures_ = enableUseLoopClosures;
+        if(useLoopClosures_){
+            std::cout << "Loading Vocabulary From: " << vocabPath << std::endl;
+            vocab_.reset(new DBoW2::TemplatedVocabulary<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>());
+            if(!binaryVocab){
+                vocab_->load(vocabPath);
+            }else{
+                vocab_->binaryLoad(vocabPath); //Note: Binary Loading only supported for ORB/BRISK vocabularies
+            }
+            //vocab_->save(vocabPath+std::string(".tst"));
+            std::cout << "Vocabulary Size: " << vocab_->size() << std::endl;
+            typename DLoopDetector::TemplatedLoopDetector<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>::Parameters detectorParams(0,0);
+            //can change specific parameters if we want
+            // Parameters given by default are:
+            // use nss = true
+            // alpha = 0.3
+            // k = 3
+            // geom checking = GEOM_DI
+            detectorParams.k=2;
+            detectorParams.di_levels = 4;
+            detector_.reset(new DLoopDetector::TemplatedLoopDetector<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>(*vocab_,detectorParams));
+            std::cout << "Map Initialized\n";
+        }
+    }
+
+    bool OkvisSLAMSystem::detectLoopClosure(MapKeyFrame::Ptr kf, MapKeyFrame::Ptr &loop_kf, Eigen::Affine3d &transformEstimate) {
+        bool shouldDetectLoopClosure = kf->timestamp_-lastLoopClosureTimestamp_>0.2*1e9;
+        if(!(useLoopClosures_ && shouldDetectLoopClosure)) {
+            return false;
+        }
+        lastLoopClosureTimestamp_=kf->timestamp_;
+        std::vector<cv::Mat> bowDesc;
+        kf->descriptorsAsVec(0,bowDesc);
+        DLoopDetector::DetectionResult result;
+        auto local_keypoints = kf->keypoints(0);
+        detector_->detectLoop(local_keypoints,bowDesc,result);
+        if(result.detection()){
+            loop_kf = bowFrameMap_[result.match];
+        }else{
+            //We only want to record a frame if it is not matched with another image
+            //no need to duplicate
+            bowFrameMap_[bowId_]=kf;
+            bowId_++;
+            return false; //pose added to graph, no loop detected, nothing left to do
+        }
+
+        //transform estimation
+        //TODO: should move to function to be set as one of a variety of methods
+
+        //brute force matching
+        std::vector<cv::DMatch> matches; 
+        //query,train
+        matcher_->match(kf->descriptors(0),loop_kf->descriptors(0), matches);
+        std::cout << "detectLoopClosure: " << "sizes: kf: " << kf->descriptors(0).rows << " loop_kf: "
+            << loop_kf->descriptors(0).rows << " matches: " << matches.size() << " loop_kf id: " << loop_kf->frameId_ << std::endl;
+
+        //get feature point clouds
+        typename pcl::PointCloud<pcl::PointXYZ>::Ptr kf_feat_cloud(new pcl::PointCloud<pcl::PointXYZ>());
+        for(int i=0; i<kf->keypoints(0).size(); i++){
+            Eigen::Vector4d kp3dh_C = kf->homogeneousKeypoints3d(0)[i];
+            kf_feat_cloud->points.push_back(pcl::PointXYZ(kp3dh_C[0],kp3dh_C[1],kp3dh_C[2]));
+        } 
+        typename pcl::PointCloud<pcl::PointXYZ>::Ptr loop_kf_feat_cloud(new pcl::PointCloud<pcl::PointXYZ>());
+        for(int i=0; i<loop_kf->keypoints(0).size(); i++){
+            Eigen::Vector4d kp3dh_C = loop_kf->homogeneousKeypoints3d(0)[i];
+            loop_kf_feat_cloud->points.push_back(pcl::PointXYZ(kp3dh_C[0],kp3dh_C[1],kp3dh_C[2]));
+        }
+
+        //convert DMatch to correspondence
+        std::vector<int> correspondences(matches.size());
+        for(int i=0; i<matches.size(); i++){
+            if(loop_kf->homogeneousKeypoints3d(0)[matches[i].queryIdx][3]!=0 && loop_kf->homogeneousKeypoints3d(0)[matches[i].trainIdx][3]!=0)
+                correspondences[matches[i].queryIdx]=matches[i].trainIdx;
+            else
+                correspondences[matches[i].queryIdx]=-1;;
+        }
+        int numInliers;
+        std::vector<bool> inliers;
+        //find initial transform estimate using feature points
+        CorrespondenceRansac<pcl::PointXYZ>::getInliersWithTransform(
+                kf_feat_cloud, loop_kf_feat_cloud, correspondences,
+                3, 0.2, 50, numInliers, inliers, transformEstimate);
+        if(((float)numInliers)/correspondences.size()<0.3) {
+            loop_kf = nullptr;
+            return false; 
+        }
+
+        transformEstimate = PointCostSolver<pcl::PointXYZ>::solve(kf_feat_cloud,loop_kf_feat_cloud,
+                                            correspondences, inliers, transformEstimate);
+
+        //std::cout << transformEstimate.matrix() << std::endl;
+
+        return true;
+    }
+
+
+    std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> OkvisSLAMSystem::mergeMaps(
+            std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> olderMap,
+            std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> currentMap, MapKeyFrame::Ptr kf,
+            MapKeyFrame::Ptr loop_kf, Eigen::Affine3d &transformEstimate) {
+    
+        // Loop is detected. Merge smaller map into bigger map and save correction
+        std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> mapA;
+        std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> mapB;
+        Eigen::Matrix4d correction;
+        Eigen::Matrix4d kfCorrection;
+        Eigen::Matrix4d T_KfKloop = kf->T_SC_[2]*transformEstimate.inverse().matrix()*kf->T_SC_[2].inverse();
+        if (olderMap->getNumKeyframes() > currentMap->getNumKeyframes()) {
+            //merge current map into older map
+            mapA = currentMap;
+            mapB = olderMap;
+            correction = loop_kf->T_WS() * (kf->T_WS() * T_KfKloop).inverse();
+            kfCorrection = correction;
+            correction_ = correction * correction_;
+            mapB->currentKeyframeId = mapA->currentKeyframeId;
+        } else {
+            //merge older map into current map
+            mapA = olderMap;
+            mapB = currentMap;
+            correction = kf->T_WS() * T_KfKloop * loop_kf->T_WS().inverse();
+            kfCorrection = Eigen::Matrix4d::Identity();
+        }
+
+        //adding keyframes from mapA to mapB
+        for (auto framePair = mapA->frameMap_.begin(); framePair != mapA->frameMap_.end(); framePair++) {
+            auto frame = framePair->second;
+            frame->setOptimizedTransform(correction * frame->T_WS());
+            frame->T_WS_ = correction * frame->T_WS_;
+            mapB->frameMap_[frame->frameId_] = frame;
+		}
+
+        //adding constraints and poses to mapB's pose graph
+        mapB->graph_.constraintMutex.lock();
+        mapA->graph_.constraintMutex.lock();
+        mapB->graph_.constraints_.insert(
+            mapB->graph_.constraints_.end(),
+            mapA->graph_.constraints_.begin(),
+            mapA->graph_.constraints_.end()
+        );
+        mapA->graph_.constraintMutex.unlock();
+        for (auto framePair = mapA->frameMap_.begin(); framePair != mapA->frameMap_.end(); framePair++) {
+            mapB->graph_.poses_.insert(std::pair<int,GraphPose>(
+                framePair->first,framePair->second->T_WS()));
+		}
+        mapB->graph_.constraintMutex.unlock();
+
+        //adding current keyframe to mapB and optimizing pose graph
+        kf->T_WS_ = kfCorrection * kf->T_WS_;
+        mapB->addKeyframe(kf, loop_kf, transformEstimate);
+
+        return mapB;
     }
 
     void OkvisSLAMSystem::display() {
@@ -333,22 +521,26 @@ namespace ark {
         return okvis_estimator_ == nullptr;
     }
 
+    void OkvisSLAMSystem::getActiveFrames(std::vector<int>& frame_ids){
+        getActiveMap()->getFrames(frame_ids);
+    }
+
     void OkvisSLAMSystem::getTrajectory(std::vector<Eigen::Matrix4d>& trajOut){
         getActiveMap()->getTrajectory(trajOut);
     }
 
     std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> OkvisSLAMSystem:: getActiveMap() {
-        if (0 <= active_map_index && active_map_index < sparse_map_vector.size()) {
-            return sparse_map_vector[active_map_index];
-        } else {
+        if (sparse_maps_.find(active_map_index) == sparse_maps_.end()) {
             std::cout << "Null map returned \n";
             return nullptr;
+        } else {
+            return sparse_maps_[active_map_index];
         }
     }
 
     void OkvisSLAMSystem::getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d>& trajOut) {
-        for (int i = 0; i < sparse_map_vector.size(); i++) {    
-            sparse_map_vector[i]->getMappedTrajectory(frameIdOut, trajOut);
+        for (auto it = sparse_maps_.begin(); it != sparse_maps_.end(); it++) {
+            it->second->getMappedTrajectory(frameIdOut, trajOut);
         }
     }
     
