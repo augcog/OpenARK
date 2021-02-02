@@ -23,8 +23,8 @@ sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 60 --slave /u
 sudo update-alternatives --set gcc "/usr/bin/gcc-5"
 ```
 
-### NOTE: CMake Builds
-For conciseness, in all sections below "build with CMake" will mean
+### Note: CMake Builds
+For conciseness, in all sections below "build with CMake" will mean ...
 
 ```sh
 mkdir build && cd build
@@ -32,7 +32,7 @@ cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j4
 sudo make install
 ```
-or a one-liner for cmake build
+or a one-liner for cmake build is ...
 ```sh
 mkdir build && cd build && cmake -D CMAKE_BUILD_TYPE=RELEASE .. && make -j4 && sudo make install
 ```
@@ -221,10 +221,13 @@ set(ENV{Open3D_DIR} "/home/[path_between_home_and_Open3D]/Open3D/build/CMakeFile
 4. Do the following things before cmake build. // this to be deleted later when OpenARK's codes are updated.
 ``` sh
 Open OpenARK/MockD435iCamera.cpp and delete & on the LHS of line 31:30 and 37:28
+```
+``` sh
 Open OpenARK/SaveFrame.cpp and change line 17 to #include <boost/filesystem.hpp> 
 Open OpenARK/SaveFrame.cpp and change mkdir(folderPath.c_str()); to boost::filesystem::create_directories(folderPath.c_str());
 Open OpenARK/saveFrame.cpp and delete “SaveFrame::” part on line 23,24,25,27 in SaveFrame.h file
-
+```
+``` sh
 Open OpenARK/include/SegmentedMesh.h and change
 From :
 #include "Open3D/geometry/PointCloud.h"
@@ -232,22 +235,27 @@ From :
 To: 
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Geometry/TriangleMesh.h"
-
+```
+``` sh
 Open OpenARK/include/SegmentedMesh.h:9:50 and change
 From : Line 9 : #include "Open3D/camera/PinholeCameraIntrinsic.h"
 To   : Line 9 : #include "Open3D/Camera/PinholeCameraIntrinsic.h"
-
+```
+``` sh
 Open OpenARK/SegmentedMesh.cpp:320:3 and change
 From : line 320 : cout << "writing meshes" << endl;
 To   : line 320:  std::cout << "writing meshes" << std::endl;
-
+```
+``` sh
 Open OpenARK/include/glfwManager.h and change
 From : line 221 : void MeshWindow::set_camera(Eigen::Affine3d t) {
 To   : line 221 : void set_camera(Eigen::Affine3d t) {
-
+```
+``` sh
 From : line 230 : MeshWindow::bool clicked() {
 To   : line 230 : bool clicked() {
-
+```
+``` sh
 Open OpenARK/SlamRecording.cpp:91:31 and change
 From :
 Line 91: std::atomic_bool paused = true;
