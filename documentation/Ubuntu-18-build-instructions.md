@@ -1,6 +1,4 @@
-## OpenARK CMAKE build instructions for Ubuntu 18.04 LTS:
-
-Due to the variety of distributions and packaging tools available, we will only provide detailed step-by-step build instructions for *Ubuntu 18.04* using `apt`. However, the steps below should be similar for any Linux distribution.
+## Installing OpenARK for Ubuntu 18.04.5 LTS (Bionic Beaver)
 
 ### Preliminaries
 
@@ -46,14 +44,6 @@ Note that this installs the library. You may replace '4' in step 3 with any numb
 sudo apt -y install libpcl-*
 ```
 
-
-### Installing [SuiteSparse 5.1.2](https://packages.ubuntu.com/bionic/libsuitesparse-dev)
-
-You might not want to get this if you are going to run Ceres without Suitesparse.
-```sh
-sudo apt install libsuitesparse-dev
-```
-
 ### Installing OpenCV with Contrib
 
 OpenCV 3.4.6, OpenCV_Contrib 3.4.6 and [Package: libopencv-dev (3.2.0+dfsg-4ubuntu0.1 and others)](https://packages.ubuntu.com/bionic/libopencv-dev)
@@ -97,27 +87,37 @@ sudo make install
 ```
 Again, -j4 may be replaced with any number of threads.
 
-### Installing Ceres 1.14.0 from source
-
-1. If you want to build Ceres without Suitesparse, then change the `option(SUITESPARSE "Enable SuiteSparse." ON)` To `OFF` in the Ceres CMakeLists.txt. 
-2. Ceres uses the Eigen Library, `add_definitions(-DEIGEN_DONT_ALIGN=1)` in CMakeLists.txt if necessary.
-
-1. `wget -O ceres114.tar.gz https://github.com/ceres-solver/ceres-solver/archive/1.14.0.tar.gz && tar -xf ceres114.tar.gz && cd ceres-solver-1.14.0`
-
-2. Build with CMake and install
+### Installing Ceres in two different ways.
+There are 2 ways to install Ceres. You can either download Ceres 1.13.0 package or Ceres 1.14.0 from source. For now, we recommend Ceres 1.13.0 package.
 
 ### Installing [Ceres 1.13.0 package](https://packages.ubuntu.com/source/bionic/ceres-solver)
 
-ceres-solver depends on [libceres-dev](https://packages.ubuntu.com/bionic/libceres-dev) and [libsuitesparse-dev](https://packages.ubuntu.com/bionic/libsuitesparse-dev)
+ceres-solver depends on [libceres-dev](https://packages.ubuntu.com/bionic/libceres-dev) and [libsuitesparse-dev 1.13.0](https://packages.ubuntu.com/bionic/libsuitesparse-dev)
 ```
 sudo apt -y install libceres-dev
 ```
+
+### Installing Ceres 1.14.0 from source
+
+#### Installing [SuiteSparse 5.1.2](https://packages.ubuntu.com/bionic/libsuitesparse-dev)
+SuiteSparse speeds up some of Ceres functions. However, if you want to prevent Suitesparse from crashing, you can skip downloading Suitesparse. You can still download Suitesparse and opt it out during the Ceres build process.
+```sh
+sudo apt install libsuitesparse-dev
+```
+Download Ceres1.14.0 from source and build as follows. 
+1. `wget -O ceres114.tar.gz https://github.com/ceres-solver/ceres-solver/archive/1.14.0.tar.gz && tar -xf ceres114.tar.gz && cd ceres-solver-1.14.0`
+2. Build with CMake and install
+3. If you want to build Ceres without Suitesparse, then change the `option(SUITESPARSE "Enable SuiteSparse." ON)` To `OFF` in the Ceres CMakeLists.txt. 
+4. Ceres uses the Eigen Library, `add_definitions(-DEIGEN_DONT_ALIGN=1)` in CMakeLists.txt if necessary.
+
 ### Intalling OpenGV 1.0
 
 OpenGV uses the Eigen Library, `add_definitions(-DEIGEN_DONT_ALIGN=1)` in CMakeLists.txt if necessary.
 
 1. `git clone https://github.com/laurentkneip/opengv && cd opengv`
+1. `wget -O ceres114.tar.gz https://github.com/ceres-solver/ceres-solver/archive/1.14.0.tar.gz && tar -xf ceres114.tar.gz && cd ceres-solver-1.14.0`
 
+2. Build with CMake and install
 2. Build with CMake and install
 
 ### Installing Brisk
@@ -173,7 +173,7 @@ Note that this is a modified version of Okvis.
 
 3. Verify Okvis+ by running the demo application
 You will find a demo application in okvis_apps. It can process datasets in the ASL/ETH format.
-
+https://github.com/ceres-solver/ceres-solver/releases/tag/1.14.0
 In order to run a minimal working example, follow the steps below:
 
 1. Download a dataset of your choice from http://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets. Assuming you downloaded MH_01_easy/. You will find a corresponding calibration / estimator configuration in the config folder.
