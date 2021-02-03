@@ -1,6 +1,4 @@
-## OpenARK CMAKE build instructions for Ubuntu 18.04 LTS:
-
-Due to the variety of distributions and packaging tools available, we will only provide detailed step-by-step build instructions for *Ubuntu 18.04* using `apt`. However, the steps below should be similar for any Linux distribution.
+## Installing OpenARK for Ubuntu 18.04.5 LTS (Bionic Beaver)
 
 ### Preliminaries
 
@@ -25,8 +23,8 @@ sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 60 --slave /u
 sudo update-alternatives --set gcc "/usr/bin/gcc-5"
 ```
 
-### NOTE: CMake Builds
-For conciseness, in all sections below "build with CMake" will mean
+### Note: CMake Builds
+For conciseness, in all sections below "build with CMake" will mean ...
 
 ```sh
 mkdir build && cd build
@@ -34,7 +32,7 @@ cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j4
 sudo make install
 ```
-or a one-liner for cmake build
+or a one-liner for cmake build is ...
 ```sh
 mkdir build && cd build && cmake -D CMAKE_BUILD_TYPE=RELEASE .. && make -j4 && sudo make install
 ```
@@ -44,14 +42,6 @@ Note that this installs the library. You may replace '4' in step 3 with any numb
 
 ```sh
 sudo apt -y install libpcl-*
-```
-
-
-### Installing [SuiteSparse 5.1.2](https://packages.ubuntu.com/bionic/libsuitesparse-dev)
-
-You might not want to get this if you are going to run Ceres without Suitesparse.
-```sh
-sudo apt install libsuitesparse-dev
 ```
 
 ### Installing OpenCV with Contrib
@@ -97,27 +87,37 @@ sudo make install
 ```
 Again, -j4 may be replaced with any number of threads.
 
-### Installing Ceres 1.14.0 from source
-
-1. If you want to build Ceres without Suitesparse, then change the `option(SUITESPARSE "Enable SuiteSparse." ON)` To `OFF` in the Ceres CMakeLists.txt. 
-2. Ceres uses the Eigen Library, `add_definitions(-DEIGEN_DONT_ALIGN=1)` in CMakeLists.txt if necessary.
-
-1. `wget -O ceres114.tar.gz https://github.com/ceres-solver/ceres-solver/archive/1.14.0.tar.gz && tar -xf ceres114.tar.gz && cd ceres-solver-1.14.0`
-
-2. Build with CMake and install
+### Installing Ceres in two different ways.
+There are 2 ways to install Ceres. You can either download Ceres 1.13.0 package or Ceres 1.14.0 from source. For now, we recommend Ceres 1.13.0 package.
 
 ### Installing [Ceres 1.13.0 package](https://packages.ubuntu.com/source/bionic/ceres-solver)
 
-ceres-solver depends on [libceres-dev](https://packages.ubuntu.com/bionic/libceres-dev) and [libsuitesparse-dev](https://packages.ubuntu.com/bionic/libsuitesparse-dev)
+ceres-solver depends on [libceres-dev](https://packages.ubuntu.com/bionic/libceres-dev) and [libsuitesparse-dev 1.13.0](https://packages.ubuntu.com/bionic/libsuitesparse-dev)
 ```
 sudo apt -y install libceres-dev
 ```
+
+### Installing Ceres 1.14.0 from source
+
+#### Installing [SuiteSparse 5.1.2](https://packages.ubuntu.com/bionic/libsuitesparse-dev)
+SuiteSparse speeds up some of Ceres functions. However, if you want to prevent Suitesparse from crashing, you can skip downloading Suitesparse. You can still download Suitesparse and opt it out during the Ceres build process.
+```sh
+sudo apt install libsuitesparse-dev
+```
+Download Ceres1.14.0 from source and build as follows. 
+1. `wget -O ceres114.tar.gz https://github.com/ceres-solver/ceres-solver/archive/1.14.0.tar.gz && tar -xf ceres114.tar.gz && cd ceres-solver-1.14.0`
+2. Build with CMake and install
+3. If you want to build Ceres without Suitesparse, then change the `option(SUITESPARSE "Enable SuiteSparse." ON)` To `OFF` in the Ceres CMakeLists.txt. 
+4. Ceres uses the Eigen Library, `add_definitions(-DEIGEN_DONT_ALIGN=1)` in CMakeLists.txt if necessary.
+
 ### Intalling OpenGV 1.0
 
 OpenGV uses the Eigen Library, `add_definitions(-DEIGEN_DONT_ALIGN=1)` in CMakeLists.txt if necessary.
 
 1. `git clone https://github.com/laurentkneip/opengv && cd opengv`
+1. `wget -O ceres114.tar.gz https://github.com/ceres-solver/ceres-solver/archive/1.14.0.tar.gz && tar -xf ceres114.tar.gz && cd ceres-solver-1.14.0`
 
+2. Build with CMake and install
 2. Build with CMake and install
 
 ### Installing Brisk
@@ -144,24 +144,24 @@ Note that this repository is a modified version of DLoopDetector.
 Note that this is a modified version of Open3D 0.8.0
 
 1. `git clone --recursive https://github.com/moonwonlee/Open3D.git && cd Open3D`
-or get `git clone --recursive https://github.com/moonwonlee/Open3D.git && cd Open3D`, go to src/Open3D/ and delete MovingTSDFVolume.cpp and MovingTSDFVolume.h in // this to be deleted later when Open3D is updated.
+or get `git clone --recursive https://github.com/adamchang2000/Open3D.git && cd Open3D`, go to src/Open3D/ and delete MovingTSDFVolume.cpp and MovingTSDFVolume.h in // this to be deleted later when Open3D is updated.
 
 2. Build with CMake 
 
-3. Make the following changes to Open3DConfig.cmake in Open3D/build/CMakeFiles // this to be deleted later when Open3D is updated.
+3. Make the following changes to Open3DConfig.cmake in Open3D/build/CMakeFiles // this to be deleted later when Open3D is updated or OpenARK CMakeLists.txt is updated.
 ```sh
 Change:
-get_filename_component(PACKAGE_PREFIX_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../" ABSOLUTE)
-To:
-get_filename_component(PACKAGE_PREFIX_DIR "${CMAKE_CURRENT_LIST_DIR}/../../" ABSOLUTE)
+From : get_filename_component(PACKAGE_PREFIX_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../" ABSOLUTE)
+To   : get_filename_component(PACKAGE_PREFIX_DIR "${CMAKE_CURRENT_LIST_DIR}/../../" ABSOLUTE)
   
 Change:
+From:
 set(Open3D_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR}/include;${PACKAGE_PREFIX_DIR}/include/Open3D/3rdparty/Eigen;/usr/include/libdrm;/usr/include;${PACKAGE_PREFIX_DIR}/include/Open3D/3rdparty/fmt/include;${PACKAGE_PREFIX_DIR}/include/Open3D/3rdparty/fmt/include/format.h";${PACKAGE_PREFIX_DIR}/include/Open3D/3rdparty/fmt/include/)
-TO:
+To:
 set(Open3D_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR}/include;${PACKAGE_PREFIX_DIR}/3rdparty/Eigen;/usr/include/libdrm;/usr/include;${PACKAGE_PREFIX_DIR}/3rdparty/fmt/include;${PACKAGE_PREFIX_DIR}/3rdparty/fmt/include/format.h")
 ```
 
-4. make -j4 && sudo make install
+4. `make -j4 && sudo make install`
 
 ### Installing Okvis+ 
 Okvis+ uses the Eigen Library, `add_definitions(-DEIGEN_DONT_ALIGN=1)` in CMakeLists.txt if necessary.
@@ -173,7 +173,7 @@ Note that this is a modified version of Okvis.
 
 3. Verify Okvis+ by running the demo application
 You will find a demo application in okvis_apps. It can process datasets in the ASL/ETH format.
-
+https://github.com/ceres-solver/ceres-solver/releases/tag/1.14.0
 In order to run a minimal working example, follow the steps below:
 
 1. Download a dataset of your choice from http://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets. Assuming you downloaded MH_01_easy/. You will find a corresponding calibration / estimator configuration in the config folder.
@@ -198,51 +198,64 @@ Optional: As a sanity check,
 3. Verify that the kernel is updated :
 `modinfo uvcvideo | grep "version:" should include realsense string`
 
-### Bulding OpenARK
+### Installing and Building OpenARK
 OpenARK uses the Eigen Library, `add_definitions(-DEIGEN_DONT_ALIGN=1)` in CMakeLists.txt if necessary.
 
 1. Clone our repository: `git clone https://github.com/augcog/OpenARK`, or download the latest release.
 
 2. `cd OpenARK && mkdir build && cd build` to create build directory.
 
-3. Add the following lines in CMakeLists.txt of OpenARK // this to be deleted later when OpenARK's CMakeLists.txt is updated.
+3.1 Add the following lines in CMakeLists.txt of OpenARK // this to be deleted later when OpenARK's CMakeLists.txt is updated.
 ``` sh
 set(ENV{DLoopDetector_INCLUDE_DIRS} "/usr/local/include/DLoopDetector")
 set(ENV{Open3D_DIR} "/home/[path_between_home_and_Open3D]/Open3D/build/CMakeFiles")
 ``` 
-
+3.2 Fix the following lines in CMAkeLists.txt of OpenARK // this to be deleted later when OpenARK's CMakeLists.txt is updated.
+``` sh
+  From: find_package( OpenGV REQUIRED NO_MODULE )
+  To  : find_package( opengv REQUIRED NO_MODULE )
+  
+  From: find_package( OpenGV REQUIRED )
+  To  : find_package( opengv REQUIRED )
+``` 
 4. Do the following things before cmake build. // this to be deleted later when OpenARK's codes are updated.
 ``` sh
 Open OpenARK/MockD435iCamera.cpp and delete & on the LHS of line 31:30 and 37:28
+```
+``` sh
 Open OpenARK/SaveFrame.cpp and change line 17 to #include <boost/filesystem.hpp> 
 Open OpenARK/SaveFrame.cpp and change mkdir(folderPath.c_str()); to boost::filesystem::create_directories(folderPath.c_str());
 Open OpenARK/saveFrame.cpp and delete “SaveFrame::” part on line 23,24,25,27 in SaveFrame.h file
-
-Open OpenARK/include/SegmentedMesh.h and 
-Change:
+```
+``` sh
+Open OpenARK/include/SegmentedMesh.h and change
+From :
 #include "Open3D/geometry/PointCloud.h"
 #include "Open3D/geometry/TriangleMesh.h"
 To: 
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Geometry/TriangleMesh.h"
-
-Open OpenARK/include/SegmentedMesh.h:9:50 and 
-Change:
-#include "Open3D/camera/PinholeCameraIntrinsic.h"
-To: 
-#include "Open3D/Camera/PinholeCameraIntrinsic.h"
-
+```
+``` sh
+Open OpenARK/include/SegmentedMesh.h:9:50 and change
+From : Line 9 : #include "Open3D/camera/PinholeCameraIntrinsic.h"
+To   : Line 9 : #include "Open3D/Camera/PinholeCameraIntrinsic.h"
+```
+``` sh
 Open OpenARK/SegmentedMesh.cpp:320:3 and change
-From line 320 : cout << "writing meshes" << endl;
-To line 320:     std::cout << "writing meshes" << std::endl;
-
+From : line 320 : cout << "writing meshes" << endl;
+To   : line 320:  std::cout << "writing meshes" << std::endl;
+```
+``` sh
 Open OpenARK/include/glfwManager.h and change
 From : line 221 : void MeshWindow::set_camera(Eigen::Affine3d t) {
 To   : line 221 : void set_camera(Eigen::Affine3d t) {
-
+```
+``` sh
 From : line 230 : MeshWindow::bool clicked() {
 To   : line 230 : bool clicked() {
-
+```
+``` sh
 Open OpenARK/SlamRecording.cpp:91:31 and change
 From :
 Line 91: std::atomic_bool paused = true;
