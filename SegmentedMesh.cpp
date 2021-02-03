@@ -220,7 +220,7 @@ namespace ark {
 
 	//only updates the active mesh
 	void SegmentedMesh::Render(std::vector<std::vector<Eigen::Vector3d>> &mesh_vertices, std::vector<std::vector<Eigen::Vector3d>> &mesh_colors, 
-		std::vector<std::vector<Eigen::Vector3i>> &mesh_triangles, std::vector<Eigen::Matrix4d> &mesh_transforms, std::vector<int> &mesh_enabled) {
+		std::vector<std::vector<Eigen::Vector3i>> &mesh_triangles, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> &mesh_transforms, std::vector<int> &mesh_enabled) { // Moon : Rule 2.c?? fixed.
 
 		//don't have any key frames, don't have any blocks
 		if (active_volume_keyframe == NULL) {

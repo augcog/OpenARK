@@ -105,7 +105,7 @@ namespace ark{
     };//CameraCalibration
 
     /** A paired down MultiCameraFrame, only containing information necessary to be stored by the map */
-    class MapKeyFrame{
+    class MapKeyFrame{ // Moon : A class that has eigen objects for Rule 2.a
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         typedef std::shared_ptr<MapKeyFrame> Ptr;
@@ -114,9 +114,9 @@ namespace ark{
         /** Timestamp */
         double timestamp_;
         /** Original world position of the Keyframe */
-        Eigen::Matrix4d T_WS_; 
+        Eigen::Matrix4d T_WS_; // Moon : a fixed-size vectorizable eigen object
         /** Optimized world position of the Keyframe */
-        Eigen::Matrix4d T_WS_Optimized_; 
+        Eigen::Matrix4d T_WS_Optimized_; // Moon : a fixed-size vectorizable eigen object
         /** Bool checking whether the frame has been optimized */
         bool optimized_;
         /** Keypoints and Descriptors extracted by the SLAM System 
@@ -125,13 +125,13 @@ namespace ark{
         std::vector<std::vector<cv::KeyPoint > > keypoints_; 
         std::vector<cv::Mat> descriptors_;
         /** Estimated 3D feature positions of all keypoints in each image */
-        std::vector<std::vector<Eigen::Vector4d > > keypoints3dh_C;
+        std::vector<std::vector<Eigen::Vector4d, Eigen::aligned_allocator<Eigen::Vector4d>>> keypoints3dh_C; // Moon : Rule 2.b ?? , fixed
         /** ID of the previous keyframe (may be -1 if not available) */
         int previousKeyframeId_;
         /** Pointer to the keyframe (may be nullptr if not available) */
         MapKeyFrame::Ptr previousKeyframe_;
 
-        std::vector<Eigen::Matrix4d> T_SC_;
+        std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> T_SC_; // Moon : Rule 2, fixed.
 
         MapKeyFrame():
         frameId_(-1),optimized_(false),previousKeyframeId_(-1){
@@ -146,7 +146,7 @@ namespace ark{
             return descriptors_[cameraIdx];
         }
 
-        const std::vector<Eigen::Vector4d > & homogeneousKeypoints3d(int cameraIdx){
+        const std::vector<Eigen::Vector4d, Eigen::aligned_allocator<Eigen::Vector4d>> & homogeneousKeypoints3d(int cameraIdx){ // Moon : 2.c?? fixed
             return keypoints3dh_C[cameraIdx];
         }
 
@@ -158,7 +158,7 @@ namespace ark{
             } 
         }
 
-        void setOptimizedTransform(const Eigen::Matrix4d& T_WS_in){
+        void setOptimizedTransform(const Eigen::Matrix4d& T_WS_in){ // Moon : Fine Rule 3
 
             T_WS_Optimized_ = T_WS_in;
             optimized_ = true;
@@ -184,7 +184,7 @@ namespace ark{
     enum class FrameType { Depth, IR, RGB, XYZMap };
 
     /** A set of images taken on the same frame, possibly by multiple instruments/cameras */
-    class MultiCameraFrame {
+    class MultiCameraFrame { // Moon : a class that has fixed-size vectorizable Eigen objects.
     public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         typedef std::shared_ptr<MultiCameraFrame> Ptr;
@@ -225,9 +225,9 @@ namespace ark{
         /** Transformation matrix of the sensor body in keyframe coordinates 
          ** This may be Identity if transforms not available
          ** This should be set to world coordinates if keyframeId is -1 */
-        Eigen::Matrix4d T_KS_;
+        Eigen::Matrix4d T_KS_; // Moon: fixed-size vectorizable Eigen object.
         /** Tranformation matrices of the cameras WRT sensor body */
-        std::vector<Eigen::Matrix4d> T_SC_;
+        std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> T_SC_; // Moon : Rule 2, fixed.
 
         /** ID of the frame (may be -1 if not available) */
         int frameId_;
@@ -250,17 +250,17 @@ namespace ark{
 
         /** Construct a MultiCameraFrame from the given images,
           * camera system, and frame ID*/
-        MultiCameraFrame(std::vector<cv::Mat> images, Eigen::Matrix4d T_KS, 
+        MultiCameraFrame(std::vector<cv::Mat> images, const Eigen::Matrix4d& T_KS, // Moon: Rule 3, fixed
             int frame_id = -1, int keyframe_id = -1){
             this->images_ = images;
             this->T_KS_ = T_KS;
             frameId_ = frame_id;
             keyframeId_ = keyframe_id;
-        }
+        } 
 
         /** Construct a MultiCameraFrame from the given image,
             and camera system, and frame ID */
-        MultiCameraFrame(cv::Mat image, Eigen::Matrix4d T_KS, 
+        MultiCameraFrame(cv::Mat image, const Eigen::Matrix4d& T_KS, // Moon: Rule 3, fixed
             int frame_id = -1, int keyframe_id = -1){
             images_.push_back(image);
             this->T_KS_ = T_KS;

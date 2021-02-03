@@ -95,7 +95,7 @@ protected:
 
 };//Window
 
-class ARCameraWindow : public ObjectWindow{
+class ARCameraWindow : public ObjectWindow{ // A class that has fixed-size vectorizable eigen objects.
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	ARCameraWindow(std::string name, int resX, int resY, GLenum image_format, GLenum data_type, double px, double py, double cx, double cy, double near_cut, double far_cut):
@@ -125,7 +125,7 @@ public:
 
 	bool display() override;
 
-	void set_camera(const Eigen::Affine3d& cam_extr){
+	void set_camera(const Eigen::Affine3d& cam_extr){ // Moon: Rule 3, fine
 		cam_extr_=cam_extr;
 	}
 
@@ -140,8 +140,8 @@ public:
 
 
 private:
-	Eigen::Affine3d cam_extr_;
-	Eigen::Matrix4d proj_mat_;
+	Eigen::Affine3d cam_extr_; // Moon : a fixed-size vectorizable Eigen object
+	Eigen::Matrix4d proj_mat_; // Moon : a fixed-size vectorizable Eigen object
 	cv::Mat current_image;
 	GLuint texture;
 	GLenum image_format_;
@@ -210,12 +210,12 @@ public:
 
 };
 
-class MeshWindow : public ObjectWindow {
+class MeshWindow : public ObjectWindow { // Moon : a class that has fixed-size vectorizable eigen objects
 public:
 	MeshWindow(std::string name, int resX, int resY) :
 		ObjectWindow(name, resX, resY) {};
 	//bool display();
-	void set_camera(Eigen::Affine3d t) {
+	void set_camera(const Eigen::Affine3d& t) { // Moon : Rule 3, fixed
 		transform = t;
 	}
         void keyboard_control()
@@ -233,10 +233,10 @@ public:
 		return clicked;
 	}
 private:
-	Eigen::Affine3d transform;
+	Eigen::Affine3d transform; // Moon : a fixed-size vectorizable eigen object
 	bool clicked_ = false;
 };
-
+// Eigen : a class having a Eigen object as member 
 class Object{
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -250,11 +250,11 @@ public:
 
 	void display();
 
-	void set_transform(Eigen::Affine3d t);
+	void set_transform(const Eigen::Affine3d& t); // Moon : Rule 3, fixed
 
 	void translate(Eigen::Translation3d t);
 
-	void rotate(Eigen::Quaterniond q);
+	void rotate(const Eigen::Quaterniond& q); // Moon : Rule 3, fixed
 
 	void hide();
 
@@ -264,7 +264,7 @@ public:
 
 protected:
 	std::mutex displayLock_;
-	Eigen::Affine3d pose;
+	Eigen::Affine3d pose; // Eigen : Fixed-size vectorizable Eigen object
 	bool draw;
 	
 };//Object
@@ -327,12 +327,12 @@ public:
 	color(color){
 	}
 
-	Path(std::string name, const std::vector<Eigen::Vector3d>& nodes)
+	Path(std::string name, const std::vector<Eigen::Vector3d>& nodes) // Moon: Rule 3 fine.
 	: Object(name),
 	nodes(nodes){
 	}
 
-	void add_node(Eigen::Vector3d node){
+	void add_node(Eigen::Vector3d node){ 
 		nodes.push_back(node);
 	}
 
@@ -357,7 +357,7 @@ public:
 	std::vector<std::vector<Eigen::Vector3d>> mesh_vertices;
     std::vector<std::vector<Eigen::Vector3d>> mesh_colors;
     std::vector<std::vector<Eigen::Vector3i>> mesh_triangles;
-    std::vector<Eigen::Matrix4d> mesh_transforms;
+    std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> mesh_transforms; // Moon : Rule 2, Fixed
     std::vector<int> mesh_enabled;
 
 	// //threadsafe?
@@ -377,7 +377,7 @@ public:
 	void update_meshes() {
 		std::lock_guard<std::mutex> guard(meshLock_);
 
-		mesh_->Render(mesh_vertices, mesh_colors, mesh_triangles, mesh_transforms, mesh_enabled);
+		mesh_->Render(mesh_vertices, mesh_colors, mesh_triangles, mesh_transforms, mesh_enabled); // Moon : Rule 2 related to line 360 fixed. not sure tho.
 
 	}
 

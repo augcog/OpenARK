@@ -60,9 +60,9 @@ namespace ark {
 
         void display();
 
-        void getTrajectory(std::vector<Eigen::Matrix4d>& trajOut);
+        void getTrajectory(std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut); // Moon: Rule 2.b, fixed
 
-		void getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d>& trajOut);
+		void getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut); // Moon: Rule 2.b, fixed.
         
         ~OkvisSLAMSystem();
 
