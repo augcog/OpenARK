@@ -107,7 +107,7 @@ sudo apt install libsuitesparse-dev
 Download Ceres1.14.0 from source and build as follows. 
 1. `wget -O ceres114.tar.gz https://github.com/ceres-solver/ceres-solver/archive/1.14.0.tar.gz && tar -xf ceres114.tar.gz && cd ceres-solver-1.14.0`
 2. Build with CMake and install
-3. If you want to build Ceres without Suitesparse, then change the `option(SUITESPARSE "Enable SuiteSparse." ON)`to `OFF` in the Ceres CMakeLists.txt. 
+3. If you want to build Ceres without Suitesparse, then change the `option(SUITESPARSE "Enable SuiteSparse." ON)` to `OFF` in the Ceres CMakeLists.txt. 
 4. Ceres uses the Eigen Library, `add_definitions(-DEIGEN_DONT_ALIGN=1)` in CMakeLists.txt if necessary.
 
 ### Intalling OpenGV 1.0
@@ -192,8 +192,8 @@ sudo apt-get install librealsense2-dkms librealsense2-utils librealsense2-dev li
 ```
 (If using Ubuntu 16, replace `bionic` on the second line with `xenial`)
 
-Optional: As a sanity check, 
-1. Connect the Intel RealSense depth camera and run: realsense-viewer to verify the installation.
+#### Optional: As a sanity check, 
+1. Connect the Intel RealSense depth camera and run: `realsense-viewer` to verify the installation.
 2. plugin your RealSense camera (SR300 or D400) and run `rs-capture` to see if streams appear.
 3. Verify that the kernel is updated :
 `modinfo uvcvideo | grep "version:" should include realsense string`
