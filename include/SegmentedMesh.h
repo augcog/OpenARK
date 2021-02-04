@@ -4,9 +4,9 @@
 #include "Open3D/Visualization/Utility/DrawGeometry.h"
 #include "Open3D/IO/ClassIO/TriangleMeshIO.h"
 #include "Open3D/IO/ClassIO/ImageIO.h"
-#include "Open3D/geometry/PointCloud.h"
-#include "Open3D/geometry/TriangleMesh.h"
-#include "Open3D/camera/PinholeCameraIntrinsic.h"
+#include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/Camera/PinholeCameraIntrinsic.h"
 #include "Types.h"
 #include <map>
 #include <set>
@@ -48,14 +48,14 @@ namespace ark {
 		std::shared_ptr<open3d::geometry::TriangleMesh> ExtractTotalTriangleMesh();
 		std::shared_ptr<open3d::geometry::PointCloud> ExtractCurrentVoxelPointCloud();
 		std::vector<std::pair<std::shared_ptr<open3d::geometry::TriangleMesh>, 
-			Eigen::Matrix4d>> GetTriangleMeshes();
+			Eigen::Matrix4d>> GetTriangleMeshes(); // Moon : ?????
 		void SetLatestKeyFrame(MapKeyFrame::Ptr frame);
 		std::vector<int> get_kf_ids();
 		void StartNewBlock();
 		void SetActiveMapIndex(int map_index);
 		void DeleteMapsAfterIndex(int map_index);
 		void Render(std::vector<std::vector<Eigen::Vector3d>> &mesh_vertices, std::vector<std::vector<Eigen::Vector3d>> &mesh_colors, 
-		std::vector<std::vector<Eigen::Vector3i>> &mesh_triangles, std::vector<Eigen::Matrix4d> &mesh_transforms, std::vector<int> &mesh_enabled);
+		std::vector<std::vector<Eigen::Vector3i>> &mesh_triangles, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> &mesh_transforms, std::vector<int> &mesh_enabled); // Moon : Rule 2.b, fixed.
 		void WriteMeshes();
 
 	public:

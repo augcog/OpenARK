@@ -6,7 +6,7 @@ namespace ark {
     OkvisSLAMSystem::OkvisSLAMSystem(const std::string & strVocFile, const std::string & strSettingsFile) :
         start_(0.0), t_imu_(0.0), deltaT_(1.0), num_frames_(0), kill(false), 
         sparse_map_vector(), active_map_index(-1), new_map_checker(false),map_timer(0), strVocFile(strVocFile){
-
+            
         okvis::VioParametersReader vio_parameters_reader;
         try {
             vio_parameters_reader.readConfigFile(strSettingsFile);
@@ -333,7 +333,7 @@ namespace ark {
         return okvis_estimator_ == nullptr;
     }
 
-    void OkvisSLAMSystem::getTrajectory(std::vector<Eigen::Matrix4d>& trajOut){
+    void OkvisSLAMSystem::getTrajectory(std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut){ // Moon : 2.c?? Fixed.
         getActiveMap()->getTrajectory(trajOut);
     }
 
@@ -346,7 +346,7 @@ namespace ark {
         }
     }
 
-    void OkvisSLAMSystem::getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d>& trajOut) {
+    void OkvisSLAMSystem::getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut) { // Moon: 2.c?? fixed
         for (int i = 0; i < sparse_map_vector.size(); i++) {    
             sparse_map_vector[i]->getMappedTrajectory(frameIdOut, trajOut);
         }

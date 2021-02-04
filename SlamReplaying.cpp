@@ -61,7 +61,7 @@ int main(int argc, char **argv)
     }
 
     OkvisSLAMSystem slam(vocabFilename, configFilename);
-
+    
     //setup display
     if (!MyGUI::Manager::init())
     {
@@ -89,9 +89,9 @@ int main(int argc, char **argv)
     traj_win.add_object(&axis2);
     traj_win.add_object(&grid1);
     ar_win.add_object(&axis1);
-    std::vector<MyGUI::Object *> cubes;
-    std::vector<Eigen::Matrix4d> T_K_cubes;
-    std::vector<MapKeyFrame::Ptr> K_cubes;
+    std::vector<MyGUI::Object *> cubes; // Moon : ??
+    std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> T_K_cubes; // Moon : Rule 2, fixed
+    std::vector<MapKeyFrame::Ptr, Eigen::aligned_allocator<MapKeyFrame::Ptr>> K_cubes; // Moon : Rule 2, fixed
 
     int lastMapIndex_path = 0;
     //Recieves output from SLAM system and displays to the screen
@@ -101,7 +101,7 @@ int main(int argc, char **argv)
 
         if (pathMap.find(mapIndex) == pathMap.end()) {
             string name = "path"+std::to_string(mapIndex);
-            pathMap[mapIndex] = new MyGUI::Path{name, Eigen::Vector3d(1, 0, 0)};
+            pathMap[mapIndex] = new MyGUI::Path{name, Eigen::Vector3d(1, 0, 0)}; // Moon : fine.
             traj_win.add_object(pathMap[mapIndex]);
         }
         if (mapIndex < lastMapIndex_path) {
@@ -142,7 +142,7 @@ int main(int argc, char **argv)
     //slam.AddKeyFrameAvailableHandler(kfHandler, "saving");
 
     LoopClosureDetectedHandler loopHandler([&](void) {
-        std::vector<Eigen::Matrix4d> traj;
+        std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> traj; // Moon : Rule 2, fixed
         slam.getTrajectory(traj);
         const auto mapIndex = slam.getActiveMapIndex();
         pathMap[mapIndex]->clear();
@@ -153,7 +153,7 @@ int main(int argc, char **argv)
         for (size_t i = 0; i < cubes.size(); i++)
         {
             if (K_cubes[i] != nullptr)
-                cubes[i]->set_transform(Eigen::Affine3d(K_cubes[i]->T_WS() * T_K_cubes[i]));
+                cubes[i]->set_transform(Eigen::Affine3d(K_cubes[i]->T_WS() * T_K_cubes[i])); // Moon : Rule 3, fixed. related with glfwManager.cpp line 394
         }
     });
     slam.AddLoopClosureDetectedHandler(loopHandler, "trajectoryUpdate");

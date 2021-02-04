@@ -20,11 +20,11 @@ namespace ark{
 
         //void OnFrameAvailable(const RGBDFrame &frame);
 
-		void SaveFrame::frameWrite(cv::Mat imRGB, cv::Mat depth, Eigen::Matrix4d traj, int frameId);
-        void SaveFrame::frameWriteMapped(cv::Mat imRGB, cv::Mat depth, Eigen::Matrix4d traj, int frameId, int mapId);
-		void SaveFrame::updateTransforms(std::map<int, Eigen::Matrix4d> keyframemap);
+                void frameWrite(cv::Mat imRGB, cv::Mat depth, const Eigen::Matrix4d& traj, int frameId); // Moon: Rule 3, fixed
+        void frameWriteMapped(cv::Mat imRGB, cv::Mat depth, const Eigen::Matrix4d& traj, int frameId, int mapId); // Moon: Rule 3, fixed
+                void updateTransforms(std::map<int, Eigen::Matrix4d, std::less<int>, Eigen::aligned_allocator<std::pair<const int, Eigen::Matrix4d>>> keyframemap); // Moon: Rule 2.c, fixed
 
-        ark::RGBDFrame SaveFrame::frameLoad(int frameId);
+        ark::RGBDFrame frameLoad(int frameId);
 
     private:
 

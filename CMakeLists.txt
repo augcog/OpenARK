@@ -126,6 +126,7 @@ IF( DBoW2_FOUND )
 ENDIF( DBoW2_FOUND )
 
 # require DLoopDetector
+set(ENV{DLoopDetector_INCLUDE_DIRS} "/usr/local/include/DLoopDetector")
 find_package( DLoopDetector REQUIRED )
 IF( DLoopDetector_FOUND )
     MESSAGE( STATUS "Found DLoopDetector: $ENV{DLoopDetector_INCLUDE_DIRS} ${DLoopDetector_LIBRARIES} ${DLoopDetector_INCLUDE_DIRS}" )
@@ -143,14 +144,14 @@ find_package( okvis REQUIRED )
 include_directories(${OKVIS_INCLUDE_DIRS})
 message(STATUS "Found Okvis: ${OKVIS_INCLUDE_DIRS} ${OKVIS_LIBRARIES}")
 
-# require OpenGV (should come with Okvis)
+# require opengv (should come with Okvis)
 if( DEFINED ENV{ARK_DEPS_DIR} )
-  find_package( OpenGV REQUIRED NO_MODULE )
+  find_package( opengv REQUIRED NO_MODULE )
 else()
-    find_package( OpenGV REQUIRED )
+    find_package( opengv REQUIRED )
 endif( DEFINED ENV{ARK_DEPS_DIR} )
 IF(OPENGV_FOUND)
-    MESSAGE(STATUS "Found OpenGV: ${OPENGV_INCLUDE_DIR} ${OPENGV_LIBRARIES}")
+    MESSAGE(STATUS "Found opengv: ${OPENGV_INCLUDE_DIR} ${OPENGV_LIBRARIES}")
 ENDIF(OPENGV_FOUND)
 
 # require Ceres
