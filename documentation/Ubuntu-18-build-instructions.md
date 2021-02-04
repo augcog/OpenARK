@@ -107,7 +107,7 @@ sudo apt install libsuitesparse-dev
 Download Ceres1.14.0 from source and build as follows. 
 1. `wget -O ceres114.tar.gz https://github.com/ceres-solver/ceres-solver/archive/1.14.0.tar.gz && tar -xf ceres114.tar.gz && cd ceres-solver-1.14.0`
 2. Build with CMake and install
-3. If you want to build Ceres without Suitesparse, then change the `option(SUITESPARSE "Enable SuiteSparse." ON)` To `OFF` in the Ceres CMakeLists.txt. 
+3. If you want to build Ceres without Suitesparse, then change the `option(SUITESPARSE "Enable SuiteSparse." ON)`to `OFF` in the Ceres CMakeLists.txt. 
 4. Ceres uses the Eigen Library, `add_definitions(-DEIGEN_DONT_ALIGN=1)` in CMakeLists.txt if necessary.
 
 ### Intalling OpenGV 1.0
