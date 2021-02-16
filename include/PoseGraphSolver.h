@@ -13,30 +13,31 @@
 
 namespace ark{
 
-class GraphPose { // a class that has a fixed-size vectorizable eigen ojbect
+// Moon: Cause 1 : Class having FSVEO as members.
+class GraphPose {
 public:
 EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     GraphPose():
     P_WA(0,0,0),Q_WA(Eigen::Matrix3d::Identity()){
     }
     GraphPose(const Eigen::Vector3d& P_WA, 
-            const Eigen::Quaterniond& Q_WA): // Moon : Rule 3 fine.
+            const Eigen::Quaterniond& Q_WA): // Moon : Cause 3 fine.
     P_WA(P_WA),Q_WA(Q_WA){}
 
-    GraphPose(const Eigen::Matrix4d& T_WA) // Moon : Rule 3 fine.
+    GraphPose(const Eigen::Matrix4d& T_WA) // Moon : Cause 3 fine.
     {
         P_WA = T_WA.block<3,1>(0,3);
         Q_WA = Eigen::Quaterniond(T_WA.block<3,3>(0,0));
     }
 
     Eigen::Vector3d P_WA;
-    Eigen::Quaterniond Q_WA; // Moon: fixed-size vectorizable eigen object
+    Eigen::Quaterniond Q_WA; // Moon: FSVEO as members.
 };
-
-class PoseConstraint{  // a class that has a fixed-size vectorizable eigen ojbect
+// Moon: Cause 1 : Class having FSVEO as members.
+class PoseConstraint{
 public:
 EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    PoseConstraint(int id_A, int id_B, const Eigen::Matrix4d& T_AB, // Moon : Rule 3 fine.
+    PoseConstraint(int id_A, int id_B, const Eigen::Matrix4d& T_AB, // Moon : Cause 3 fine.
             const Eigen::Matrix<double, 6, 6>& sqrt_information =
                 Eigen::Matrix<double, 6, 6>::Identity() ):
         id_A(id_A),id_B(id_B),sqrt_information(sqrt_information){
@@ -46,7 +47,7 @@ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     }
 
     PoseConstraint(int id_A, int id_B, const Eigen::Vector3d& P_AB, 
-            const Eigen::Quaterniond& Q_AB, // Moon : Rule 3 fine.
+            const Eigen::Quaterniond& Q_AB, // Moon : Cause 3 fine.
             const Eigen::Matrix<double, 6, 6>& sqrt_information =
                 Eigen::Matrix<double, 6, 6>::Identity()):
         id_A(id_A),id_B(id_B),P_AB(P_AB),Q_AB(Q_AB){
@@ -54,16 +55,17 @@ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     int id_A, id_B;
     Eigen::Vector3d P_AB;
-    Eigen::Quaterniond Q_AB; // Moon: fixed-size vectorizable eigen object
+    Eigen::Quaterniond Q_AB; // Moon: FSVEO as members.
     Eigen::Matrix<double, 6, 6> sqrt_information;
 }; //PoseConstraint
 
+// Moon: Cause 1 : Class having FSVEO as members.
 class PoseError {
 public:
 EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     PoseError(const Eigen::Vector3d& p_ab_measured, 
-            const Eigen::Quaterniond& q_ab_measured, // Moon : Rule 3 fine.
+            const Eigen::Quaterniond& q_ab_measured, // Moon : Cause 3 fine.
             const Eigen::Matrix<double, 6, 6>& sqrt_information):
         p_ab_measured_(p_ab_measured), q_ab_measured_(q_ab_measured),
         sqrt_information_(sqrt_information) {}
@@ -110,7 +112,7 @@ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     static ::ceres::CostFunction* Create(
             const Eigen::Vector3d& p_ab_measured, 
-            const Eigen::Quaterniond& q_ab_measured, // Moon : Rule 3 fine.
+            const Eigen::Quaterniond& q_ab_measured, // Moon : Cause 3 fine.
             const Eigen::Matrix<double, 6, 6>& sqrt_information) {
         return new ::ceres::AutoDiffCostFunction<PoseError, 6, 3, 4, 3, 4>(
             new PoseError(p_ab_measured, q_ab_measured, sqrt_information));
@@ -127,7 +129,7 @@ private:
     // The measurement for the position of B relative to A in the A frame.
     const Eigen::Vector3d p_ab_measured_;
     // The measurement for the rotation of B relative to A in the A frame.
-    const Eigen::Quaterniond q_ab_measured_; // moon : is this a fixed-size vectorizable object ??
+    const Eigen::Quaterniond q_ab_measured_; // moon : FSVEO as members.
     // The square root of the measurement information matrix.
     const Eigen::Matrix<double, 6, 6> sqrt_information_;
 }; //PoseConstraint
@@ -145,21 +147,21 @@ public:
         constraintMutex.unlock();
     };
 
-    void AddConstraint(int id_A, int id_B, const Eigen::Vector3d& P_AB, const Eigen::Quaterniond& Q_AB, // Moon : Rule 3 fixed 
+    void AddConstraint(int id_A, int id_B, const Eigen::Vector3d& P_AB, const Eigen::Quaterniond& Q_AB, // Moon : Cause 3.a. Pass by reference required. 
             const Eigen::Matrix<double, 6, 6>& sqrt_information = Eigen::Matrix<double, 6, 6>::Identity()){
         constraintMutex.lock();
         constraints_.push_back(PoseConstraint(id_A,id_B,P_AB,Q_AB,sqrt_information));
         constraintMutex.unlock();
     };
 
-    void AddConstraint(int id_A, int id_B, const Eigen::Matrix4d& T_AB, // Moon : Rule 3 fine.
+    void AddConstraint(int id_A, int id_B, const Eigen::Matrix4d& T_AB, // Moon : Cause 3 fine.
             const Eigen::Matrix<double, 6, 6>& sqrt_information = Eigen::Matrix<double, 6, 6>::Identity()){
         constraintMutex.lock();
         constraints_.push_back(PoseConstraint(id_A,id_B,T_AB,sqrt_information));
         constraintMutex.unlock();
     };
 
-    void AddPose(int id_A, const Eigen::Matrix4d& T_WA){ // Moon : Rule 3 fine.
+    void AddPose(int id_A, const Eigen::Matrix4d& T_WA){ // Moon : Cause 3 fine.
         constraintMutex.lock();
         poses_.insert(std::pair<int,GraphPose>(id_A,T_WA));
         constraintMutex.unlock();

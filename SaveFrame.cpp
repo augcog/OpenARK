@@ -52,7 +52,7 @@ namespace ark {
 
     }
 
-    void SaveFrame::frameWrite(cv::Mat imRGB, cv::Mat depth, const Eigen::Matrix4d& traj, int frameId){ // Moon : Rule 3, fixed
+    void SaveFrame::frameWrite(cv::Mat imRGB, cv::Mat depth, const Eigen::Matrix4d& traj, int frameId){ // Moon : Cause 3. Pass by reference required for FXVEO. const looks fine here.
 
 		frame_ids.push_back(frameId);
 
@@ -70,7 +70,7 @@ namespace ark {
 		file.close();
     }
 
-    void SaveFrame::frameWriteMapped(cv::Mat imRGB, cv::Mat depth, const Eigen::Matrix4d& traj, int frameId, int mapId) { // Moon : Rule 3, fixed
+    void SaveFrame::frameWriteMapped(cv::Mat imRGB, cv::Mat depth, const Eigen::Matrix4d& traj, int frameId, int mapId) { // Moon : Cause 3. Pass by reference required for FXVEO. const looks fine here.
 
         frame_ids.push_back(frameId);
 
@@ -96,8 +96,8 @@ namespace ark {
 
     }
 
-	void SaveFrame::updateTransforms(std::map<int, Eigen::Matrix4d, std::less<int>, Eigen::aligned_allocator<std::pair<const int, Eigen::Matrix4d>>> keyframemap) { // Moon : rule 2.c fixed.
-
+	void SaveFrame::updateTransforms(std::map<int, Eigen::Matrix4d, std::less<int>, Eigen::aligned_allocator<std::pair<const int, Eigen::Matrix4d>>> &keyframemap) {
+        // Moon : Cause 4 = Cause 2.a + Cause 3.
 		printf("updating transforms inside file\n");
 
 		for (int frame_id : frame_ids) {

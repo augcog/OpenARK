@@ -72,7 +72,7 @@ public:
             const CloudPtr tgt, 
             const std::vector<int>& correspondences, 
             const std::vector<bool>& inliers,
-            const Eigen::Affine3d& initial_pose_estimate, // Moon: Rule 3, fixed
+            const Eigen::Affine3d& initial_pose_estimate, // Moon: Cause 3.a. const + & or & might be needed.
             int max_num_iterations = 20){
 
         ceres::Problem problem;
