@@ -333,7 +333,7 @@ namespace ark {
         return okvis_estimator_ == nullptr;
     }
 
-    void OkvisSLAMSystem::getTrajectory(std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut){ // Moon : 2.c?? Fixed.
+    void OkvisSLAMSystem::getTrajectory(std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut){ // Moon: Cause 4 = Cause 2.a + Cause 3: STL used with FSVEO for passing.
         getActiveMap()->getTrajectory(trajOut);
     }
 
@@ -346,7 +346,7 @@ namespace ark {
         }
     }
 
-    void OkvisSLAMSystem::getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut) { // Moon: 2.c?? fixed
+    void OkvisSLAMSystem::getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut) { // Moon: Cause 4 = Cause 2.a + Cause 3. STL vector used with FSVEO for passing.
         for (int i = 0; i < sparse_map_vector.size(); i++) {    
             sparse_map_vector[i]->getMappedTrajectory(frameIdOut, trajOut);
         }
