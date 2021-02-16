@@ -60,9 +60,9 @@ namespace ark {
 
         void display();
 
-        void getTrajectory(const std::vector<Eigen::Matrix4d, const Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut); // Moon: Cause 4 = Cause 2.a + Cause 3. const added.
+        void getTrajectory(std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut); // Moon: Cause 4 = Cause 2.a + Cause 3.
 
-		void getMappedTrajectory(std::vector<int>& frameIdOut, const std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut); // Moon: Cause 4 = Cause 2.a + Cause 3. const + & or & alone might be needed.
+		void getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut); // Moon: Cause 4 = Cause 2.a + Cause 3.
         
         ~OkvisSLAMSystem();
 

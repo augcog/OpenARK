@@ -96,8 +96,8 @@ namespace ark {
 
     }
 
-	void SaveFrame::updateTransforms(std::map<int, Eigen::Matrix4d, std::less<int>, const Eigen::aligned_allocator<std::pair<const int, Eigen::Matrix4d>>> &keyframemap) {
-        // Moon : Cause 4 = Cause 2.a + Cause 3. const added.
+	void SaveFrame::updateTransforms(std::map<int, Eigen::Matrix4d, std::less<int>, Eigen::aligned_allocator<std::pair<const int, Eigen::Matrix4d>>> &keyframemap) {
+        // Moon : Cause 4 = Cause 2.a + Cause 3.
 		printf("updating transforms inside file\n");
 
 		for (int frame_id : frame_ids) {

@@ -153,7 +153,7 @@ int main(int argc, char **argv)
         for (size_t i = 0; i < cubes.size(); i++)
         {
             if (K_cubes[i] != nullptr)
-                cubes[i]->set_transform(Eigen::Affine3d(K_cubes[i]->T_WS() * T_K_cubes[i])); // Moon : Cause 3.a. const + & or & should be added.
+                cubes[i]->set_transform(Eigen::Affine3d(K_cubes[i]->T_WS() * T_K_cubes[i])); // Moon : Cause 3.a. const + & or & might be needed.
         }
     });
     slam.AddLoopClosureDetectedHandler(loopHandler, "trajectoryUpdate");

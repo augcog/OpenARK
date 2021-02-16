@@ -333,7 +333,7 @@ namespace ark {
         return okvis_estimator_ == nullptr;
     }
 
-    void OkvisSLAMSystem::getTrajectory(std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut){ // Moon: Cause 4 = Cause 2.a + Cause 3: STL used with FSVEO for passing.
+    void OkvisSLAMSystem::getTrajectory(std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut){ // Moon: Cause 4 = Cause 2.a + Cause 3: STL used with FSVEO for passing. 
         getActiveMap()->getTrajectory(trajOut);
     }
 

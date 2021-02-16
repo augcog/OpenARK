@@ -55,8 +55,8 @@ namespace ark {
 		void SetActiveMapIndex(int map_index);
 		void DeleteMapsAfterIndex(int map_index);
 		void Render(std::vector<std::vector<Eigen::Vector3d>> &mesh_vertices, std::vector<std::vector<Eigen::Vector3d>> &mesh_colors, 
-		std::vector<std::vector<Eigen::Vector3i>> &mesh_triangles, const std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> &mesh_transforms, std::vector<int> &mesh_enabled); 
-		// Moon : Cause 4 = Cause 2.a + Cause 3. const added.
+		std::vector<std::vector<Eigen::Vector3i>> &mesh_triangles, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> &mesh_transforms, std::vector<int> &mesh_enabled); 
+		// Moon : Cause 4 = Cause 2.a + Cause 3.
 		void WriteMeshes();
 
 	public:
