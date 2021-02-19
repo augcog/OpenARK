@@ -121,7 +121,7 @@ int main(int argc, char **argv)
     //slam.AddKeyFrameAvailableHandler(kfHandler, "saving");
 
     LoopClosureDetectedHandler loopHandler([&](void) {
-        std::vector<Eigen::Matrix4d> traj;
+        std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> traj;
         slam.getTrajectory(traj);
         const auto mapIndex = slam.getActiveMapIndex();
         pathMap[mapIndex]->clear();
