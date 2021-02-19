@@ -191,7 +191,7 @@ int main(int argc, char **argv)
 		slam.AddKeyFrameAvailableHandler(saveFrameHandler, "saveframe");
 	}
 
-	SegmentedMesh * mesh = new SegmentedMesh(voxel_size, voxel_size * 5, open3d::integration::TSDFVolumeColorType::RGB8, block_size);
+	SegmentedMesh * mesh = new SegmentedMesh(voxel_size, voxel_size * 5, open3d::pipelines::integration::TSDFVolumeColorType::RGB8, block_size);
 
 	std::vector<float> intrinsics = camera.getColorIntrinsics();
 	auto intr = open3d::camera::PinholeCameraIntrinsic(640, 480, intrinsics[0], intrinsics[1], intrinsics[2], intrinsics[3]);
