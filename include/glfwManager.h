@@ -94,8 +94,8 @@ protected:
 
 
 };//Window
-
-class ARCameraWindow : public ObjectWindow{ // A class that has fixed-size vectorizable eigen objects.
+// Moon: Cause 1 : class having FSVEO as members
+class ARCameraWindow : public ObjectWindow{ 
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	ARCameraWindow(std::string name, int resX, int resY, GLenum image_format, GLenum data_type, double px, double py, double cx, double cy, double near_cut, double far_cut):
@@ -125,7 +125,7 @@ public:
 
 	bool display() override;
 
-	void set_camera(const Eigen::Affine3d& cam_extr){ // Moon: Rule 3, fine
+	void set_camera(const Eigen::Affine3d& cam_extr){ // Moon: Cause 3 fine.
 		cam_extr_=cam_extr;
 	}
 
@@ -210,12 +210,12 @@ public:
 
 };
 
-class MeshWindow : public ObjectWindow { // Moon : a class that has fixed-size vectorizable eigen objects
+class MeshWindow : public ObjectWindow { // Moon : Cause 1 : class having FSVEO as members
 public:
 	MeshWindow(std::string name, int resX, int resY) :
 		ObjectWindow(name, resX, resY) {};
 	//bool display();
-	void set_camera(const Eigen::Affine3d& t) { // Moon : Rule 3, fixed
+	void set_camera(const Eigen::Affine3d& t) { // Moon : Cause 3. This might be wrong. Const + & or & alone should be added
 		transform = t;
 	}
         void keyboard_control()
@@ -236,7 +236,7 @@ private:
 	Eigen::Affine3d transform; // Moon : a fixed-size vectorizable eigen object
 	bool clicked_ = false;
 };
-// Eigen : a class having a Eigen object as member 
+// Moon: Cause 1 : class having FSVEO as members 
 class Object{
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -250,11 +250,11 @@ public:
 
 	void display();
 
-	void set_transform(const Eigen::Affine3d& t); // Moon : Rule 3, fixed
+	void set_transform(const Eigen::Affine3d& t); // Moon : Cause 3. This might be wrong. Const + & or & might be needed.
 
 	void translate(Eigen::Translation3d t);
 
-	void rotate(const Eigen::Quaterniond& q); // Moon : Rule 3, fixed
+	void rotate(const Eigen::Quaterniond& q); // Moon : Cause 3. This might be wrong. Const + & or & might be needed.
 
 	void hide();
 
@@ -357,7 +357,7 @@ public:
 	std::vector<std::vector<Eigen::Vector3d>> mesh_vertices;
     std::vector<std::vector<Eigen::Vector3d>> mesh_colors;
     std::vector<std::vector<Eigen::Vector3i>> mesh_triangles;
-    std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> mesh_transforms; // Moon : Rule 2, Fixed
+    std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> mesh_transforms; // Moon : Cause 2.a
     std::vector<int> mesh_enabled;
 
 	// //threadsafe?
@@ -377,7 +377,7 @@ public:
 	void update_meshes() {
 		std::lock_guard<std::mutex> guard(meshLock_);
 
-		mesh_->Render(mesh_vertices, mesh_colors, mesh_triangles, mesh_transforms, mesh_enabled); // Moon : Rule 2 related to line 360 fixed. not sure tho.
+		mesh_->Render(mesh_vertices, mesh_colors, mesh_triangles, mesh_transforms, mesh_enabled); // Moon : Render is deprecated in the Master branch of OpenARK. This line might be wrong.
 
 	}
 
