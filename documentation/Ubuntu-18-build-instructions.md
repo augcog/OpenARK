@@ -115,9 +115,7 @@ Download Ceres1.14.0 from source and build as follows.
 OpenGV uses the Eigen Library, `add_definitions(-DEIGEN_DONT_ALIGN=1)` in CMakeLists.txt if necessary.
 
 1. `git clone https://github.com/laurentkneip/opengv && cd opengv`
-1. `wget -O ceres114.tar.gz https://github.com/ceres-solver/ceres-solver/archive/1.14.0.tar.gz && tar -xf ceres114.tar.gz && cd ceres-solver-1.14.0`
 
-2. Build with CMake and install
 2. Build with CMake and install
 
 ### Installing Brisk
