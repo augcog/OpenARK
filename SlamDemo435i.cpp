@@ -23,6 +23,8 @@ int main(int argc, char **argv)
         deltaT = okvis::Duration(atof(argv[3]));
     }
 
+    printf("here\n");
+
     // read configuration file
     std::string configFilename;
     if (argc > 1) configFilename = argv[1];
@@ -32,8 +34,15 @@ int main(int argc, char **argv)
     if (argc > 2) vocabFilename = argv[2];
     else vocabFilename = util::resolveRootPath("config/brisk_vocab.bn");
 
+    printf("????\n");
+    fflush(stdout);
+
     OkvisSLAMSystem slam(vocabFilename, configFilename);
+
+    printf("here1\n");
     cv::FileStorage configFile(configFilename, cv::FileStorage::READ);
+
+    printf("here2\n");
 
     //setup display
     if (!MyGUI::Manager::init())
@@ -56,8 +65,8 @@ int main(int argc, char **argv)
     fflush(stdout);
 
     //Window for displaying the path
-    MyGUI::CameraWindow traj_win("Traj Viewer", 640*2,480*2);
-    MyGUI::ARCameraWindow ar_win("AR Viewer", 640*2.5,480*2.5, GL_RGB, GL_UNSIGNED_BYTE,  6.16403320e+02, 6.16171021e+02, 3.18104584e+02, 2.33643127e+02,0.01,100);
+    MyGUI::CameraWindow traj_win("Traj Viewer", 150, 150);
+    MyGUI::ARCameraWindow ar_win("AR Viewer", 500, 500, GL_RGB, GL_UNSIGNED_BYTE,  6.16403320e+02, 6.16171021e+02, 3.18104584e+02, 2.33643127e+02,0.01,100);
     traj_win.set_pos(640*2.5,100);
     ar_win.set_pos(0,100);
     std::map<int, MyGUI::Path *> pathMap;
@@ -144,6 +153,7 @@ int main(int argc, char **argv)
     okvis::Time start(0.0);
     // camera.start();
     int lastMapIndex = -1;
+    int frame_num = 0;
 
     while (MyGUI::Manager::running())
     {
@@ -158,6 +168,13 @@ int main(int argc, char **argv)
 
             std::vector<ImuPair> imuData;
             camera.getImuToTime(frame->timestamp_, imuData);
+
+            cv::Mat imRGB;
+
+            frame->getImage(imRGB, 3);
+
+            cv::namedWindow("test", CV_WINDOW_AUTOSIZE);
+            cv::imshow("test", imRGB);
 
             //Add data to SLAM system
             slam.PushIMU(imuData);
@@ -186,6 +203,8 @@ int main(int argc, char **argv)
         int k = cv::waitKey(1);
         if (k == 'q' || k == 'Q' || k == 27)
             break; // 27 is ESC
+
+        std::cout << "frame " << frame_num++ << std::endl;
     }
     printf("\nTerminate...\n");
     // Clean up

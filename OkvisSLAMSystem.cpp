@@ -6,6 +6,9 @@ namespace ark {
     OkvisSLAMSystem::OkvisSLAMSystem(const std::string & strVocFile, const std::string & strSettingsFile) :
         start_(0.0), t_imu_(0.0), deltaT_(1.0), num_frames_(0), kill(false), 
         sparse_map_vector(), active_map_index(-1), new_map_checker(false),map_timer(0), strVocFile(strVocFile){
+
+        printf("heretest\n");
+        fflush(stdout);
             
         okvis::VioParametersReader vio_parameters_reader;
         try {
@@ -16,14 +19,26 @@ namespace ark {
             return;
         }
 
+        printf("HEREERER\n");
+        fflush(stdout);
+
         //okvis::VioParameters parameters;
         vio_parameters_reader.getParameters(parameters_);
 
+        printf("hereXD\n");
+        fflush(stdout);
+
         createNewMap();
+
+        printf("herexdd\n");
+        fflush(stdout);
 
         //initialize Visual odometry
         okvis_estimator_ = std::make_shared<okvis::ThreadedKFVio>(parameters_);
         okvis_estimator_->setBlocking(true);
+
+        printf("herexdddd\n");
+        fflush(stdout);
 
         //Okvis's outframe is our inframe
         auto frame_callback = [this](const okvis::Time& timestamp, okvis::OutFrameData::Ptr frame_data) {
@@ -240,6 +255,10 @@ namespace ark {
     }*/
 
     void OkvisSLAMSystem::PushFrame(MultiCameraFrame::Ptr frame){
+
+        std::cout << "pushing frame" << std::endl;
+        fflush(stdout);
+
         if (okvis_estimator_ == nullptr)
             return;
         okvis::Time t_image(frame->timestamp_ / 1e9);
@@ -258,14 +277,20 @@ namespace ark {
                     okvis_estimator_->addImage(t_image, i, frame->images_[i]);
                 }
             }
-        }   
+        }
+        std::cout << "finish pushing frame" << std::endl;
+        fflush(stdout);   
     }
 
     void OkvisSLAMSystem::PushIMU(const std::vector<ImuPair>& imu) {
+        std::cout << "pushing imu" << std::endl;
+        fflush(stdout);
         if (okvis_estimator_ == nullptr) return;
         for (size_t i = 0; i < imu.size(); i++) {
             PushIMU(imu[i]);
         }
+        std::cout << "finished pushing imu" << std::endl;
+        fflush(stdout);
     }
 
     void OkvisSLAMSystem::PushIMU(const ImuPair& imu) {
