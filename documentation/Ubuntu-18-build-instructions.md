@@ -187,71 +187,10 @@ OpenARK uses the Eigen Library, `add_definitions(-DEIGEN_DONT_ALIGN=1)` in CMake
 
 2. `cd OpenARK && mkdir build && cd build` to create build directory.
 
-3.1 Add the following lines in CMakeLists.txt of OpenARK // this to be deleted later when OpenARK's CMakeLists.txt is updated.
-``` sh
-set(ENV{DLoopDetector_INCLUDE_DIRS} "/usr/local/include/DLoopDetector")
-set(ENV{Open3D_DIR} "/home/[path_between_home_and_Open3D]/Open3D/build/CMakeFiles")
-``` 
-3.2 Fix the following lines in CMAkeLists.txt of OpenARK // this to be deleted later when OpenARK's CMakeLists.txt is updated.
-``` sh
-  From: find_package( OpenGV REQUIRED NO_MODULE )
-  To  : find_package( opengv REQUIRED NO_MODULE )
-  
-  From: find_package( OpenGV REQUIRED )
-  To  : find_package( opengv REQUIRED )
-``` 
-4. Do the following things before cmake build. // this to be deleted later when OpenARK's codes are updated.
-``` sh
-Open OpenARK/MockD435iCamera.cpp and delete & on the LHS of line 31:30 and 37:28
-```
-``` sh
-Open OpenARK/SaveFrame.cpp and change line 17 to #include <boost/filesystem.hpp> 
-Open OpenARK/SaveFrame.cpp and change mkdir(folderPath.c_str()); to boost::filesystem::create_directories(folderPath.c_str());
-Open OpenARK/saveFrame.cpp and delete “SaveFrame::” part on line 23,24,25,27 in SaveFrame.h file
-```
-``` sh
-Open OpenARK/include/SegmentedMesh.h and change
-From :
-#include "Open3D/geometry/PointCloud.h"
-#include "Open3D/geometry/TriangleMesh.h"
-To: 
-#include "Open3D/Geometry/PointCloud.h"
-#include "Open3D/Geometry/TriangleMesh.h"
-```
-``` sh
-Open OpenARK/include/SegmentedMesh.h:9:50 and change
-From : Line 9 : #include "Open3D/camera/PinholeCameraIntrinsic.h"
-To   : Line 9 : #include "Open3D/Camera/PinholeCameraIntrinsic.h"
-```
-``` sh
-Open OpenARK/SegmentedMesh.cpp:320:3 and change
-From : line 320 : cout << "writing meshes" << endl;
-To   : line 320:  std::cout << "writing meshes" << std::endl;
-```
-``` sh
-Open OpenARK/include/glfwManager.h and change
-From : line 221 : void MeshWindow::set_camera(Eigen::Affine3d t) {
-To   : line 221 : void set_camera(Eigen::Affine3d t) {
-```
-``` sh
-From : line 230 : MeshWindow::bool clicked() {
-To   : line 230 : bool clicked() {
-```
-``` sh
-Open OpenARK/SlamRecording.cpp:91:31 and change
-From :
-Line 91: std::atomic_bool paused = true;
-Line 92: std::atomic_bool quit = false;    
+3. `cmake .. -DCMAKE_BUILD_TYPE=Release` to run CMake. librealsense2 will be enabled by default. You can add `-DBUILD_AVATAR_DEMO` to build the avatar demo in addition to hand and SLAM, `-DBUILD_DATA_RECORDING` to build the data recording tool, and `-BUILD_TESTS` to build hand tests. `-DBUILD_UNITY_PLUGIN` is not available on Linux at the moment.
 
-To : line 91, 92:
-Line 91: std::atomic_bool paused = {true};
-Line 92: std::atomic_e bool quit = {false};
-```
+4. `make -j4` to build.
 
-5. `cmake .. -DCMAKE_BUILD_TYPE=Release` to run CMake. librealsense2 will be enabled by default. You can add `-DBUILD_AVATAR_DEMO` to build the avatar demo in addition to hand and SLAM, `-DBUILD_DATA_RECORDING` to build the data recording tool, and `-BUILD_TESTS` to build hand tests. `-DBUILD_UNITY_PLUGIN` is not available on Linux at the moment.
-
-6. `make -j4` to build.
-
-7. As a final sanity check, try running the demo executable in the build directory: `./OpenARK-Hand-Demo`. You should see the hand detection and depth image windows. If you only see one window, drag it and see if the other is behind it. The static library is named: `libopenark_0_9_3.a`.
+5. As a final sanity check, try running the demo executable in the build directory: `./OpenARK-Hand-Demo`. You should see the hand detection and depth image windows. If you only see one window, drag it and see if the other is behind it. The static library is named: `libopenark_0_9_3.a`.
 
 
