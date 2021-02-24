@@ -140,9 +140,10 @@ Note that this repository is a modified version of DLoopDetector.
 
 ### Installing [Open3D tags/v0.12.0](https://github.com/intel-isl/Open3D)
 
-1. `git clone https://github.com/intel-isl/Open3D`
+1. `git clone --recursive https://github.com/intel-isl/Open3D`
 2. `git checkout tags/v0.12.0`
-3. Build with CMake 
+3. Turn off BUILD_PYTHON_MODULE : `option(BUILD_PYTHON_MODULE "Build the python module" OFF)`
+4. Build with CMake 
 
 ### Installing Okvis+ 
 Okvis+ uses the Eigen Library, `add_definitions(-DEIGEN_DONT_ALIGN=1)` in CMakeLists.txt if necessary.
