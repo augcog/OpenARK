@@ -138,28 +138,11 @@ Note that this repository is a modified version of DLoopDetector.
 
 2. Build with CMake and install
 
-### Installing [Open3D 0.8.0, Custom Version](https://github.com/adamchang2000/Open3D)
-Note that this is a modified version of Open3D 0.8.0
+### Installing [Open3D tags/v0.12.0](https://github.com/intel-isl/Open3D)
 
-1. `git clone --recursive https://github.com/moonwonlee/Open3D.git && cd Open3D`
-or get `git clone --recursive https://github.com/adamchang2000/Open3D.git && cd Open3D`, go to src/Open3D/ and delete MovingTSDFVolume.cpp and MovingTSDFVolume.h in // this to be deleted later when Open3D is updated.
-
-2. Build with CMake 
-
-3. Make the following changes to Open3DConfig.cmake in Open3D/build/CMakeFiles // this to be deleted later when Open3D is updated or OpenARK CMakeLists.txt is updated.
-```sh
-Change:
-From : get_filename_component(PACKAGE_PREFIX_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../" ABSOLUTE)
-To   : get_filename_component(PACKAGE_PREFIX_DIR "${CMAKE_CURRENT_LIST_DIR}/../../" ABSOLUTE)
-  
-Change:
-From:
-set(Open3D_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR}/include;${PACKAGE_PREFIX_DIR}/include/Open3D/3rdparty/Eigen;/usr/include/libdrm;/usr/include;${PACKAGE_PREFIX_DIR}/include/Open3D/3rdparty/fmt/include;${PACKAGE_PREFIX_DIR}/include/Open3D/3rdparty/fmt/include/format.h";${PACKAGE_PREFIX_DIR}/include/Open3D/3rdparty/fmt/include/)
-To:
-set(Open3D_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR}/include;${PACKAGE_PREFIX_DIR}/3rdparty/Eigen;/usr/include/libdrm;/usr/include;${PACKAGE_PREFIX_DIR}/3rdparty/fmt/include;${PACKAGE_PREFIX_DIR}/3rdparty/fmt/include/format.h")
-```
-
-4. `make -j4 && sudo make install`
+1. `git clone https://github.com/intel-isl/Open3D`
+2. `git checkout tags/v0.12.0`
+3. Build with CMake 
 
 ### Installing Okvis+ 
 Okvis+ uses the Eigen Library, `add_definitions(-DEIGEN_DONT_ALIGN=1)` in CMakeLists.txt if necessary.
