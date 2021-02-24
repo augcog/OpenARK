@@ -151,16 +151,19 @@ Okvis+ uses the Eigen Library, `add_definitions(-DEIGEN_DONT_ALIGN=1)` in CMakeL
 1. `git clone https://github.com/joemenke/okvis && cd okvis`
 Note that this is a modified version of Okvis.
 
-2. Build with CMake and install
+2. Build with CMake and install.
 
-3. Verify Okvis+ by running the demo application
+3. Verify Okvis+ by running the demo application.
 You will find a demo application in okvis_apps. It can process datasets in the ASL/ETH format.
 https://github.com/ceres-solver/ceres-solver/releases/tag/1.14.0
 In order to run a minimal working example, follow the steps below:
 
 1. Download a dataset of your choice from http://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets. Assuming you downloaded MH_01_easy/. You will find a corresponding calibration / estimator configuration in the config folder.
 
-2. Run the app as
+2. Turn on BUILD_APPS in the CMakeLists.txt of okvis+.
+`option (BUILD_APPS "Builds a demo app (which requires boost)" On`
+
+3. Run the app as
  `./okvis_app_synchronous path/to/okvis/config/config_fpga_p2_euroc.yaml path/to/mav0/`
  
 ### Installing librealsense2
