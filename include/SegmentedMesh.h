@@ -1,12 +1,12 @@
 #pragma once
 
-#include "open3d/pipelines/integration/ScalableTSDFVolume.h"
-#include "open3d/visualization/utility/DrawGeometry.h"
-#include "open3d/io/TriangleMeshIO.h"
-#include "open3d/io/ImageIO.h"
-#include "open3d/geometry/PointCloud.h"
-#include "open3d/geometry/TriangleMesh.h"
-#include "open3d/camera/PinholeCameraIntrinsic.h"
+#include "Open3D/Integration/ScalableTSDFVolume.h"
+#include "Open3D/Visualization/Utility/DrawGeometry.h"
+#include "Open3D/IO/ClassIO/TriangleMeshIO.h"
+#include "Open3D/IO/ClassIO/ImageIO.h"
+#include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/Camera/PinholeCameraIntrinsic.h"
 #include "Types.h"
 #include <map>
 #include <set>
@@ -21,7 +21,7 @@ namespace ark {
 	public:
 		SegmentedMesh(double voxel_length,
 			double sdf_trunc,
-			open3d::pipelines::integration::TSDFVolumeColorType color_type,
+			open3d::integration::TSDFVolumeColorType color_type,
 			double block_length);
 
 		//~SegmentedMesh();
@@ -63,7 +63,7 @@ namespace ark {
 		double block_length_;
 		double sdf_trunc_;
 		double voxel_length_;
-		open3d::pipelines::integration::TSDFVolumeColorType color_type_;
+		open3d::integration::TSDFVolumeColorType color_type_;
 
 
 	private:
@@ -82,7 +82,7 @@ namespace ark {
 
 
 		//stores current scalable tsdf volume
-		open3d::pipelines::integration::ScalableTSDFVolume * active_volume;
+		open3d::integration::ScalableTSDFVolume * active_volume;
 		MapKeyFrame::Ptr active_volume_keyframe;
 		int active_volume_map_index = 0;
 
