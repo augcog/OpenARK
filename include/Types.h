@@ -58,7 +58,6 @@ namespace ark{
     /** A container for Camera Calibration */
     class CameraCalibration {  
     public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         cv::Mat camera_matrix;
         cv::Mat distortion_coeffs;
 

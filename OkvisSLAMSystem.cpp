@@ -3,12 +3,35 @@
 
 namespace ark {
 
+    void test_f() {
+        printf("push test inside okvisslamsystem\n");
+        fflush(stdout);
+
+        struct imut {
+          public:
+            EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+            Eigen::Vector3d gyroscopes;     ///< Gyroscope measurement.
+            Eigen::Vector3d test;
+            Eigen::Vector2i test2;
+          };
+
+          std::deque<struct imut, Eigen::aligned_allocator<struct imut>> testdq;
+
+          for (int i = 0; i < 500; i++) {
+            struct imut data;
+            data.gyroscopes << 1, 2, 3;
+            data.test << 4, 5, 6;
+            testdq.push_back(data);
+          }
+
+          printf("passed my push test inside okvis\n");
+          fflush(stdout);
+    }
+
+
     OkvisSLAMSystem::OkvisSLAMSystem(const std::string & strVocFile, const std::string & strSettingsFile) :
         start_(0.0), t_imu_(0.0), deltaT_(1.0), num_frames_(0), kill(false), 
         sparse_map_vector(), active_map_index(-1), new_map_checker(false),map_timer(0), strVocFile(strVocFile){
-
-        printf("heretest\n");
-        fflush(stdout);
             
         okvis::VioParametersReader vio_parameters_reader;
         try {
@@ -19,33 +42,33 @@ namespace ark {
             return;
         }
 
-        printf("HEREERER\n");
-        fflush(stdout);
-
         //okvis::VioParameters parameters;
         vio_parameters_reader.getParameters(parameters_);
 
-        printf("hereXD\n");
-        fflush(stdout);
-
         createNewMap();
 
-        printf("herexdd\n");
+        test_f();
+
+        printf("help\n");
         fflush(stdout);
 
         //initialize Visual odometry
-        okvis_estimator_ = std::make_shared<okvis::ThreadedKFVio>(parameters_);
-        okvis_estimator_->setBlocking(true);
+        //okvis_estimator_ = std::make_shared<okvis::ThreadedKFVio>(parameters_);
 
-        printf("herexdddd\n");
+        //okvis_estimator_ = std::shared_ptr<okvis::ThreadedKFVio>(new okvis::ThreadedKFVio(parameters_));
+        okvis_estimator_ = std::allocate_shared<okvis::ThreadedKFVio>(Eigen::aligned_allocator<okvis::ThreadedKFVio>(), parameters_);
+
+        printf("finished constructor of tkfv\n");
         fflush(stdout);
+
+        okvis_estimator_->setBlocking(true);
 
         //Okvis's outframe is our inframe
         auto frame_callback = [this](const okvis::Time& timestamp, okvis::OutFrameData::Ptr frame_data) {
             frame_data_queue_.enqueue({ frame_data,timestamp });
         };
 
-        okvis_estimator_->setFrameCallback(frame_callback);
+        //okvis_estimator_->setFrameCallback(frame_callback);
 
         //at thread to pull from queue and call our own callbacks
         frameConsumerThread_ = std::thread(&OkvisSLAMSystem::FrameConsumerLoop, this);
@@ -53,6 +76,9 @@ namespace ark {
         frame_data_queue_.clear();
         frame_queue_.clear();
         std::cout << "SLAM Initialized\n";
+        fflush(stdout);
+
+
     }
 
     void OkvisSLAMSystem::Start() {
@@ -302,7 +328,7 @@ namespace ark {
         }
     }
 
-    void OkvisSLAMSystem::PushIMU(double timestamp, const Eigen::Vector3d& accel, const Eigen::Vector3d gyro) {
+    void OkvisSLAMSystem::PushIMU(double timestamp, const Eigen::Vector3d& accel, const Eigen::Vector3d& gyro) {
         if (okvis_estimator_ == nullptr) return;
         t_imu_ = okvis::Time(timestamp / 1e9);
         if (t_imu_ - start_ + okvis::Duration(1.0) > deltaT_) {
@@ -314,7 +340,8 @@ namespace ark {
         if (!sparse_map_vector.empty()) {
             sparse_map_vector.back()->lastKfTimestamp_ = sparse_map_vector.back()->lastKfTimestampDetect_ = 0.;
         }
-        const auto newMap = std::make_shared<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>>();
+        //const auto newMap = std::make_shared<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>>();
+        const auto newMap = std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>>(new SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>());
         newMap->setEnableLoopClosure(parameters_.loopClosureParameters.enabled,strVocFile,true, new brisk::BruteForceMatcher());
         sparse_map_vector.push_back(newMap);
         // set it to the latest one

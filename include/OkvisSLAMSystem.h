@@ -34,8 +34,6 @@ namespace ark {
         };
 
     public:
-        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
         OkvisSLAMSystem(const std::string &strVocFile, const std::string &strSettingsFile);
 
         //void PushFrame(const std::vector<cv::Mat>& images, const double &timestamp);
@@ -48,7 +46,7 @@ namespace ark {
 
         void PushIMU(const ImuPair& imu);
 
-        void PushIMU(double timestamp, const Eigen::Vector3d& accel, const Eigen::Vector3d gyro);
+        void PushIMU(double timestamp, const Eigen::Vector3d& accel, const Eigen::Vector3d& gyro);
 
         void Start();
 
@@ -100,6 +98,8 @@ namespace ark {
         int map_timer;
         int active_map_index;
         std::string strVocFile;
+    public:
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     }; // OkvisSLAMSystem
 
 }//ark
