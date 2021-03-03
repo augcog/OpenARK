@@ -144,9 +144,10 @@ namespace ark {
                 // Get accelerometer measures
                 rs2_vector accel_data = fa.get_motion_data();
 
-                ImuPair imu_out { double(ts_g)*1e6, //convert to nanoseconds, for some reason gyro timestamp is in centiseconds
-                    Eigen::Vector3d(gyro_data.x,gyro_data.y,gyro_data.z),
-                    Eigen::Vector3d(accel_data.x,accel_data.y,accel_data.z)};
+                ImuPair imu_out;
+                imu_out.timestamp = double(ts_g)*1e6; //convert to nanoseconds, for some reason gyro timestamp is in centiseconds
+                imu_out.gyro = Eigen::Vector3d(gyro_data.x,gyro_data.y,gyro_data.z);
+                imu_out.accel = Eigen::Vector3d(accel_data.x,accel_data.y,accel_data.z);
                 imu_queue_.enqueue(imu_out);
             }
 
@@ -154,7 +155,7 @@ namespace ark {
 
     }
 
-    bool D435iCamera::getImuToTime(double timestamp, std::vector<ImuPair>& data_out){
+    bool D435iCamera::getImuToTime(double timestamp, std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>>& data_out){
         ImuPair imu_data;
         imu_data.timestamp=0;
         float imu_rate = static_cast<float>(cameraParameter.imuFps);

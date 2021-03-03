@@ -42,7 +42,7 @@ namespace ark {
 
         void PushFrame(const MultiCameraFrame::Ptr frame);
 
-        void PushIMU(const std::vector<ImuPair>& imu);
+        void PushIMU(const std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>>& imu);
 
         void PushIMU(const ImuPair& imu);
 

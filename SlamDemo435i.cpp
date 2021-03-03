@@ -163,10 +163,10 @@ int main(int argc, char **argv)
         try
         {
             //Get current camera frame
-            MultiCameraFrame::Ptr frame(new MultiCameraFrame);
+            MultiCameraFrame::Ptr frame = std::allocate_shared<MultiCameraFrame>(Eigen::aligned_allocator<MultiCameraFrame>());
             camera.update(*frame);
 
-            std::vector<ImuPair> imuData;
+            std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>> imuData;
             camera.getImuToTime(frame->timestamp_, imuData);
 
             cv::Mat imRGB;

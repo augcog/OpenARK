@@ -87,7 +87,7 @@ public:
 
 	void add_object(Object* obj);
 
-	void set_camera(Eigen::Vector3d eye, Eigen::Vector3d gaze);
+	//void set_camera(const Eigen::Vector3d& eye, const Eigen::Vector3d& gaze);
 
 protected:
 	std::mutex displayLock_;
@@ -212,6 +212,7 @@ public:
 
 class MeshWindow : public ObjectWindow { // Moon : Cause 1 : class having FSVEO as members
 public:
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	MeshWindow(std::string name, int resX, int resY) :
 		ObjectWindow(name, resX, resY) {};
 	//bool display();

@@ -239,47 +239,6 @@ namespace ark {
         }
     }
 
-    /*void OkvisSLAMSystem::PushFrame(const std::vector<cv::Mat>& images, const double &timestamp) {
-        if (okvis_estimator_ == nullptr)
-            return;
-        okvis::Time t_image(timestamp / 1e9);
-        if (start_ == okvis::Time(0.0)) {
-            start_ = t_image;
-        }
-
-        if (t_image - start_ > deltaT_) {
-            if(mMapFrameAvailableHandler.size()>0){
-                frame_queue_.enqueue({ images,t_image,num_frames_ });
-            }
-            num_frames_++;
-            for (size_t i = 0; i < images.size(); i++) {
-                if (i < parameters_.nCameraSystem.numCameras()){
-                    //printf("add image: %i\n", i);
-                    okvis_estimator_->addImage(t_image, i, images[i]);
-                }
-            }
-        }
-    }
-
-    void OkvisSLAMSystem::PushFrame(const cv::Mat image, const double &timestamp) {
-        if (okvis_estimator_ == nullptr)
-            return;
-        okvis::Time t_image(timestamp / 1e9);
-        if (start_ == okvis::Time(0.0)) {
-            start_ = t_image;
-        }
-
-        if (t_image - start_ > deltaT_) {
-            std::vector<cv::Mat> images;
-            images.push_back(image);
-            if(mMapFrameAvailableHandler.size()>0){
-                frame_queue_.enqueue({ images,t_image,num_frames_ });
-            }
-            num_frames_++;
-            okvis_estimator_->addImage(t_image, 0, image);
-        }
-    }*/
-
     void OkvisSLAMSystem::PushFrame(MultiCameraFrame::Ptr frame){
 
         std::cout << "pushing frame" << std::endl;
@@ -308,7 +267,7 @@ namespace ark {
         fflush(stdout);   
     }
 
-    void OkvisSLAMSystem::PushIMU(const std::vector<ImuPair>& imu) {
+    void OkvisSLAMSystem::PushIMU(const std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>>& imu) {
         std::cout << "pushing imu" << std::endl;
         fflush(stdout);
         if (okvis_estimator_ == nullptr) return;
