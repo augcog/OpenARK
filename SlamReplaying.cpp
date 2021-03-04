@@ -186,7 +186,7 @@ int main(int argc, char **argv)
             cv::imshow(std::string(camera.getModelName()) + " Infrared", infrared);
             cv::imshow(std::string(camera.getModelName()) + " Depth", depth);
 
-            std::vector<ImuPair> imuData;
+            std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>> imuData;
             camera.getImuToTime(frame->timestamp_, imuData);
 
             //Add data to SLAM system
