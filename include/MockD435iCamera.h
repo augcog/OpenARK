@@ -54,7 +54,7 @@ namespace ark {
 
         void project(const cv::Mat &depth_frame, cv::Mat &xyz_map);
 
-        bool getImuToTime(double timestamp, std::vector<ImuPair>& data_out);
+        bool getImuToTime(double timestamp, std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>>& data_out);
 
         std::vector<ImuPair> getAllImu();
 

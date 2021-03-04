@@ -42,7 +42,7 @@ void MockD435iCamera::start()
     }
 }
 
-bool MockD435iCamera::getImuToTime(double timestamp, std::vector<ImuPair> &data_out)
+bool MockD435iCamera::getImuToTime(double timestamp, std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>> &data_out)
 {
     std::string line1;
     std::string line2;

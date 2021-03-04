@@ -203,7 +203,7 @@ int main(int argc, char **argv)
         {
             std::cout << "ex catched\n";
         }
-        const auto isReset = slam.okvis_estimator_->isReset();
+        const auto isReset = slam.okvis_estimator_.isReset();
         const auto mapIndex = slam.getActiveMapIndex();
         if (mapIndex != lastMapIndex) {
             lastMapIndex = mapIndex;
