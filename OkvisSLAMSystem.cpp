@@ -2,73 +2,29 @@
 #include "OkvisSLAMSystem.h"
 
 namespace ark {
-
-    void test_f() {
-        printf("push test inside okvisslamsystem\n");
-        fflush(stdout);
-
-        struct imut {
-          public:
-            EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-            Eigen::Vector3d gyroscopes;     ///< Gyroscope measurement.
-            Eigen::Vector3d test;
-            Eigen::Vector2i test2;
-          };
-
-          std::deque<struct imut, Eigen::aligned_allocator<struct imut>> testdq;
-
-          for (int i = 0; i < 500; i++) {
-            struct imut data;
-            data.gyroscopes << 1, 2, 3;
-            data.test << 4, 5, 6;
-            testdq.push_back(data);
-          }
-
-          printf("passed my push test inside okvis\n");
-          fflush(stdout);
-    }
-
-
     OkvisSLAMSystem::OkvisSLAMSystem(const std::string & strVocFile, const std::string & strSettingsFile) :
         start_(0.0), t_imu_(0.0), deltaT_(1.0), num_frames_(0), kill(false), 
-        sparse_map_vector(), active_map_index(-1), new_map_checker(false),map_timer(0), strVocFile(strVocFile){
-            
-        okvis::VioParametersReader vio_parameters_reader;
-        try {
-            vio_parameters_reader.readConfigFile(strSettingsFile);
-        }
-        catch (okvis::VioParametersReader::Exception ex) {
-            std::cerr << ex.what() << "\n";
-            return;
-        }
-
-        //okvis::VioParameters parameters;
-        vio_parameters_reader.getParameters(parameters_);
+        sparse_map_vector(), active_map_index(-1), new_map_checker(false),map_timer(0), strVocFile(strVocFile), parameters_(), okvis_estimator_(initParams(strSettingsFile)) {
 
         createNewMap();
-
-        test_f();
-
-        printf("help\n");
-        fflush(stdout);
 
         //initialize Visual odometry
         //okvis_estimator_ = std::make_shared<okvis::ThreadedKFVio>(parameters_);
 
         //okvis_estimator_ = std::shared_ptr<okvis::ThreadedKFVio>(new okvis::ThreadedKFVio(parameters_));
-        okvis_estimator_ = std::allocate_shared<okvis::ThreadedKFVio>(Eigen::aligned_allocator<okvis::ThreadedKFVio>(), parameters_);
+        //okvis_estimator_ = std::allocate_shared<okvis::ThreadedKFVio>(Eigen::aligned_allocator<okvis::ThreadedKFVio>(), parameters_);
 
         printf("finished constructor of tkfv\n");
         fflush(stdout);
 
-        okvis_estimator_->setBlocking(true);
+        okvis_estimator_.setBlocking(true);
 
         //Okvis's outframe is our inframe
         auto frame_callback = [this](const okvis::Time& timestamp, okvis::OutFrameData::Ptr frame_data) {
             frame_data_queue_.enqueue({ frame_data,timestamp });
         };
 
-        //okvis_estimator_->setFrameCallback(frame_callback);
+        okvis_estimator_.setFrameCallback(frame_callback);
 
         //at thread to pull from queue and call our own callbacks
         frameConsumerThread_ = std::thread(&OkvisSLAMSystem::FrameConsumerLoop, this);
@@ -78,7 +34,68 @@ namespace ark {
         std::cout << "SLAM Initialized\n";
         fflush(stdout);
 
+    }
 
+    OkvisSLAMSystem::OkvisSLAMSystem(const std::string & strVocFile, okvis::VioParameters& parameters) :
+        start_(0.0), t_imu_(0.0), deltaT_(1.0), num_frames_(0), kill(false), 
+        sparse_map_vector(), active_map_index(-1), new_map_checker(false),map_timer(0), strVocFile(strVocFile), okvis_estimator_(parameters) {
+
+        parameters_ = parameters;
+
+        createNewMap();
+
+        //initialize Visual odometry
+        //okvis_estimator_ = std::make_shared<okvis::ThreadedKFVio>(parameters_);
+
+        //okvis_estimator_ = std::shared_ptr<okvis::ThreadedKFVio>(new okvis::ThreadedKFVio(parameters_));
+        //okvis_estimator_ = std::allocate_shared<okvis::ThreadedKFVio>(Eigen::aligned_allocator<okvis::ThreadedKFVio>(), parameters_);
+
+        printf("finished constructor of tkfv\n");
+        fflush(stdout);
+
+        okvis_estimator_.setBlocking(true);
+
+        //Okvis's outframe is our inframe
+        auto frame_callback = [this](const okvis::Time& timestamp, okvis::OutFrameData::Ptr frame_data) {
+            frame_data_queue_.enqueue({ frame_data,timestamp });
+        };
+
+        okvis_estimator_.setFrameCallback(frame_callback);
+
+        //at thread to pull from queue and call our own callbacks
+        frameConsumerThread_ = std::thread(&OkvisSLAMSystem::FrameConsumerLoop, this);
+
+        frame_data_queue_.clear();
+        frame_queue_.clear();
+        std::cout << "SLAM Initialized\n";
+        fflush(stdout);
+
+    }
+
+    okvis::VioParameters& OkvisSLAMSystem::initParams(const std::string & strSettingsFile) {
+
+        printf("initing params\n");
+        fflush(stdout);
+
+        std::cout << strSettingsFile << std::endl;
+
+        okvis::VioParametersReader vio_parameters_reader;
+        try {
+            vio_parameters_reader.readConfigFile(strSettingsFile);
+        }
+        catch (okvis::VioParametersReader::Exception ex) {
+            std::cerr << ex.what() << "\n";
+            return parameters_;
+        }
+
+        printf("getting parametrs, putting into parameters");
+        fflush(stdout);
+
+
+        //okvis::VioParameters parameters;
+        vio_parameters_reader.getParameters(parameters_);
+
+        return parameters_;
     }
 
     void OkvisSLAMSystem::Start() {
@@ -91,7 +108,7 @@ namespace ark {
             //Get processed frame data from OKVIS
             StampedFrameData frame_data;
             while (!frame_data_queue_.try_dequeue(&frame_data)) {
-                if (okvis_estimator_->isReset() && !new_map_checker) {
+                if (okvis_estimator_.isReset() && !new_map_checker) {
                     if(map_timer >= 15)
                     {
                         cout<<"Created new map"<<endl;
@@ -100,12 +117,12 @@ namespace ark {
                     }
                     map_timer=0;
                     
-                } else if (!okvis_estimator_->isReset() && new_map_checker) {
+                } else if (!okvis_estimator_.isReset() && new_map_checker) {
                     frame_queue_.clear();
                     frame_data_queue_.clear();
                     new_map_checker = false;
                 }
-                if (okvis_estimator_->isReset()) {
+                if (okvis_estimator_.isReset()) {
                     frame_queue_.clear();
                     frame_data_queue_.clear();
                 }
@@ -239,12 +256,12 @@ namespace ark {
         }
     }
 
-    void OkvisSLAMSystem::PushFrame(MultiCameraFrame::Ptr frame){
+    void OkvisSLAMSystem::PushFrame(const MultiCameraFrame::Ptr frame){
 
         std::cout << "pushing frame" << std::endl;
         fflush(stdout);
 
-        if (okvis_estimator_ == nullptr)
+        if (stop_requested)
             return;
         okvis::Time t_image(frame->timestamp_ / 1e9);
         if (start_ == okvis::Time(0.0)) {
@@ -258,8 +275,8 @@ namespace ark {
             num_frames_++;
             for (size_t i = 0; i < frame->images_.size(); i++) {
                 if (i < parameters_.nCameraSystem.numCameras()){
-                    //printf("add image: %i\n", i);
-                    okvis_estimator_->addImage(t_image, i, frame->images_[i]);
+                    printf("add image: %i\n", i);
+                    okvis_estimator_.addImage(t_image, i, frame->images_[i]);
                 }
             }
         }
@@ -270,7 +287,7 @@ namespace ark {
     void OkvisSLAMSystem::PushIMU(const std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>>& imu) {
         std::cout << "pushing imu" << std::endl;
         fflush(stdout);
-        if (okvis_estimator_ == nullptr) return;
+        if (stop_requested) return;
         for (size_t i = 0; i < imu.size(); i++) {
             PushIMU(imu[i]);
         }
@@ -279,19 +296,19 @@ namespace ark {
     }
 
     void OkvisSLAMSystem::PushIMU(const ImuPair& imu) {
-        if (okvis_estimator_ == nullptr) return;
+        if (stop_requested) return;
         t_imu_ = okvis::Time(imu.timestamp / 1e9);
         if (t_imu_ - start_ + okvis::Duration(1.0) > deltaT_) {
             //std::cout << imu.timestamp / 1e9 << " , " << imu.accel.transpose() << " , " << imu.gyro.transpose() << std::endl;
-            okvis_estimator_->addImuMeasurement(t_imu_, imu.accel, imu.gyro);
+            okvis_estimator_.addImuMeasurement(t_imu_, imu.accel, imu.gyro);
         }
     }
 
     void OkvisSLAMSystem::PushIMU(double timestamp, const Eigen::Vector3d& accel, const Eigen::Vector3d& gyro) {
-        if (okvis_estimator_ == nullptr) return;
+        if (stop_requested) return;
         t_imu_ = okvis::Time(timestamp / 1e9);
         if (t_imu_ - start_ + okvis::Duration(1.0) > deltaT_) {
-            okvis_estimator_->addImuMeasurement(t_imu_, accel, gyro);
+            okvis_estimator_.addImuMeasurement(t_imu_, accel, gyro);
         }
     }
 
@@ -314,9 +331,9 @@ namespace ark {
     }
 
     void OkvisSLAMSystem::display() {
-        if (okvis_estimator_ == nullptr)
+        if (stop_requested)
             return;
-        okvis_estimator_->display();
+        okvis_estimator_.display();
     }
 
     void OkvisSLAMSystem::ShutDown()
@@ -325,7 +342,7 @@ namespace ark {
         frame_data_queue_.clear();
         kill=true;
         frameConsumerThread_.join();
-        okvis_estimator_.reset();
+        //delete okvis_estimator_;
     }
 
     OkvisSLAMSystem::~OkvisSLAMSystem() {
@@ -336,12 +353,12 @@ namespace ark {
 
     void OkvisSLAMSystem::RequestStop()
     {
-        okvis_estimator_ = nullptr;
+        stop_requested = true;
     }
 
     bool OkvisSLAMSystem::IsRunning()
     {
-        return okvis_estimator_ == nullptr;
+        return !stop_requested;
     }
 
     void OkvisSLAMSystem::getTrajectory(std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut){ // Moon: Cause 4 = Cause 2.a + Cause 3: STL used with FSVEO for passing. 

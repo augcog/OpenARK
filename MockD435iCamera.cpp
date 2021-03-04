@@ -122,8 +122,9 @@ void MockD435iCamera::project(const cv::Mat &depth_frame, cv::Mat &xyz_map)
     }
 }
 
-void MockD435iCamera::update(MultiCameraFrame &frame)
-{
+void MockD435iCamera::update(MultiCameraFrame::Ptr frame_ptr)
+{   
+    MultiCameraFrame frame = *frame_ptr;
     std::string line;
     if (!std::getline(timestampStream, line))
     {

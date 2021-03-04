@@ -34,10 +34,27 @@ int main(int argc, char **argv)
     if (argc > 2) vocabFilename = argv[2];
     else vocabFilename = util::resolveRootPath("config/brisk_vocab.bn");
 
-    printf("????\n");
+    printf("initing params\n");
     fflush(stdout);
 
-    OkvisSLAMSystem slam(vocabFilename, configFilename);
+    std::cout << configFilename << std::endl;
+
+    okvis::VioParameters parameters;
+
+    okvis::VioParametersReader vio_parameters_reader;
+    try {
+        vio_parameters_reader.readConfigFile(configFilename);
+    }
+    catch (okvis::VioParametersReader::Exception ex) {
+        std::cerr << ex.what() << "\n";
+    }
+
+    //okvis::VioParameters parameters;
+    vio_parameters_reader.getParameters(parameters);
+
+    OkvisSLAMSystem slam(vocabFilename, parameters);
+
+    //OkvisSLAMSystem slam(vocabFilename, configFilename);
 
     printf("here1\n");
     cv::FileStorage configFile(configFilename, cv::FileStorage::READ);
@@ -164,7 +181,7 @@ int main(int argc, char **argv)
         {
             //Get current camera frame
             MultiCameraFrame::Ptr frame = std::allocate_shared<MultiCameraFrame>(Eigen::aligned_allocator<MultiCameraFrame>());
-            camera.update(*frame);
+            camera.update(frame);
 
             std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>> imuData;
             camera.getImuToTime(frame->timestamp_, imuData);
@@ -188,7 +205,7 @@ int main(int argc, char **argv)
         {
             std::cout << "An exception caught.\n";
         }
-        const auto isReset = slam.okvis_estimator_->isReset();
+        const auto isReset = slam.okvis_estimator_.isReset();
         const auto mapIndex = slam.getActiveMapIndex();
         if (mapIndex != lastMapIndex) {
             lastMapIndex = mapIndex;

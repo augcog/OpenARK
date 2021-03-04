@@ -36,6 +36,8 @@ namespace ark {
     public:
         OkvisSLAMSystem(const std::string &strVocFile, const std::string &strSettingsFile);
 
+        OkvisSLAMSystem(const std::string &strVocFile, okvis::VioParameters& parameters);
+
         //void PushFrame(const std::vector<cv::Mat>& images, const double &timestamp);
 
         //void PushFrame(const cv::Mat image, const double &timestamp);
@@ -70,11 +72,11 @@ namespace ark {
         int getActiveMapIndex() {
             return active_map_index;
         }
-        std::shared_ptr<okvis::ThreadedKFVio> okvis_estimator_;
+        //std::shared_ptr<okvis::ThreadedKFVio> okvis_estimator_;
 
-
-        
-
+        //stack it up
+        okvis::ThreadedKFVio okvis_estimator_;
+        bool stop_requested = false;
 
     protected:
         void KeyFrameConsumerLoop();
@@ -82,6 +84,8 @@ namespace ark {
         void FrameConsumerLoop();
 
         void createNewMap();
+
+        okvis::VioParameters& initParams(const std::string & strSettingsFile);
 
     private:
         okvis::Time start_;

@@ -50,7 +50,7 @@ namespace ark {
         /**
         * get a frame per time
         */
-        void update(MultiCameraFrame & frame) override;
+        void update(MultiCameraFrame::Ptr frame_ptr) override;
 
         void project(const cv::Mat &depth_frame, cv::Mat &xyz_map);
 

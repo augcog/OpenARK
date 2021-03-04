@@ -171,7 +171,7 @@ int main(int argc, char **argv)
         {
             //Get current camera frame
             MultiCameraFrame::Ptr frame(new MultiCameraFrame);
-            camera.update(*frame);
+            camera.update(frame);
 
             const auto frameId = frame->frameId_;
             if (frameId < 0) {

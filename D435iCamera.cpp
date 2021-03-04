@@ -179,11 +179,11 @@ namespace ark {
         return cv::Size(width,height);
     }
 
-    void D435iCamera::update(MultiCameraFrame & frame) {
+    void D435iCamera::update(MultiCameraFrame::Ptr frame) {
 
         try {
             // Ensure the frame has space for all images
-            frame.images_.resize(5);
+            frame->images_.resize(5);
 
             std::cout << "getting camera frames" << std::endl;
             fflush(stdout);
@@ -199,9 +199,9 @@ namespace ark {
             fflush(stdout);
 
             // Store ID for later
-            frame.frameId_ = depth.get_frame_number();
+            frame->frameId_ = depth.get_frame_number();
             if(depth.supports_frame_metadata(RS2_FRAME_METADATA_SENSOR_TIMESTAMP)){
-                frame.timestamp_= depth.get_frame_metadata(RS2_FRAME_METADATA_SENSOR_TIMESTAMP)*1e3;
+                frame->timestamp_= depth.get_frame_metadata(RS2_FRAME_METADATA_SENSOR_TIMESTAMP)*1e3;
                 //std::cout << "Image: " << std::fixed << frame.timestamp_/1e3 << std::endl;
             
             }else{
@@ -210,32 +210,32 @@ namespace ark {
             }
 
             // Convert infrared frame to opencv
-            if (frame.images_[0].empty()) frame.images_[0] = cv::Mat(cv::Size(width,height), CV_8UC1);
-            std::memcpy( frame.images_[0].data, infrared.get_data(),width * height);
+            if (frame->images_[0].empty()) frame->images_[0] = cv::Mat(cv::Size(width,height), CV_8UC1);
+            std::memcpy( frame->images_[0].data, infrared.get_data(),width * height);
 
-            if (frame.images_[1].empty()) frame.images_[1] = cv::Mat(cv::Size(width,height), CV_8UC1);
-            std::memcpy( frame.images_[1].data, infrared2.get_data(),width * height);
+            if (frame->images_[1].empty()) frame->images_[1] = cv::Mat(cv::Size(width,height), CV_8UC1);
+            std::memcpy( frame->images_[1].data, infrared2.get_data(),width * height);
 
 
-            if (frame.images_[2].empty()) frame.images_[2] = cv::Mat(cv::Size(width,height), CV_32FC3);
-            project(depth, frame.images_[2]);
-            frame.images_[2] = frame.images_[2]*scale; //depth is in mm by default
+            if (frame->images_[2].empty()) frame->images_[2] = cv::Mat(cv::Size(width,height), CV_32FC3);
+            project(depth, frame->images_[2]);
+            frame->images_[2] = frame->images_[2]*scale; //depth is in mm by default
 
 			auto aligned_frames = align_to_color->process(frames);
 			auto aligned_depth = aligned_frames.get_depth_frame();
 			
-			if (frame.images_[4].empty()) frame.images_[4] = cv::Mat(cv::Size(width, height), CV_16UC1, (void*)aligned_depth.get_data(), cv::Mat::AUTO_STEP);
+			if (frame->images_[4].empty()) frame->images_[4] = cv::Mat(cv::Size(width, height), CV_16UC1, (void*)aligned_depth.get_data(), cv::Mat::AUTO_STEP);
 
-            if (frame.images_[3].empty()) frame.images_[3] = cv::Mat(cv::Size(width,height), CV_8UC3);
-            std::memcpy( frame.images_[3].data, color.get_data(),3 * width * height);
+            if (frame->images_[3].empty()) frame->images_[3] = cv::Mat(cv::Size(width,height), CV_8UC3);
+            std::memcpy( frame->images_[3].data, color.get_data(),3 * width * height);
 
 			//FILTER OUT ALL POINTS CLOSER THAN min_dist AND FARTHER THAN max_dist
 			int min_dist = 200;
 			int max_dist = 6000;
 			for (int i = 0; i < width; i++) {
 				for (int k = 0; k < height; k++) {
-					if (frame.images_[4].at<uint16_t>(k, i) < min_dist || frame.images_[4].at<uint16_t>(k, i) > max_dist) { 
-						frame.images_[4].at<uint16_t>(k, i) = 0;
+					if (frame->images_[4].at<uint16_t>(k, i) < min_dist || frame->images_[4].at<uint16_t>(k, i) > max_dist) { 
+						frame->images_[4].at<uint16_t>(k, i) = 0;
 					}
 				}
 			}
