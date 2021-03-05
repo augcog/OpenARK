@@ -60,7 +60,25 @@ int main(int argc, char **argv)
         dataPath = path(argv[4]);
     }
 
-    OkvisSLAMSystem slam(vocabFilename, configFilename);
+    printf("initing params\n");
+    fflush(stdout);
+
+    std::cout << configFilename << std::endl;
+
+    okvis::VioParameters parameters;
+
+    okvis::VioParametersReader vio_parameters_reader;
+    try {
+        vio_parameters_reader.readConfigFile(configFilename);
+    }
+    catch (okvis::VioParametersReader::Exception ex) {
+        std::cerr << ex.what() << "\n";
+    }
+
+    //okvis::VioParameters parameters;
+    vio_parameters_reader.getParameters(parameters);
+
+    OkvisSLAMSystem slam(vocabFilename, parameters);
     
     //setup display
     if (!MyGUI::Manager::init())
