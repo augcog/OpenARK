@@ -1,3 +1,4 @@
+
 ## Installing OpenARK for Ubuntu 18.04.5 LTS (Bionic Beaver)
 
 ### Preliminaries
@@ -87,16 +88,26 @@ sudo make install
 ```
 Again, -j4 may be replaced with any number of threads.
 
-### Installing Ceres in two different ways.
-There are 2 ways to install Ceres. You can either download Ceres 1.13.0 package or Ceres 1.14.0 from source. For now, we recommend Ceres 1.13.0 package.
+## Fixing Eigen
+The following sections directly have Eigen as a depenendency:
+1. Ceres
+2. OpenGV
+3. Okvis
+4. OpenARK
 
-### Installing [Ceres 1.13.0 package](https://packages.ubuntu.com/source/bionic/ceres-solver)
-
-ceres-solver depends on [libceres-dev](https://packages.ubuntu.com/bionic/libceres-dev) and [libsuitesparse-dev 1.13.0](https://packages.ubuntu.com/bionic/libsuitesparse-dev)
+In order to get Eigen working, the following lines of code must be added into the top level CMakesList.txt:
 ```
-sudo apt -y install libceres-dev
+message(STATUS "using c++17")
+add_definitions(-DEIGEN_DONT_ALIGN=1)
+add_definitions(-DEIGEN_DONT_VECTORIZE=1)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++17")
+set(CMAKE_CXX_STANDARD 17)
 ```
 
+This will disable alignment as well as force the compiler to use c++17 standard.  
+Add these lines before running the Cmake instructions to build each library.
+
+## Continued Dependencies
 ### Installing Ceres 1.14.0 from source
 
 #### Installing [SuiteSparse 5.1.2](https://packages.ubuntu.com/bionic/libsuitesparse-dev)
@@ -106,48 +117,49 @@ sudo apt install libsuitesparse-dev
 ```
 Download Ceres1.14.0 from source and build as follows. 
 1. `wget -O ceres114.tar.gz https://github.com/ceres-solver/ceres-solver/archive/1.14.0.tar.gz && tar -xf ceres114.tar.gz && cd ceres-solver-1.14.0`
-2. Build with CMake and install
-3. If you want to build Ceres without Suitesparse, then change the `option(SUITESPARSE "Enable SuiteSparse." ON)` to `OFF` in the Ceres CMakeLists.txt. 
-4. Ceres uses the Eigen Library, `add_definitions(-DEIGEN_DONT_ALIGN=1)` in CMakeLists.txt if necessary.
+2. Comment out lines 434-439 of the top level CMakeLists.txt
+It should look like: (notice the #[[ open comment and ]] close comment)
+```
+#[[if (CXX11 AND COMPILER_HAS_CXX11_FLAG)
+  # Update CMAKE_REQUIRED_FLAGS used by CheckCXXSourceCompiles to include
+  # -std=c++11 s/t we will detect the C++11 versions of unordered_map &
+  # shared_ptr if they exist.
+  set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -std=c++11")
+endif (CXX11 AND COMPILER_HAS_CXX11_FLAG)]]
+```
+3. Apply the Fixing Eigen changes.
+4. Build with CMake and install
 
 ### Intalling OpenGV 1.0
-
-OpenGV uses the Eigen Library, `add_definitions(-DEIGEN_DONT_ALIGN=1)` in CMakeLists.txt if necessary.
-
 1. `git clone https://github.com/laurentkneip/opengv && cd opengv`
-1. `wget -O ceres114.tar.gz https://github.com/ceres-solver/ceres-solver/archive/1.14.0.tar.gz && tar -xf ceres114.tar.gz && cd ceres-solver-1.14.0`
-
-2. Build with CMake and install
-2. Build with CMake and install
+2. Apply the Fixing Eigen changes.
+3. Build with CMake and install
 
 ### Installing Brisk
 
 1. `git clone https://github.com/sxyu/brisk && cd brisk`
-
 2. Build with CMake and install
 
 ### Installing DBoW2 with Brisk Descriptors, Custom Version
 
 1. `git clone https://github.com/joemenke/DBoW2_Mod && cd DBoW2_Mod`. 
 Note that this repository is a modified version of DBoW2_Mod to support Brisk descriptors.
-
 2. Build with CMake and install
 
 ### Installing DLoopDetector, Custom Version
 
 1. `git clone https://github.com/joemenke/DLoopDetector && cd DLoopDetector`
 Note that this repository is a modified version of DLoopDetector.
-
 2. Build with CMake and install
+
+### NOTE: CURRENTLY OPEN3D isnt confirmed to work, 3drecondemo probably wont work.
 
 ### Installing [Open3D 0.8.0, Custom Version](https://github.com/adamchang2000/Open3D)
 Note that this is a modified version of Open3D 0.8.0
 
 1. `git clone --recursive https://github.com/moonwonlee/Open3D.git && cd Open3D`
 or get `git clone --recursive https://github.com/adamchang2000/Open3D.git && cd Open3D`, go to src/Open3D/ and delete MovingTSDFVolume.cpp and MovingTSDFVolume.h in // this to be deleted later when Open3D is updated.
-
 2. Build with CMake 
-
 3. Make the following changes to Open3DConfig.cmake in Open3D/build/CMakeFiles // this to be deleted later when Open3D is updated or OpenARK CMakeLists.txt is updated.
 ```sh
 Change:
@@ -164,21 +176,18 @@ set(Open3D_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR}/include;${PACKAGE_PREFIX_DIR}/3rd
 4. `make -j4 && sudo make install`
 
 ### Installing Okvis+ 
-Okvis+ uses the Eigen Library, `add_definitions(-DEIGEN_DONT_ALIGN=1)` in CMakeLists.txt if necessary.
-
-1. `git clone https://github.com/joemenke/okvis && cd okvis`
-Note that this is a modified version of Okvis.
-
+1. `git clone https://github.com/adamchang2000/okvis && cd okvis`
+Note that this is a modified version of Okvis.   
+This already has the Eigen changes applied.
 2. Build with CMake and install
-
 3. Verify Okvis+ by running the demo application
 You will find a demo application in okvis_apps. It can process datasets in the ASL/ETH format.
 https://github.com/ceres-solver/ceres-solver/releases/tag/1.14.0
 In order to run a minimal working example, follow the steps below:
 
-1. Download a dataset of your choice from http://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets. Assuming you downloaded MH_01_easy/. You will find a corresponding calibration / estimator configuration in the config folder.
+4. Download a dataset of your choice from http://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets. Assuming you downloaded MH_01_easy/. You will find a corresponding calibration / estimator configuration in the config folder.
 
-2. Run the app as
+5. Run the app as
  `./okvis_app_synchronous path/to/okvis/config/config_fpga_p2_euroc.yaml path/to/mav0/`
  
 ### Installing librealsense2
@@ -199,11 +208,10 @@ sudo apt-get install librealsense2-dkms librealsense2-utils librealsense2-dev li
 `modinfo uvcvideo | grep "version:" should include realsense string`
 
 ### Installing and Building OpenARK
-OpenARK uses the Eigen Library, `add_definitions(-DEIGEN_DONT_ALIGN=1)` in CMakeLists.txt if necessary.
+1. Clone our repository: `git clone https://github.com/augcog/OpenARK`, or download the latest release.  
+This already has the Eigen changes.
 
-1. Clone our repository: `git clone https://github.com/augcog/OpenARK`, or download the latest release.
-
-2. `cd OpenARK && mkdir build && cd build` to create build directory.
+3. `cd OpenARK && mkdir build && cd build` to create build directory.
 
 3.1 Add the following lines in CMakeLists.txt of OpenARK // this to be deleted later when OpenARK's CMakeLists.txt is updated.
 ``` sh
