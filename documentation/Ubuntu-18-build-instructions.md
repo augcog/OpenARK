@@ -261,8 +261,8 @@ Example `G_SLICE=always-malloc G_DEBUG=gc-friendly  valgrind -v --tool=memcheck 
     bt
 
 #### Debugging with print statements
-`printf("debug");
- fflush(stdout);`
+    printf("debug");
+    fflush(stdout);
 
 
 
