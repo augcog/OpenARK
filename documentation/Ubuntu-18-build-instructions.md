@@ -1,7 +1,7 @@
 
-## Installing OpenARK for Ubuntu 18.04.5 LTS (Bionic Beaver)
+# Installing OpenARK for Ubuntu 18.04.5 LTS (Bionic Beaver)
 
-### Preliminaries
+## Preliminaries
 
 1. Install basic tools, dependencies:
 
@@ -24,7 +24,7 @@ sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 60 --slave /u
 sudo update-alternatives --set gcc "/usr/bin/gcc-5"
 ```
 
-### Note: CMake Builds
+## Note: CMake Builds
 For conciseness, in all sections below "build with CMake" will mean ...
 
 ```sh
@@ -39,13 +39,13 @@ mkdir build && cd build && cmake -D CMAKE_BUILD_TYPE=RELEASE .. && make -j4 && s
 ```
 Note that this installs the library. You may replace '4' in step 3 with any number of threads. The build process should not take too long.
 
-### Installing PCL, [Package: libpcl-dev (1.8.1+dfsg1-2ubuntu2)](https://packages.ubuntu.com/bionic/libpcl-dev)
+## Installing PCL, [Package: libpcl-dev (1.8.1+dfsg1-2ubuntu2)](https://packages.ubuntu.com/bionic/libpcl-dev)
 
 ```sh
 sudo apt -y install libpcl-*
 ```
 
-### Installing OpenCV with Contrib
+## Installing OpenCV with Contrib
 
 OpenCV 3.4.6, OpenCV_Contrib 3.4.6 and [Package: libopencv-dev (3.2.0+dfsg-4ubuntu0.1 and others)](https://packages.ubuntu.com/bionic/libopencv-dev)
 
@@ -130,38 +130,37 @@ It should look like: (notice the #[[ open comment and ]] close comment)
 3. Apply the Fixing Eigen changes.
 4. Build with CMake and install
 
-### Intalling OpenGV 1.0
+## Intalling OpenGV 1.0
 1. `git clone https://github.com/laurentkneip/opengv && cd opengv`
 2. Apply the Fixing Eigen changes.
 3. Build with CMake and install
 
-### Installing Brisk
+## Installing Brisk
 
 1. `git clone https://github.com/sxyu/brisk && cd brisk`
 2. Build with CMake and install
 
-### Installing DBoW2 with Brisk Descriptors, Custom Version
+## Installing DBoW2 with Brisk Descriptors, Custom Version
 
 1. `git clone https://github.com/joemenke/DBoW2_Mod && cd DBoW2_Mod`. 
 Note that this repository is a modified version of DBoW2_Mod to support Brisk descriptors.
 2. Build with CMake and install
 
-### Installing DLoopDetector, Custom Version
+## Installing DLoopDetector, Custom Version
 
 1. `git clone https://github.com/joemenke/DLoopDetector && cd DLoopDetector`
 Note that this repository is a modified version of DLoopDetector.
 2. Build with CMake and install
 
-### NOTE: CURRENTLY OPEN3D isnt confirmed to work, 3drecondemo probably wont work.
-
-### Installing [Open3D 0.8.0, Custom Version](https://github.com/adamchang2000/Open3D)
+## Installing [Open3D 0.8.0, Custom Version](https://github.com/adamchang2000/Open3D)
+### NOTE: CURRENTLY OPEN3D is not confirmed to work, therefore 3drecondemo module probably will not work.
 Note that this is a modified version of Open3D 0.8.0
 
 1. `git clone --recursive https://github.com/adamchang2000/Open3D.git && cd Open3D`, go to src/Open3D/ and delete MovingTSDFVolume.cpp and MovingTSDFVolume.h in // this to be deleted later when Open3D is updated.
 2. Build with CMake 
 3. `make -j4 && sudo make install`
 
-### Installing Okvis+ 
+## Installing Okvis+ 
 1. `git clone https://github.com/adamchang2000/okvis && cd okvis`
 Note that this is a modified version of Okvis.   
 This already has the Eigen changes applied.
@@ -176,7 +175,7 @@ In order to run a minimal working example, follow the steps below:
 5. Run the app as
  `./okvis_app_synchronous path/to/okvis/config/config_fpga_p2_euroc.yaml path/to/mav0/`
  
-### Installing librealsense2
+## Installing librealsense2
 Follow this : https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md
 or here is summary.
 ``` sh
@@ -187,13 +186,13 @@ sudo apt-get install librealsense2-dkms librealsense2-utils librealsense2-dev li
 ```
 (If using Ubuntu 16, replace `bionic` on the second line with `xenial`)
 
-#### Optional: As a sanity check, 
+### Optional: As a sanity check for librealsense2, 
 1. Connect the Intel RealSense depth camera and run: `realsense-viewer` to verify the installation.
 2. plugin your RealSense camera (SR300 or D400) and run `rs-capture` to see if streams appear.
 3. Verify that the kernel is updated :
 `modinfo uvcvideo | grep "version:" should include realsense string`
 
-### Installing and Building OpenARK
+## Installing and Building OpenARK
 1. Clone our repository: `git clone https://github.com/augcog/OpenARK`, or download the latest release.  
 This already has the Eigen changes.
 
@@ -203,6 +202,67 @@ This already has the Eigen changes.
 
 4. `make -j4` to build.
 
-5. As a final sanity check, try running the demo executable in the build directory: `./OpenARK-Hand-Demo`. You should see the hand detection and depth image windows. If you only see one window, drag it and see if the other is behind it. The static library is named: `libopenark_0_9_3.a`.
+## Running the OpenARK demo applications
+- These applications will show you how core functionalities of OpenARK work 
+- These applications will also help you to verify successful installation of OpenARK.
+- The demos apps are in `build` directory.
+- If you do not want to create these demo files, you can do turn off building them in `CMakeLists.txt`.
+`option( BUILD_HAND_DEMO "BUILD_HAND_DEMO" OFF )`
+
+### OpenARK_hand_demo
+As a final sanity check, try running the demo executable in the build directory: 
+`./OpenARK-Hand-Demo` 
+You should see the hand detection and depth image windows. If you only see one window, drag it and see if the other is behind it. The static library is named: `libopenark_0_9_3.a`.
+
+### OpenARK_slam_demo
+Run as  `./OpenARK_SLAM_demo "/path/to/camera_intr.yaml" "../config/brisk_vocab.bn" "0.0"`
+
+Example `./OpenARK_SLAM_demo "../mycam_intr.yaml" "../config/brisk_vocab.bn" "0.0"`
+
+### OpenARK_slam_recording
+#### Data Collected
+    depth
+    infrared
+    infrared2
+    timestamp.txt
+    imu.txt
+    rgb
+    intrin.bin
+    meta.txt
+    
+Run as  `./OpenARK_slam_recording "/path/to/save/data" "/path/to/camera_yaml_file"`
+
+Example `sudo ./OpenARK_slam_recording "../data" "../mycam_intr.yaml"`
+
+### OpenARK_slam_replaying
+Run as  `./OpenARK_slam_replaying "/path/to/camera_yaml_file path/to/brisk_vocab.bn" "0.0" "/path/to/data/collected/by/openark_slam_recording"`
+
+Example `./OpenARK_slam_replaying "../mycam_intr.yaml" "../config/brisk_vocab.bn" "0.0" "../myroom4"`
+
+### 3dRecon_data_recording
+
+## Yaml File Explained
+Please read the documentation of the individual parameters in the yaml file carefully. You have various options to trade-off accuracy and computational expense as well as to enable online calibration.
+
+## Installation Errors
+Linux/Ubuntu is case-sensitive.
+
+## Debugging Tips
+#### [Valgrind](https://www.valgrind.org/docs/manual/manual-core.html): 
+This tool can help you to locate segfaults and invalid write/reads
+
+Run as `G_SLICE=always-malloc G_DEBUG=gc-friendly  valgrind -v --tool=memcheck --leak-check=full --num-callers=40 --log-file=valgrind.log <application name> <argument 1> <argument 2> <argument 3> > output.txt 2>&1`
+
+Example `G_SLICE=always-malloc G_DEBUG=gc-friendly  valgrind -v --tool=memcheck --leak-check=full --num-callers=40 --log-file=valgrind.log ./OpenARK_SLAM_demo > output.txt 2>&1`
+
+#### gdb
+    gdb OpenARK_SLAM_DEMO
+    r
+    bt
+
+#### Debugging with print statements
+`printf("debug");
+ fflush(stdout);`
+
 
 
