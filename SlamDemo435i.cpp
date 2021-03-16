@@ -37,10 +37,7 @@ int main(int argc, char **argv)
     printf("initing params\n");
     fflush(stdout);
 
-    std::cout << configFilename << std::endl;
-
     okvis::VioParameters parameters;
-
     okvis::VioParametersReader vio_parameters_reader;
     try {
         vio_parameters_reader.readConfigFile(configFilename);
@@ -48,18 +45,10 @@ int main(int argc, char **argv)
     catch (okvis::VioParametersReader::Exception ex) {
         std::cerr << ex.what() << "\n";
     }
-
-    //okvis::VioParameters parameters;
     vio_parameters_reader.getParameters(parameters);
-
     OkvisSLAMSystem slam(vocabFilename, parameters);
 
-    //OkvisSLAMSystem slam(vocabFilename, configFilename);
-
-    printf("here1\n");
     cv::FileStorage configFile(configFilename, cv::FileStorage::READ);
-
-    printf("here2\n");
 
     //setup display
     if (!MyGUI::Manager::init())
@@ -185,13 +174,6 @@ int main(int argc, char **argv)
 
             std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>> imuData;
             camera.getImuToTime(frame->timestamp_, imuData);
-
-            cv::Mat imRGB;
-
-            frame->getImage(imRGB, 3);
-
-            cv::namedWindow("test", CV_WINDOW_AUTOSIZE);
-            cv::imshow("test", imRGB);
 
             //Add data to SLAM system
             slam.PushIMU(imuData);

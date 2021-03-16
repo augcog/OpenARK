@@ -76,7 +76,7 @@ int main(int argc, char **argv)
     }
 
     std::vector<MultiCameraFrame> frameList;
-    std::vector<ImuPair> imuList;
+    std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>> imuList;
 
     cv::FileStorage configFile(configFilename, cv::FileStorage::READ);
     CameraParameter cameraParameter;
@@ -86,8 +86,8 @@ int main(int argc, char **argv)
     D435iCamera camera(cameraParameter);
     camera.start();
 
-    std::vector<ImuPair> imuBuffer;
-    std::vector<ImuPair> imuDispose;
+    std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>> imuBuffer;
+    std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>> imuDispose;
     std::atomic_bool paused = {true};
     std::atomic_bool quit = {false};
     single_consumer_queue<std::shared_ptr<MultiCameraFrame>> img_queue;
@@ -155,7 +155,7 @@ int main(int argc, char **argv)
         // 3: rgb
         // 4: depth raw
         auto frame = std::make_shared<MultiCameraFrame>();
-        camera.update(*frame);
+        camera.update(frame);
 
         const auto rgb = frame->images_[3].clone();
         const auto ir1 = frame->images_[0].clone();
