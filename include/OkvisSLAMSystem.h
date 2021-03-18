@@ -34,9 +34,9 @@ namespace ark {
         };
 
     public:
-        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
         OkvisSLAMSystem(const std::string &strVocFile, const std::string &strSettingsFile);
+
+        OkvisSLAMSystem(const std::string &strVocFile, okvis::VioParameters& parameters);
 
         //void PushFrame(const std::vector<cv::Mat>& images, const double &timestamp);
 
@@ -44,11 +44,11 @@ namespace ark {
 
         void PushFrame(const MultiCameraFrame::Ptr frame);
 
-        void PushIMU(const std::vector<ImuPair>& imu);
+        void PushIMU(const std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>>& imu);
 
         void PushIMU(const ImuPair& imu);
 
-        void PushIMU(double timestamp, const Eigen::Vector3d& accel, const Eigen::Vector3d gyro);
+        void PushIMU(double timestamp, const Eigen::Vector3d& accel, const Eigen::Vector3d& gyro);
 
         void Start();
 
@@ -72,11 +72,11 @@ namespace ark {
         int getActiveMapIndex() {
             return active_map_index;
         }
-        std::shared_ptr<okvis::ThreadedKFVio> okvis_estimator_;
+        //std::shared_ptr<okvis::ThreadedKFVio> okvis_estimator_;
 
-
-        
-
+        //stack it up
+        okvis::ThreadedKFVio okvis_estimator_;
+        bool stop_requested = false;
 
     protected:
         void KeyFrameConsumerLoop();
@@ -84,6 +84,8 @@ namespace ark {
         void FrameConsumerLoop();
 
         void createNewMap();
+
+        okvis::VioParameters& initParams(const std::string & strSettingsFile);
 
     private:
         okvis::Time start_;
@@ -100,6 +102,8 @@ namespace ark {
         int map_timer;
         int active_map_index;
         std::string strVocFile;
+    public:
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     }; // OkvisSLAMSystem
 
 }//ark

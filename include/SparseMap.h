@@ -267,6 +267,8 @@ class SparseMap {
   double lastKfTimestampDetect_;
   static constexpr double LOOP_CLOSURE_DISTANCE_THRESHOLD = 0.0;
 
+public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 private: 
 

@@ -60,7 +60,19 @@ int main(int argc, char **argv)
         dataPath = path(argv[4]);
     }
 
-    OkvisSLAMSystem slam(vocabFilename, configFilename);
+    printf("initing params\n");
+    fflush(stdout);
+
+    okvis::VioParameters parameters;
+    okvis::VioParametersReader vio_parameters_reader;
+    try {
+        vio_parameters_reader.readConfigFile(configFilename);
+    }
+    catch (okvis::VioParametersReader::Exception ex) {
+        std::cerr << ex.what() << "\n";
+    }
+    vio_parameters_reader.getParameters(parameters);
+    OkvisSLAMSystem slam(vocabFilename, parameters);
     
     //setup display
     if (!MyGUI::Manager::init())
@@ -171,7 +183,7 @@ int main(int argc, char **argv)
         {
             //Get current camera frame
             MultiCameraFrame::Ptr frame(new MultiCameraFrame);
-            camera.update(*frame);
+            camera.update(frame);
 
             const auto frameId = frame->frameId_;
             if (frameId < 0) {
@@ -186,7 +198,7 @@ int main(int argc, char **argv)
             cv::imshow(std::string(camera.getModelName()) + " Infrared", infrared);
             cv::imshow(std::string(camera.getModelName()) + " Depth", depth);
 
-            std::vector<ImuPair> imuData;
+            std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>> imuData;
             camera.getImuToTime(frame->timestamp_, imuData);
 
             //Add data to SLAM system
@@ -203,7 +215,7 @@ int main(int argc, char **argv)
         {
             std::cout << "ex catched\n";
         }
-        const auto isReset = slam.okvis_estimator_->isReset();
+        const auto isReset = slam.okvis_estimator_.isReset();
         const auto mapIndex = slam.getActiveMapIndex();
         if (mapIndex != lastMapIndex) {
             lastMapIndex = mapIndex;

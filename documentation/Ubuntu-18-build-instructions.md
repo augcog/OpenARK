@@ -1,4 +1,3 @@
-
 # Installing OpenARK for Ubuntu 18.04.5 LTS (Bionic Beaver)
 
 ## Preliminaries
@@ -97,11 +96,8 @@ The following sections directly have Eigen as a depenendency:
 
 In order to get Eigen working, the following lines of code must be added into the top level CMakesList.txt:
 ```
-message(STATUS "using c++17")
 add_definitions(-DEIGEN_DONT_ALIGN=1)
 add_definitions(-DEIGEN_DONT_VECTORIZE=1)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++17")
-set(CMAKE_CXX_STANDARD 17)
 ```
 
 This will disable alignment as well as force the compiler to use c++17 standard.  
@@ -120,12 +116,12 @@ Download Ceres1.14.0 from source and build as follows.
 2. Comment out lines 434-439 of the top level CMakeLists.txt
 It should look like: (notice the #[[ open comment and ]] close comment)
 ```
-# [[if (CXX11 AND COMPILER_HAS_CXX11_FLAG)
+#[[if (CXX11 AND COMPILER_HAS_CXX11_FLAG)
   # Update CMAKE_REQUIRED_FLAGS used by CheckCXXSourceCompiles to include
   # -std=c++11 s/t we will detect the C++11 versions of unordered_map &
   # shared_ptr if they exist.
-  # set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -std=c++11")
-# endif (CXX11 AND COMPILER_HAS_CXX11_FLAG)]]
+  set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -std=c++11")
+endif (CXX11 AND COMPILER_HAS_CXX11_FLAG)]]
 ```
 3. Apply the Fixing Eigen changes.
 4. Build with CMake and install
@@ -152,27 +148,27 @@ Note that this repository is a modified version of DBoW2_Mod to support Brisk de
 Note that this repository is a modified version of DLoopDetector.
 2. Build with CMake and install
 
-## Installing [Open3D 0.8.0, Custom Version](https://github.com/adamchang2000/Open3D)
-### NOTE: CURRENTLY OPEN3D is not confirmed to work, therefore 3drecondemo module probably will not work.
-Note that this is a modified version of Open3D 0.8.0
+### NOTE: CURRENTLY OPEN3D isnt confirmed to work, 3drecondemo probably wont work.
 
-1. `git clone --recursive https://github.com/adamchang2000/Open3D.git && cd Open3D`, go to src/Open3D/ and delete MovingTSDFVolume.cpp and MovingTSDFVolume.h in // this to be deleted later when Open3D is updated.
-2. Build with CMake 
-3. `make -j4 && sudo make install`
+### Installing Open3D (0.12.0)
+1. `git clone --recursive https://github.com/intel-isl/Open3D && cd Open3D`
+2. Switch to release 0.12. `git checkout tags/v0.12.0 -b v12`
+3. Install dependencies for Open3D. `./util/install-deps/ubuntu.sh assume-yes`
+4. Build with CMake and install, but replace `cmake -DCMAKE_BUILD_TYPE=Release..` with `cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PYTHON_MODULE=OFF ..`
 
-## Installing Okvis+ 
-1. `git clone https://github.com/adamchang2000/okvis && cd okvis`
-Note that this is a modified version of Okvis.   
-This already has the Eigen changes applied.
-2. Build with CMake and install
-3. Verify Okvis+ by running the demo application
+### Installing Okvis+ 
+1. `git clone https://github.com/joemenke/okvis && cd okvis`
+2. Apply the Fixing Eigen changes.
+3. Build with CMake and install
+4. Verify Okvis+ by running the demo application
+
 You will find a demo application in okvis_apps. It can process datasets in the ASL/ETH format.
 https://github.com/ceres-solver/ceres-solver/releases/tag/1.14.0
 In order to run a minimal working example, follow the steps below:
 
-4. Download a dataset of your choice from http://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets. Assuming you downloaded MH_01_easy/. You will find a corresponding calibration / estimator configuration in the config folder.
+5. Download a dataset of your choice from http://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets. Assuming you downloaded MH_01_easy/. You will find a corresponding calibration / estimator configuration in the config folder.
 
-5. Run the app as
+6. Run the app as
  `./okvis_app_synchronous path/to/okvis/config/config_fpga_p2_euroc.yaml path/to/mav0/`
  
 ## Installing librealsense2
@@ -196,7 +192,7 @@ sudo apt-get install librealsense2-dkms librealsense2-utils librealsense2-dev li
 1. Clone our repository: `git clone https://github.com/augcog/OpenARK`, or download the latest release.  
 This already has the Eigen changes.
 
-2. `cd OpenARK && mkdir build && cd build` to create build directory.
+3. `cd OpenARK && mkdir build && cd build` to create build directory.
 
 3. `cmake .. -DCMAKE_BUILD_TYPE=Release` to run CMake. librealsense2 will be enabled by default. You can add `-DBUILD_AVATAR_DEMO` to build the avatar demo in addition to hand and SLAM, `-DBUILD_DATA_RECORDING` to build the data recording tool, and `-BUILD_TESTS` to build hand tests. `-DBUILD_UNITY_PLUGIN` is not available on Linux at the moment.
 

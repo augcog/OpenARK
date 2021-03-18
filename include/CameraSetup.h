@@ -14,7 +14,7 @@ namespace ark{
 
         virtual void start() =0;
 
-        virtual void update(MultiCameraFrame & frame) =0;
+        virtual void update(MultiCameraFrame::Ptr frame) =0;
 
     }; //CameraSetup
 

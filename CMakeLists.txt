@@ -45,12 +45,19 @@ CHECK_CXX_COMPILER_FLAG( "-std=c++11" COMPILER_SUPPORTS_CXX11 )
 CHECK_CXX_COMPILER_FLAG( "-std=c++0x" COMPILER_SUPPORTS_CXX0X )
 
 if( COMPILER_SUPPORTS_CXX11 )
+    message(STATUS "c++11 supported")
     set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11" )
 elseif( COMPILER_SUPPORTS_CXX0X )
+    message(status "c++ something supported")
     set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x" )
 else()
     message( STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler." )
 endif()
+
+message(STATUS "using c++17")
+add_definitions(-DEIGEN_DONT_ALIGN=1)
+add_definitions(-DEIGEN_DONT_VECTORIZE=1)
+
 
 if ( CMAKE_COMPILER_IS_GNUCXX )
     set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated -Wno-deprecated-declarations -O3 -g" )

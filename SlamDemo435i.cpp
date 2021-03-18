@@ -23,6 +23,8 @@ int main(int argc, char **argv)
         deltaT = okvis::Duration(atof(argv[3]));
     }
 
+    printf("here\n");
+
     // read configuration file
     std::string configFilename;
     if (argc > 1) configFilename = argv[1];
@@ -32,7 +34,20 @@ int main(int argc, char **argv)
     if (argc > 2) vocabFilename = argv[2];
     else vocabFilename = util::resolveRootPath("config/brisk_vocab.bn");
 
-    OkvisSLAMSystem slam(vocabFilename, configFilename);
+    printf("initing params\n");
+    fflush(stdout);
+
+    okvis::VioParameters parameters;
+    okvis::VioParametersReader vio_parameters_reader;
+    try {
+        vio_parameters_reader.readConfigFile(configFilename);
+    }
+    catch (okvis::VioParametersReader::Exception ex) {
+        std::cerr << ex.what() << "\n";
+    }
+    vio_parameters_reader.getParameters(parameters);
+    OkvisSLAMSystem slam(vocabFilename, parameters);
+
     cv::FileStorage configFile(configFilename, cv::FileStorage::READ);
 
     //setup display
@@ -56,8 +71,8 @@ int main(int argc, char **argv)
     fflush(stdout);
 
     //Window for displaying the path
-    MyGUI::CameraWindow traj_win("Traj Viewer", 640*2,480*2);
-    MyGUI::ARCameraWindow ar_win("AR Viewer", 640*2.5,480*2.5, GL_RGB, GL_UNSIGNED_BYTE,  6.16403320e+02, 6.16171021e+02, 3.18104584e+02, 2.33643127e+02,0.01,100);
+    MyGUI::CameraWindow traj_win("Traj Viewer", 150, 150);
+    MyGUI::ARCameraWindow ar_win("AR Viewer", 500, 500, GL_RGB, GL_UNSIGNED_BYTE,  6.16403320e+02, 6.16171021e+02, 3.18104584e+02, 2.33643127e+02,0.01,100);
     traj_win.set_pos(640*2.5,100);
     ar_win.set_pos(0,100);
     std::map<int, MyGUI::Path *> pathMap;
@@ -144,6 +159,7 @@ int main(int argc, char **argv)
     okvis::Time start(0.0);
     // camera.start();
     int lastMapIndex = -1;
+    int frame_num = 0;
 
     while (MyGUI::Manager::running())
     {
@@ -153,10 +169,10 @@ int main(int argc, char **argv)
         try
         {
             //Get current camera frame
-            MultiCameraFrame::Ptr frame(new MultiCameraFrame);
-            camera.update(*frame);
+            MultiCameraFrame::Ptr frame = std::allocate_shared<MultiCameraFrame>(Eigen::aligned_allocator<MultiCameraFrame>());
+            camera.update(frame);
 
-            std::vector<ImuPair> imuData;
+            std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>> imuData;
             camera.getImuToTime(frame->timestamp_, imuData);
 
             //Add data to SLAM system
@@ -171,7 +187,7 @@ int main(int argc, char **argv)
         {
             std::cout << "An exception caught.\n";
         }
-        const auto isReset = slam.okvis_estimator_->isReset();
+        const auto isReset = slam.okvis_estimator_.isReset();
         const auto mapIndex = slam.getActiveMapIndex();
         if (mapIndex != lastMapIndex) {
             lastMapIndex = mapIndex;
@@ -186,6 +202,8 @@ int main(int argc, char **argv)
         int k = cv::waitKey(1);
         if (k == 'q' || k == 'Q' || k == 27)
             break; // 27 is ESC
+
+        std::cout << "frame " << frame_num++ << std::endl;
     }
     printf("\nTerminate...\n");
     // Clean up
