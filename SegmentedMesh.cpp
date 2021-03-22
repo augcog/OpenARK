@@ -4,7 +4,7 @@ namespace ark {
 
 	SegmentedMesh::SegmentedMesh(double voxel_length,
 	               double sdf_trunc,
-	               open3d::integration::TSDFVolumeColorType color_type,
+	               open3d::pipelines::integration::TSDFVolumeColorType color_type,
 	               double block_length)
 	:	block_length_(block_length),
 		voxel_length_(voxel_length),
@@ -12,7 +12,7 @@ namespace ark {
 		color_type_(color_type){
 			Eigen::Vector3i * temp = &current_block;
 			temp = NULL;
-			active_volume = new open3d::integration::ScalableTSDFVolume(voxel_length_,
+			active_volume = new open3d::pipelines::integration::ScalableTSDFVolume(voxel_length_,
 	               sdf_trunc_,
 	               color_type_);
 		}
@@ -98,7 +98,7 @@ namespace ark {
 		completed_meshes.push_back(completed_mesh);
 
 
-		active_volume = new open3d::integration::ScalableTSDFVolume(voxel_length_, sdf_trunc_, color_type_);
+		active_volume = new open3d::pipelines::integration::ScalableTSDFVolume(voxel_length_, sdf_trunc_, color_type_);
 		active_volume_keyframe = latest_keyframe;
 		active_volume_map_index = active_map_index;
 
