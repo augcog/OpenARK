@@ -1,4 +1,4 @@
-#include "SegmentedMesh.h"
+#include "include/SegmentedMesh.h"
 
 namespace ark {
 
