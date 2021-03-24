@@ -1,5 +1,5 @@
-cmake_minimum_required( VERSION 3.18.4 )
-cmake_policy( VERSION 3.18.4 )
+cmake_minimum_required( VERSION 3.5 )
+cmake_policy( VERSION 3.5 )
 
 
 project( OpenARK )
@@ -16,11 +16,29 @@ if( NOT CMAKE_BUILD_TYPE )
 endif()
 
 set( LIB_NAME "OpenARK" )
-set( SLAM_DEMO_NAME "OpenARK_slam_demo")
+set( DEMO_NAME "OpenARK_hand_demo" )
+set( AVATAR_DEMO_NAME "OpenARK_avatar_demo")
+set( SLAM_DEMO_NAME "OpenARK_SLAM_demo")
+set( 3DRECON_DATA_NAME "3dRecon_Data_Recording")
+set( DATA_RECORDING_NAME "OpenARK_data_recording")
+set( SLAM_RECORDING_NAME "OpenARK_slam_recording")
 set( SLAM_REPLAYING_NAME "OpenARK_slam_replaying")
+set( TEST_NAME "OpenARK_test" )
+set( UNITY_PLUGIN_NAME "UnityPlugin" )
 
-option( BUILD_SLAM_DEMO "BUILD_SLAM_DEMO" ON)
+option( BUILD_HAND_DEMO "BUILD_HAND_DEMO" OFF )
+option( BUILD_AVATAR_DEMO "BUILD_AVATAR_DEMO" OFF)
+option( BUILD_SLAM_DEMO "BUILD_SLAM_DEMO" OFF)
+option( BUILD_3DRECON_DEMO "BUILD_3DRECON_DEMO" OFF)
+option( BUILD_DATA_RECORDING "BUILD_DATA_RECORDING" OFF)
+option( BUILD_SLAM_RECORDING "BUILD_SLAM_RECORDING" OFF)
 option( BUILD_SLAM_REPLAYING "BUILD_SLAM_REPLAYING" ON)
+option( BUILD_TESTS "BUILD_TESTS" OFF )
+option( BUILD_UNITY_PLUGIN "BUILD_UNITY_PLUGIN" OFF )
+option( USE_AZURE_KINECT_SDK "USE_AZURE_KINECT_SDK" OFF )
+option( USE_RSSDK2 "USE_RSSDK2" OFF )
+option( USE_RSSDK "USE_RSSDK" OFF )
+option( USE_PMDSDK "USE_PMDSDK" OFF )
 
 include( CheckCXXCompilerFlag )
 CHECK_CXX_COMPILER_FLAG( "-std=c++11" COMPILER_SUPPORTS_CXX11 )
@@ -36,6 +54,7 @@ else()
     message( STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler." )
 endif()
 
+message(STATUS "using c++17")
 add_definitions(-DEIGEN_DONT_ALIGN=1)
 add_definitions(-DEIGEN_DONT_VECTORIZE=1)
 
@@ -51,12 +70,6 @@ endif( DEFINED ENV{ARK_DEPS_DIR} )
 
 set( Boost_USE_STATIC_LIBS ON )
 set( Boost_USE_STATIC ON )
-#flag
-FIND_PACKAGE(Boost REQUIRED)
-include_directories(${Boost_INCLUDE_DIR}) 
-IF(Boost_FOUND)
-  MESSAGE(STATUS "Found Boost: ${Boost_LIBRARIES}")
-ENDIF(Boost_FOUND)
 
 # require Eigen
 if( NOT DEFINED EIGEN_INCLUDE_DIRS )
@@ -132,6 +145,7 @@ else()
   include_directories($ENV{DLoopDetector_INCLUDE_DIRS})
 endif( DEFINED ENV{ARK_DEPS_DIR} )
 
+
 # require Okvis
 find_package( okvis REQUIRED )
 include_directories(${OKVIS_INCLUDE_DIRS})
@@ -173,21 +187,12 @@ find_package( brisk REQUIRED )
 include_directories(${BRISK_INCLUDE_DIRS})
 message(STATUS "Found Brisk: ${BRISK_INCLUDE_DIRS} ${BRISK_LIBRARIES}")
 
-# # require Open3D
-# find_package( Open3D REQUIRED )
-# include_directories(${Open3D_INCLUDE_DIRS})
-# link_directories(${Open3D_LIBRARY_DIRS})
-# message(STATUS "Found Open3D: ${Open3D_INCLUDE_DIRS} ${Open3D_LIBRARIES}")
+# require Open3D
+find_package( Open3D REQUIRED )
+include_directories(${Open3D_INCLUDE_DIRS})
+#link_directories(${Open3D_LIBRARY_DIRS})
+message(STATUS "Found Open3D: ${Open3D_INCLUDE_DIRS} ${Open3D_LIBRARIES}")
 
-set( _FOUND_CAMERA_LIB OFF )
-set( k4a_FOUND OFF )
-if( USE_AZURE_KINECT_SDK )
-  find_package( k4a )
-  if( k4a_FOUND)
-      message( STATUS "Found k4a (Azure Kinect SDK)" )
-  endif( k4a_FOUND )
-  set( _FOUND_CAMERA_LIB ON )
-endif()
 
 set( realsense2_FOUND OFF )
 if( USE_RSSDK2 OR NOT _FOUND_CAMERA_LIB )
@@ -197,6 +202,7 @@ if( USE_RSSDK2 OR NOT _FOUND_CAMERA_LIB )
   endif( realsense2_FOUND )
   set( _FOUND_CAMERA_LIB ON )
 endif()
+
 
 include_directories(
   ${OpenCV_INCLUDE_DIRS}
@@ -246,7 +252,7 @@ set(
   MockD435iCamera.cpp
   HumanDetector.cpp
   HumanBody.cpp
-  Avatar.cpp
+  #Avatar.cpp
   glfwManager.cpp
   OkvisSLAMSystem.cpp
   SaveFrame.cpp
@@ -275,7 +281,7 @@ set(
   ${INCLUDE_DIR}/MockD435iCamera.h
   ${INCLUDE_DIR}/HumanDetector.h
   ${INCLUDE_DIR}/HumanBody.h
-  ${INCLUDE_DIR}/Avatar.h
+  #${INCLUDE_DIR}/Avatar.h
   ${INCLUDE_DIR}/nanoflann.hpp
   ${INCLUDE_DIR}/SLAMSystem.h
   ${INCLUDE_DIR}/OkvisSLAMSystem.h
@@ -292,43 +298,6 @@ set(
   stdafx.h
 )
 
-if(WIN32)
-  add_subdirectory(third_party/glfw)
-  list(APPEND DEPENDENCIES glfw3)
-else()
-    # Find glfw header
-    find_path(GLFW_INCLUDE_DIR NAMES GLFW/glfw3.h
-        PATHS /usr/X11R6/include
-              /usr/include/X11
-              /opt/graphics/OpenGL/include
-              /opt/graphics/OpenGL/contrib/libglfw
-              /usr/local/include
-              /usr/include/GL
-              /usr/include
-    )
-    # Find glfw library
-    find_library(GLFW_LIBRARIES NAMES glfw glfw3
-            PATHS /usr/lib64
-                  /usr/lib
-                  /usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}
-                  /usr/local/lib64
-                  /usr/local/lib
-                  /usr/local/lib/${CMAKE_LIBRARY_ARCHITECTURE}
-                  /usr/X11R6/lib
-    )
-    list(APPEND DEPENDENCIES m ${GLFW_LIBRARIES} ${LIBUSB1_LIBRARIES})
-    include_directories(${GLFW_INCLUDE_DIR})
-endif() 
-
-if( NOT realsense2_FOUND )
-  set( _RSSDK2_ "//" )
-else()
-  include_directories( ${realsense2_INCLUDE_DIR} )
-  set( SOURCES ${SOURCES} RS2Camera.cpp D435iCamera.cpp )
-  set( HEADERS ${HEADERS} ${INCLUDE_DIR}/RS2Camera.h ${INCLUDE_DIR}/D435iCamera.h ${INCLUDE_DIR}/D435iCalibWriter.h )
-  set( DEPENDENCIES ${DEPENDENCIES} ${realsense2_LIBRARY} )
-endif( NOT realsense2_FOUND )
-
 
 if ( NOT CMAKE_BUILD_TYPE STREQUAL "Debug" )
   set( _DEBUG_ "//" )
@@ -337,70 +306,31 @@ endif ( NOT CMAKE_BUILD_TYPE STREQUAL "Debug" )
 configure_file( Version.h.in ${INCLUDE_DIR}/Version.h )
 set( HEADERS ${HEADERS} ${INCLUDE_DIR}/Version.h )
 
-# download required files
-if (NOT EXISTS "${PROJECT_SOURCE_DIR}/config/brisk_vocab.bn")
-    message( STATUS "Downloading Brisk vocab to config/brisk_vocab.bn..." )
-    file(DOWNLOAD "https://github.com/sxyu/OpenARK-Deps/releases/download/0.0.1/brisk_vocab.bn" "${PROJECT_SOURCE_DIR}/config/brisk_vocab.bn")
-endif()
 
-add_library( ${LIB_NAME} STATIC "${INCLUDE_DIR}/Core.h" ${SOURCES} ${HEADERS} )
- set_target_properties( ${LIB_NAME} PROPERTIES OUTPUT_NAME "openark")
-# set_target_properties( ${LIB_NAME} PROPERTIES OUTPUT_NAME
-        # "openark_${OpenARK_VERSION_MAJOR}_${OpenARK_VERSION_MINOR}_${OpenARK_VERSION_PATCH}" )
+# build the SegmentedMesh library
+add_library( SegmentedMesh STATIC
+    SegmentedMesh.cpp
+    include/SegmentedMesh.h
+)
+
+# and link it                     
+target_link_libraries(SegmentedMesh 
+    #${Open3D_LIBRARY_DIRS}
+    ${Open3D_LIBRARIES}
+)
+target_include_directories( SegmentedMesh PRIVATE ${Open3D_INCLUDE_DIRS} )
+
+
+# Making OpenARK Library
+add_library( ${LIB_NAME} STATIC "${INCLUDE_DIR}/Core.h" ${SOURCES} ${HEADERS})
+set_target_properties( ${LIB_NAME} PROPERTIES OUTPUT_NAME
+        "openark_${OpenARK_VERSION_MAJOR}_${OpenARK_VERSION_MINOR}_${OpenARK_VERSION_PATCH}" )
 
 set_property( TARGET ${LIB_NAME} PROPERTY DBG_POSTFIX d )
-target_link_libraries( ${LIB_NAME} ${DEPENDENCIES} )
+target_link_libraries( ${LIB_NAME} ${DEPENDENCIES} SegmentedMesh)
 target_include_directories( ${LIB_NAME} PRIVATE ${INCLUDE_DIR} )
 
-
-# if( ${BUILD_SLAM_DEMO} AND realsense2_FOUND )
-#     add_executable( ${SLAM_DEMO_NAME} SlamDemo435i.cpp )
-#     target_include_directories( ${SLAM_DEMO_NAME} PRIVATE ${INCLUDE_DIR} )
-#     set_target_properties( ${SLAM_DEMO_NAME} PROPERTIES OUTPUT_NAME ${SLAM_DEMO_NAME} )
-#     set_target_properties( ${SLAM_DEMO_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
-#     if ( MSVC )
-#         target_link_libraries( ${SLAM_DEMO_NAME} ${DEPENDENCIES} ${LIB_NAME} )
-#     else()
-#         target_link_libraries( ${SLAM_DEMO_NAME} ${DEPENDENCIES} ${LIB_NAME} GLU GL glut )
-#     endif ( MSVC )
-#     add_executable( d435i_intrinsics_writer D435iCalibWriter.cpp )
-#     target_include_directories( d435i_intrinsics_writer PRIVATE ${INCLUDE_DIR} )
-#     target_link_libraries( d435i_intrinsics_writer ${DEPENDENCIES} ${LIB_NAME} )
-#     #set_target_properties( d435i_intrinsics_writer PROPERTIES OUTPUT_NAME d435i_intrinsics_writer )
-#     set_target_properties( d435i_intrinsics_writer PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
-# endif( ${BUILD_SLAM_DEMO} AND realsense2_FOUND )
-
-if(${BUILD_SLAM_REPLAYING} )
-    add_executable(moonwon 
-        SlamReplaying.cpp 
-        ${INCLUDE_DIR}/Util.h
-        ${INCLUDE_DIR}/MockD435iCamera.h
-        ${INCLUDE_DIR}/OkvisSLAMSystem.h
-        ${INCLUDE_DIR}/glfwManager.h
-        ${INCLUDE_DIR}/concurrency.h
-    )
-    target_link_libraries(moonwon 
-        ${OpenCV_LIBRARIES}
-        ${PCL_LIBRARIES}
-        ${GLOG_LIBRARIES} #${CXSPARSE_LIBRARIES}
-        ${SuiteSparse_LIBRARIES}
-        ${OKVIS_LIBRARIES}
-        ${CERES_LIBRARIES}
-        ${BRISK_LIBRARIES}
-        ${DBoW2_LIBRARIES}
-        ${OPENGV_LIBRARIES}
-        ${Boost_LIBRARIES}
-        #${Open3D_LIBRARIES}
-        ${LIB_NAME}
-    )
-    target_include_directories( moonwon PRIVATE 
-    "${PROJECT_SOURCE_DIR}/include" 
-    ${OKVIS_INCLUDE_DIRS}
-    ${INCLUDE_DIR} 
-    )
-endif(${BUILD_SLAM_REPLAYING} )
-
-
+# Making slam_replaying
 if( ${BUILD_SLAM_REPLAYING} )
     add_executable( ${SLAM_REPLAYING_NAME} SlamReplaying.cpp )
     target_include_directories( ${SLAM_REPLAYING_NAME} PRIVATE ${INCLUDE_DIR} )
@@ -409,10 +339,9 @@ if( ${BUILD_SLAM_REPLAYING} )
     if ( MSVC )
         target_link_libraries( ${SLAM_REPLAYING_NAME} ${DEPENDENCIES} ${LIB_NAME} )
     else()
-        target_link_libraries( ${SLAM_REPLAYING_NAME} ${DEPENDENCIES} ${LIB_NAME} GLU GL glut )
+        target_link_libraries( ${SLAM_REPLAYING_NAME} ${DEPENDENCIES} ${LIB_NAME}  GLU GL glut )
     endif ( MSVC )
 endif( ${BUILD_SLAM_REPLAYING} )
-
 
 # Create source group for headers
 source_group( "Header Files" FILES ${HEADERS} )
