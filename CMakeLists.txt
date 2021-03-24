@@ -1,5 +1,5 @@
-cmake_minimum_required( VERSION 3.5 )
-cmake_policy( VERSION 3.5 )
+cmake_minimum_required( VERSION 3.18.4 )
+cmake_policy( VERSION 3.18.4 )
 
 
 project( OpenARK )
@@ -16,29 +16,11 @@ if( NOT CMAKE_BUILD_TYPE )
 endif()
 
 set( LIB_NAME "OpenARK" )
-set( DEMO_NAME "OpenARK_hand_demo" )
-set( AVATAR_DEMO_NAME "OpenARK_avatar_demo")
-set( SLAM_DEMO_NAME "OpenARK_SLAM_demo")
-set( 3DRECON_DATA_NAME "3dRecon_Data_Recording")
-set( DATA_RECORDING_NAME "OpenARK_data_recording")
-set( SLAM_RECORDING_NAME "OpenARK_slam_recording")
+set( SLAM_DEMO_NAME "OpenARK_slam_demo")
 set( SLAM_REPLAYING_NAME "OpenARK_slam_replaying")
-set( TEST_NAME "OpenARK_test" )
-set( UNITY_PLUGIN_NAME "UnityPlugin" )
 
-option( BUILD_HAND_DEMO "BUILD_HAND_DEMO" OFF )
-option( BUILD_AVATAR_DEMO "BUILD_AVATAR_DEMO" OFF)
 option( BUILD_SLAM_DEMO "BUILD_SLAM_DEMO" ON)
-option( BUILD_3DRECON_DEMO "BUILD_3DRECON_DEMO" ON)
-option( BUILD_DATA_RECORDING "BUILD_DATA_RECORDING" OFF)
-option( BUILD_SLAM_RECORDING "BUILD_SLAM_RECORDING" ON)
 option( BUILD_SLAM_REPLAYING "BUILD_SLAM_REPLAYING" ON)
-option( BUILD_TESTS "BUILD_TESTS" OFF )
-option( BUILD_UNITY_PLUGIN "BUILD_UNITY_PLUGIN" ON )
-option( USE_AZURE_KINECT_SDK "USE_AZURE_KINECT_SDK" OFF )
-option( USE_RSSDK2 "USE_RSSDK2" ON )
-option( USE_RSSDK "USE_RSSDK" OFF )
-option( USE_PMDSDK "USE_PMDSDK" OFF )
 
 include( CheckCXXCompilerFlag )
 CHECK_CXX_COMPILER_FLAG( "-std=c++11" COMPILER_SUPPORTS_CXX11 )
@@ -54,7 +36,6 @@ else()
     message( STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler." )
 endif()
 
-message(STATUS "using c++17")
 add_definitions(-DEIGEN_DONT_ALIGN=1)
 add_definitions(-DEIGEN_DONT_VECTORIZE=1)
 
@@ -70,6 +51,12 @@ endif( DEFINED ENV{ARK_DEPS_DIR} )
 
 set( Boost_USE_STATIC_LIBS ON )
 set( Boost_USE_STATIC ON )
+#flag
+FIND_PACKAGE(Boost REQUIRED)
+include_directories(${Boost_INCLUDE_DIR}) 
+IF(Boost_FOUND)
+  MESSAGE(STATUS "Found Boost: ${Boost_LIBRARIES}")
+ENDIF(Boost_FOUND)
 
 # require Eigen
 if( NOT DEFINED EIGEN_INCLUDE_DIRS )
@@ -145,7 +132,6 @@ else()
   include_directories($ENV{DLoopDetector_INCLUDE_DIRS})
 endif( DEFINED ENV{ARK_DEPS_DIR} )
 
-
 # require Okvis
 find_package( okvis REQUIRED )
 include_directories(${OKVIS_INCLUDE_DIRS})
@@ -187,11 +173,11 @@ find_package( brisk REQUIRED )
 include_directories(${BRISK_INCLUDE_DIRS})
 message(STATUS "Found Brisk: ${BRISK_INCLUDE_DIRS} ${BRISK_LIBRARIES}")
 
-# require Open3D
-find_package( Open3D REQUIRED )
-include_directories(${Open3D_INCLUDE_DIRS})
-link_directories(${Open3D_LIBRARY_DIRS})
-message(STATUS "Found Open3D: ${Open3D_INCLUDE_DIRS} ${Open3D_LIBRARIES}")
+# # require Open3D
+# find_package( Open3D REQUIRED )
+# include_directories(${Open3D_INCLUDE_DIRS})
+# link_directories(${Open3D_LIBRARY_DIRS})
+# message(STATUS "Found Open3D: ${Open3D_INCLUDE_DIRS} ${Open3D_LIBRARIES}")
 
 set( _FOUND_CAMERA_LIB OFF )
 set( k4a_FOUND OFF )
@@ -209,24 +195,6 @@ if( USE_RSSDK2 OR NOT _FOUND_CAMERA_LIB )
   if( realsense2_FOUND )
        message( STATUS "Found librealsense2: ${realsense2_INCLUDE_DIR}" )
   endif( realsense2_FOUND )
-  set( _FOUND_CAMERA_LIB ON )
-endif()
-
-set( RSSDK_FOUND OFF )
-if( USE_RSSDK OR NOT _FOUND_CAMERA_LIB )
-  find_package( RSSDK )
-  if( RSSDK_FOUND )
-       message( STATUS "Found RSSDK: ${RSSDK_INCLUDE_DIR}" )
-  endif( RSSDK_FOUND )
-  set( _FOUND_CAMERA_LIB ON )
-endif()
-
-set( PMDSDK_FOUND OFF )
-if( USE_PMDSDK OR NOT _FOUND_CAMERA_LIB )
-  find_package( PMDSDK REQUIRED )
-  if( PMDSDK_FOUND )
-     message( STATUS "Found PMDSDK: ${PMDSDK_INCLUDE_DIR}" )
-  endif( PMDSDK_FOUND )
   set( _FOUND_CAMERA_LIB ON )
 endif()
 
@@ -248,7 +216,7 @@ set(
   ${DBoW2_LIBRARIES}
   ${OPENGV_LIBRARIES}
   ${Boost_LIBRARIES}
-  ${Open3D_LIBRARIES}
+  #${Open3D_LIBRARIES}
 )
 
 add_definitions(
@@ -282,7 +250,7 @@ set(
   glfwManager.cpp
   OkvisSLAMSystem.cpp
   SaveFrame.cpp
-  SegmentedMesh.cpp
+  #SegmentedMesh.cpp
 )
 
 set(
@@ -320,7 +288,7 @@ set(
   ${INCLUDE_DIR}/CorrespondenceRansac.h
   ${INCLUDE_DIR}/UKF.h
   ${INCLUDE_DIR}/SaveFrame.h
-  ${INCLUDE_DIR}/SegmentedMesh.h
+  #${INCLUDE_DIR}/SegmentedMesh.h
   stdafx.h
 )
 
@@ -352,14 +320,6 @@ else()
     include_directories(${GLFW_INCLUDE_DIR})
 endif() 
 
-if( NOT k4a_FOUND )
-  set( _AZURE_KINECT_SDK_ "//" )
-else()
-  set( SOURCES ${SOURCES} AzureKinectCamera.cpp )
-  set( HEADERS ${HEADERS} ${INCLUDE_DIR}/AzureKinectCamera.h )
-  set( DEPENDENCIES ${DEPENDENCIES} k4a::k4a )
-endif( NOT k4a_FOUND )
-
 if( NOT realsense2_FOUND )
   set( _RSSDK2_ "//" )
 else()
@@ -369,22 +329,6 @@ else()
   set( DEPENDENCIES ${DEPENDENCIES} ${realsense2_LIBRARY} )
 endif( NOT realsense2_FOUND )
 
-if( NOT RSSDK_FOUND )
-  set( _RSSDK_ "//" )
-else()
-  include_directories( ${RSSDK_INCLUDE_DIR} )
-  set( SOURCES ${SOURCES} SR300Camera.cpp Converter.cpp )
-  set( HEADERS ${HEADERS} ${INCLUDE_DIR}/SR300Camera.h ${INCLUDE_DIR}/Converter.h )
-endif( NOT RSSDK_FOUND )
-
-if( NOT PMDSDK_FOUND )
-  set( _PMDSDK_ "//" )
-else()
-  include_directories( ${PMDSDK_INCLUDE_DIR} )
-  set( SOURCES ${SOURCES} PMDCamera.cpp )
-  set( HEADERS ${HEADERS} ${INCLUDE_DIR}/PMDCamera.h )
-  set( DEPENDENCIES ${DEPENDENCIES} ${PMDSDK_LIBRARIES} )
-endif( NOT PMDSDK_FOUND )
 
 if ( NOT CMAKE_BUILD_TYPE STREQUAL "Debug" )
   set( _DEBUG_ "//" )
@@ -393,124 +337,69 @@ endif ( NOT CMAKE_BUILD_TYPE STREQUAL "Debug" )
 configure_file( Version.h.in ${INCLUDE_DIR}/Version.h )
 set( HEADERS ${HEADERS} ${INCLUDE_DIR}/Version.h )
 
-# MSVC special options
-if ( MSVC )
-    # MSVC precompiled header
-    set( PRECOMPILED_BINARY "$(IntDir)/stdafx.pch" )
-    set( PRECOMPILED_HEADER "stdafx.h" )
-    set( PRECOMPILED_SOURCE "stdafx.cpp" )
-
-    set_source_files_properties( ${PRECOMPILED_SOURCE}
-                                PROPERTIES COMPILE_FLAGS "/Yc\"${PRECOMPILED_HEADER}\" /Fp\"${PRECOMPILED_BINARY}\""
-                                           OBJECT_OUTPUTS "${PRECOMPILED_HEADER}" )
-    set_source_files_properties( ${SOURCES}
-                                PROPERTIES COMPILE_FLAGS "/Yu\"${PRECOMPILED_HEADER}\" /FI\"${PRECOMPILED_HEADER}\" /Fp\"${PRECOMPILED_BINARY}\""
-                                           OBJECT_DEPENDS "${PRECOMPILED_HEADER}" )
-    set( SOURCES ${SOURCES} ${PRECOMPILED_SOURCE} )
-    add_definitions( -D_CRT_SECURE_NO_WARNINGS )
-    set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /Ot /Z7 /Zm1010 /MP" )
-    set( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT /DEBUG" )
-    set( CMAKE_SHARED_LINKER_FLAGS  "${CMAKE_SHARED_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT" )
-    set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD" )
-endif ( MSVC )
-
 # download required files
 if (NOT EXISTS "${PROJECT_SOURCE_DIR}/config/brisk_vocab.bn")
     message( STATUS "Downloading Brisk vocab to config/brisk_vocab.bn..." )
     file(DOWNLOAD "https://github.com/sxyu/OpenARK-Deps/releases/download/0.0.1/brisk_vocab.bn" "${PROJECT_SOURCE_DIR}/config/brisk_vocab.bn")
 endif()
 
-if (NOT EXISTS "${PROJECT_SOURCE_DIR}/config/face/lbfmodel.yaml")
-    message( STATUS "Downloading face landmarks model to config/face/lbfmodel.yaml..." )
-    file(DOWNLOAD "https://raw.githubusercontent.com/kurnianggoro/GSOC2017/master/data/lbfmodel.yaml" "${PROJECT_SOURCE_DIR}/config/face/lbfmodel.yaml")
-endif()
-
-if (NOT EXISTS "${PROJECT_SOURCE_DIR}/config/pose-net/pose.caffemodel")
-    message( STATUS "Downloading pose net model to config/pose-net/pose.caffemodel..." )
-    file(DOWNLOAD "https://github.com/sxyu/OpenARK-Deps/releases/download/0.0.1/pose.caffemodel" "${PROJECT_SOURCE_DIR}/config/pose-net/pose.caffemodel")
-endif()
-
-if (NOT EXISTS "${PROJECT_SOURCE_DIR}/data/avatar-model/model.pcd")
-    message( WARNING "SMPL model files are not present, so the avatar module will not work. To use the avatar module and/or run the avatar demo, you will need to download the SMPL model manually. Please follow the instructions in data/avatar-model/README.md. Note that SMPL is available for non-commercial, academic research purposes only." )
-endif()
-
 add_library( ${LIB_NAME} STATIC "${INCLUDE_DIR}/Core.h" ${SOURCES} ${HEADERS} )
-set_target_properties( ${LIB_NAME} PROPERTIES OUTPUT_NAME
-        "openark_${OpenARK_VERSION_MAJOR}_${OpenARK_VERSION_MINOR}_${OpenARK_VERSION_PATCH}" )
+ set_target_properties( ${LIB_NAME} PROPERTIES OUTPUT_NAME "openark")
+# set_target_properties( ${LIB_NAME} PROPERTIES OUTPUT_NAME
+        # "openark_${OpenARK_VERSION_MAJOR}_${OpenARK_VERSION_MINOR}_${OpenARK_VERSION_PATCH}" )
 
 set_property( TARGET ${LIB_NAME} PROPERTY DBG_POSTFIX d )
 target_link_libraries( ${LIB_NAME} ${DEPENDENCIES} )
 target_include_directories( ${LIB_NAME} PRIVATE ${INCLUDE_DIR} )
 
-if ( MSVC )
-    set_target_properties( ${LIB_NAME} PROPERTIES COMPILE_FLAGS "/MD" )
-endif()
 
-if( ${BUILD_HAND_DEMO} )
-    add_executable( ${DEMO_NAME} HandDemo.cpp )
-    target_include_directories( ${DEMO_NAME} PRIVATE ${INCLUDE_DIR} )
-    target_link_libraries( ${DEMO_NAME} ${DEPENDENCIES} ${LIB_NAME} )
-    set_target_properties( ${DEMO_NAME} PROPERTIES OUTPUT_NAME ${DEMO_NAME} )
-    set_target_properties( ${DEMO_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
-endif( ${BUILD_HAND_DEMO} )
+# if( ${BUILD_SLAM_DEMO} AND realsense2_FOUND )
+#     add_executable( ${SLAM_DEMO_NAME} SlamDemo435i.cpp )
+#     target_include_directories( ${SLAM_DEMO_NAME} PRIVATE ${INCLUDE_DIR} )
+#     set_target_properties( ${SLAM_DEMO_NAME} PROPERTIES OUTPUT_NAME ${SLAM_DEMO_NAME} )
+#     set_target_properties( ${SLAM_DEMO_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
+#     if ( MSVC )
+#         target_link_libraries( ${SLAM_DEMO_NAME} ${DEPENDENCIES} ${LIB_NAME} )
+#     else()
+#         target_link_libraries( ${SLAM_DEMO_NAME} ${DEPENDENCIES} ${LIB_NAME} GLU GL glut )
+#     endif ( MSVC )
+#     add_executable( d435i_intrinsics_writer D435iCalibWriter.cpp )
+#     target_include_directories( d435i_intrinsics_writer PRIVATE ${INCLUDE_DIR} )
+#     target_link_libraries( d435i_intrinsics_writer ${DEPENDENCIES} ${LIB_NAME} )
+#     #set_target_properties( d435i_intrinsics_writer PROPERTIES OUTPUT_NAME d435i_intrinsics_writer )
+#     set_target_properties( d435i_intrinsics_writer PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
+# endif( ${BUILD_SLAM_DEMO} AND realsense2_FOUND )
 
-if( ${BUILD_AVATAR_DEMO} )
-    add_executable( ${AVATAR_DEMO_NAME} AvatarDemo.cpp )
-    target_include_directories( ${AVATAR_DEMO_NAME} PRIVATE ${INCLUDE_DIR} )
-    target_link_libraries( ${AVATAR_DEMO_NAME} ${DEPENDENCIES} ${LIB_NAME} )
-    set_target_properties( ${AVATAR_DEMO_NAME} PROPERTIES OUTPUT_NAME ${AVATAR_DEMO_NAME} )
-    set_target_properties( ${AVATAR_DEMO_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
-endif( ${BUILD_AVATAR_DEMO} )
+if(${BUILD_SLAM_REPLAYING} )
+    add_executable(moonwon 
+        SlamReplaying.cpp 
+        ${INCLUDE_DIR}/Util.h
+        ${INCLUDE_DIR}/MockD435iCamera.h
+        ${INCLUDE_DIR}/OkvisSLAMSystem.h
+        ${INCLUDE_DIR}/glfwManager.h
+        ${INCLUDE_DIR}/concurrency.h
+    )
+    target_link_libraries(moonwon 
+        ${OpenCV_LIBRARIES}
+        ${PCL_LIBRARIES}
+        ${GLOG_LIBRARIES} #${CXSPARSE_LIBRARIES}
+        ${SuiteSparse_LIBRARIES}
+        ${OKVIS_LIBRARIES}
+        ${CERES_LIBRARIES}
+        ${BRISK_LIBRARIES}
+        ${DBoW2_LIBRARIES}
+        ${OPENGV_LIBRARIES}
+        ${Boost_LIBRARIES}
+        #${Open3D_LIBRARIES}
+        ${LIB_NAME}
+    )
+    target_include_directories( moonwon PRIVATE 
+    "${PROJECT_SOURCE_DIR}/include" 
+    ${OKVIS_INCLUDE_DIRS}
+    ${INCLUDE_DIR} 
+    )
+endif(${BUILD_SLAM_REPLAYING} )
 
-if( ${BUILD_SLAM_DEMO} AND realsense2_FOUND )
-    add_executable( ${SLAM_DEMO_NAME} SlamDemo435i.cpp )
-    target_include_directories( ${SLAM_DEMO_NAME} PRIVATE ${INCLUDE_DIR} )
-    set_target_properties( ${SLAM_DEMO_NAME} PROPERTIES OUTPUT_NAME ${SLAM_DEMO_NAME} )
-    set_target_properties( ${SLAM_DEMO_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
-    if ( MSVC )
-        target_link_libraries( ${SLAM_DEMO_NAME} ${DEPENDENCIES} ${LIB_NAME} )
-    else()
-        target_link_libraries( ${SLAM_DEMO_NAME} ${DEPENDENCIES} ${LIB_NAME} GLU GL glut )
-    endif ( MSVC )
-    add_executable( d435i_intrinsics_writer D435iCalibWriter.cpp )
-    target_include_directories( d435i_intrinsics_writer PRIVATE ${INCLUDE_DIR} )
-    target_link_libraries( d435i_intrinsics_writer ${DEPENDENCIES} ${LIB_NAME} )
-    #set_target_properties( d435i_intrinsics_writer PROPERTIES OUTPUT_NAME d435i_intrinsics_writer )
-    set_target_properties( d435i_intrinsics_writer PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
-endif( ${BUILD_SLAM_DEMO} AND realsense2_FOUND )
-
-if( ${BUILD_3DRECON_DEMO} AND realsense2_FOUND )
-    add_executable( ${3DRECON_DATA_NAME} 3DReconDemo.cpp )
-    target_include_directories( ${3DRECON_DATA_NAME} PRIVATE ${INCLUDE_DIR} )
-    set_target_properties( ${3DRECON_DATA_NAME} PROPERTIES OUTPUT_NAME ${3DRECON_DATA_NAME} )
-    set_target_properties( ${3DRECON_DATA_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
-    if ( MSVC )
-        target_link_libraries( ${3DRECON_DATA_NAME} ${DEPENDENCIES} ${LIB_NAME} )
-    else()
-        target_link_libraries( ${3DRECON_DATA_NAME} ${DEPENDENCIES} ${LIB_NAME} GLU GL glut )
-    endif ( MSVC )
-endif( ${BUILD_3DRECON_DEMO} AND realsense2_FOUND )
-
-
-if( ${BUILD_DATA_RECORDING} )
-    add_executable( ${DATA_RECORDING_NAME} DataRecording.cpp )
-    target_include_directories( ${DATA_RECORDING_NAME} PRIVATE ${INCLUDE_DIR} )
-    target_link_libraries( ${DATA_RECORDING_NAME} ${DEPENDENCIES} ${LIB_NAME} )
-    set_target_properties( ${DATA_RECORDING_NAME} PROPERTIES OUTPUT_NAME ${DATA_RECORDING_NAME} )
-    set_target_properties( ${DATA_RECORDING_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
-endif( ${BUILD_DATA_RECORDING} )
-
-if( ${BUILD_SLAM_RECORDING} )
-    add_executable( ${SLAM_RECORDING_NAME} SlamRecording.cpp )
-    target_include_directories( ${SLAM_RECORDING_NAME} PRIVATE ${INCLUDE_DIR} )
-    set_target_properties( ${SLAM_RECORDING_NAME} PROPERTIES OUTPUT_NAME ${SLAM_RECORDING_NAME} )
-    set_target_properties( ${SLAM_RECORDING_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
-    if ( MSVC )
-        target_link_libraries( ${SLAM_RECORDING_NAME} ${DEPENDENCIES} ${LIB_NAME} )
-    else()
-        target_link_libraries( ${SLAM_RECORDING_NAME} ${DEPENDENCIES} ${LIB_NAME} GLU GL glut )
-    endif ( MSVC )
-endif( ${BUILD_SLAM_RECORDING} )
 
 if( ${BUILD_SLAM_REPLAYING} )
     add_executable( ${SLAM_REPLAYING_NAME} SlamReplaying.cpp )
@@ -524,35 +413,6 @@ if( ${BUILD_SLAM_REPLAYING} )
     endif ( MSVC )
 endif( ${BUILD_SLAM_REPLAYING} )
 
-# Unity plugin currently only supports Windows
-if( ${BUILD_UNITY_PLUGIN} AND MSVC )
-    add_library( ${UNITY_PLUGIN_NAME} SHARED "unity/native/UnityInterface.cpp" "unity/native/UnityInterface.h" "unity/README.md" )
-    set( HEADERS ${HEADERS} "unity/native/UnityInterface.h" )
-    target_link_libraries( ${UNITY_PLUGIN_NAME} ${DEPENDENCIES} ${LIB_NAME} )
-    if ( MSVC )
-        set_target_properties( ${UNITY_PLUGIN_NAME} PROPERTIES COMPILE_FLAGS "/MD" )
-    endif ( MSVC )
-    set_property( TARGET ${UNITY_PLUGIN_NAME} PROPERTY DBG_POSTFIX d )
-    target_include_directories( ${UNITY_PLUGIN_NAME} PRIVATE ${INCLUDE_DIR} "unity/native" )
-    set_target_properties( ${UNITY_PLUGIN_NAME} PROPERTIES OUTPUT_NAME "openark_unity_${OpenARK_VERSION_MAJOR}_${OpenARK_VERSION_MINOR}_${OpenARK_VERSION_PATCH}_native" )
-endif( ${BUILD_UNITY_PLUGIN} AND MSVC )
-
-if( ${BUILD_TESTS} )
-  if( NOT EXISTS ${PROJECT_SOURCE_DIR}/OpenARK_test )
-    execute_process(
-      COMMAND git clone https://github.com/augcog/OpenARK_test.git
-      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} )
-  endif( NOT EXISTS ${PROJECT_SOURCE_DIR}/OpenARK_test )
-
-  add_executable( ${TEST_NAME} "OpenARK_test/test.cpp" "OpenARK_test/TestCamera.cpp" "OpenARK_test/TestCamera.h" )
-  set( HEADERS ${HEADERS} "OpenARK_test/TestCamera.h" )
-
-  target_link_libraries( ${TEST_NAME} ${DEPENDENCIES} ${LIB_NAME} )
-  set_target_properties( ${TEST_NAME} PROPERTIES
-    COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
-
-  target_include_directories( ${TEST_NAME} PRIVATE ${INCLUDE_DIR} )
-endif( ${BUILD_TESTS} )
 
 # Create source group for headers
 source_group( "Header Files" FILES ${HEADERS} )

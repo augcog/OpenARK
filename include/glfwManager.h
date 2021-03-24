@@ -17,7 +17,7 @@
 #include <atomic>
 #include <mutex>
 #include <set>
-#include "SegmentedMesh.h"
+//#include "SegmentedMesh.h"
 
 #include <opencv2/core/core.hpp>
 
@@ -350,43 +350,43 @@ public:
 	}
 };
 
-class Mesh : public Object {
-public:
+// class Mesh : public Object {
+// public:
 
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+// 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-	std::vector<std::vector<Eigen::Vector3d>> mesh_vertices;
-    std::vector<std::vector<Eigen::Vector3d>> mesh_colors;
-    std::vector<std::vector<Eigen::Vector3i>> mesh_triangles;
-    std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> mesh_transforms; // Moon : Cause 2.a
-    std::vector<int> mesh_enabled;
+// 	std::vector<std::vector<Eigen::Vector3d>> mesh_vertices;
+//     std::vector<std::vector<Eigen::Vector3d>> mesh_colors;
+//     std::vector<std::vector<Eigen::Vector3i>> mesh_triangles;
+//     std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> mesh_transforms; // Moon : Cause 2.a
+//     std::vector<int> mesh_enabled;
 
-	// //threadsafe?
-	// int current_active_map;
-	// int archive_index;
-	// std::set<int> enabled_meshes;
+// 	// //threadsafe?
+// 	// int current_active_map;
+// 	// int archive_index;
+// 	// std::set<int> enabled_meshes;
 
-	ark::SegmentedMesh * mesh_;
+// 	ark::SegmentedMesh * mesh_;
 
-	void draw_obj();
+// 	void draw_obj();
 
-	Mesh(std::string name, ark::SegmentedMesh * mesh)
-	: Object(name) {
-		mesh_ = mesh;
-	}
+// 	Mesh(std::string name, ark::SegmentedMesh * mesh)
+// 	: Object(name) {
+// 		mesh_ = mesh;
+// 	}
 
-	void update_meshes() {
-		std::lock_guard<std::mutex> guard(meshLock_);
+// 	void update_meshes() {
+// 		std::lock_guard<std::mutex> guard(meshLock_);
 
-		mesh_->Render(mesh_vertices, mesh_colors, mesh_triangles, mesh_transforms, mesh_enabled); // Moon : Render is deprecated in the Master branch of OpenARK. This line might be wrong.
+// 		mesh_->Render(mesh_vertices, mesh_colors, mesh_triangles, mesh_transforms, mesh_enabled); // Moon : Render is deprecated in the Master branch of OpenARK. This line might be wrong.
 
-	}
+// 	}
 
 
-protected:
-	std::mutex meshLock_;
+// protected:
+// 	std::mutex meshLock_;
 
-};
+// };
 
 
 } //MyGUI
