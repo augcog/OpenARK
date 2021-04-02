@@ -1,5 +1,7 @@
 # Installing OpenARK for Ubuntu 18.04.5 LTS (Bionic Beaver)
-
+## OpenARK Ubuntu Supports
+1. X86-64 instruction set
+2. NVIDIA Jetson Xavier NX (ARM®v8.2 64-bit CPU)
 ## Preliminaries
 
 1. Install basic tools, dependencies:
@@ -131,15 +133,21 @@ endif (CXX11 AND COMPILER_HAS_CXX11_FLAG)]]
 2. Apply the Fixing Eigen changes.
 3. Build with CMake and install
 
-## Installing Brisk, Nvidia Jetson Xavier NX Version.
 
+## Installing Brisk
+1. `git clone https://github.com/sxyu/brisk && cd brisk`
+2. Build with CMake and install
+
+## Installing Brisk, Nvidia Jetson Xavier NX Version.
 1. `git clone https://github.com/moonwonlee/brisk.git && cd brisk`
 2. Build with CMake and install
 
-## Installing DBoW2 with Brisk Descriptors, Custom Version, Nvidia Jetson Xavier NX Version.
+## Installing DBoW2 with Brisk Descriptors
+1. `git clone https://github.com/joemenke/DBoW2_Mod && cd DBoW2_Mod`. Note that this repository is a modified version of DBoW2_Mod to support Brisk descriptors.
+2. Build with CMake and install
 
-1. `git clone https://github.com/moonwonlee/DBoW2_Mod.git && cd DBoW2_Mod`. 
-Note that this repository is a modified version of DBoW2_Mod to support Brisk descriptors.
+## Installing DBoW2 with Brisk Descriptors, Nvidia Jetson Xavier NX Version.
+1. `git clone https://github.com/moonwonlee/DBoW2_Mod.git && cd DBoW2_Mod`. Note that this repository is a modified version of DBoW2_Mod to support Brisk descriptors.
 2. Build with CMake and install
 
 ## Installing DLoopDetector, Custom Version
