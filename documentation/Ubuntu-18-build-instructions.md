@@ -50,8 +50,9 @@ sudo apt -y install libpcl-*
 
 OpenCV 3.4.6, OpenCV_Contrib 3.4.6 and [Package: libopencv-dev (3.2.0+dfsg-4ubuntu0.1 and others)](https://packages.ubuntu.com/bionic/libopencv-dev)
 
-1. Install prerequisites:
+1. Install prerequisites
 
+X86-64 Instruction Set:
 ```sh
 sudo add-apt-repository "deb http://security.ubuntu.com/ubuntu xenial-security main"
 sudo apt update
@@ -66,6 +67,24 @@ sudo apt -y install libgoogle-glog-dev libgflags-dev
 sudo apt -y install libgphoto2-dev libeigen3-dev libhdf5-dev doxygen
 sudo apt -y install libgtk2.0-dev
 sudo apt -y install libglfw3 libglfw3-dev
+```
+NVIDIA Jetson Xavier NX (ARM®v8.2 64-bit CPU):
+```sh
+sudo apt -y install libopencv-dev libdc1394-22 libdc1394-22-dev libjpeg-dev libtiff5-dev libpng-dev
+sudo apt -y install libavcodec-dev libavformat-dev libswscale-dev libxine2-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+sudo apt -y install libv4l-dev libtbb-dev libfaac-dev libmp3lame-dev libopencore-amrnb-dev libopencore-amrwb-dev libtheora-dev
+sudo apt -y install libvorbis-dev libxvidcore-dev v4l-utils
+sudo apt -y install liblapacke-dev libopenblas-dev libgdal-dev checkinstall
+sudo apt -y install libssl-dev libopenexr-dev openexr
+sudo apt -y install libprotobuf-dev protobuf-compiler
+sudo apt -y install libgoogle-glog-dev libgflags-dev
+sudo apt -y install libgphoto2-dev libeigen3-dev libhdf5-dev doxygen
+sudo apt -y install libgtk2.0-dev
+sudo apt -y install libglfw3 libglfw3-dev
+sudo apt -y libx264-dev libx265-dev libgtk2.0-dev libgtk-3-dev libatlas-base-dev gfortran python3-devsudo 
+sudo apt -y apt install libgstreamer1.0-0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly 
+sudo apt -y gstreamer1.0-libav gstreamer1.0-doc gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 
+sudo apt -ygstreamer1.0-pulseaudio libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
 ```
 
 Note that we add the Ubuntu 16 (Xenial) repo since some packages have been removed in later versions of Ubuntu.
