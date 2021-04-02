@@ -131,14 +131,14 @@ endif (CXX11 AND COMPILER_HAS_CXX11_FLAG)]]
 2. Apply the Fixing Eigen changes.
 3. Build with CMake and install
 
-## Installing Brisk
+## Installing Brisk, Nvidia Jetson Xavier NX Version.
 
-1. `git clone https://github.com/sxyu/brisk && cd brisk`
+1. `git clone https://github.com/moonwonlee/brisk.git && cd brisk`
 2. Build with CMake and install
 
-## Installing DBoW2 with Brisk Descriptors, Custom Version
+## Installing DBoW2 with Brisk Descriptors, Custom Version, Nvidia Jetson Xavier NX Version.
 
-1. `git clone https://github.com/joemenke/DBoW2_Mod && cd DBoW2_Mod`. 
+1. `git clone https://github.com/moonwonlee/DBoW2_Mod.git && cd DBoW2_Mod`. 
 Note that this repository is a modified version of DBoW2_Mod to support Brisk descriptors.
 2. Build with CMake and install
 
