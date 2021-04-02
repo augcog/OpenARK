@@ -22,7 +22,4 @@
 
 #### Open3D is MIT Licensed
 
-#### sse2neon is MIT Licensed
-
-
 #### Note: if you wish to use the SMPL model for the Avatar demo, please refer to the SMPL website for licence and restrictions: http://smpl.is.tue.mpg.de/license_model
