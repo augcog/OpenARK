@@ -177,17 +177,17 @@ Note that this repository is a modified version of DLoopDetector.
 
 ### NOTE: CURRENTLY OPEN3D isnt confirmed to work, 3drecondemo probably wont work.
 
-### Installing Open3D (0.12.0)
+## Installing Open3D (0.12.0)
 1. `git clone --recursive https://github.com/intel-isl/Open3D && cd Open3D`
 2. Switch to release 0.12. `git checkout tags/v0.12.0 -b v12`
 3. Install dependencies for Open3D. `./util/install-deps/ubuntu.sh assume-yes`
 4. Build with CMake and install, but replace `cmake -DCMAKE_BUILD_TYPE=Release..` with `cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PYTHON_MODULE=OFF ..`
 
-### Installing Okvis+ 
+## Installing Okvis+ 
 1. `git clone https://github.com/joemenke/okvis && cd okvis`
 2. Apply the Fixing Eigen changes.
-3. Build with CMake and install
-4. Verify Okvis+ by running the demo application
+3. Build with CMake and install.
+4. Verify Okvis+ by running the demo application.
 
 You will find a demo application in okvis_apps. It can process datasets in the ASL/ETH format.
 https://github.com/ceres-solver/ceres-solver/releases/tag/1.14.0
@@ -198,6 +198,12 @@ In order to run a minimal working example, follow the steps below:
 6. Run the app as
  `./okvis_app_synchronous path/to/okvis/config/config_fpga_p2_euroc.yaml path/to/mav0/`
  
+## Installing Okvis+, NVIDIA Jetson Xavier NX Version.
+1. `git clone https://github.com/moonwonlee/okvis.git && cd okvis`
+2. Apply the Fixing Eigen changes.
+3. Build with CMake and install.
+4. Verify Okvis+ by running the demo application.
+
 ## Installing librealsense2
 Follow this : https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md
 or here is summary.
@@ -280,6 +286,10 @@ Example `G_SLICE=always-malloc G_DEBUG=gc-friendly  valgrind -v --tool=memcheck 
 
 #### gdb
     gdb OpenARK_SLAM_DEMO
+    r
+    bt
+    
+    gdb --args okvis_app_synchronous ../config/config_fpga_p2_euroc.yaml /home/moon/Desktop/mav0/
     r
     bt
 
