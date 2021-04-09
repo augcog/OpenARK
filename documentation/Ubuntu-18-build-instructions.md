@@ -223,13 +223,14 @@ sudo apt-get install librealsense2-dkms librealsense2-utils librealsense2-dev li
 
 ## Installing and Building OpenARK
 1. Clone our repository: `git clone https://github.com/augcog/OpenARK`, or download the latest release.  
+2. `git checkout openark-ubuntu`
 This already has the Eigen changes.
 
 3. `cd OpenARK && mkdir build && cd build` to create build directory.
 
-3. `cmake .. -DCMAKE_BUILD_TYPE=Release` to run CMake. librealsense2 will be enabled by default. You can add `-DBUILD_AVATAR_DEMO` to build the avatar demo in addition to hand and SLAM, `-DBUILD_DATA_RECORDING` to build the data recording tool, and `-BUILD_TESTS` to build hand tests. `-DBUILD_UNITY_PLUGIN` is not available on Linux at the moment.
+4. `cmake .. -DCMAKE_BUILD_TYPE=Release` to run CMake. librealsense2 will be enabled by default. You can add `-DBUILD_AVATAR_DEMO` to build the avatar demo in addition to hand and SLAM, `-DBUILD_DATA_RECORDING` to build the data recording tool, and `-BUILD_TESTS` to build hand tests. `-DBUILD_UNITY_PLUGIN` is not available on Linux at the moment.
 
-4. `make -j4` to build.
+5. `make -j4` to build.
 
 ## Running the OpenARK demo applications
 - These applications will show you how core functionalities of OpenARK work 
