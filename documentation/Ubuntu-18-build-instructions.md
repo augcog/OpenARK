@@ -215,6 +215,9 @@ sudo apt-get install librealsense2-dkms librealsense2-utils librealsense2-dev li
 ```
 (If using Ubuntu 16, replace `bionic` on the second line with `xenial`)
 
+## Installing librealsense2, Nvidia Jetson Xavier NX Version.
+Follow this : https://github.com/IntelRealSense/librealsense/blob/master/doc/installation_jetson.md
+
 ### Optional: As a sanity check for librealsense2, 
 1. Connect the Intel RealSense depth camera and run: `realsense-viewer` to verify the installation.
 2. plugin your RealSense camera (SR300 or D400) and run `rs-capture` to see if streams appear.
