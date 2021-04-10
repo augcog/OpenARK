@@ -181,7 +181,7 @@ Note that this repository is a modified version of DLoopDetector.
 1. `git clone --recursive https://github.com/intel-isl/Open3D && cd Open3D`
 2. Switch to release 0.12. `git checkout tags/v0.12.0 -b v12`
 3. Install dependencies for Open3D. `./util/install_deps_ubuntu.sh assume-yes`
-4. Build with CMake and install, but replace `cmake -DCMAKE_BUILD_TYPE=Release..` with `cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PYTHON_MODULE=OFF ..`
+4. Build with CMake and install, but replace `cmake -DCMAKE_BUILD_TYPE=Release..` with `cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PYTHON_MODULE=OFF -DGLIBCXX_USE_CXX11_ABI=ON ..`
 
 ## Installing Okvis+ 
 1. `git clone https://github.com/joemenke/okvis && cd okvis`
