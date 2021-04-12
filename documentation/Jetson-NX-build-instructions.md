@@ -232,7 +232,8 @@ Follow this : https://github.com/IntelRealSense/librealsense/blob/master/doc/ins
 ## Installing and Building OpenARK, for Jetson NX.
 1. Clone our repository: `git clone https://github.com/augcog/OpenARK`, or download the latest release.  
 2. `git checkout jetson-nx`.   
-This already has the Eigen changes. Make sure that the EIGEN_HACK option is ON.     
+This already has the Eigen changes. 
+But make sure that the EIGEN_HACK option is ON.     
 `option( EIGEN_HACK "EIGEN_HACK" ON)`.      
 Also make sure that the following is applied for ARM support, in case it is not applied automatically.     
 `add_definitions(-D__ARM_NEON__)`
