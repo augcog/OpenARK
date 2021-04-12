@@ -1,13 +1,12 @@
 # Installing OpenARK for NVIDIA Jetson Xavier NX
 
-OpenARK provides support for Nvidia Jetson Xavier NX.
-CPU : (6-core NVIDIA Carmel ARM®v8.2 64-bit CPU (arm64 or aarch64) 
-OS  : L4T = {Linux Kernel 4.9, bootloader, NVIDIA drivers, flashing utilities, sample filesystem based on Ubuntu 18.04}
+OpenARK provides support for Nvidia Jetson Xavier NX.  
+CPU : (6-core NVIDIA Carmel ARM®v8.2 64-bit CPU (arm64 or aarch64).    
+OS  : L4T = {sample filesystem based on Ubuntu 18.04, Linux Kernel 4.9, bootloader, NVIDIA drivers, flashing utilities}
 
 ## Preliminaries
 
 1. Install basic tools, dependencies:
-
 ```sh
 sudo apt update
 sudo apt -y install g++ build-essential cmake cmake-gui git-core
@@ -48,7 +47,7 @@ Note that this installs the library. You may replace '4' in step 3 with any numb
 sudo apt -y install libpcl-*
 ```
 
-## Installing OpenCV with Contrib, NVIDIA Jetson Xavier NX (ARM®v8.2 64-bit CPU)
+## Installing OpenCV with Contrib, for Jetson NX.
 
 OpenCV 3.4.6, OpenCV_Contrib 3.4.6 and [Package: libopencv-dev (3.2.0+dfsg-4ubuntu0.1 and others)](https://packages.ubuntu.com/bionic/libopencv-dev)
 
@@ -83,7 +82,6 @@ tar -xf contrib.tar.gz
 ```
 
 3. Build:
-
 ``` sh
 mkdir build && cd build
 cmake -D CMAKE_BUILD_TYPE=RELEASE -DWITH_TBB=ON -DOPENCV_EXTRA_MODULES_PATH="../opencv_contrib-3.4.6/modules" -DBUILD_PERF_TESTS=OFF -DBUILD_TESTS=OFF ..
@@ -92,21 +90,21 @@ sudo make install
 ```
 Again, -j4 may be replaced with any number of threads.
 
-## Eigen Hack for OpenARK Ubuntu Version.
+## Eigen Hack for OpenARK Ubuntu and Jetson NX.
 The following sections directly have Eigen as a depenendency:
 1. Ceres 1.14.0
 2. OpenGV
 3. Okvis
 4. OpenARK Ubuntu.
 
-In order to get Eigen working for OpenARK Ubuntu, the following lines of code must be added into the top level CMakesList.txt:
+In order to get Eigen working for OpenARK Ubuntu and Jetson NX, the following lines of code must be added into the top level CMakesList.txt:
 ```
 add_definitions(-DEIGEN_DONT_ALIGN=1)
 add_definitions(-DEIGEN_DONT_VECTORIZE=1)
 ```
 This will disable alignment as well as force the compiler to use c++17 standard.  
 
-When it comes to OpenARK, make sure that the EIGEN_HACK option is ON.
+When it comes to OpenARK, make sure that the EIGEN_HACK option is ON. This will apply the same Eigen hack above.       
 `option( EIGEN_HACK "EIGEN_HACK" ON)`
 
 Now run the CMake instructions to build each library.
@@ -139,21 +137,20 @@ endif (CXX11 AND COMPILER_HAS_CXX11_FLAG)]]
 2. Apply the Fixing Eigen changes.
 3. Build with CMake and install
 
-## Installing Brisk, Nvidia Jetson Xavier NX Version.
+## Installing Brisk, for Jetson NX.
 1. `git clone https://github.com/moonwonlee/brisk.git && cd brisk`
 2. Build with CMake and install
 
-## Installing DBoW2 with Brisk Descriptors, Nvidia Jetson Xavier NX Version.
+## Installing DBoW2 with Brisk Descriptors, for Jetson NX.
 1. `git clone https://github.com/moonwonlee/DBoW2_Mod.git && cd DBoW2_Mod`. Note that this repository is a modified version of DBoW2_Mod to support Brisk descriptors.
 2. Build with CMake and install
 
 ## Installing DLoopDetector, Custom Version
-
 1. `git clone https://github.com/joemenke/DLoopDetector && cd DLoopDetector`
 Note that this repository is a modified version of DLoopDetector.
 2. Build with CMake and install
 
-## Installing Open3D (0.12.0), Nvidia Jetson Xavier NX Version.
+## Installing Open3D (0.12.0), for Jetson NX.
 ### Install system dependencies
 ```
 sudo apt-get update -y
@@ -206,7 +203,7 @@ sudo make install
 If the Open3D build system complains about CMake xxx or higher is required, get a CMake version higher than 3.18.
 Follow this => Compile CMake from source : https://cmake.org/install/
  
-## Installing Okvis+, NVIDIA Jetson Xavier NX Version.
+## Installing Okvis+, for Jetson NX.
 1. `git clone https://github.com/moonwonlee/okvis.git && cd okvis`
 2. Apply the Fixing Eigen changes.
 3. To run okvis demo, turn on the demo option in the CMakeListst.txt.
@@ -214,7 +211,6 @@ Follow this => Compile CMake from source : https://cmake.org/install/
 4. Build with CMake and install.
 5. Verify Okvis+ by running the demo application.
 You will find a demo application in okvis_apps. It can process datasets in the ASL/ETH format.
-https://github.com/ceres-solver/ceres-solver/releases/tag/1.14.0
 In order to run a minimal working example, follow the steps below:
 
 6. Download a dataset of your choice from http://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets. Assuming you downloaded MH_01_easy/. You will find a corresponding calibration / estimator configuration in the config folder.
@@ -222,7 +218,7 @@ In order to run a minimal working example, follow the steps below:
 7. Run the app as
  `./okvis_app_synchronous path/to/okvis/config/config_fpga_p2_euroc.yaml path/to/mav0/`
 
-## Installing librealsense2, Nvidia Jetson Xavier NX Version.
+## Installing librealsense2, for Jetson NX.
 Follow this : https://github.com/IntelRealSense/librealsense/blob/master/doc/installation_jetson.md
 
 ### Optional: As a sanity check for librealsense2, 
@@ -231,13 +227,13 @@ Follow this : https://github.com/IntelRealSense/librealsense/blob/master/doc/ins
 3. Verify that the kernel is updated :
 `modinfo uvcvideo | grep "version:" should include realsense string`
 
-## Installing and Building OpenARK
+## Installing and Building OpenARK, for Jetson NX.
 1. Clone our repository: `git clone https://github.com/augcog/OpenARK`, or download the latest release.  
-2. `git checkout jetson-nx`
-This already has the Eigen changes. Make sure that the EIGEN_HACK option is ON.
-`option( EIGEN_HACK "EIGEN_HACK" ON)`
-
-Also make sure that add_definitions(-D__ARM_NEON__) is applied for ARM support.
+2. `git checkout jetson-nx`.   
+This already has the Eigen changes. Make sure that the EIGEN_HACK option is ON.     
+`option( EIGEN_HACK "EIGEN_HACK" ON)`.      
+Also make sure that the following is applied for ARM support, in case it is not applied automatically.     
+`add_definitions(-D__ARM_NEON__)`
 
 3. `cd OpenARK && mkdir build && cd build` to create build directory.
 
