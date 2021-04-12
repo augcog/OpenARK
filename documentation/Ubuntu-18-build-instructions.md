@@ -1,7 +1,6 @@
 # Installing OpenARK for Ubuntu 18.04.5 LTS (Bionic Beaver)
-## OpenARK Ubuntu Supports
-1. X86-64 instruction set
-2. NVIDIA Jetson Xavier NX (ARM®v8.2 64-bit CPU)
+OpenARK provides support Ubuntu 18.04.5 LTS (Bionic Beaver), 64-bit PC (AMD64) architecture.
+
 ## Preliminaries
 
 1. Install basic tools, dependencies:
@@ -50,8 +49,7 @@ sudo apt -y install libpcl-*
 
 OpenCV 3.4.6, OpenCV_Contrib 3.4.6 and [Package: libopencv-dev (3.2.0+dfsg-4ubuntu0.1 and others)](https://packages.ubuntu.com/bionic/libopencv-dev)
 
-1. Install prerequisites
-
+1. Install prerequisites.    
 X86-64 Instruction Set:
 ```sh
 sudo add-apt-repository "deb http://security.ubuntu.com/ubuntu xenial-security main"
@@ -68,25 +66,6 @@ sudo apt -y install libgphoto2-dev libeigen3-dev libhdf5-dev doxygen
 sudo apt -y install libgtk2.0-dev
 sudo apt -y install libglfw3 libglfw3-dev
 ```
-NVIDIA Jetson Xavier NX (ARM®v8.2 64-bit CPU):
-```sh
-sudo apt -y install libopencv-dev libdc1394-22 libdc1394-22-dev libjpeg-dev libtiff5-dev libpng-dev
-sudo apt -y install libavcodec-dev libavformat-dev libswscale-dev libxine2-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
-sudo apt -y install libv4l-dev libtbb-dev libfaac-dev libmp3lame-dev libopencore-amrnb-dev libopencore-amrwb-dev libtheora-dev
-sudo apt -y install libvorbis-dev libxvidcore-dev v4l-utils
-sudo apt -y install liblapacke-dev libopenblas-dev libgdal-dev checkinstall
-sudo apt -y install libssl-dev libopenexr-dev openexr
-sudo apt -y install libprotobuf-dev protobuf-compiler
-sudo apt -y install libgoogle-glog-dev libgflags-dev
-sudo apt -y install libgphoto2-dev libeigen3-dev libhdf5-dev doxygen
-sudo apt -y install libgtk2.0-dev
-sudo apt -y install libglfw3 libglfw3-dev
-sudo apt -y libx264-dev libx265-dev libgtk2.0-dev libgtk-3-dev libatlas-base-dev gfortran python3-devsudo 
-sudo apt -y apt install libgstreamer1.0-0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly 
-sudo apt -y gstreamer1.0-libav gstreamer1.0-doc gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 
-sudo apt -ygstreamer1.0-pulseaudio libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
-```
-
 Note that we add the Ubuntu 16 (Xenial) repo since some packages have been removed in later versions of Ubuntu.
 
 2. Download OpenCV and OpenCV_contrib sources:
@@ -113,16 +92,20 @@ The following sections directly have Eigen as a depenendency:
 1. Ceres
 2. OpenGV
 3. Okvis
-4. OpenARK
+4. OpenARK Ubuntu
+5. OpenARK Jetson NX
 
-In order to get Eigen working, the following lines of code must be added into the top level CMakesList.txt:
+In order to get Eigen working for OpenARK Ubuntu and Jetson NX, the following lines of code must be added into the top level CMakesList.txt:
 ```
 add_definitions(-DEIGEN_DONT_ALIGN=1)
 add_definitions(-DEIGEN_DONT_VECTORIZE=1)
 ```
+This will disable alignment as well as force the compiler to use c++17 standard.   
 
-This will disable alignment as well as force the compiler to use c++17 standard.  
-Add these lines before running the Cmake instructions to build each library.
+When it comes to OpenARK, make sure that the EIGEN_HACK option is ON. This will apply the same Eigen hack above.       
+`option( EIGEN_HACK "EIGEN_HACK" ON)`. 
+
+Now run the CMake instructions to build each library.
 
 ## Continued Dependencies
 ### Installing Ceres 1.14.0 from source
@@ -157,16 +140,8 @@ endif (CXX11 AND COMPILER_HAS_CXX11_FLAG)]]
 1. `git clone https://github.com/sxyu/brisk && cd brisk`
 2. Build with CMake and install
 
-## Installing Brisk, Nvidia Jetson Xavier NX Version.
-1. `git clone https://github.com/moonwonlee/brisk.git && cd brisk`
-2. Build with CMake and install
-
 ## Installing DBoW2 with Brisk Descriptors
 1. `git clone https://github.com/joemenke/DBoW2_Mod && cd DBoW2_Mod`. Note that this repository is a modified version of DBoW2_Mod to support Brisk descriptors.
-2. Build with CMake and install
-
-## Installing DBoW2 with Brisk Descriptors, Nvidia Jetson Xavier NX Version.
-1. `git clone https://github.com/moonwonlee/DBoW2_Mod.git && cd DBoW2_Mod`. Note that this repository is a modified version of DBoW2_Mod to support Brisk descriptors.
 2. Build with CMake and install
 
 ## Installing DLoopDetector, Custom Version
@@ -175,34 +150,29 @@ endif (CXX11 AND COMPILER_HAS_CXX11_FLAG)]]
 Note that this repository is a modified version of DLoopDetector.
 2. Build with CMake and install
 
-### NOTE: CURRENTLY OPEN3D isnt confirmed to work, 3drecondemo probably wont work.
-
 ## Installing Open3D (0.12.0)
-1. `git clone --recursive https://github.com/intel-isl/Open3D && cd Open3D`
-2. Switch to release 0.12. `git checkout tags/v0.12.0 -b v12`
-3. Install dependencies for Open3D. `./util/install_deps_ubuntu.sh assume-yes`
-4. Build with CMake and install, but replace `cmake -DCMAKE_BUILD_TYPE=Release..` with `cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PYTHON_MODULE=OFF -DGLIBCXX_USE_CXX11_ABI=ON ..`
+1. `git clone --recursive https://github.com/moonwonlee/Open3D.git && cd Open3D`
+2. `git checkout v12`
+3. Install dependencies for Open3D.      
+`./util/install_deps_ubuntu.sh assume-yes`
+4. Build with CMake and install, but replace           
+`cmake -DCMAKE_BUILD_TYPE=Release..` with         
+`cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PYTHON_MODULE=OFF -DGLIBCXX_USE_CXX11_ABI=ON ..`
 
 ## Installing Okvis+ 
 1. `git clone https://github.com/joemenke/okvis && cd okvis`
 2. Apply the Fixing Eigen changes.
-3. Build with CMake and install.
-4. Verify Okvis+ by running the demo application.
-
+3. To run okvis demo, turn on the demo option in the CMakeListst.txt.      
+`option (BUILD_APPS "Builds a demo app (which requires boost)" ON)` 
+4. Build with CMake and install.
+5. Verify Okvis+ by running the demo application.        
 You will find a demo application in okvis_apps. It can process datasets in the ASL/ETH format.
-https://github.com/ceres-solver/ceres-solver/releases/tag/1.14.0
 In order to run a minimal working example, follow the steps below:
 
-5. Download a dataset of your choice from http://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets. Assuming you downloaded MH_01_easy/. You will find a corresponding calibration / estimator configuration in the config folder.
+6. Download a dataset of your choice from http://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets. Assuming you downloaded MH_01_easy/. You will find a corresponding calibration / estimator configuration in the config folder.
 
-6. Run the app as
+7. Run the app as
  `./okvis_app_synchronous path/to/okvis/config/config_fpga_p2_euroc.yaml path/to/mav0/`
- 
-## Installing Okvis+, NVIDIA Jetson Xavier NX Version.
-1. `git clone https://github.com/moonwonlee/okvis.git && cd okvis`
-2. Apply the Fixing Eigen changes.
-3. Build with CMake and install.
-4. Verify Okvis+ by running the demo application.
 
 ## Installing librealsense2
 Follow this : https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md
@@ -215,9 +185,6 @@ sudo apt-get install librealsense2-dkms librealsense2-utils librealsense2-dev li
 ```
 (If using Ubuntu 16, replace `bionic` on the second line with `xenial`)
 
-## Installing librealsense2, Nvidia Jetson Xavier NX Version.
-Follow this : https://github.com/IntelRealSense/librealsense/blob/master/doc/installation_jetson.md
-
 ### Optional: As a sanity check for librealsense2, 
 1. Connect the Intel RealSense depth camera and run: `realsense-viewer` to verify the installation.
 2. plugin your RealSense camera (SR300 or D400) and run `rs-capture` to see if streams appear.
@@ -226,8 +193,10 @@ Follow this : https://github.com/IntelRealSense/librealsense/blob/master/doc/ins
 
 ## Installing and Building OpenARK
 1. Clone our repository: `git clone https://github.com/augcog/OpenARK`, or download the latest release.  
-2. `git checkout openark-ubuntu`
-This already has the Eigen changes.
+2. `git checkout openark-ubuntu`.     
+This already has the Eigen changes.         
+But make sure that the EIGEN_HACK option is ON.     
+`option( EIGEN_HACK "EIGEN_HACK" ON)`.      
 
 3. `cd OpenARK && mkdir build && cd build` to create build directory.
 
@@ -300,6 +269,3 @@ Example `G_SLICE=always-malloc G_DEBUG=gc-friendly  valgrind -v --tool=memcheck 
 #### Debugging with print statements
     printf("debug");
     fflush(stdout);
-
-
-
