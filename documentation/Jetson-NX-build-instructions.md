@@ -206,7 +206,7 @@ Follow this => Compile CMake from source : https://cmake.org/install/
 ## Installing Okvis+, for Jetson NX.
 1. `git clone https://github.com/moonwonlee/okvis.git && cd okvis`
 2. Apply the Fixing Eigen changes.
-3. To run okvis demo, turn on the demo option in the CMakeListst.txt.
+3. To run okvis demo, turn on the demo option in the CMakeListst.txt.      
 `option (BUILD_APPS "Builds a demo app (which requires boost)" ON)` 
 4. Build with CMake and install.
 5. Verify Okvis+ by running the demo application.
