@@ -117,7 +117,7 @@ int main(int argc, char **argv)
             traj_win.add_object(pathMap[mapIndex]);
         }
         if (mapIndex < lastMapIndex_path) {
-            pathMap[lastMapIndex_path]->clear();
+            // pathMap[lastMapIndex_path]->clear();
             auto it = pathMap.cbegin();
             while(it != pathMap.cend()) {
                 auto curr = it++;
@@ -151,7 +151,7 @@ int main(int argc, char **argv)
     KeyFrameAvailableHandler kfHandler([](MultiCameraFrame::Ptr frame) {
         frame->saveSimple("map_images/");
     });
-    slam.AddKeyFrameAvailableHandler(kfHandler, "saving");
+    //slam.AddKeyFrameAvailableHandler(kfHandler, "saving");
 
     LoopClosureDetectedHandler loopHandler([&](void) {
         std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> traj; // Moon : Cause 2.b
