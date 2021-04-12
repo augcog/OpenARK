@@ -157,7 +157,7 @@ int main(int argc, char **argv)
         std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> traj; // Moon : Cause 2.b
         slam.getTrajectory(traj);
         const auto mapIndex = slam.getActiveMapIndex();
-        //pathMap[mapIndex]->clear();
+        pathMap[mapIndex]->clear();
         for (size_t i = 0; i < traj.size(); i++)
         {
             pathMap[mapIndex]->add_node(traj[i].block<3, 1>(0, 3));
