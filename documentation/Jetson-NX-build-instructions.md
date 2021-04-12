@@ -166,7 +166,8 @@ sudo apt-get install -y clang-7
 # Clone
 git clone --recursive https://github.com/moonwonlee/Open3D.git
 git checkout v12
-Install dependencies for Open3D. `./util/install_deps_ubuntu.sh assume-yes`
+#Install dependencies for Open3D. 
+./util/install_deps_ubuntu.sh assume-yes
 cd Open3D
 mkdir build
 cd build
