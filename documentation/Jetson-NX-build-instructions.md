@@ -95,7 +95,8 @@ The following sections directly have Eigen as a depenendency:
 1. Ceres 1.14.0
 2. OpenGV
 3. Okvis
-4. OpenARK Ubuntu.
+4. OpenARK Ubuntu
+5. OpenARK Jetson NX
 
 In order to get Eigen working for OpenARK Ubuntu and Jetson NX, the following lines of code must be added into the top level CMakesList.txt:
 ```
