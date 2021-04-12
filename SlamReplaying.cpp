@@ -114,10 +114,10 @@ int main(int argc, char **argv)
         if (pathMap.find(mapIndex) == pathMap.end()) {
             string name = "path"+std::to_string(mapIndex);
             pathMap[mapIndex] = new MyGUI::Path{name, Eigen::Vector3d(1, 0, 0)}; // Moon : fine.
-           // traj_win.add_object(pathMap[mapIndex]);
+            traj_win.add_object(pathMap[mapIndex]);
         }
         if (mapIndex < lastMapIndex_path) {
-            // pathMap[lastMapIndex_path]->clear();
+            pathMap[lastMapIndex_path]->clear();
             auto it = pathMap.cbegin();
             while(it != pathMap.cend()) {
                 auto curr = it++;
