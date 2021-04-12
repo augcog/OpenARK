@@ -51,6 +51,10 @@ if(${CMAKE_HOST_SYSTEM_PROCESSOR} MATCHES "arm*")
   message(STATUS "ARM processor detected, will attempt to use NEON.")
   add_definitions(-D__ARM_NEON__)
 
+include( CheckCXXCompilerFlag )
+CHECK_CXX_COMPILER_FLAG( "-std=c++11" COMPILER_SUPPORTS_CXX11 )
+CHECK_CXX_COMPILER_FLAG( "-std=c++0x" COMPILER_SUPPORTS_CXX0X )
+
 if( COMPILER_SUPPORTS_CXX11 )
     message(STATUS "c++11 supported")
     set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11" )
