@@ -165,7 +165,10 @@ sudo make install
 2. `git checkout v12`
 3. Install dependencies for Open3D.      
 `./util/install_deps_ubuntu.sh assume-yes`
-4. Build with CMake and install         
+4. The minimum CMake version required is 3.18. You can check your CMake version with        
+`cmake --version`     
+For Ubuntu 18.04, we suggest you install the latest CMake from the official repository https://apt.kitware.com/.  CMake 3.18+ is required to allow linking with OBJECT libraries, to prevent erroneous -gencode option deduplication with CUDA, and to simplify generator expressions for selecting compile flags and setting global hardened link flags.
+6. Build with CMake and install         
 ```sh
 mkdir build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PYTHON_MODULE=OFF -DGLIBCXX_USE_CXX11_ABI=ON ..
