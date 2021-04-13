@@ -2,7 +2,7 @@
 
 OpenARK provides support for Nvidia Jetson Xavier NX.  
 ```
-CPU : (6-core NVIDIA Carmel ARM®v8.2 64-bit CPU (arm64 or aarch64).    
+CPU : 6-core NVIDIA Carmel ARM®v8.2 64-bit CPU (arm64 or aarch64).    
 OS  : L4T = {sample filesystem based on Ubuntu 18.04, Linux Kernel 4.9, bootloader, NVIDIA drivers, flashing utilities}
 ```
 ## Preliminaries
