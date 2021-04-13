@@ -1,5 +1,5 @@
 # Installing OpenARK for Ubuntu 18.04.5 LTS (Bionic Beaver)
-OpenARK provides support Ubuntu 18.04.5 LTS (Bionic Beaver), 64-bit PC (AMD64) architecture.
+OpenARK provides support for Ubuntu 18.04.5 LTS (Bionic Beaver), 64-bit PC (AMD64) architecture.
 
 ## Preliminaries
 
@@ -24,21 +24,6 @@ sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 60 --slave /u
 sudo update-alternatives --set gcc "/usr/bin/gcc-5"
 ```
 
-## Note: CMake Builds
-For conciseness, in all sections below "build with CMake" will mean ...
-
-```sh
-mkdir build && cd build
-cmake -DCMAKE_BUILD_TYPE=Release ..
-make -j4
-sudo make install
-```
-or a one-liner for cmake build is ...
-```sh
-mkdir build && cd build && cmake -D CMAKE_BUILD_TYPE=RELEASE .. && make -j4 && sudo make install
-```
-Note that this installs the library. You may replace '4' in step 3 with any number of threads. The build process should not take too long.
-
 ## Installing PCL, [Package: libpcl-dev (1.8.1+dfsg1-2ubuntu2)](https://packages.ubuntu.com/bionic/libpcl-dev)
 
 ```sh
@@ -49,8 +34,7 @@ sudo apt -y install libpcl-*
 
 OpenCV 3.4.6, OpenCV_Contrib 3.4.6 and [Package: libopencv-dev (3.2.0+dfsg-4ubuntu0.1 and others)](https://packages.ubuntu.com/bionic/libopencv-dev)
 
-1. Install prerequisites.    
-X86-64 Instruction Set:
+1. Install prerequisites
 ```sh
 sudo add-apt-repository "deb http://security.ubuntu.com/ubuntu xenial-security main"
 sudo apt update
@@ -78,22 +62,19 @@ tar -xf contrib.tar.gz
 ```
 
 3. Build:
-
 ``` sh
 mkdir build && cd build
 cmake -D CMAKE_BUILD_TYPE=RELEASE -DWITH_TBB=ON -DOPENCV_EXTRA_MODULES_PATH="../opencv_contrib-3.4.6/modules" -DBUILD_PERF_TESTS=OFF -DBUILD_TESTS=OFF ..
-make -j4
+make -j$(nproc)
 sudo make install
 ```
-Again, -j4 may be replaced with any number of threads.
 
 ## Fixing Eigen
 The following sections directly have Eigen as a depenendency:
 1. Ceres
 2. OpenGV
 3. Okvis
-4. OpenARK Ubuntu
-5. OpenARK Jetson NX
+4. OpenARK
 
 In order to get Eigen working for OpenARK Ubuntu and Jetson NX, the following lines of code must be added into the top level CMakesList.txt:
 ```
@@ -102,10 +83,10 @@ add_definitions(-DEIGEN_DONT_VECTORIZE=1)
 ```
 This will disable alignment as well as force the compiler to use c++17 standard.   
 
-When it comes to OpenARK, make sure that the EIGEN_HACK option is ON. This will apply the same Eigen hack above.       
+When it comes to OpenARK, you can easily add the Eigen hack above by setting EIGEN_HACK option as ON in the CMakeLists.txt       
 `option( EIGEN_HACK "EIGEN_HACK" ON)`. 
 
-Now run the CMake instructions to build each library.
+Then follow the CMake instructions to build each library.
 
 ## Continued Dependencies
 ### Installing Ceres 1.14.0 from source
@@ -129,35 +110,68 @@ endif (CXX11 AND COMPILER_HAS_CXX11_FLAG)]]
 ```
 3. Apply the Fixing Eigen changes.
 4. Build with CMake and install
+```sh
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make -j$(nproc)
+sudo make install
+```
 
 ## Intalling OpenGV 1.0
 1. `git clone https://github.com/laurentkneip/opengv && cd opengv`
 2. Apply the Fixing Eigen changes.
 3. Build with CMake and install
-
+```sh
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make -j$(nproc)
+sudo make install
+```
 
 ## Installing Brisk
 1. `git clone https://github.com/sxyu/brisk && cd brisk`
 2. Build with CMake and install
+```sh
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make -j$(nproc)
+sudo make install
+```
 
 ## Installing DBoW2 with Brisk Descriptors
 1. `git clone https://github.com/joemenke/DBoW2_Mod && cd DBoW2_Mod`. Note that this repository is a modified version of DBoW2_Mod to support Brisk descriptors.
 2. Build with CMake and install
+```sh
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make -j$(nproc)
+sudo make install
+```
 
 ## Installing DLoopDetector, Custom Version
 
 1. `git clone https://github.com/joemenke/DLoopDetector && cd DLoopDetector`
 Note that this repository is a modified version of DLoopDetector.
 2. Build with CMake and install
+```sh
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make -j$(nproc)
+sudo make install
+```
 
 ## Installing Open3D (0.12.0)
 1. `git clone --recursive https://github.com/moonwonlee/Open3D.git && cd Open3D`
 2. `git checkout v12`
 3. Install dependencies for Open3D.      
 `./util/install_deps_ubuntu.sh assume-yes`
-4. Build with CMake and install, but replace           
-`cmake -DCMAKE_BUILD_TYPE=Release..` with         
-`cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PYTHON_MODULE=OFF -DGLIBCXX_USE_CXX11_ABI=ON ..`
+4. Build with CMake and install         
+```sh
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_PYTHON_MODULE=OFF -DGLIBCXX_USE_CXX11_ABI=ON ..
+make -j$(nproc)
+sudo make install
+```
 
 ## Installing Okvis+ 
 1. `git clone https://github.com/joemenke/okvis && cd okvis`
@@ -165,6 +179,12 @@ Note that this repository is a modified version of DLoopDetector.
 3. To run okvis demo, turn on the demo option in the CMakeListst.txt.      
 `option (BUILD_APPS "Builds a demo app (which requires boost)" ON)` 
 4. Build with CMake and install.
+```sh
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make -j$(nproc)
+sudo make install
+```
 5. Verify Okvis+ by running the demo application.        
 You will find a demo application in okvis_apps. It can process datasets in the ASL/ETH format.
 In order to run a minimal working example, follow the steps below:
