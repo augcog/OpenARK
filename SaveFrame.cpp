@@ -52,14 +52,14 @@ namespace ark {
 
     }
 
-    void SaveFrame::frameWrite(cv::Mat imRGB, cv::Mat depth, const Eigen::Matrix4d& traj, int frameId){ // Moon : Cause 3. Pass by reference required for FXVEO. const looks fine here.
+    void SaveFrame::frameWrite(const cv::Mat& imRGB, const cv::Mat& depth, const Eigen::Matrix4d& traj, int frameId){ // Moon : Cause 3. Pass by reference required for FXVEO. const looks fine here.
 
 		frame_ids.push_back(frameId);
 
 		cv::Mat imBGR;
         cv::cvtColor(imRGB, imBGR, CV_RGB2BGR);
-        cv::imwrite(rgbPath + std::to_string(frameId) + ".jpg", imBGR);
 
+        cv::imwrite(rgbPath + std::to_string(frameId) + ".png", imBGR);
         cv::imwrite(depthPath + std::to_string(frameId) + ".png", depth);
 
 		std::ofstream file(tcwPath + std::to_string(frameId) + ".txt");
@@ -70,14 +70,14 @@ namespace ark {
 		file.close();
     }
 
-    void SaveFrame::frameWriteMapped(cv::Mat imRGB, cv::Mat depth, const Eigen::Matrix4d& traj, int frameId, int mapId) { // Moon : Cause 3. Pass by reference required for FXVEO. const looks fine here.
+    void SaveFrame::frameWriteMapped(const cv::Mat& imRGB, const cv::Mat& depth, const Eigen::Matrix4d& traj, int frameId, int mapId) { // Moon : Cause 3. Pass by reference required for FXVEO. const looks fine here.
 
         frame_ids.push_back(frameId);
 
         cv::Mat imBGR;
         cv::cvtColor(imRGB, imBGR, CV_RGB2BGR);
-        cv::imwrite(rgbPath + std::to_string(frameId) + ".jpg", imBGR);
 
+        cv::imwrite(rgbPath + std::to_string(frameId) + ".png", imBGR);
         cv::imwrite(depthPath + std::to_string(frameId) + ".png", depth);
 
         std::ofstream file(tcwPath + std::to_string(frameId) + ".txt");
