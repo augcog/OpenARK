@@ -95,14 +95,14 @@ When it comes to OpenARK, you can easily add the Eigen hack above by setting EIG
 Then follow the CMake instructions to build each library.
 
 ## Continued Dependencies
-### Installing Ceres 1.14.0 from source
+## Installing Ceres 1.14.0 from source
 
-#### Installing [SuiteSparse 5.1.2](https://packages.ubuntu.com/bionic/libsuitesparse-dev)
+### Installing [SuiteSparse 5.1.2](https://packages.ubuntu.com/bionic/libsuitesparse-dev)
 SuiteSparse speeds up some of Ceres functions. However, if you want to prevent Suitesparse from crashing, you can skip downloading Suitesparse. You can still download Suitesparse and opt it out during the Ceres build process.
 ```sh
 sudo apt install libsuitesparse-dev
 ```
-Download Ceres1.14.0 from source and build as follows. 
+### Download Ceres1.14.0 from source and build as follows. 
 1. `wget -O ceres114.tar.gz https://github.com/ceres-solver/ceres-solver/archive/1.14.0.tar.gz && tar -xf ceres114.tar.gz && cd ceres-solver-1.14.0`
 2. Comment out lines 434-439 of the top level CMakeLists.txt
 It should look like: (notice the #[[ open comment and ]] close comment)
