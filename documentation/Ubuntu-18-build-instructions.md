@@ -1,4 +1,5 @@
 # Installing OpenARK for Ubuntu 18.04.5 LTS (Bionic Beaver)
+
 OpenARK provides support for Ubuntu 18.04.5 LTS (Bionic Beaver), 64-bit PC (AMD64) architecture.
 
 ## Preliminaries
@@ -83,7 +84,7 @@ add_definitions(-DEIGEN_DONT_VECTORIZE=1)
 ```
 This will disable alignment as well as force the compiler to use c++17 standard.   
 
-When it comes to OpenARK, you can easily add the Eigen hack above by setting EIGEN_HACK option as ON in the CMakeLists.txt       
+When it comes to OpenARK, you can easily add the Eigen hack above by setting EIGEN_HACK option as ON in the CMakeLists.txt 
 `option( EIGEN_HACK "EIGEN_HACK" ON)`. 
 
 Then follow the CMake instructions to build each library.
@@ -149,7 +150,6 @@ sudo make install
 ```
 
 ## Installing DLoopDetector, Custom Version
-
 1. `git clone https://github.com/joemenke/DLoopDetector && cd DLoopDetector`
 Note that this repository is a modified version of DLoopDetector.
 2. Build with CMake and install
@@ -223,9 +223,11 @@ But make sure that the EIGEN_HACK option is ON.
 
 3. `cd OpenARK && mkdir build && cd build` to create build directory.
 
-4. `cmake .. -DCMAKE_BUILD_TYPE=Release` to run CMake. librealsense2 will be enabled by default. You can add `-DBUILD_AVATAR_DEMO` to build the avatar demo in addition to hand and SLAM, `-DBUILD_DATA_RECORDING` to build the data recording tool, and `-BUILD_TESTS` to build hand tests. `-DBUILD_UNITY_PLUGIN` is not available on Linux at the moment.
+4.. Run CMake.      
+`cmake .. -DCMAKE_BUILD_TYPE=Release`    
+librealsense2 will be enabled by default. You can add `-DBUILD_AVATAR_DEMO` to build the avatar demo in addition to hand and SLAM, `-DBUILD_DATA_RECORDING` to build the data recording tool, and `-BUILD_TESTS` to build hand tests. `-DBUILD_UNITY_PLUGIN` is not available on Linux at the moment.
 
-5. `make -j4` to build.
+5. `make -j4`
 
 ## Running the OpenARK demo applications
 - These applications will show you how core functionalities of OpenARK work 
