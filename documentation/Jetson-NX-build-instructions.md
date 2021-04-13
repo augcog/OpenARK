@@ -1,12 +1,14 @@
 # Installing OpenARK for NVIDIA Jetson Xavier NX
 
 OpenARK provides support for Nvidia Jetson Xavier NX.  
+```
 CPU : (6-core NVIDIA Carmel ARM®v8.2 64-bit CPU (arm64 or aarch64).    
 OS  : L4T = {sample filesystem based on Ubuntu 18.04, Linux Kernel 4.9, bootloader, NVIDIA drivers, flashing utilities}
-
+```
 ## Preliminaries
 
 1. Install basic tools, dependencies:
+
 ```sh
 sudo apt update
 sudo apt -y install g++ build-essential cmake cmake-gui git-core
@@ -25,21 +27,6 @@ sudo apt install gcc-5 g++-5
 sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 60 --slave /usr/bin/g++ g++ /usr/bin/g++-5
 sudo update-alternatives --set gcc "/usr/bin/gcc-5"
 ```
-
-## Note: CMake Builds
-For conciseness, in all sections below "build with CMake" will mean ...
-
-```sh
-mkdir build && cd build
-cmake -DCMAKE_BUILD_TYPE=Release ..
-make -j4
-sudo make install
-```
-or a one-liner for cmake build is ...
-```sh
-mkdir build && cd build && cmake -D CMAKE_BUILD_TYPE=RELEASE .. && make -j4 && sudo make install
-```
-Note that this installs the library. You may replace '4' in step 3 with any number of threads. The build process should not take too long.
 
 ## Installing PCL, [Package: libpcl-dev (1.8.1+dfsg1-2ubuntu2)](https://packages.ubuntu.com/bionic/libpcl-dev)
 
@@ -69,7 +56,6 @@ sudo apt -y apt install libgstreamer1.0-0 gstreamer1.0-plugins-base gstreamer1.0
 sudo apt -y gstreamer1.0-libav gstreamer1.0-doc gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 
 sudo apt -ygstreamer1.0-pulseaudio libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
 ```
-
 Note that we add the Ubuntu 16 (Xenial) repo since some packages have been removed in later versions of Ubuntu.
 
 2. Download OpenCV and OpenCV_contrib sources:
@@ -85,30 +71,28 @@ tar -xf contrib.tar.gz
 ``` sh
 mkdir build && cd build
 cmake -D CMAKE_BUILD_TYPE=RELEASE -DWITH_TBB=ON -DOPENCV_EXTRA_MODULES_PATH="../opencv_contrib-3.4.6/modules" -DBUILD_PERF_TESTS=OFF -DBUILD_TESTS=OFF ..
-make -j4
+make -j$(nproc)
 sudo make install
 ```
-Again, -j4 may be replaced with any number of threads.
 
-## Eigen Hack for OpenARK Ubuntu and Jetson NX.
+## Fixing Eigen
 The following sections directly have Eigen as a depenendency:
 1. Ceres 1.14.0
 2. OpenGV
 3. Okvis
-4. OpenARK Ubuntu
-5. OpenARK Jetson NX
+4. OpenARK
 
-In order to get Eigen working for OpenARK Ubuntu and Jetson NX, the following lines of code must be added into the top level CMakesList.txt:
+In order to get Eigen working for OpenARK Ubuntu and Jetson NX, the following lines of code must be added into the top level CMakesList.txt:    
 ```
 add_definitions(-DEIGEN_DONT_ALIGN=1)
 add_definitions(-DEIGEN_DONT_VECTORIZE=1)
 ```
 This will disable alignment as well as force the compiler to use c++17 standard.  
 
-When it comes to OpenARK, make sure that the EIGEN_HACK option is ON. This will apply the same Eigen hack above.       
+When it comes to OpenARK, you can easily add the Eigen hack above by setting EIGEN_HACK option as ON in the CMakeLists.txt         
 `option( EIGEN_HACK "EIGEN_HACK" ON)`
 
-Now run the CMake instructions to build each library.
+Then follow the CMake instructions to build each library.
 
 ## Continued Dependencies
 ### Installing Ceres 1.14.0 from source
@@ -132,24 +116,54 @@ endif (CXX11 AND COMPILER_HAS_CXX11_FLAG)]]
 ```
 3. Apply the Fixing Eigen changes.
 4. Build with CMake and install
+```sh
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make -j$(nproc)
+sudo make install
+```
 
 ## Intalling OpenGV 1.0
 1. `git clone https://github.com/laurentkneip/opengv && cd opengv`
 2. Apply the Fixing Eigen changes.
 3. Build with CMake and install
+```sh
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make -j$(nproc)
+sudo make install
+```
 
 ## Installing Brisk, for Jetson NX.
 1. `git clone https://github.com/moonwonlee/brisk.git && cd brisk`
 2. Build with CMake and install
+```sh
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make -j$(nproc)
+sudo make install
+```
 
 ## Installing DBoW2 with Brisk Descriptors, for Jetson NX.
 1. `git clone https://github.com/moonwonlee/DBoW2_Mod.git && cd DBoW2_Mod`. Note that this repository is a modified version of DBoW2_Mod to support Brisk descriptors.
 2. Build with CMake and install
+```sh
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make -j$(nproc)
+sudo make install
+```
 
 ## Installing DLoopDetector, Custom Version
 1. `git clone https://github.com/joemenke/DLoopDetector && cd DLoopDetector`
 Note that this repository is a modified version of DLoopDetector.
 2. Build with CMake and install
+```sh
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make -j$(nproc)
+sudo make install
+```
 
 ## Installing Open3D (0.12.0), for Jetson NX.
 ### Install system dependencies
@@ -163,6 +177,9 @@ sudo apt-get install -y libsdl2-dev libc++-7-dev libc++abi-7-dev libxi-dev
 sudo apt-get install -y clang-7
 ```
 ### Build.
+The minimum CMake version required is 3.18. You can check your CMake version with        
+`cmake --version`     
+For Ubuntu 18.04, we suggest you install the latest CMake from the official repository https://apt.kitware.com/.  CMake 3.18+ is required to allow linking with OBJECT libraries, to prevent erroneous -gencode option deduplication with CUDA, and to simplify generator expressions for selecting compile flags and setting global hardened link flags.
 ```
 # Clone
 git clone --recursive https://github.com/moonwonlee/Open3D.git
@@ -211,6 +228,12 @@ Follow this => Compile CMake from source : https://cmake.org/install/
 3. To run okvis demo, turn on the demo option in the CMakeListst.txt.      
 `option (BUILD_APPS "Builds a demo app (which requires boost)" ON)` 
 4. Build with CMake and install.
+```sh
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make -j$(nproc)
+sudo make install
+```
 5. Verify Okvis+ by running the demo application.
 You will find a demo application in okvis_apps. It can process datasets in the ASL/ETH format.
 In order to run a minimal working example, follow the steps below:
@@ -235,14 +258,16 @@ Follow this : https://github.com/IntelRealSense/librealsense/blob/master/doc/ins
 This already has the Eigen changes. 
 But make sure that the EIGEN_HACK option is ON.     
 `option( EIGEN_HACK "EIGEN_HACK" ON)`.      
-Also make sure that the following is applied for ARM support, in case it is not applied automatically.     
+Also make sure that the following is applied for ARM support, just in case it is not applied automatically.     
 `add_definitions(-D__ARM_NEON__)`
 
 3. `cd OpenARK && mkdir build && cd build` to create build directory.
 
-4. `cmake .. -DCMAKE_BUILD_TYPE=Release` to run CMake. librealsense2 will be enabled by default. You can add `-DBUILD_AVATAR_DEMO` to build the avatar demo in addition to hand and SLAM, `-DBUILD_DATA_RECORDING` to build the data recording tool, and `-BUILD_TESTS` to build hand tests. `-DBUILD_UNITY_PLUGIN` is not available on Linux at the moment.
+4. Run CMake.      
+`cmake .. -DCMAKE_BUILD_TYPE=Release`    
+librealsense2 will be enabled by default. You can add `-DBUILD_AVATAR_DEMO` to build the avatar demo in addition to hand and SLAM, `-DBUILD_DATA_RECORDING` to build the data recording tool, and `-BUILD_TESTS` to build hand tests. `-DBUILD_UNITY_PLUGIN` is not available on Linux at the moment.
 
-5. `make -j4` to build.
+5. `make -j4`
 
 ## Running the OpenARK demo applications
 - These applications will show you how core functionalities of OpenARK work 
