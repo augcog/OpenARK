@@ -266,7 +266,10 @@ Run as  `./OpenARK_slam_replaying "/path/to/camera_yaml_file path/to/brisk_vocab
 
 Example `./OpenARK_slam_replaying "../mycam_intr.yaml" "../config/brisk_vocab.bn" "0.0" "../myroom4"`
 
-### 3dRecon_data_recording
+### 3dRecon_Data_Recording
+Run as `./3dRecon_Data_Recording "/path/to/camera_yaml_file"`
+
+Example `./3dRecon_Data_Recording "../config/d435i_intr.yaml"`
 
 ## Yaml File Explained
 Please read the documentation of the individual parameters in the yaml file carefully. You have various options to trade-off accuracy and computational expense as well as to enable online calibration.
