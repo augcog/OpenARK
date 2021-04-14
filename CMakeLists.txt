@@ -45,11 +45,13 @@ option( USE_PMDSDK "USE_PMDSDK" OFF )
 if( ${EIGEN_HACK} )
     add_definitions(-DEIGEN_DONT_ALIGN=1)
     add_definitions(-DEIGEN_DONT_VECTORIZE=1)
+endif()
 
 # NVIDIA Jetson Xavier NX 
 if(${CMAKE_HOST_SYSTEM_PROCESSOR} MATCHES "arm*")
   message(STATUS "ARM processor detected, will attempt to use NEON.")
   add_definitions(-D__ARM_NEON__)
+endif()
 
 include( CheckCXXCompilerFlag )
 CHECK_CXX_COMPILER_FLAG( "-std=c++11" COMPILER_SUPPORTS_CXX11 )
