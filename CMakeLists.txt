@@ -1,7 +1,6 @@
 cmake_minimum_required( VERSION 3.5 )
 cmake_policy( VERSION 3.5 )
 
-
 project( OpenARK )
 set( OpenARK_VERSION_MAJOR 0 )
 set( OpenARK_VERSION_MINOR 9 )
@@ -26,19 +25,33 @@ set( SLAM_REPLAYING_NAME "OpenARK_slam_replaying")
 set( TEST_NAME "OpenARK_test" )
 set( UNITY_PLUGIN_NAME "UnityPlugin" )
 
-option( BUILD_HAND_DEMO "BUILD_HAND_DEMO" OFF )
-option( BUILD_AVATAR_DEMO "BUILD_AVATAR_DEMO" OFF)
+# Options.
+option( EIGEN_HACK "EIGEN_HACK" ON)
+option( BUILD_HAND_DEMO "BUILD_HAND_DEMO" ON )
+option( BUILD_AVATAR_DEMO "BUILD_AVATAR_DEMO" ON)
 option( BUILD_SLAM_DEMO "BUILD_SLAM_DEMO" ON)
 option( BUILD_3DRECON_DEMO "BUILD_3DRECON_DEMO" ON)
-option( BUILD_DATA_RECORDING "BUILD_DATA_RECORDING" OFF)
+option( BUILD_DATA_RECORDING "BUILD_DATA_RECORDING" ON)
 option( BUILD_SLAM_RECORDING "BUILD_SLAM_RECORDING" ON)
 option( BUILD_SLAM_REPLAYING "BUILD_SLAM_REPLAYING" ON)
 option( BUILD_TESTS "BUILD_TESTS" OFF )
-option( BUILD_UNITY_PLUGIN "BUILD_UNITY_PLUGIN" ON )
+option( BUILD_UNITY_PLUGIN "BUILD_UNITY_PLUGIN" OFF )
 option( USE_AZURE_KINECT_SDK "USE_AZURE_KINECT_SDK" OFF )
-option( USE_RSSDK2 "USE_RSSDK2" ON )
+option( USE_RSSDK2 "USE_RSSDK2" OFF )
 option( USE_RSSDK "USE_RSSDK" OFF )
 option( USE_PMDSDK "USE_PMDSDK" OFF )
+
+# Eigen hack for OpenARK Ubuntu version.
+if( ${EIGEN_HACK} )
+    add_definitions(-DEIGEN_DONT_ALIGN=1)
+    add_definitions(-DEIGEN_DONT_VECTORIZE=1)
+endif()
+
+# NVIDIA Jetson Xavier NX 
+if(${CMAKE_HOST_SYSTEM_PROCESSOR} MATCHES "arm*")
+  message(STATUS "ARM processor detected, will attempt to use NEON.")
+  add_definitions(-D__ARM_NEON__)
+endif()
 
 include( CheckCXXCompilerFlag )
 CHECK_CXX_COMPILER_FLAG( "-std=c++11" COMPILER_SUPPORTS_CXX11 )
@@ -53,11 +66,6 @@ elseif( COMPILER_SUPPORTS_CXX0X )
 else()
     message( STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler." )
 endif()
-
-message(STATUS "using c++17")
-add_definitions(-DEIGEN_DONT_ALIGN=1)
-add_definitions(-DEIGEN_DONT_VECTORIZE=1)
-
 
 if ( CMAKE_COMPILER_IS_GNUCXX )
     set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated -Wno-deprecated-declarations -O3 -g" )

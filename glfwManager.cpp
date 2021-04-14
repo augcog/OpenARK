@@ -637,4 +637,3 @@ void Mesh::draw_obj()
 }
 
 }//MyGUI
-
