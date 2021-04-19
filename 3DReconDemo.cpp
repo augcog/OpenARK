@@ -11,100 +11,6 @@
 
 using namespace ark;
 
-float voxel_size, block_size, max_depth;
-bool save_frames;
-int mesh_view_width, mesh_view_height;
-
-std::shared_ptr<open3d::geometry::RGBDImage> generateRGBDImageFromCV(cv::Mat color_mat, cv::Mat depth_mat) {
-
-	int height = 480;
-	int width = 640;
-
-	auto color_im = std::make_shared<open3d::geometry::Image>();
-	color_im->Prepare(width, height, 3, sizeof(uint8_t));
-
-	uint8_t *pi = (uint8_t *)(color_im->data_.data());
-
-	for (int i = 0; i < height; i++) {
-		for (int k = 0; k < width; k++) {
-
-			cv::Vec3b pixel = color_mat.at<cv::Vec3b>(i, k);
-
-			*pi++ = pixel[0];
-			*pi++ = pixel[1];
-			*pi++ = pixel[2];
-		}
-	}
-
-
-	auto depth_im = std::make_shared<open3d::geometry::Image>();
-	depth_im->Prepare(width, height, 1, sizeof(uint16_t));
-
-	uint16_t * p = (uint16_t *)depth_im->data_.data();
-
-	for (int i = 0; i < height; i++) {
-		for (int k = 0; k < width; k++) {
-			*p++ = depth_mat.at<uint16_t>(i, k);
-		}
-	}
-
-	//change the second-to-last parameter here to set maximum distance
-	auto rgbd_image = open3d::geometry::RGBDImage::CreateFromColorAndDepth(*color_im, *depth_im, 1000.0, max_depth, false);
-	return rgbd_image;
-}
-
-void readConfig(std::string& recon_config) {
-
-	cv::FileStorage file(recon_config, cv::FileStorage::READ);
-
-	std::cout << "Add entries to the intr.yaml to configure 3drecon parameters." << std::endl;
-
-	if (file["Recon_VoxelSize"].isReal()) {
-		file["Recon_VoxelSize"] >> voxel_size;
-  	} else {
-		std::cout << "option <3dRecon_VoxelSize> not found, setting to default 0.03" << std::endl;
-		voxel_size = 0.03;
-	}
-
-	if (file["Recon_BlockSize"].isReal()) {
-		file["Recon_BlockSize"] >> block_size;
-  	} else {
-		std::cout << "option <3dRecon_BlockSize> not found, setting to default 2.0" << std::endl;
-		block_size = 2.0;
-	}
-
-	if (file["Recon_MaxDepth"].isReal()) {
-		file["Recon_MaxDepth"] >> max_depth;
-  	} else {
-		std::cout << "option <3dRecon_MaxDepth> not found, setting to default 2.5" << std::endl;
-		max_depth = 2.5;
-	}
-
-	if (file["Recon_SaveFrames"].isInt()) {
-		int save;
-		file["Recon_SaveFrames"] >> save;
-		save_frames = (bool)save;
-  	} else {
-		std::cout << "option <3dRecon_SaveFrames> not found, setting to default true" << std::endl;
-		save_frames = true;
-	}
-
-	if (file["Recon_MeshWinWidth"].isInt()) {
-		file["Recon_MeshWinWidth"] >> mesh_view_width;
-  	} else {
-		std::cout << "option <3dRecon_MeshWinWidth> not found, setting to default 1000px" << std::endl;
-		mesh_view_width = 1000;
-	}
-
-	if (file["Recon_MeshWinHeight"].isInt()) {
-		file["Recon_MeshWinHeight"] >> mesh_view_height;
-  	} else {
-		std::cout << "option <3dRecon_MeshWinHeight> not found, setting to default 1000px" << std::endl;
-		mesh_view_height = 1000;
-	}
-
-}
-
 int main(int argc, char **argv)
 {
 
@@ -145,9 +51,12 @@ int main(int argc, char **argv)
     vio_parameters_reader.getParameters(parameters);
     OkvisSLAMSystem slam(vocabFilename, parameters);
 
-	readConfig(configFilename);
+	//readConfig(configFilename);
 
 	cv::namedWindow("image", cv::WINDOW_AUTOSIZE);
+
+	bool save_frames = true;
+	int mesh_view_width = 1000, mesh_view_height = 1000;
 
 	SaveFrame * saveFrame = new SaveFrame(frameOutput);
 
@@ -172,84 +81,24 @@ int main(int argc, char **argv)
 	okvis::Time start(0.0);
 	int id = 0;
 
-
-
 	int frame_counter = 1;
 	bool do_integration = true;
-	int max_map_index = 0;
-	int current_map_index = 0;
 
-	KeyFrameAvailableHandler saveFrameHandler([&saveFrame, &frame_counter, &do_integration, &current_map_index](MultiCameraFrame::Ptr frame) {
-		if (!do_integration || frame_counter % 3 != 0) {
-			return;
-		}
-
-		cv::Mat imRGB;
-		cv::Mat imDepth;
-
-		frame->getImage(imRGB, 3);
-
-		frame->getImage(imDepth, 4);
-
-		Eigen::Matrix4d transform(frame->T_WC(3));
-
-		saveFrame->frameWriteMapped(imRGB, imDepth, transform, frame->frameId_, current_map_index);
-	});
-	
-	if (save_frames) {
-		slam.AddKeyFrameAvailableHandler(saveFrameHandler, "saveframe");
-	}
-
-	SegmentedMesh * mesh = new SegmentedMesh(voxel_size, voxel_size * 5, open3d::pipelines::integration::TSDFVolumeColorType::RGB8, block_size);
-
-	std::vector<float> intrinsics = camera.getColorIntrinsics();
-	auto intr = open3d::camera::PinholeCameraIntrinsic(640, 480, intrinsics[0], intrinsics[1], intrinsics[2], intrinsics[3]);
-
-	FrameAvailableHandler tsdfFrameHandler([&mesh, &frame_counter, &do_integration, intr](MultiCameraFrame::Ptr frame) {
-		if (!do_integration || frame_counter % 3 != 0) {
-			return;
-		}
-
-		cout << "Integrating frame number: " << frame->frameId_ << endl;
-
-		cv::Mat color_mat;
-		cv::Mat depth_mat;
-
-
-		frame->getImage(color_mat, 3);
-		frame->getImage(depth_mat, 4);
-
-		auto rgbd_image = generateRGBDImageFromCV(color_mat, depth_mat);
-
-		mesh->Integrate(*rgbd_image, intr, frame->T_WC(3).inverse());
-	});
-
-	slam.AddFrameAvailableHandler(tsdfFrameHandler, "tsdfframe");
+	SegmentedMesh * mesh = new SegmentedMesh(configFilename, slam, &camera);
 
 	MyGUI::MeshWindow mesh_win("Mesh Viewer", mesh_view_width, mesh_view_height);
 	MyGUI::Mesh mesh_obj("mesh", mesh);
 
 	mesh_win.add_object(&mesh_obj);
 
-	std::vector<std::pair<std::shared_ptr<open3d::geometry::TriangleMesh>,
-		Eigen::Matrix4d>> vis_mesh;
-
-	FrameAvailableHandler meshHandler([&mesh_obj, &frame_counter, &do_integration](MultiCameraFrame::Ptr frame) {
-		if (!do_integration || frame_counter % 30 != 1) {
-			return;
-		}
-
-		mesh_obj.update_meshes();
-
-	});
-
-	slam.AddFrameAvailableHandler(meshHandler, "meshupdate");
-
-	FrameAvailableHandler viewHandler([&mesh_obj, &mesh_win, &frame_counter, &do_integration](MultiCameraFrame::Ptr frame) {
+	FrameAvailableHandler viewHandler([&mesh, &mesh_obj, &mesh_win, &do_integration](MultiCameraFrame::Ptr frame) {
 		Eigen::Affine3d transform(frame->T_WC(3));
 		mesh_obj.set_transform(transform.inverse());
+
 		if (mesh_win.clicked()) {
 			do_integration = !do_integration;
+			mesh->SetIntegrationEnabled(do_integration);
+
 			if (do_integration) {
 				std::cout << "----INTEGRATION ENABLED----" << endl;
 			}
@@ -261,29 +110,25 @@ int main(int argc, char **argv)
 	
 	slam.AddFrameAvailableHandler(viewHandler, "viewhandler");
 
-	KeyFrameAvailableHandler updateKFHandler([&mesh](MultiCameraFrame::Ptr frame) {
-		MapKeyFrame::Ptr kf = frame->keyframe_;
-		mesh->SetLatestKeyFrame(kf);
-	});
+	if (save_frames) {
+		KeyFrameAvailableHandler saveFrameHandler([&saveFrame, &frame_counter, &do_integration](MultiCameraFrame::Ptr frame) {
+			if (!do_integration || frame_counter % 3 != 0) {
+				return;
+			}
 
-	slam.AddKeyFrameAvailableHandler(updateKFHandler, "updatekfhandler");
+			cv::Mat imRGB;
+			cv::Mat imDepth;
 
-	SparseMapDeletionHandler spdHandler([&mesh, &max_map_index, &current_map_index](int active_map_index) {
-		mesh->DeleteMapsAfterIndex(active_map_index);
-		mesh->StartNewBlock();
-		current_map_index = active_map_index;
-	});
+			frame->getImage(imRGB, 3);
+			frame->getImage(imDepth, 4);
 
-	slam.AddSparseMapDeletionHandler(spdHandler, "mesh sp deletion");
+			Eigen::Matrix4d transform(frame->T_WC(3));
 
-	SparseMapCreationHandler spcHandler([&mesh, &max_map_index, &current_map_index](int active_map_index) {
-		mesh->SetActiveMapIndex(active_map_index);
-		mesh->StartNewBlock();
-		current_map_index = max_map_index + 1;
-		max_map_index++;
-	});
-
-	slam.AddSparseMapCreationHandler(spcHandler, "mesh sp creation");
+			saveFrame->frameWrite(imRGB, imDepth, transform, frame->frameId_);
+		});
+	
+		slam.AddKeyFrameAvailableHandler(saveFrameHandler, "saveframe");
+	}
 
 	cv::namedWindow("image");
 
@@ -303,7 +148,6 @@ int main(int argc, char **argv)
 		//Add data to SLAM system
 		slam.PushIMU(imuData);
 		slam.PushFrame(frame);
-
 
 		frame_counter++;
 
@@ -334,8 +178,11 @@ int main(int argc, char **argv)
 	for (int i = 0; i < frameIdOut.size(); i++) {
 		keyframemap[frameIdOut[i]] = traj[i];
 	}
-
 	saveFrame->updateTransforms(keyframemap);
+
+	std::vector<int> active_frames;
+	slam.getActiveFrames(active_frames);
+	saveFrame->writeActiveFrames(active_frames);
 
 	mesh->WriteMeshes();
 

@@ -41,7 +41,7 @@ namespace ark {
         /**
          * Get image size
          */
-        cv::Size getImageSize() const;
+        cv::Size getImageSize() const override;
 
         /** 
          * Dummy method
@@ -57,6 +57,8 @@ namespace ark {
         bool getImuToTime(double timestamp, std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>>& data_out);
 
         std::vector<ImuPair> getAllImu();
+
+        std::vector<float> getColorIntrinsics() override;
 
     protected:
 

@@ -16,6 +16,10 @@ namespace ark{
 
         virtual void update(MultiCameraFrame::Ptr frame) =0;
 
+        virtual std::vector<float> getColorIntrinsics() =0;
+
+        virtual cv::Size getImageSize() const =0;
+
     }; //CameraSetup
 
 } //ark

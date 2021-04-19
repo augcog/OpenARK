@@ -1,5 +1,7 @@
 #pragma once
 
+#include "CameraSetup.h"
+#include "OkvisSLAMSystem.h"
 #include "open3d/pipelines/integration/ScalableTSDFVolume.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
 #include "open3d/io/TriangleMeshIO.h"
@@ -7,22 +9,26 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/camera/PinholeCameraIntrinsic.h"
+
 #include "Types.h"
+#include "SaveFrame.h"
 #include <map>
 #include <set>
 #include <unordered_map>
 #include <mutex>
 #include <chrono>
+#include <sys/stat.h>
 
 namespace ark {
+
+	std::shared_ptr<open3d::geometry::RGBDImage> generateRGBDImageFromCV(cv::Mat color_mat, cv::Mat depth_mat, double max_depth);
 
 	class SegmentedMesh {
 
 	public:
-		SegmentedMesh(double voxel_length,
-			double sdf_trunc,
-			open3d::pipelines::integration::TSDFVolumeColorType color_type,
-			double block_length);
+		SegmentedMesh(std::string& recon_config, OkvisSLAMSystem& slam, CameraSetup* camera, bool blocking = true);
+		SegmentedMesh(std::string& recon_config);
+		SegmentedMesh();
 
 		//~SegmentedMesh();
 
@@ -53,28 +59,44 @@ namespace ark {
 		std::vector<int> get_kf_ids();
 		void StartNewBlock();
 		void SetActiveMapIndex(int map_index);
-		void DeleteMapsAfterIndex(int map_index);
-		void Render(std::vector<std::vector<Eigen::Vector3d>> &mesh_vertices, std::vector<std::vector<Eigen::Vector3d>> &mesh_colors, 
-		std::vector<std::vector<Eigen::Vector3i>> &mesh_triangles, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> &mesh_transforms, std::vector<int> &mesh_enabled); 
-		// Moon : Cause 4 = Cause 2.a + Cause 3.
+
+		std::tuple<std::shared_ptr<std::vector<std::vector<Eigen::Vector3d>>>, 
+			std::shared_ptr<std::vector<std::vector<Eigen::Vector3d>>>,
+			std::shared_ptr<std::vector<std::vector<Eigen::Vector3i>>>, 
+			std::shared_ptr<std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>, std::shared_ptr<std::vector<int>>> GetOutputVectors(); // Moon: applied eigen syntax in PR (all-inclusive)
+
+		void AddRenderMutex(std::mutex* render_mutex, std::string render_mutex_key);
+		void RemoveRenderMutex(std::string render_mutex_key);
+
 		void WriteMeshes();
 
-	public:
-		double block_length_;
-		double sdf_trunc_;
-		double voxel_length_;
-		open3d::pipelines::integration::TSDFVolumeColorType color_type_;
+		void SetIntegrationEnabled(bool enabled);
 
+	public:
+		open3d::pipelines::integration::TSDFVolumeColorType color_type_ = open3d::pipelines::integration::TSDFVolumeColorType::RGB8;
+		int integration_frame_stride_ = 3;
+		int extraction_frame_stride_ = 60;
+
+		int camera_height_, camera_width_;
 
 	private:
+
+		//initialize
+		void Initialize(std::string& recon_config, bool blocking);
+
+		//setup sets up all callbacks
+		void Setup(OkvisSLAMSystem& slam, CameraSetup* camera);
+
 		Eigen::Vector3i LocateBlock(const Eigen::Vector3d &point) {
 			return Eigen::Vector3i((int)std::floor(point(0) / block_length_),
 				(int)std::floor(point(1) / block_length_),
 				(int)std::floor(point(2) / block_length_));
 		}
 
+		void readConfig(std::string& recon_config);
 		void UpdateActiveVolume(Eigen::Matrix4d extrinsic);
 		void CombineMeshes(std::shared_ptr<open3d::geometry::TriangleMesh>& output_mesh, std::shared_ptr<open3d::geometry::TriangleMesh> mesh_to_combine);
+		void UpdateOutputVectors();
 
 
 		//stores triangles meshes of completed reconstructed blocks
@@ -90,15 +112,29 @@ namespace ark {
 
 		MapKeyFrame::Ptr latest_keyframe;
 		int active_map_index = 0;
-		int archive_index = -1;
 
 		bool start_new_block = false;
 
-		//temp for debug purposes
-		int counter = 0;
+		int frame_counter_ = 1;
 
 		std::chrono::system_clock::time_point latest_loop_closure = std::chrono::system_clock::now();
 		float time_threshold = 1.0;
+
+
+		double block_length_;
+		double sdf_trunc_;
+		double voxel_length_;
+		bool blocking_;
+		double max_depth_;
+		bool do_integration_;
+
+		std::shared_ptr<std::vector<std::vector<Eigen::Vector3d>>> mesh_vertices;
+		std::shared_ptr<std::vector<std::vector<Eigen::Vector3d>>> mesh_colors;
+		std::shared_ptr<std::vector<std::vector<Eigen::Vector3i>>> mesh_triangles;
+		std::shared_ptr<std::vector<Eigen::Matrix4d>> mesh_transforms;
+		std::shared_ptr<std::vector<int>> mesh_enabled;
+
+		std::unordered_map<std::string, std::mutex *> render_mutexes;
 
 	protected:
 		std::mutex keyFrameLock;
