@@ -40,7 +40,16 @@ int main(int argc, char **argv)
 	if (argc > 3) frameOutput = argv[3];
 	else frameOutput = "./frames/";
 
-	OkvisSLAMSystem slam(vocabFilename, configFilename);
+	okvis::VioParameters parameters;
+    okvis::VioParametersReader vio_parameters_reader;
+    try {
+        vio_parameters_reader.readConfigFile(configFilename);
+    }
+    catch (okvis::VioParametersReader::Exception ex) {
+        std::cerr << ex.what() << "\n";
+    }
+    vio_parameters_reader.getParameters(parameters);
+    OkvisSLAMSystem slam(vocabFilename, parameters);
 
 	//readConfig(configFilename);
 
@@ -130,10 +139,10 @@ int main(int argc, char **argv)
 
 		//Get current camera frame
 		MultiCameraFrame::Ptr frame(new MultiCameraFrame);
-		camera.update(*frame);
+		camera.update(frame);
 
-		//Get or wait for IMU Data
-		std::vector<ImuPair> imuData;
+		//Get or wait for IMU Data until current frame 
+		std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>> imuData;
 		camera.getImuToTime(frame->timestamp_, imuData);
 
 		//Add data to SLAM system
@@ -160,11 +169,12 @@ int main(int argc, char **argv)
 	cout << "updating transforms" << endl;
 
 	std::vector<int> frameIdOut;
-	std::vector<Eigen::Matrix4d> traj;
+	std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> traj; // Moon, Cause 2.a STL with FSVEO.
 
 	slam.getMappedTrajectory(frameIdOut, traj);
 
-	std::map<int, Eigen::Matrix4d> keyframemap;
+	std::map<int, Eigen::Matrix4d, std::less<int>, Eigen::aligned_allocator<std::pair<const int, Eigen::Matrix4d>>> keyframemap; // Moon, Cause 2.1 STL with FSVEO.
+
 	for (int i = 0; i < frameIdOut.size(); i++) {
 		keyframemap[frameIdOut[i]] = traj[i];
 	}

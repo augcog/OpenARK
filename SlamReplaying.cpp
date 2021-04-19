@@ -60,8 +60,20 @@ int main(int argc, char **argv)
         dataPath = path(argv[4]);
     }
 
-    OkvisSLAMSystem slam(vocabFilename, configFilename);
+    printf("initing params\n");
+    fflush(stdout);
 
+    okvis::VioParameters parameters;
+    okvis::VioParametersReader vio_parameters_reader;
+    try {
+        vio_parameters_reader.readConfigFile(configFilename);
+    }
+    catch (okvis::VioParametersReader::Exception ex) {
+        std::cerr << ex.what() << "\n";
+    }
+    vio_parameters_reader.getParameters(parameters);
+    OkvisSLAMSystem slam(vocabFilename, parameters);
+    
     //setup display
     if (!MyGUI::Manager::init())
     {
@@ -89,9 +101,9 @@ int main(int argc, char **argv)
     traj_win.add_object(&axis2);
     traj_win.add_object(&grid1);
     ar_win.add_object(&axis1);
-    std::vector<MyGUI::Object *> cubes;
-    std::vector<Eigen::Matrix4d> T_K_cubes;
-    std::vector<MapKeyFrame::Ptr> K_cubes;
+    std::vector<MyGUI::Object *> cubes; // Moon : Cause 2. b This line might be wrong. MyGUI::Object is also a class having FSVEO.But it's a pointer of that. So not sure.
+    std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> T_K_cubes; // Moon : Cause 2.a
+    std::vector<MapKeyFrame::Ptr, Eigen::aligned_allocator<MapKeyFrame::Ptr>> K_cubes; // Moon : Cause 2.b. MayKeyFrame is a class having members of FSVEO
 
     const bool hideInactiveMaps = true;
 
@@ -103,7 +115,7 @@ int main(int argc, char **argv)
 
         if (pathMap.find(mapIndex) == pathMap.end()) {
             string name = "path"+std::to_string(mapIndex);
-            pathMap[mapIndex] = new MyGUI::Path{name, Eigen::Vector3d(1, 0, 0)};
+            pathMap[mapIndex] = new MyGUI::Path{name, Eigen::Vector3d(1, 0, 0)}; // Moon : fine.
             traj_win.add_object(pathMap[mapIndex]);
         }
         if (lastMapIndex_path != mapIndex) {
@@ -137,7 +149,7 @@ int main(int argc, char **argv)
     //slam.AddKeyFrameAvailableHandler(kfHandler, "saving");
 
     LoopClosureDetectedHandler loopHandler([&](void) {
-        std::vector<Eigen::Matrix4d> traj;
+        std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> traj; // Moon : Cause 2.b
         slam.getTrajectory(traj);
         const auto mapIndex = slam.getActiveMapIndex();
         pathMap[mapIndex]->clear();
@@ -148,7 +160,7 @@ int main(int argc, char **argv)
         for (size_t i = 0; i < cubes.size(); i++)
         {
             if (K_cubes[i] != nullptr)
-                cubes[i]->set_transform(Eigen::Affine3d(K_cubes[i]->T_WS() * T_K_cubes[i]));
+                cubes[i]->set_transform(Eigen::Affine3d(K_cubes[i]->T_WS() * T_K_cubes[i])); // Moon : Cause 3.a. const + & or & might be needed.
         }
     });
     slam.AddLoopClosureDetectedHandler(loopHandler, "trajectoryUpdate");
@@ -178,7 +190,7 @@ int main(int argc, char **argv)
         {
             //Get current camera frame
             MultiCameraFrame::Ptr frame(new MultiCameraFrame);
-            camera.update(*frame);
+            camera.update(frame);
 
             const auto frameId = frame->frameId_;
             if (frameId < 0) {
@@ -193,7 +205,7 @@ int main(int argc, char **argv)
             cv::imshow(std::string(camera.getModelName()) + " Infrared", infrared);
             cv::imshow(std::string(camera.getModelName()) + " Depth", depth);
 
-            std::vector<ImuPair> imuData;
+            std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>> imuData;
             camera.getImuToTime(frame->timestamp_, imuData);
 
             //Add data to SLAM system
@@ -210,7 +222,7 @@ int main(int argc, char **argv)
         {
             std::cout << "ex catched\n";
         }
-        const auto isReset = slam.okvis_estimator_->isReset();
+        const auto isReset = slam.okvis_estimator_.isReset();
         const auto mapIndex = slam.getActiveMapIndex();
         if (mapIndex != lastMapIndex) {
             lastMapIndex = mapIndex;

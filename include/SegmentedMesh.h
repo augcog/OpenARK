@@ -2,13 +2,14 @@
 
 #include "CameraSetup.h"
 #include "OkvisSLAMSystem.h"
-#include "Open3D/Integration/ScalableTSDFVolume.h"
-#include "Open3D/Visualization/Utility/DrawGeometry.h"
-#include "Open3D/IO/ClassIO/TriangleMeshIO.h"
-#include "Open3D/IO/ClassIO/ImageIO.h"
-#include "Open3D/geometry/PointCloud.h"
-#include "Open3D/geometry/TriangleMesh.h"
-#include "Open3D/camera/PinholeCameraIntrinsic.h"
+#include "open3d/pipelines/integration/ScalableTSDFVolume.h"
+#include "open3d/visualization/utility/DrawGeometry.h"
+#include "open3d/io/TriangleMeshIO.h"
+#include "open3d/io/ImageIO.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/TriangleMesh.h"
+#include "open3d/camera/PinholeCameraIntrinsic.h"
+
 #include "Types.h"
 #include "SaveFrame.h"
 #include <map>
@@ -53,7 +54,7 @@ namespace ark {
 		std::shared_ptr<open3d::geometry::TriangleMesh> ExtractTotalTriangleMesh();
 		std::shared_ptr<open3d::geometry::PointCloud> ExtractCurrentVoxelPointCloud();
 		std::vector<std::pair<std::shared_ptr<open3d::geometry::TriangleMesh>, 
-			Eigen::Matrix4d>> GetTriangleMeshes();
+			Eigen::Matrix4d>> GetTriangleMeshes(); // Cause 2.C : Double STL. Cause 2.a : STL containers on FSVEO. This line is wrong, should be fixed.
 		void SetLatestKeyFrame(MapKeyFrame::Ptr frame);
 		std::vector<int> get_kf_ids();
 		void StartNewBlock();
@@ -62,16 +63,17 @@ namespace ark {
 		std::tuple<std::shared_ptr<std::vector<std::vector<Eigen::Vector3d>>>, 
 			std::shared_ptr<std::vector<std::vector<Eigen::Vector3d>>>,
 			std::shared_ptr<std::vector<std::vector<Eigen::Vector3i>>>, 
-			std::shared_ptr<std::vector<Eigen::Matrix4d>>, std::shared_ptr<std::vector<int>>> GetOutputVectors();
+			std::shared_ptr<std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>, std::shared_ptr<std::vector<int>>> GetOutputVectors(); // Moon: applied eigen syntax in PR (all-inclusive)
 
 		void AddRenderMutex(std::mutex* render_mutex, std::string render_mutex_key);
 		void RemoveRenderMutex(std::string render_mutex_key);
+
 		void WriteMeshes();
 
 		void SetIntegrationEnabled(bool enabled);
 
 	public:
-		open3d::integration::TSDFVolumeColorType color_type_ = open3d::integration::TSDFVolumeColorType::RGB8;
+		open3d::pipelines::integration::TSDFVolumeColorType color_type_ = open3d::pipelines::integration::TSDFVolumeColorType::RGB8;
 		int integration_frame_stride_ = 3;
 		int extraction_frame_stride_ = 60;
 
@@ -102,7 +104,7 @@ namespace ark {
 
 
 		//stores current scalable tsdf volume
-		open3d::integration::ScalableTSDFVolume * active_volume;
+		open3d::pipelines::integration::ScalableTSDFVolume * active_volume;
 		MapKeyFrame::Ptr active_volume_keyframe;
 		int active_volume_map_index = 0;
 

@@ -34,9 +34,9 @@ namespace ark {
         };
 
     public:
-        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
         OkvisSLAMSystem(const std::string &strVocFile, const std::string &strSettingsFile);
+
+        OkvisSLAMSystem(const std::string &strVocFile, okvis::VioParameters& parameters);
 
         //void PushFrame(const std::vector<cv::Mat>& images, const double &timestamp);
 
@@ -44,11 +44,11 @@ namespace ark {
 
         void PushFrame(const MultiCameraFrame::Ptr frame);
 
-        void PushIMU(const std::vector<ImuPair>& imu);
+        void PushIMU(const std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>>& imu);
 
         void PushIMU(const ImuPair& imu);
 
-        void PushIMU(double timestamp, const Eigen::Vector3d& accel, const Eigen::Vector3d gyro);
+        void PushIMU(double timestamp, const Eigen::Vector3d& accel, const Eigen::Vector3d& gyro);
 
         void Start();
 
@@ -62,9 +62,9 @@ namespace ark {
 
         void getActiveFrames(std::vector<int>& frame_ids);
 
-        void getTrajectory(std::vector<Eigen::Matrix4d>& trajOut);
+        void getTrajectory(std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut); // Moon: Cause 4 = Cause 2.a + Cause 3.
 
-		void getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d>& trajOut);
+		void getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut); // Moon: Cause 4 = Cause 2.a + Cause 3.
         
         ~OkvisSLAMSystem();
 
@@ -74,6 +74,7 @@ namespace ark {
         int getActiveMapIndex() {
             return active_map_index;
         }
+      
         std::shared_ptr<okvis::ThreadedKFVio> okvis_estimator_;
 
         std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> getMap(int index) {
@@ -133,6 +134,8 @@ namespace ark {
         static const int kMapCreationCooldownFrames_ = 15;
         static const int kMinimumKeyframes_ = 20;
 
+    public:
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     }; // OkvisSLAMSystem
 
 }//ark

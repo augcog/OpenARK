@@ -26,7 +26,7 @@ public:
             int num_iterations,
             int& num_inliers_out,
             std::vector<bool>& inliers_out,
-            Eigen::Affine3d& transform_out){
+            Eigen::Affine3d transform_out){ // Moon: Looks fine.
 
         //We need at least 3 samples to compute a transform
         if(num_samples<3){

@@ -28,13 +28,13 @@ void MockD435iCamera::start()
     imuStream = ifstream(imuTxtPath.string());
     timestampStream = ifstream(timestampTxtPath.string());
     {
-        auto &intrinStream = ifstream(intrinFilePath.string());
+        auto intrinStream = ifstream(intrinFilePath.string()); // Moon : This change might be wrong.
         boost::archive::text_iarchive ia(intrinStream);
         ia >> depthIntrinsics;
 
         std::cout << "depthIntrin: fx: " << depthIntrinsics.fx << " fy: " << depthIntrinsics.fy << " ppx: " << depthIntrinsics.ppx << " ppy: " << depthIntrinsics.ppy << '\n';
 
-        auto &metaStream = ifstream(metaTxtPath.string());
+        auto metaStream = ifstream(metaTxtPath.string()); // Moon : This change might be wrong.
         std::string ph;
         metaStream >> ph >> scale;
         std::cout << "scale: " << scale << "\n";
@@ -42,7 +42,7 @@ void MockD435iCamera::start()
     }
 }
 
-bool MockD435iCamera::getImuToTime(double timestamp, std::vector<ImuPair> &data_out)
+bool MockD435iCamera::getImuToTime(double timestamp, std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>> &data_out)
 {
     std::string line1;
     std::string line2;
@@ -129,13 +129,13 @@ void MockD435iCamera::project(const cv::Mat &depth_frame, cv::Mat &xyz_map)
     }
 }
 
-void MockD435iCamera::update(MultiCameraFrame &frame)
-{
+void MockD435iCamera::update(MultiCameraFrame::Ptr frame)
+{   
     std::string line;
     if (!std::getline(timestampStream, line))
     {
         std::cout << "Unable to read form data or data end reached\n";
-        frame.frameId_ = -1;
+        frame->frameId_ = -1;
         return;
     }
     auto ss = std::stringstream(line);
@@ -143,8 +143,8 @@ void MockD435iCamera::update(MultiCameraFrame &frame)
     double timestamp;
     ss >> frameId >> timestamp;
 
-    frame.frameId_ = frameId;
-    frame.timestamp_ = timestamp;
+    frame->frameId_ = frameId;
+    frame->timestamp_ = timestamp;
     if (startTime == 0)
     {
         startTime = timestamp;
@@ -157,16 +157,16 @@ void MockD435iCamera::update(MultiCameraFrame &frame)
     std::string fileName = fileNamess.str();
 
     std::vector<path> pathList{infraredDir, infrared2Dir, depthDir, infraredDir, depthDir};
-    frame.images_.resize(pathList.size());
+    frame->images_.resize(pathList.size());
 
     // for (auto i = 0; i < pathList.size(); i++)
     // {
     //     frame.images_[i] = loadImg(pathList[i] / fileName);
     // }
-    frame.images_[0] = cv::imread((pathList[0] / fileName).string(), cv::IMREAD_GRAYSCALE | cv::IMREAD_ANYDEPTH);
-    frame.images_[1] = cv::imread((pathList[1] / fileName).string(), cv::IMREAD_GRAYSCALE | cv::IMREAD_ANYDEPTH);
-    frame.images_[3] = cv::imread((pathList[3] / fileName).string(), cv::IMREAD_GRAYSCALE | cv::IMREAD_ANYDEPTH);
-    frame.images_[4] = cv::imread((pathList[4] / fileName).string(), cv::IMREAD_GRAYSCALE | cv::IMREAD_ANYDEPTH);
+    frame->images_[0] = cv::imread((pathList[0] / fileName).string(), cv::IMREAD_GRAYSCALE | cv::IMREAD_ANYDEPTH);
+    frame->images_[1] = cv::imread((pathList[1] / fileName).string(), cv::IMREAD_GRAYSCALE | cv::IMREAD_ANYDEPTH);
+    frame->images_[3] = cv::imread((pathList[3] / fileName).string(), cv::IMREAD_GRAYSCALE | cv::IMREAD_ANYDEPTH);
+    frame->images_[4] = cv::imread((pathList[4] / fileName).string(), cv::IMREAD_GRAYSCALE | cv::IMREAD_ANYDEPTH);
 
     // project the point cloud at 2
     // TODO: should we mock the block time as well?
@@ -176,9 +176,9 @@ void MockD435iCamera::update(MultiCameraFrame &frame)
     // std::cout << "RGB Size: " << frame.images_[3].total() << " type: " << frame.images_[3].type() << "\n";
     // std::cout << "DEPTH Size: " << frame.images_[4].total() << " type: " << frame.images_[4].type() << "\n";
 
-    frame.images_[2] = cv::Mat(cv::Size(width,height), CV_32FC3);
-    project(frame.images_[4], frame.images_[2]);
-    frame.images_[2] = frame.images_[2]*scale;
+    frame->images_[2] = cv::Mat(cv::Size(width,height), CV_32FC3);
+    project(frame->images_[4], frame->images_[2]);
+    frame->images_[2] = frame->images_[2]*scale;
 
     // std::cout << "Depth cloud: " << frame.images_[2].total() << "\n";
 }

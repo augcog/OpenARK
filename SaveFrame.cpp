@@ -14,7 +14,7 @@ Esther commented
 #include <mutex>
 #include <iostream>
 #include <fstream>
-#include <direct.h>
+#include <boost/filesystem.hpp>
 
 //#include <MathUtils.h>
 //#include <pcl/filters/statistical_outlier_removal.h>
@@ -27,8 +27,8 @@ Esther commented
 namespace ark {
 
     void createFolder(std::string folderPath){
-		mkdir(folderPath.c_str());
-		std::cout << folderPath << "dir made" << std::endl;
+        boost::filesystem::create_directories(folderPath.c_str());
+        std::cout << folderPath << "dir made" << std::endl;
     }
 
 
@@ -48,14 +48,14 @@ namespace ark {
 
     }
 
-    void SaveFrame::frameWrite(cv::Mat imRGB, cv::Mat depth, Eigen::Matrix4d traj, int frameId){
+    void SaveFrame::frameWrite(const cv::Mat& imRGB, const cv::Mat& depth, const Eigen::Matrix4d& traj, int frameId){ // Moon : Cause 3. Pass by reference required for FXVEO. const looks fine here.
 
 		frame_ids.push_back(frameId);
 
 		cv::Mat imBGR;
         cv::cvtColor(imRGB, imBGR, CV_RGB2BGR);
-        cv::imwrite(rgbPath + std::to_string(frameId) + ".jpg", imBGR);
 
+        cv::imwrite(rgbPath + std::to_string(frameId) + ".png", imBGR);
         cv::imwrite(depthPath + std::to_string(frameId) + ".png", depth);
 
 		std::ofstream file(tcwPath + std::to_string(frameId) + ".txt");
@@ -66,14 +66,14 @@ namespace ark {
 		file.close();
     }
 
-    void SaveFrame::frameWriteMapped(cv::Mat imRGB, cv::Mat depth, Eigen::Matrix4d traj, int frameId, int mapId) {
+    void SaveFrame::frameWriteMapped(const cv::Mat& imRGB, const cv::Mat& depth, const Eigen::Matrix4d& traj, int frameId, int mapId) { // Moon : Cause 3. Pass by reference required for FXVEO. const looks fine here.
 
         frame_ids.push_back(frameId);
 
         cv::Mat imBGR;
         cv::cvtColor(imRGB, imBGR, CV_RGB2BGR);
-        cv::imwrite(rgbPath + std::to_string(frameId) + ".jpg", imBGR);
 
+        cv::imwrite(rgbPath + std::to_string(frameId) + ".png", imBGR);
         cv::imwrite(depthPath + std::to_string(frameId) + ".png", depth);
 
         std::ofstream file(tcwPath + std::to_string(frameId) + ".txt");
@@ -102,8 +102,9 @@ namespace ark {
         }
         file1.close();
     }
-
-	void SaveFrame::updateTransforms(std::map<int, Eigen::Matrix4d> keyframemap) {
+	  void SaveFrame::updateTransforms(std::map<int, Eigen::Matrix4d, std::less<int>, Eigen::aligned_allocator<std::pair<const int, Eigen::Matrix4d>>> &keyframemap) {
+        // Moon : Cause 4 = Cause 2.a + Cause 3.
+	  //Moon: void SaveFrame::updateTransforms(std::map<int, Eigen::Matrix4d> keyframemap) {
 
 		printf("updating transforms inside file\n");
 
