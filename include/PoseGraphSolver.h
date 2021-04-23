@@ -10,6 +10,7 @@
 #include <Eigen/Geometry>
 #include "ceres/ceres.h"
 #include <atomic>
+#include <mutex>
 
 namespace ark{
 

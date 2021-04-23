@@ -2,84 +2,11 @@
 #include "OkvisSLAMSystem.h"
 
 namespace ark {
+
     OkvisSLAMSystem::OkvisSLAMSystem(const std::string & strVocFile, const std::string & strSettingsFile) :
         start_(0.0), t_imu_(0.0), deltaT_(1.0), num_frames_(0), kill(false), 
         sparse_maps_(), active_map_index(-1), map_id_counter_(0), new_map_checker(false),map_timer(0),
         strVocFile(strVocFile), matcher_(nullptr), bowId_(0), lastLoopClosureTimestamp_(0) {
-
-        createNewMap();
-
-        //initialize Visual odometry
-        //okvis_estimator_ = std::make_shared<okvis::ThreadedKFVio>(parameters_);
-
-        //okvis_estimator_ = std::shared_ptr<okvis::ThreadedKFVio>(new okvis::ThreadedKFVio(parameters_));
-        //okvis_estimator_ = std::allocate_shared<okvis::ThreadedKFVio>(Eigen::aligned_allocator<okvis::ThreadedKFVio>(), parameters_);
-
-        printf("finished constructor of tkfv\n");
-        fflush(stdout);
-
-        okvis_estimator_.setBlocking(true);
-
-        //Okvis's outframe is our inframe
-        auto frame_callback = [this](const okvis::Time& timestamp, okvis::OutFrameData::Ptr frame_data) {
-            frame_data_queue_.enqueue({ frame_data,timestamp });
-        };
-
-        okvis_estimator_.setFrameCallback(frame_callback);
-
-        //at thread to pull from queue and call our own callbacks
-        frameConsumerThread_ = std::thread(&OkvisSLAMSystem::FrameConsumerLoop, this);
-
-        frame_data_queue_.clear();
-        frame_queue_.clear();
-        std::cout << "SLAM Initialized\n";
-        fflush(stdout);
-
-    }
-
-    OkvisSLAMSystem::OkvisSLAMSystem(const std::string & strVocFile, okvis::VioParameters& parameters) :
-        start_(0.0), t_imu_(0.0), deltaT_(1.0), num_frames_(0), kill(false), 
-        sparse_map_vector(), active_map_index(-1), new_map_checker(false),map_timer(0), strVocFile(strVocFile), okvis_estimator_(parameters) {
-
-        parameters_ = parameters;
-
-        setEnableLoopClosure(parameters_.loopClosureParameters.enabled,strVocFile,true, new brisk::BruteForceMatcher());
-        createNewMap();
-
-        //initialize Visual odometry
-        //okvis_estimator_ = std::make_shared<okvis::ThreadedKFVio>(parameters_);
-
-        //okvis_estimator_ = std::shared_ptr<okvis::ThreadedKFVio>(new okvis::ThreadedKFVio(parameters_));
-        //okvis_estimator_ = std::allocate_shared<okvis::ThreadedKFVio>(Eigen::aligned_allocator<okvis::ThreadedKFVio>(), parameters_);
-
-        printf("finished constructor of tkfv\n");
-        fflush(stdout);
-
-        okvis_estimator_.setBlocking(true);
-
-        //Okvis's outframe is our inframe
-        auto frame_callback = [this](const okvis::Time& timestamp, okvis::OutFrameData::Ptr frame_data) {
-            frame_data_queue_.enqueue({ frame_data,timestamp });
-        };
-
-        okvis_estimator_.setFrameCallback(frame_callback);
-
-        //at thread to pull from queue and call our own callbacks
-        frameConsumerThread_ = std::thread(&OkvisSLAMSystem::FrameConsumerLoop, this);
-
-        frame_data_queue_.clear();
-        frame_queue_.clear();
-        std::cout << "SLAM Initialized\n";
-        fflush(stdout);
-
-    }
-
-    okvis::VioParameters& OkvisSLAMSystem::initParams(const std::string & strSettingsFile) {
-
-        printf("initing params\n");
-        fflush(stdout);
-
-        std::cout << strSettingsFile << std::endl;
 
         okvis::VioParametersReader vio_parameters_reader;
         try {
@@ -87,17 +14,32 @@ namespace ark {
         }
         catch (okvis::VioParametersReader::Exception ex) {
             std::cerr << ex.what() << "\n";
-            return parameters_;
+            return;
         }
-
-        printf("getting parametrs, putting into parameters");
-        fflush(stdout);
-
 
         //okvis::VioParameters parameters;
         vio_parameters_reader.getParameters(parameters_);
 
-        return parameters_;
+        setEnableLoopClosure(parameters_.loopClosureParameters.enabled,strVocFile,true, new brisk::BruteForceMatcher());
+        createNewMap();
+
+        //initialize Visual odometry
+        okvis_estimator_ = std::make_shared<okvis::ThreadedKFVio>(parameters_);
+        okvis_estimator_->setBlocking(true);
+
+        //Okvis's outframe is our inframe
+        auto frame_callback = [this](const okvis::Time& timestamp, okvis::OutFrameData::Ptr frame_data) {
+            frame_data_queue_.enqueue({ frame_data,timestamp });
+        };
+
+        okvis_estimator_->setFrameCallback(frame_callback);
+
+        //at thread to pull from queue and call our own callbacks
+        frameConsumerThread_ = std::thread(&OkvisSLAMSystem::FrameConsumerLoop, this);
+
+        frame_data_queue_.clear();
+        frame_queue_.clear();
+        std::cout << "SLAM Initialized\n";
     }
 
     void OkvisSLAMSystem::Start() {
@@ -110,7 +52,7 @@ namespace ark {
             //Get processed frame data from OKVIS
             StampedFrameData frame_data;
             while (!frame_data_queue_.try_dequeue(&frame_data)) {
-                if (okvis_estimator_->isReset() && !new_map_checker) { // Moon :if (okvis_estimator_.isReset() && !new_map_checker)
+                if (okvis_estimator_->isReset() && !new_map_checker) {
                     if(map_timer >= kMapCreationCooldownFrames_)
                     {
                         cout<<"Created new map"<<endl;
@@ -119,12 +61,12 @@ namespace ark {
                     }
                     map_timer=0;
                     
-                } else if (!okvis_estimator_.isReset() && new_map_checker) {
+                } else if (!okvis_estimator_->isReset() && new_map_checker) {
                     frame_queue_.clear();
                     frame_data_queue_.clear();
                     new_map_checker = false;
                 }
-                if (okvis_estimator_.isReset()) {
+                if (okvis_estimator_->isReset()) {
                     frame_queue_.clear();
                     frame_data_queue_.clear();
                 }
@@ -286,12 +228,49 @@ namespace ark {
         }
     }
 
-    void OkvisSLAMSystem::PushFrame(const MultiCameraFrame::Ptr frame){
+    /*void OkvisSLAMSystem::PushFrame(const std::vector<cv::Mat>& images, const double &timestamp) {
+        if (okvis_estimator_ == nullptr)
+            return;
+        okvis::Time t_image(timestamp / 1e9);
+        if (start_ == okvis::Time(0.0)) {
+            start_ = t_image;
+        }
 
-        std::cout << "pushing frame" << std::endl;
-        fflush(stdout);
+        if (t_image - start_ > deltaT_) {
+            if(mMapFrameAvailableHandler.size()>0){
+                frame_queue_.enqueue({ images,t_image,num_frames_ });
+            }
+            num_frames_++;
+            for (size_t i = 0; i < images.size(); i++) {
+                if (i < parameters_.nCameraSystem.numCameras()){
+                    //printf("add image: %i\n", i);
+                    okvis_estimator_->addImage(t_image, i, images[i]);
+                }
+            }
+        }
+    }
 
-        if (stop_requested)
+    void OkvisSLAMSystem::PushFrame(const cv::Mat image, const double &timestamp) {
+        if (okvis_estimator_ == nullptr)
+            return;
+        okvis::Time t_image(timestamp / 1e9);
+        if (start_ == okvis::Time(0.0)) {
+            start_ = t_image;
+        }
+
+        if (t_image - start_ > deltaT_) {
+            std::vector<cv::Mat> images;
+            images.push_back(image);
+            if(mMapFrameAvailableHandler.size()>0){
+                frame_queue_.enqueue({ images,t_image,num_frames_ });
+            }
+            num_frames_++;
+            okvis_estimator_->addImage(t_image, 0, image);
+        }
+    }*/
+
+    void OkvisSLAMSystem::PushFrame(MultiCameraFrame::Ptr frame){
+        if (okvis_estimator_ == nullptr)
             return;
         okvis::Time t_image(frame->timestamp_ / 1e9);
         if (start_ == okvis::Time(0.0)) {
@@ -305,40 +284,34 @@ namespace ark {
             num_frames_++;
             for (size_t i = 0; i < frame->images_.size(); i++) {
                 if (i < parameters_.nCameraSystem.numCameras()){
-                    printf("add image: %i\n", i);
-                    okvis_estimator_.addImage(t_image, i, frame->images_[i]);
+                    //printf("add image: %i\n", i);
+                    okvis_estimator_->addImage(t_image, i, frame->images_[i]);
                 }
             }
-        }
-        std::cout << "finish pushing frame" << std::endl;
-        fflush(stdout);   
+        }   
     }
 
     void OkvisSLAMSystem::PushIMU(const std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>>& imu) {
-        std::cout << "pushing imu" << std::endl;
-        fflush(stdout);
-        if (stop_requested) return;
+        if (okvis_estimator_ == nullptr) return;
         for (size_t i = 0; i < imu.size(); i++) {
             PushIMU(imu[i]);
         }
-        std::cout << "finished pushing imu" << std::endl;
-        fflush(stdout);
     }
 
     void OkvisSLAMSystem::PushIMU(const ImuPair& imu) {
-        if (stop_requested) return;
+        if (okvis_estimator_ == nullptr) return;
         t_imu_ = okvis::Time(imu.timestamp / 1e9);
         if (t_imu_ - start_ + okvis::Duration(1.0) > deltaT_) {
             //std::cout << imu.timestamp / 1e9 << " , " << imu.accel.transpose() << " , " << imu.gyro.transpose() << std::endl;
-            okvis_estimator_.addImuMeasurement(t_imu_, imu.accel, imu.gyro);
+            okvis_estimator_->addImuMeasurement(t_imu_, imu.accel, imu.gyro);
         }
     }
 
-    void OkvisSLAMSystem::PushIMU(double timestamp, const Eigen::Vector3d& accel, const Eigen::Vector3d& gyro) {
-        if (stop_requested) return;
+    void OkvisSLAMSystem::PushIMU(double timestamp, const Eigen::Vector3d& accel, const Eigen::Vector3d gyro) {
+        if (okvis_estimator_ == nullptr) return;
         t_imu_ = okvis::Time(timestamp / 1e9);
         if (t_imu_ - start_ + okvis::Duration(1.0) > deltaT_) {
-            okvis_estimator_.addImuMeasurement(t_imu_, accel, gyro);
+            okvis_estimator_->addImuMeasurement(t_imu_, accel, gyro);
         }
     }
 
@@ -354,7 +327,6 @@ namespace ark {
         active_map_index = map_id_counter_;
         map_id_counter_ ++;
         correction_ = Eigen::Matrix4d::Identity();
-
         for (MapSparseMapCreationHandler::const_iterator callback_iter = mMapSparseMapCreationHandler.begin();
             callback_iter != mMapSparseMapCreationHandler.end(); ++callback_iter) {
             const MapSparseMapCreationHandler::value_type& pair = *callback_iter;
@@ -494,7 +466,7 @@ namespace ark {
             frame->setOptimizedTransform(correction * frame->T_WS());
             frame->T_WS_ = correction * frame->T_WS_;
             mapB->frameMap_[frame->frameId_] = frame;
-		}
+        }
 
         //adding constraints and poses to mapB's pose graph
         mapB->graph_.constraintMutex.lock();
@@ -508,7 +480,7 @@ namespace ark {
         for (auto framePair = mapA->frameMap_.begin(); framePair != mapA->frameMap_.end(); framePair++) {
             mapB->graph_.poses_.insert(std::pair<int,GraphPose>(
                 framePair->first,framePair->second->T_WS()));
-		}
+        }
         mapB->graph_.constraintMutex.unlock();
 
         //adding current keyframe to mapB and optimizing pose graph
@@ -519,9 +491,9 @@ namespace ark {
     }
 
     void OkvisSLAMSystem::display() {
-        if (stop_requested)
+        if (okvis_estimator_ == nullptr)
             return;
-        okvis_estimator_.display();
+        okvis_estimator_->display();
     }
 
     void OkvisSLAMSystem::ShutDown()
@@ -530,7 +502,7 @@ namespace ark {
         frame_data_queue_.clear();
         kill=true;
         frameConsumerThread_.join();
-        //delete okvis_estimator_;
+        okvis_estimator_.reset();
     }
 
     OkvisSLAMSystem::~OkvisSLAMSystem() {
@@ -541,19 +513,19 @@ namespace ark {
 
     void OkvisSLAMSystem::RequestStop()
     {
-        stop_requested = true;
+        okvis_estimator_ = nullptr;
     }
 
     bool OkvisSLAMSystem::IsRunning()
     {
-        return !stop_requested;
+        return okvis_estimator_ == nullptr;
     }
 
     void OkvisSLAMSystem::getActiveFrames(std::vector<int>& frame_ids){
         getActiveMap()->getFrames(frame_ids);
     }
-  
-    void OkvisSLAMSystem::getTrajectory(std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut){ // Moon: Cause 4 = Cause 2.a + Cause 3: STL used with FSVEO for passing. 
+
+    void OkvisSLAMSystem::getTrajectory(std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut){
         getActiveMap()->getTrajectory(trajOut);
     }
 
@@ -566,7 +538,7 @@ namespace ark {
         }
     }
 
-    void OkvisSLAMSystem::getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut) { // Moon: Cause 4 = Cause 2.a + Cause 3. STL vector used with FSVEO for passing.
+    void OkvisSLAMSystem::getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut) {
         for (auto it = sparse_maps_.begin(); it != sparse_maps_.end(); it++) {
             it->second->getMappedTrajectory(frameIdOut, trajOut);
         }

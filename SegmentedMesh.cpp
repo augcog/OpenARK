@@ -89,7 +89,8 @@ namespace ark {
 	}
 
 	SegmentedMesh::SegmentedMesh() {
-		Initialize(std::string(""), false);
+		std::string temp;
+		Initialize(temp, false);
 	}
 
 	void SegmentedMesh::Initialize(std::string& recon_config, bool blocking) {

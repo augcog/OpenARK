@@ -40,16 +40,7 @@ int main(int argc, char **argv)
 	if (argc > 3) frameOutput = argv[3];
 	else frameOutput = "./frames/";
 
-	okvis::VioParameters parameters;
-    okvis::VioParametersReader vio_parameters_reader;
-    try {
-        vio_parameters_reader.readConfigFile(configFilename);
-    }
-    catch (okvis::VioParametersReader::Exception ex) {
-        std::cerr << ex.what() << "\n";
-    }
-    vio_parameters_reader.getParameters(parameters);
-    OkvisSLAMSystem slam(vocabFilename, parameters);
+    OkvisSLAMSystem slam(vocabFilename, configFilename);
 
 	//readConfig(configFilename);
 
