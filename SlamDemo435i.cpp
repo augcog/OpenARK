@@ -25,8 +25,6 @@ int main(int argc, char **argv)
         deltaT = okvis::Duration(atof(argv[3]));
     }
 
-    printf("here\n");
-
     // read configuration file
     std::string configFilename;
     if (argc > 1) configFilename = argv[1];
@@ -36,19 +34,7 @@ int main(int argc, char **argv)
     if (argc > 2) vocabFilename = argv[2];
     else vocabFilename = util::resolveRootPath("config/brisk_vocab.bn");
 
-    printf("initing params\n");
-    fflush(stdout);
-
-    okvis::VioParameters parameters;
-    okvis::VioParametersReader vio_parameters_reader;
-    try {
-        vio_parameters_reader.readConfigFile(configFilename);
-    }
-    catch (okvis::VioParametersReader::Exception ex) {
-        std::cerr << ex.what() << "\n";
-    }
-    vio_parameters_reader.getParameters(parameters);
-    OkvisSLAMSystem slam(vocabFilename, parameters);
+    OkvisSLAMSystem slam(vocabFilename, configFilename);
 
     cv::FileStorage configFile(configFilename, cv::FileStorage::READ);
 
@@ -153,7 +139,7 @@ int main(int argc, char **argv)
     
     SparseMapMergeHandler mergeHandler([&](int deletedIndex, int currentIndex) {
         pathMap[deletedIndex]->clear();
-        std::vector<Eigen::Matrix4d> traj;
+        std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> traj;
         slam.getMap(currentIndex)->getTrajectory(traj);
         pathMap[currentIndex]->clear();
         for (size_t i = 0; i < traj.size(); i++) {
@@ -193,7 +179,7 @@ int main(int argc, char **argv)
         {
             std::cout << "An exception caught.\n";
         }
-        const auto isReset = slam.okvis_estimator_.isReset();
+        const auto isReset = slam.okvis_estimator_->isReset();
         const auto mapIndex = slam.getActiveMapIndex();
         if (mapIndex != lastMapIndex) {
             lastMapIndex = mapIndex;

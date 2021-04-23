@@ -358,7 +358,7 @@ public:
 	std::shared_ptr<std::vector<std::vector<Eigen::Vector3d>>> mesh_vertices;
     std::shared_ptr<std::vector<std::vector<Eigen::Vector3d>>> mesh_colors;
     std::shared_ptr<std::vector<std::vector<Eigen::Vector3i>>> mesh_triangles;
-    std::shared_ptr<std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> mesh_transforms; // Moon: applied eigen syntax in PR(all-inclusive) just in case.
+    std::shared_ptr<std::vector<Eigen::Matrix4d>> mesh_transforms;
     std::shared_ptr<std::vector<int>> mesh_enabled;
 
 	// //threadsafe?
