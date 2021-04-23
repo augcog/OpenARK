@@ -185,18 +185,12 @@ namespace ark {
             // Ensure the frame has space for all images
             frame->images_.resize(5);
 
-            std::cout << "getting camera frames" << std::endl;
-            fflush(stdout);
-
             // Get frames from camera
             auto frames = pipe->wait_for_frames();
             auto infrared = frames.get_infrared_frame(1);        
             auto infrared2 = frames.get_infrared_frame(2);
             auto depth = frames.get_depth_frame();
             auto color = frames.get_color_frame();
-
-            std::cout << "kinda got frames" << std::endl;
-            fflush(stdout);
 
             // Store ID for later
             frame->frameId_ = depth.get_frame_number();

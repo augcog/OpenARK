@@ -16,14 +16,14 @@ int main(int argc, char **argv)
         return -1;
     }
 
+    const bool hideInactiveMaps = true;
+
     google::InitGoogleLogging(argv[0]);
 
     okvis::Duration deltaT(0.0);
     if (argc == 4) {
         deltaT = okvis::Duration(atof(argv[3]));
     }
-
-    printf("here\n");
 
     // read configuration file
     std::string configFilename;
@@ -34,19 +34,7 @@ int main(int argc, char **argv)
     if (argc > 2) vocabFilename = argv[2];
     else vocabFilename = util::resolveRootPath("config/brisk_vocab.bn");
 
-    printf("initing params\n");
-    fflush(stdout);
-
-    okvis::VioParameters parameters;
-    okvis::VioParametersReader vio_parameters_reader;
-    try {
-        vio_parameters_reader.readConfigFile(configFilename);
-    }
-    catch (okvis::VioParametersReader::Exception ex) {
-        std::cerr << ex.what() << "\n";
-    }
-    vio_parameters_reader.getParameters(parameters);
-    OkvisSLAMSystem slam(vocabFilename, parameters);
+    OkvisSLAMSystem slam(vocabFilename, configFilename);
 
     cv::FileStorage configFile(configFilename, cv::FileStorage::READ);
 
@@ -98,17 +86,10 @@ int main(int argc, char **argv)
             pathMap[mapIndex] = new MyGUI::Path{name, Eigen::Vector3d(1, 0, 0)};
             traj_win.add_object(pathMap[mapIndex]);
         }
-        if (mapIndex < lastMapIndex_path) {
-            // pathMap[lastMapIndex_path]->clear();
-            auto it = pathMap.cbegin();
-            while(it != pathMap.cend()) {
-                auto curr = it++;
-                if (it->first > mapIndex) {
-                    it->second->clear();
-                }
-            }
-        }
         if (lastMapIndex_path != mapIndex) {
+            if (hideInactiveMaps) {
+                pathMap[lastMapIndex_path]->clear();
+            }
             lastMapIndex_path = mapIndex;
         }
         pathMap[mapIndex]->add_node(transform.translation());
@@ -145,9 +126,9 @@ int main(int argc, char **argv)
             pathMap[mapIndex]->add_node(traj[i].block<3, 1>(0, 3));
         }
         std::cout << "Loop Trajectory: \n";
-        for (const auto &node: pathMap[mapIndex]->nodes) {
+        /*for (const auto &node: pathMap[mapIndex]->nodes) {
             std::cout << node;
-        }
+        }*/
         for (size_t i = 0; i < cubes.size(); i++)
         {
             if (K_cubes[i] != nullptr)
@@ -155,6 +136,17 @@ int main(int argc, char **argv)
         }
     });
     slam.AddLoopClosureDetectedHandler(loopHandler, "trajectoryUpdate");
+    
+    SparseMapMergeHandler mergeHandler([&](int deletedIndex, int currentIndex) {
+        pathMap[deletedIndex]->clear();
+        std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> traj;
+        slam.getMap(currentIndex)->getTrajectory(traj);
+        pathMap[currentIndex]->clear();
+        for (size_t i = 0; i < traj.size(); i++) {
+            pathMap[currentIndex]->add_node(traj[i].block<3, 1>(0, 3));
+        }
+    });
+    slam.AddSparseMapMergeHandler(mergeHandler, "mergeUpdate");
     //run until display is closed
     okvis::Time start(0.0);
     // camera.start();
@@ -187,7 +179,7 @@ int main(int argc, char **argv)
         {
             std::cout << "An exception caught.\n";
         }
-        const auto isReset = slam.okvis_estimator_.isReset();
+        const auto isReset = slam.okvis_estimator_->isReset();
         const auto mapIndex = slam.getActiveMapIndex();
         if (mapIndex != lastMapIndex) {
             lastMapIndex = mapIndex;
