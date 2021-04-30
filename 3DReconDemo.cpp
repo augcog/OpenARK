@@ -160,11 +160,11 @@ int main(int argc, char **argv)
 	cout << "updating transforms" << endl;
 
 	std::vector<int> frameIdOut;
-	std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> traj; // Moon, Cause 2.a STL with FSVEO.
+	std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> traj;
 
 	slam.getMappedTrajectory(frameIdOut, traj);
 
-	std::map<int, Eigen::Matrix4d, std::less<int>, Eigen::aligned_allocator<std::pair<const int, Eigen::Matrix4d>>> keyframemap; // Moon, Cause 2.1 STL with FSVEO.
+	std::map<int, Eigen::Matrix4d, std::less<int>, Eigen::aligned_allocator<std::pair<const int, Eigen::Matrix4d>>> keyframemap;
 
 	for (int i = 0; i < frameIdOut.size(); i++) {
 		keyframemap[frameIdOut[i]] = traj[i];

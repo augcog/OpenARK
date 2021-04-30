@@ -33,7 +33,7 @@ class SparseMap {
     }
   }
 
-  void getTrajectory(std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut){ // Moon: Cause 4 = Cause 2.a + Cause 3.
+  void getTrajectory(std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut){
     trajOut.resize(frameMap_.size());
     size_t i=0;
     for(std::map<int, MapKeyFrame::Ptr>::iterator frame = frameMap_.begin(); 
@@ -42,7 +42,7 @@ class SparseMap {
     }
   }
 
-  void getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut){ // Moon: Cause 4 = Cause 2.a + Cause 3.
+  void getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut){ 
     for(std::map<int, MapKeyFrame::Ptr>::iterator frame = frameMap_.begin(); 
         frame!=frameMap_.end(); frame++){
       frameIdOut.push_back(frame->first);
@@ -111,7 +111,6 @@ public:
 
 private: 
 
- };//class SparseMap
-
+};//class SparseMap
 
 } //namespace ark

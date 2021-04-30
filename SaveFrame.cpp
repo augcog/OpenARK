@@ -1,6 +1,4 @@
-//
 // Created by yiwen on 2/2/19.
-//
 /*
 Esther commented
 - Enables online frame writing to folder for offline reconstruction later
@@ -66,7 +64,7 @@ namespace ark {
 		file.close();
     }
 
-    void SaveFrame::frameWriteMapped(const cv::Mat& imRGB, const cv::Mat& depth, const Eigen::Matrix4d& traj, int frameId, int mapId) { // Moon : Cause 3. Pass by reference required for FXVEO. const looks fine here.
+    void SaveFrame::frameWriteMapped(const cv::Mat& imRGB, const cv::Mat& depth, const Eigen::Matrix4d& traj, int frameId, int mapId) {
 
         frame_ids.push_back(frameId);
 
@@ -102,14 +100,10 @@ namespace ark {
         }
         file1.close();
     }
-	  void SaveFrame::updateTransforms(std::map<int, Eigen::Matrix4d, std::less<int>, Eigen::aligned_allocator<std::pair<const int, Eigen::Matrix4d>>> &keyframemap) {
-        // Moon : Cause 4 = Cause 2.a + Cause 3.
-	  //Moon: void SaveFrame::updateTransforms(std::map<int, Eigen::Matrix4d> keyframemap) {
 
+	void SaveFrame::updateTransforms(std::map<int, Eigen::Matrix4d, std::less<int>, Eigen::aligned_allocator<std::pair<const int, Eigen::Matrix4d>>> &keyframemap) {
 		printf("updating transforms inside file\n");
-
 		for (int frame_id : frame_ids) {
-
 			if (!keyframemap.count(frame_id))
 				continue;
 

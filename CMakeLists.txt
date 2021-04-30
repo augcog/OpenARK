@@ -1,10 +1,14 @@
 cmake_minimum_required( VERSION 3.5 )
 cmake_policy( VERSION 3.5 )
+#[[ For OpenARK Ubuntu and Jetson Xavier NX, 
+cmake_minimum_required( VERSION 3.18 )
+cmake_policy( VERSION 3.18 )
+]]
 
 project( OpenARK )
 set( OpenARK_VERSION_MAJOR 0 )
 set( OpenARK_VERSION_MINOR 9 )
-set( OpenARK_VERSION_PATCH 3 )
+set( OpenARK_VERSION_PATCH 3 )  
 set( INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include" )
 
 set( CMAKE_CXX_STACK_SIZE "10000000" )
@@ -12,6 +16,27 @@ set( CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake_modules" )
 
 if( NOT CMAKE_BUILD_TYPE )
   set( CMAKE_BUILD_TYPE Release )
+endif()
+
+message(STATUS "CMAKE_HOST_SYSTEM_PROCESSOR: ${CMAKE_HOST_SYSTEM_PROCESSOR}")
+if(${CMAKE_HOST_SYSTEM_PROCESSOR} MATCHES "arm*")
+  # NVIDIA Jetson Xavier NX 
+  add_definitions(-D__ARM_NEON__)
+  message(STATUS "Host System Processor is ${CMAKE_HOST_SYSTEM_PROCESSOR}, will attempt to use NEON.")
+endif()
+
+message(STATUS "CMAKE_HOST_SYSTEM_NAME: ${CMAKE_HOST_SYSTEM_NAME}")
+if(${CMAKE_HOST_SYSTEM_NAME} MATCHES "Linux")
+    message(STATUS "Host System Name is ${CMAKE_HOST_SYSTEM_NAME}.")
+
+    # Eigen Fix for OpenARK Ubuntu
+    add_definitions(-DEIGEN_DONT_ALIGN=1)
+    add_definitions(-DEIGEN_DONT_VECTORIZE=1)
+    message(STATUS "EIGEN_FIX_UBUNTU is activated.")
+
+    # Using Open3D 0.12.0 instead of 0.9.0 for Eigen Fix
+    add_definitions(-D__OPEN3D_V12__)
+    message(STATUS "will attempt to use Open3D 0.12.0 for Eigen Fix.")
 endif()
 
 set( LIB_NAME "OpenARK" )
@@ -26,7 +51,6 @@ set( TEST_NAME "OpenARK_test" )
 set( UNITY_PLUGIN_NAME "UnityPlugin" )
 
 # Options.
-option( EIGEN_HACK "EIGEN_HACK" ON)
 option( BUILD_HAND_DEMO "BUILD_HAND_DEMO" ON )
 option( BUILD_AVATAR_DEMO "BUILD_AVATAR_DEMO" ON)
 option( BUILD_SLAM_DEMO "BUILD_SLAM_DEMO" ON)
@@ -40,18 +64,6 @@ option( USE_AZURE_KINECT_SDK "USE_AZURE_KINECT_SDK" OFF )
 option( USE_RSSDK2 "USE_RSSDK2" OFF )
 option( USE_RSSDK "USE_RSSDK" OFF )
 option( USE_PMDSDK "USE_PMDSDK" OFF )
-
-# Eigen hack for OpenARK Ubuntu version.
-if( ${EIGEN_HACK} )
-    add_definitions(-DEIGEN_DONT_ALIGN=1)
-    add_definitions(-DEIGEN_DONT_VECTORIZE=1)
-endif()
-
-# NVIDIA Jetson Xavier NX 
-if(${CMAKE_HOST_SYSTEM_PROCESSOR} MATCHES "arm*")
-  message(STATUS "ARM processor detected, will attempt to use NEON.")
-  add_definitions(-D__ARM_NEON__)
-endif()
 
 include( CheckCXXCompilerFlag )
 CHECK_CXX_COMPILER_FLAG( "-std=c++11" COMPILER_SUPPORTS_CXX11 )
