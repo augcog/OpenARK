@@ -52,7 +52,7 @@ set( UNITY_PLUGIN_NAME "UnityPlugin" )
 
 # Options.
 option( BUILD_HAND_DEMO "BUILD_HAND_DEMO" ON )
-option( BUILD_AVATAR_DEMO "BUILD_AVATAR_DEMO" OFF)
+option( BUILD_AVATAR_DEMO "BUILD_AVATAR_DEMO" ON)
 option( BUILD_SLAM_DEMO "BUILD_SLAM_DEMO" ON)
 option( BUILD_3DRECON_DEMO "BUILD_3DRECON_DEMO" ON)
 option( BUILD_DATA_RECORDING "BUILD_DATA_RECORDING" OFF)
@@ -298,7 +298,7 @@ set(
   MockD435iCamera.cpp
   HumanDetector.cpp
   HumanBody.cpp
-  #  Avatar.cpp
+  Avatar.cpp
   glfwManager.cpp
   OkvisSLAMSystem.cpp
   SaveFrame.cpp
@@ -327,7 +327,7 @@ set(
   ${INCLUDE_DIR}/MockD435iCamera.h
   ${INCLUDE_DIR}/HumanDetector.h
   ${INCLUDE_DIR}/HumanBody.h
-  # ${INCLUDE_DIR}/Avatar.h
+  ${INCLUDE_DIR}/Avatar.h
   ${INCLUDE_DIR}/nanoflann.hpp
   ${INCLUDE_DIR}/SLAMSystem.h
   ${INCLUDE_DIR}/OkvisSLAMSystem.h

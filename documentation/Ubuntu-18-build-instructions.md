@@ -84,8 +84,7 @@ add_definitions(-DEIGEN_DONT_VECTORIZE=1)
 ```
 This will disable alignment as well as force the compiler to use c++17 standard.   
 
-When it comes to OpenARK, you can easily add the Eigen hack above by setting EIGEN_HACK option as ON in the CMakeLists.txt 
-`option( EIGEN_HACK "EIGEN_HACK" ON)`. 
+When it comes to OpenARK, the Eigen Fix is activated automatically if the host system is Linux in the CMakeLists.txt of OpenARK.
 
 Then follow the CMake instructions to build each library.
 
@@ -215,19 +214,21 @@ sudo apt-get install librealsense2-dkms librealsense2-utils librealsense2-dev li
 `modinfo uvcvideo | grep "version:" should include realsense string`
 
 ## Installing and Building OpenARK
-1. Clone our repository: `git clone https://github.com/augcog/OpenARK`, or download the latest release.  
-2. `git checkout openark-ubuntu`.     
-This already has the Eigen changes.         
-But make sure that the EIGEN_HACK option is ON.     
-`option( EIGEN_HACK "EIGEN_HACK" ON)`.      
+1. Clone our repository: `git clone https://github.com/augcog/OpenARK && cd OpenARK`, or download the latest release.  
+2. Build with CMake    
+```sh
+mkdir build && cd build
 
-3. `cd OpenARK && mkdir build && cd build` to create build directory.
+# Configure
+# > librealsense2 will be enabled by default. 
+# > Set `-DBUILD_AVATAR_DEMO` to build the avatar demo in addition to hand and SLAM
+# > Set `-DBUILD_DATA_RECORDING` to build the data recording tool 
+# > Set `-BUILD_TESTS` to build hand tests. 
+# > `-DBUILD_UNITY_PLUGIN` is not available on Linux at the moment.
+cmake .. -DCMAKE_BUILD_TYPE=Release
 
-4.. Run CMake.      
-`cmake .. -DCMAKE_BUILD_TYPE=Release`    
-librealsense2 will be enabled by default. You can add `-DBUILD_AVATAR_DEMO` to build the avatar demo in addition to hand and SLAM, `-DBUILD_DATA_RECORDING` to build the data recording tool, and `-BUILD_TESTS` to build hand tests. `-DBUILD_UNITY_PLUGIN` is not available on Linux at the moment.
-
-5. `make -j4`
+make -j$(nproc)
+```
 
 ## Running the OpenARK demo applications
 - These applications will show you how core functionalities of OpenARK work 
