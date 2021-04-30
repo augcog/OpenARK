@@ -114,9 +114,9 @@ namespace ark{
         /** Timestamp */
         double timestamp_;
         /** Original world position of the Keyframe */
-        Eigen::Matrix4d T_WS_; // Moon : a fixed-size vectorizable eigen object
+        Eigen::Matrix4d T_WS_; 
         /** Optimized world position of the Keyframe */
-        Eigen::Matrix4d T_WS_Optimized_; // Moon : a fixed-size vectorizable eigen object
+        Eigen::Matrix4d T_WS_Optimized_; 
         /** Bool checking whether the frame has been optimized */
         bool optimized_;
         /** Keypoints and Descriptors extracted by the SLAM System 
@@ -125,13 +125,13 @@ namespace ark{
         std::vector<std::vector<cv::KeyPoint > > keypoints_; 
         std::vector<cv::Mat> descriptors_;
         /** Estimated 3D feature positions of all keypoints in each image */
-        std::vector<std::vector<Eigen::Vector4d, Eigen::aligned_allocator<Eigen::Vector4d>>> keypoints3dh_C; // Moon : Cause 2.C : Double STL. This change might be wrong.
+        std::vector<std::vector<Eigen::Vector4d, Eigen::aligned_allocator<Eigen::Vector4d>>> keypoints3dh_C; 
         /** ID of the previous keyframe (may be -1 if not available) */
         int previousKeyframeId_;
         /** Pointer to the keyframe (may be nullptr if not available) */
         MapKeyFrame::Ptr previousKeyframe_;
 
-        std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> T_SC_; // Moon : Cause 2.a STL containers on FSVEO.
+        std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> T_SC_; 
 
         MapKeyFrame():
         frameId_(-1),optimized_(false),previousKeyframeId_(-1){
@@ -147,7 +147,6 @@ namespace ark{
         }
 
         const std::vector<Eigen::Vector4d, Eigen::aligned_allocator<Eigen::Vector4d>> & homogeneousKeypoints3d(int cameraIdx){ 
-            // Moon : Cause 4 = Cause 2.a but as return type This change might be wrong. Special care needed.
             return keypoints3dh_C[cameraIdx];
         }
 
@@ -159,7 +158,7 @@ namespace ark{
             } 
         }
 
-        void setOptimizedTransform(const Eigen::Matrix4d& T_WS_in){ // Moon : Fine Rule 3
+        void setOptimizedTransform(const Eigen::Matrix4d& T_WS_in){
 
             T_WS_Optimized_ = T_WS_in;
             optimized_ = true;
@@ -185,7 +184,7 @@ namespace ark{
     enum class FrameType { Depth, IR, RGB, XYZMap };
 
     /** A set of images taken on the same frame, possibly by multiple instruments/cameras */
-    class MultiCameraFrame { // Moon : Cause 1 : class having FSVEO as members.
+    class MultiCameraFrame { 
     public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         typedef std::shared_ptr<MultiCameraFrame> Ptr;
@@ -226,9 +225,9 @@ namespace ark{
         /** Transformation matrix of the sensor body in keyframe coordinates 
          ** This may be Identity if transforms not available
          ** This should be set to world coordinates if keyframeId is -1 */
-        Eigen::Matrix4d T_KS_; // Moon: fixed-size vectorizable Eigen object.
+        Eigen::Matrix4d T_KS_; 
         /** Tranformation matrices of the cameras WRT sensor body */
-        std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> T_SC_; // Moon : Cause 2.a : STL container on FSVEO
+        std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> T_SC_; 
 
         /** ID of the frame (may be -1 if not available) */
         int frameId_;
@@ -251,7 +250,7 @@ namespace ark{
 
         /** Construct a MultiCameraFrame from the given images,
           * camera system, and frame ID*/
-        MultiCameraFrame(std::vector<cv::Mat> images, const Eigen::Matrix4d& T_KS, // Moon: Cause 4 = Cause 2.a + Cause 3. This change might be wrong. const + & or & alone should be added.
+        MultiCameraFrame(std::vector<cv::Mat> images, const Eigen::Matrix4d& T_KS, 
             int frame_id = -1, int keyframe_id = -1){
             this->images_ = images;
             this->T_KS_ = T_KS;
@@ -261,7 +260,7 @@ namespace ark{
 
         /** Construct a MultiCameraFrame from the given image,
             and camera system, and frame ID */
-        MultiCameraFrame(cv::Mat image, const Eigen::Matrix4d& T_KS, // Moon: Cause 3. This change might be wrong. const + & or & alone should be added.
+        MultiCameraFrame(cv::Mat image, const Eigen::Matrix4d& T_KS,
             int frame_id = -1, int keyframe_id = -1){
             images_.push_back(image);
             this->T_KS_ = T_KS;

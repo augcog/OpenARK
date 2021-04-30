@@ -1,5 +1,6 @@
 # OpenARK
-OpenARK is an open-source wearable augmented reality (AR) system founded at UC Berkeley in 2016. The C++ based software offers innovative core functionalities to power a wide range of off-the-shelf AR components, including see-through glasses, depth cameras, and IMUs. The open-source platform includes higher-level modules to aid human-computer interaction, such as 3D gesture recognition, plane detection, avatar/pose tracking, and multi-user collaboration, and also contains fundamental tools such as AR-based camera calibration, depth-to-stereo, and SLAM, and 3D Reconstruction. Currently, it supports Intel RealSense D435i and Microsoft Azure Kinect DK. The project builds natively on both Windows and Linux.
+
+OpenARK is an open-source wearable augmented reality (AR) system founded at UC Berkeley in 2016. The C++ based software offers innovative core functionalities to power a wide range of off-the-shelf AR components, including see-through glasses, depth cameras, and IMUs. The open-source platform includes higher-level modules to aid human-computer interaction, such as 3D gesture recognition, plane detection, avatar/pose tracking, and multi-user collaboration, and also contains fundamental tools such as AR-based camera calibration, depth-to-stereo, and SLAM, and 3D Reconstruction. Currently, it supports both PMD Pico Flexx and Intel RealSense SR300 cameras. The project builds natively on both Windows and Linux.
 
 #### At a Glance,
 
@@ -23,7 +24,7 @@ OpenARK is an open-source wearable augmented reality (AR) system founded at UC B
 - etc. for the full list, see DEPENDENCIES.md
 
 ## Installation
-### Windows
+## Windows
   **New:** a dependency pack installer is now available, which accelerates the setup process. Please read
   [documentation/Windows-build-instructions-quick.md](https://github.com/augcog/OpenARK/blob/master/documentation/Windows-build-instructions-quick.md) for instructions. The installer may be found [here](openark-deps-vc14-win64.exe).
   
@@ -31,22 +32,22 @@ OpenARK is an open-source wearable augmented reality (AR) system founded at UC B
   
   [![OpenArk Windows Installation Instructions](OpenARKTitlePage.png)](https://www.youtube.com/watch?v=EPWCvhgbDUo "OpenArk Windows Installation Instructions")
   
-#### Building from source without dependency pack installer: 
+### Building from source without dependency pack installer: 
 Check the following installation document for OpenARK for Windows : [documentation/Windows-build-instructions.pdf](https://github.com/augcog/OpenARK/blob/master/documentation/Windows-build-instructions.pdf)
   
-#### Prebuilt Binaries
+### Prebuilt Binaries
 Prebuilt binaries for 64-bit Windows are available [here](https://github.com/augcog/OpenARK/releases). This is only updated for major releases.
 Both the static library (with the headers) and the demo program are included. For the SVM to work properly, the `svm/` folder must be present in the current directory OR under the directory pointed to by the OPENARK_DIR environment variable.
 
-### Linux 
+## Linux 
 Check the following installation document for OpenARK for Linux : [documentation/Linux-build-instructions.md](https://github.com/augcog/OpenARK/blob/master/documentation/Ubuntu-18-build-instructions.md)
 
-### The Avatar Module/Demo 
+## The Avatar Module/Demo 
 To use the avatar module/demo, please download the SMPL model files manually. The instructions are in [data/avatar-model/README.md](https://github.com/augcog/OpenARK/blob/master/data/avatar-model/README.md).
 You may also download the dataset sample by running `data/avatar-dataset/download.sh`.
 
-## Using OpenARK
-### Using OpenARK in a Visual Studio C++ project
+## Usage
+To use OpenARK in a Visual Studio C++ project:
 
 After setting up all the dependencies (OpenCV, PCL, etc.) according the configuration instructions, add `openark_x_x_x.lib` to `Project > MyProjectProperties > Linker > Input > Additional Dependencies`. Then add `OPENARK_DIR/include` to `C/C++ > General > Additional Include Directories`. Finally, make sure that under `C/C++ > Code Generation`, `Runtime Library` is set to `Multi-threaded DLL (/MD)`.
 
@@ -88,11 +89,15 @@ int main() {
 
 Additional sample code is available in `samplecode/`.
 
-### Testing OpenARK
+## Customization
+
+OpenARK is made for easy customization. Please feel free to build on top of this platform to fit your needs.
+
+## How to test the software
 
 Code used to run the demo video is included in HandDemo.cpp. Additional sample code can be found in /samplecode/ and you would need to replace it with the main that comes with the project solution.
 
-### Using OpenARK SLAM Demo.
+## Using OpenARK SLAM
 
 Currently OpenARK only supports the Intel Realsense D435i Camera for use with OpenARK SLAM. OpenARK SLAM requires two configuration files to run, a camera intrinsics file, and a vocab file. Examples of both files can be found in the config folder. To run the OpenARK SLAM Demo run:
 
@@ -106,7 +111,7 @@ This will generate a complete intrinsics file named `<camera name>_intr.yaml`
 
 OpenARK SLAM heavily utilizes the open source packages DBoW2, Okvis, and Ceres. Please respect their Licences and credit/cite when appropriate.  
 
-### Using OpenARK 3D Reconstruction
+## Using OpenARK 3D Reconstruction
 
 Currently OpenARK only supports the Intel Realsense D435i Camera for use with OpenARK 3D Reconstruction. OpenARK 3D Reconstruction requires two configuration files to run, a camera intrinsics file, and a vocab file. Examples of both files can be found in the config folder. It also accepts a frame output directory, which defaults to `/frames/`. To run the OpenARK 3D Reconstruction Demo run:
 
@@ -121,10 +126,6 @@ This will generate a complete intrinsics file named `<camera name>_intr.yaml`
 Offline reconstruction can be performed on the recorded data output of the application using the Python script located in `/scripts/OfflineReconstruction.py`.
 
 OpenARK 3D Reconstruction heavily utilizes the open source packages DBoW2, Okvis, Open3D, and Ceres. Please respect their Licences and credit/cite when appropriate.  
-
-### Customization
-
-OpenARK is made for easy customization. Please feel free to build on top of this platform to fit your needs.
 
 ## Known issues
 
@@ -144,4 +145,4 @@ The Center for Augmented Cognition welcomes interested industry partners to join
 ## Credits and references
 
 [Bill Zhou](http://www.billzhou.me/), [Allen Y. Yang](https://people.eecs.berkeley.edu/~yang/), [S. Shankar Sastry](http://robotics.eecs.berkeley.edu/~sastry/), [Will Huang](https://www.linkedin.com/in/hwjwill/), [Larry Yang](https://www.linkedin.com/in/larry-yang-33bab1aa/), [Eric Nguyen](https://www.linkedin.com/in/eric-nguyen-71577678/), Michelli Ni, [Peter Li](https://www.linkedin.com/in/peter-li-a770ab88/), [Jessica Jiang](https://github.com/jessicajiang), [Mona Jalal](http://monajalal.com/), [Joseph Menke](https://people.eecs.berkeley.edu/~joemenke/),
-Lawrence Chen, Kuan Lu, Rachel Lee, Justin Yang, [Alex Yu](https://alexyu.net), Adam Chang, Woojin Ko, [Moonwon Lee](https://github.com/moonwonlee)
+Lawrence Chen, Kuan Lu, Rachel Lee, Justin Yang, [Alex Yu](https://alexyu.net), Adam Chang, Woojin Ko

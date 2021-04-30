@@ -94,7 +94,7 @@ protected:
 
 
 };//Window
-// Moon: Cause 1 : class having FSVEO as members
+
 class ARCameraWindow : public ObjectWindow{ 
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -125,7 +125,7 @@ public:
 
 	bool display() override;
 
-	void set_camera(const Eigen::Affine3d& cam_extr){ // Moon: Cause 3 fine.
+	void set_camera(const Eigen::Affine3d& cam_extr){ 
 		cam_extr_=cam_extr;
 	}
 
@@ -140,8 +140,8 @@ public:
 
 
 private:
-	Eigen::Affine3d cam_extr_; // Moon : a fixed-size vectorizable Eigen object
-	Eigen::Matrix4d proj_mat_; // Moon : a fixed-size vectorizable Eigen object
+	Eigen::Affine3d cam_extr_; 
+	Eigen::Matrix4d proj_mat_; 
 	cv::Mat current_image;
 	GLuint texture;
 	GLenum image_format_;
@@ -210,13 +210,13 @@ public:
 
 };
 
-class MeshWindow : public ObjectWindow { // Moon : Cause 1 : class having FSVEO as members
+class MeshWindow : public ObjectWindow { 
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	MeshWindow(std::string name, int resX, int resY) :
 		ObjectWindow(name, resX, resY) {};
 	//bool display();
-	void set_camera(const Eigen::Affine3d& t) { // Moon : Cause 3. This might be wrong. Const + & or & alone should be added
+	void set_camera(const Eigen::Affine3d& t) { 
 		transform = t;
 	}
         void keyboard_control()
@@ -234,10 +234,10 @@ public:
 		return clicked;
 	}
 private:
-	Eigen::Affine3d transform; // Moon : a fixed-size vectorizable eigen object
+	Eigen::Affine3d transform; 
 	bool clicked_ = false;
 };
-// Moon: Cause 1 : class having FSVEO as members 
+
 class Object{
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -251,11 +251,11 @@ public:
 
 	void display();
 
-	void set_transform(const Eigen::Affine3d& t); // Moon : Cause 3. This might be wrong. Const + & or & might be needed.
+	void set_transform(const Eigen::Affine3d& t);
 
 	void translate(Eigen::Translation3d t);
 
-	void rotate(const Eigen::Quaterniond& q); // Moon : Cause 3. This might be wrong. Const + & or & might be needed.
+	void rotate(const Eigen::Quaterniond& q); 
 
 	void hide();
 
@@ -328,7 +328,7 @@ public:
 	color(color){
 	}
 
-	Path(std::string name, const std::vector<Eigen::Vector3d>& nodes) // Moon: Rule 3 fine.
+	Path(std::string name, const std::vector<Eigen::Vector3d>& nodes)
 	: Object(name),
 	nodes(nodes){
 	}
