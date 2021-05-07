@@ -104,7 +104,6 @@ namespace ark{
     };//CameraCalibration
 
     /** A paired down MultiCameraFrame, only containing information necessary to be stored by the map */
-    // Cause 1 : Class having FSVEO as members.
     class MapKeyFrame{
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
