@@ -72,8 +72,8 @@ int main(int argc, char **argv)
     traj_win.add_object(&grid1);
     ar_win.add_object(&axis1);
     std::vector<MyGUI::Object *> cubes;
-    std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> T_K_cubes; // Moon : Cause 2.a
-    std::vector<MapKeyFrame::Ptr, Eigen::aligned_allocator<MapKeyFrame::Ptr>> K_cubes; // Moon : Cause 2.b. MayKeyFrame is a class having members of FSVEO
+    std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> T_K_cubes;
+    std::vector<MapKeyFrame::Ptr, Eigen::aligned_allocator<MapKeyFrame::Ptr>> K_cubes;
     printf("Window initialization complete\n");
     int lastMapIndex_path = 0;
     //Recieves output from SLAM system and displays to the screen

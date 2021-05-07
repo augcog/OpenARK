@@ -85,8 +85,6 @@ namespace ark {
         }
 
     protected:
-        void KeyFrameConsumerLoop();
-
         void FrameConsumerLoop();
 
         void createNewMap();

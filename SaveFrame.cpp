@@ -46,7 +46,7 @@ namespace ark {
 
     }
 
-    void SaveFrame::frameWrite(const cv::Mat& imRGB, const cv::Mat& depth, const Eigen::Matrix4d& traj, int frameId){ // Moon : Cause 3. Pass by reference required for FXVEO. const looks fine here.
+    void SaveFrame::frameWrite(const cv::Mat& imRGB, const cv::Mat& depth, const Eigen::Matrix4d& traj, int frameId){
 
 		frame_ids.push_back(frameId);
 
