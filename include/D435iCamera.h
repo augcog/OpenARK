@@ -52,9 +52,9 @@ namespace ark {
         * Gets the new frame from the sensor (implements functionality).
         * Updates xyzMap and ir_map.
         */
-        void update(MultiCameraFrame & frame) override;
+        void update(MultiCameraFrame::Ptr frame) override;
 
-        bool getImuToTime(double timestamp, std::vector<ImuPair>& data_out);
+        bool getImuToTime(double timestamp, std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>>& data_out);
 
         std::vector<float> getColorIntrinsics() override;
 

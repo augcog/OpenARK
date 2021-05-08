@@ -58,7 +58,6 @@ namespace ark{
     /** A container for Camera Calibration */
     class CameraCalibration {  
     public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         cv::Mat camera_matrix;
         cv::Mat distortion_coeffs;
 
@@ -125,13 +124,13 @@ namespace ark{
         std::vector<std::vector<cv::KeyPoint > > keypoints_; 
         std::vector<cv::Mat> descriptors_;
         /** Estimated 3D feature positions of all keypoints in each image */
-        std::vector<std::vector<Eigen::Vector4d > > keypoints3dh_C;
+        std::vector<std::vector<Eigen::Vector4d, Eigen::aligned_allocator<Eigen::Vector4d>>> keypoints3dh_C; 
         /** ID of the previous keyframe (may be -1 if not available) */
         int previousKeyframeId_;
         /** Pointer to the keyframe (may be nullptr if not available) */
         MapKeyFrame::Ptr previousKeyframe_;
 
-        std::vector<Eigen::Matrix4d> T_SC_;
+        std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> T_SC_; 
 
         MapKeyFrame():
         frameId_(-1),optimized_(false),previousKeyframeId_(-1){
@@ -146,7 +145,7 @@ namespace ark{
             return descriptors_[cameraIdx];
         }
 
-        const std::vector<Eigen::Vector4d > & homogeneousKeypoints3d(int cameraIdx){
+        const std::vector<Eigen::Vector4d, Eigen::aligned_allocator<Eigen::Vector4d>> & homogeneousKeypoints3d(int cameraIdx){ 
             return keypoints3dh_C[cameraIdx];
         }
 
@@ -184,7 +183,7 @@ namespace ark{
     enum class FrameType { Depth, IR, RGB, XYZMap };
 
     /** A set of images taken on the same frame, possibly by multiple instruments/cameras */
-    class MultiCameraFrame {
+    class MultiCameraFrame { 
     public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         typedef std::shared_ptr<MultiCameraFrame> Ptr;
@@ -225,9 +224,9 @@ namespace ark{
         /** Transformation matrix of the sensor body in keyframe coordinates 
          ** This may be Identity if transforms not available
          ** This should be set to world coordinates if keyframeId is -1 */
-        Eigen::Matrix4d T_KS_;
+        Eigen::Matrix4d T_KS_; 
         /** Tranformation matrices of the cameras WRT sensor body */
-        std::vector<Eigen::Matrix4d> T_SC_;
+        std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> T_SC_; 
 
         /** ID of the frame (may be -1 if not available) */
         int frameId_;
@@ -250,17 +249,17 @@ namespace ark{
 
         /** Construct a MultiCameraFrame from the given images,
           * camera system, and frame ID*/
-        MultiCameraFrame(std::vector<cv::Mat> images, Eigen::Matrix4d T_KS, 
+        MultiCameraFrame(std::vector<cv::Mat> images, const Eigen::Matrix4d& T_KS, 
             int frame_id = -1, int keyframe_id = -1){
             this->images_ = images;
             this->T_KS_ = T_KS;
             frameId_ = frame_id;
             keyframeId_ = keyframe_id;
-        }
+        } 
 
         /** Construct a MultiCameraFrame from the given image,
             and camera system, and frame ID */
-        MultiCameraFrame(cv::Mat image, Eigen::Matrix4d T_KS, 
+        MultiCameraFrame(cv::Mat image, const Eigen::Matrix4d& T_KS,
             int frame_id = -1, int keyframe_id = -1){
             images_.push_back(image);
             this->T_KS_ = T_KS;

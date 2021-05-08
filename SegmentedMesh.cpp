@@ -89,7 +89,8 @@ namespace ark {
 	}
 
 	SegmentedMesh::SegmentedMesh() {
-		Initialize(std::string(""), false);
+		std::string temp;
+		Initialize(temp, false);
 	}
 
 	void SegmentedMesh::Initialize(std::string& recon_config, bool blocking) {
@@ -99,7 +100,11 @@ namespace ark {
 			Eigen::Vector3i * temp = &current_block;
 			temp = NULL;
 		}
+	#ifdef __OPEN3D_V12__ // Open3D 0.12.0 for OpenARK Ubuntu
+		active_volume = new open3d::pipelines::integration::ScalableTSDFVolume(voxel_length_,
+	#else // Open3D 0.9.0 for OpenARK Windows
 		active_volume = new open3d::integration::ScalableTSDFVolume(voxel_length_,
+	#endif
                sdf_trunc_,      
 				color_type_);
 		do_integration_ = true;
@@ -281,8 +286,11 @@ namespace ark {
 		completed_mesh->mesh_map_index = active_volume_map_index;
 		completed_meshes.push_back(completed_mesh);
 
-
+	#ifdef __OPEN3D_V12__ // Open3D 0.12.0 for OpenARK Ubuntu
+		active_volume = new open3d::pipelines::integration::ScalableTSDFVolume(voxel_length_, sdf_trunc_, color_type_);
+	#else // Open3D 0.9.0 for OpenARK Windows
 		active_volume = new open3d::integration::ScalableTSDFVolume(voxel_length_, sdf_trunc_, color_type_);
+	#endif	
 		active_volume_keyframe = latest_keyframe;
 		active_volume_map_index = active_map_index;
 
@@ -435,7 +443,6 @@ namespace ark {
 		}
 		return t;
 	}
-
 
 	void SegmentedMesh::AddRenderMutex(std::mutex* render_mutex, std::string render_mutex_key) {
 		render_mutexes.insert(std::pair<std::string, std::mutex*>(render_mutex_key, render_mutex));

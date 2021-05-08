@@ -35,6 +35,7 @@ int main(int argc, char **argv)
     else vocabFilename = util::resolveRootPath("config/brisk_vocab.bn");
 
     OkvisSLAMSystem slam(vocabFilename, configFilename);
+
     cv::FileStorage configFile(configFilename, cv::FileStorage::READ);
 
     //setup display
@@ -58,8 +59,8 @@ int main(int argc, char **argv)
     fflush(stdout);
 
     //Window for displaying the path
-    MyGUI::CameraWindow traj_win("Traj Viewer", 640*2,480*2);
-    MyGUI::ARCameraWindow ar_win("AR Viewer", 640*2.5,480*2.5, GL_RGB, GL_UNSIGNED_BYTE,  6.16403320e+02, 6.16171021e+02, 3.18104584e+02, 2.33643127e+02,0.01,100);
+    MyGUI::CameraWindow traj_win("Traj Viewer", 150, 150);
+    MyGUI::ARCameraWindow ar_win("AR Viewer", 500, 500, GL_RGB, GL_UNSIGNED_BYTE,  6.16403320e+02, 6.16171021e+02, 3.18104584e+02, 2.33643127e+02,0.01,100);
     traj_win.set_pos(640*2.5,100);
     ar_win.set_pos(0,100);
     std::map<int, MyGUI::Path *> pathMap;
@@ -71,8 +72,8 @@ int main(int argc, char **argv)
     traj_win.add_object(&grid1);
     ar_win.add_object(&axis1);
     std::vector<MyGUI::Object *> cubes;
-    std::vector<Eigen::Matrix4d> T_K_cubes;
-    std::vector<MapKeyFrame::Ptr> K_cubes;
+    std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> T_K_cubes;
+    std::vector<MapKeyFrame::Ptr, Eigen::aligned_allocator<MapKeyFrame::Ptr>> K_cubes;
     printf("Window initialization complete\n");
     int lastMapIndex_path = 0;
     //Recieves output from SLAM system and displays to the screen
@@ -116,7 +117,7 @@ int main(int argc, char **argv)
     //slam.AddKeyFrameAvailableHandler(kfHandler, "saving");
 
     LoopClosureDetectedHandler loopHandler([&](void) {
-        std::vector<Eigen::Matrix4d> traj;
+        std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> traj;
         slam.getTrajectory(traj);
         const auto mapIndex = slam.getActiveMapIndex();
         pathMap[mapIndex]->clear();
@@ -138,7 +139,7 @@ int main(int argc, char **argv)
     
     SparseMapMergeHandler mergeHandler([&](int deletedIndex, int currentIndex) {
         pathMap[deletedIndex]->clear();
-        std::vector<Eigen::Matrix4d> traj;
+        std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> traj;
         slam.getMap(currentIndex)->getTrajectory(traj);
         pathMap[currentIndex]->clear();
         for (size_t i = 0; i < traj.size(); i++) {
@@ -150,6 +151,7 @@ int main(int argc, char **argv)
     okvis::Time start(0.0);
     // camera.start();
     int lastMapIndex = -1;
+    int frame_num = 0;
 
     while (MyGUI::Manager::running())
     {
@@ -159,10 +161,10 @@ int main(int argc, char **argv)
         try
         {
             //Get current camera frame
-            MultiCameraFrame::Ptr frame(new MultiCameraFrame);
-            camera.update(*frame);
+            MultiCameraFrame::Ptr frame = std::allocate_shared<MultiCameraFrame>(Eigen::aligned_allocator<MultiCameraFrame>());
+            camera.update(frame);
 
-            std::vector<ImuPair> imuData;
+            std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>> imuData;
             camera.getImuToTime(frame->timestamp_, imuData);
 
             //Add data to SLAM system
@@ -192,6 +194,8 @@ int main(int argc, char **argv)
         int k = cv::waitKey(1);
         if (k == 'q' || k == 'Q' || k == 27)
             break; // 27 is ESC
+
+        std::cout << "frame " << frame_num++ << std::endl;
     }
     printf("\nTerminate...\n");
     // Clean up

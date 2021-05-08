@@ -61,7 +61,7 @@ int main(int argc, char **argv)
     }
 
     OkvisSLAMSystem slam(vocabFilename, configFilename);
-
+    
     //setup display
     if (!MyGUI::Manager::init())
     {
@@ -90,8 +90,8 @@ int main(int argc, char **argv)
     traj_win.add_object(&grid1);
     ar_win.add_object(&axis1);
     std::vector<MyGUI::Object *> cubes;
-    std::vector<Eigen::Matrix4d> T_K_cubes;
-    std::vector<MapKeyFrame::Ptr> K_cubes;
+    std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> T_K_cubes;
+    std::vector<MapKeyFrame::Ptr, Eigen::aligned_allocator<MapKeyFrame::Ptr>> K_cubes;
 
     const bool hideInactiveMaps = true;
 
@@ -137,7 +137,7 @@ int main(int argc, char **argv)
     //slam.AddKeyFrameAvailableHandler(kfHandler, "saving");
 
     LoopClosureDetectedHandler loopHandler([&](void) {
-        std::vector<Eigen::Matrix4d> traj;
+        std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> traj;
         slam.getTrajectory(traj);
         const auto mapIndex = slam.getActiveMapIndex();
         pathMap[mapIndex]->clear();
@@ -155,7 +155,7 @@ int main(int argc, char **argv)
 
     SparseMapMergeHandler mergeHandler([&](int deletedIndex, int currentIndex) {
         pathMap[deletedIndex]->clear();
-        std::vector<Eigen::Matrix4d> traj;
+        std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> traj;
         slam.getMap(currentIndex)->getTrajectory(traj);
         pathMap[currentIndex]->clear();
         for (size_t i = 0; i < traj.size(); i++) {
@@ -178,7 +178,7 @@ int main(int argc, char **argv)
         {
             //Get current camera frame
             MultiCameraFrame::Ptr frame(new MultiCameraFrame);
-            camera.update(*frame);
+            camera.update(frame);
 
             const auto frameId = frame->frameId_;
             if (frameId < 0) {
@@ -193,7 +193,7 @@ int main(int argc, char **argv)
             cv::imshow(std::string(camera.getModelName()) + " Infrared", infrared);
             cv::imshow(std::string(camera.getModelName()) + " Depth", depth);
 
-            std::vector<ImuPair> imuData;
+            std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>> imuData;
             camera.getImuToTime(frame->timestamp_, imuData);
 
             //Add data to SLAM system

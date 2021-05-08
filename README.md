@@ -2,19 +2,19 @@
 
 OpenARK is an open-source wearable augmented reality (AR) system founded at UC Berkeley in 2016. The C++ based software offers innovative core functionalities to power a wide range of off-the-shelf AR components, including see-through glasses, depth cameras, and IMUs. The open-source platform includes higher-level modules to aid human-computer interaction, such as 3D gesture recognition, plane detection, avatar/pose tracking, and multi-user collaboration, and also contains fundamental tools such as AR-based camera calibration, depth-to-stereo, and SLAM, and 3D Reconstruction. Currently, it supports both PMD Pico Flexx and Intel RealSense SR300 cameras. The project builds natively on both Windows and Linux.
 
-At a Glance
+#### At a Glance,
 
   - **Technology stack**: C++, OpenCV, PCL, Boost, Intel RealSense SDK (1 or 2) / PMD SDK
   - **Status**:  Beta 0.9.3
   - **Application Demos**: [Vive Center](https://vivecenter.berkeley.edu/research1/openark/)
 
 ## Dependencies
-Hardware
+#### Hardware
 - Depth Camera
 - RGB Camera
 - Transparent AR Glasses (optional)
 
-Software
+#### Software
 - Eigen 3
 - OpenCV 3.2.0+
 - PCL 1.8
@@ -24,13 +24,7 @@ Software
 - etc. for the full list, see DEPENDENCIES.md
 
 ## Installation
-
-### Building From Scratch
-
-Instructions are available in the following documents:
-
-- Windows:
-
+## Windows
   **New:** a dependency pack installer is now available, which accelerates the setup process. Please read
   [documentation/Windows-build-instructions-quick.md](https://github.com/augcog/OpenARK/blob/master/documentation/Windows-build-instructions-quick.md) for instructions. The installer may be found [here](openark-deps-vc14-win64.exe).
   
@@ -38,17 +32,19 @@ Instructions are available in the following documents:
   
   [![OpenArk Windows Installation Instructions](OpenARKTitlePage.png)](https://www.youtube.com/watch?v=EPWCvhgbDUo "OpenArk Windows Installation Instructions")
   
-  Building from source without dependency pack installer: [documentation/Windows-build-instructions.pdf](https://github.com/augcog/OpenARK/blob/master/documentation/Windows-build-instructions.pdf)
-
-- Linux: [documentation/Linux-build-instructions.md](https://github.com/augcog/OpenARK/blob/master/documentation/Ubuntu-18-build-instructions.md)
-
-**To use the avatar module/demo**: you will need to download the SMPL model files manually. The instructions are in [data/avatar-model/README.md](https://github.com/augcog/OpenARK/blob/master/data/avatar-model/README.md).
-You may also download the dataset sample by running `data/avatar-dataset/download.sh`.
-
-### Prebuilt Binaries (For Windows)
+### Building from source without dependency pack installer: 
+Check the following installation document for OpenARK for Windows : [documentation/Windows-build-instructions.pdf](https://github.com/augcog/OpenARK/blob/master/documentation/Windows-build-instructions.pdf)
+  
+### Prebuilt Binaries
 Prebuilt binaries for 64-bit Windows are available [here](https://github.com/augcog/OpenARK/releases). This is only updated for major releases.
-Both the static library (with the headers) and the demo program are included. For the SVM to work properly, the `svm/` folder
- must be present in the current directory OR under the directory pointed to by the OPENARK_DIR environment variable.
+Both the static library (with the headers) and the demo program are included. For the SVM to work properly, the `svm/` folder must be present in the current directory OR under the directory pointed to by the OPENARK_DIR environment variable.
+
+## Linux 
+Check the following installation document for OpenARK for Linux : [documentation/Linux-build-instructions.md](https://github.com/augcog/OpenARK/blob/master/documentation/Ubuntu-18-build-instructions.md)
+
+## The Avatar Module/Demo 
+To use the avatar module/demo, please download the SMPL model files manually. The instructions are in [data/avatar-model/README.md](https://github.com/augcog/OpenARK/blob/master/data/avatar-model/README.md).
+You may also download the dataset sample by running `data/avatar-dataset/download.sh`.
 
 ## Usage
 To use OpenARK in a Visual Studio C++ project:

@@ -391,7 +391,7 @@ void Object::draw_obj(){
 
 }
 
-void Object::set_transform(Eigen::Affine3d t){
+void Object::set_transform(const Eigen::Affine3d& t){ 
     std::lock_guard<std::mutex> guard(displayLock_);
     pose = t;
 }
@@ -401,7 +401,7 @@ void Object::translate(Eigen::Translation3d t){
     pose = t*pose;
 }
 
-void Object::rotate(Eigen::Quaterniond q){
+void Object::rotate(const Eigen::Quaterniond& q){ 
     std::lock_guard<std::mutex> guard(displayLock_);
     pose = q*pose;
 }

@@ -10,6 +10,7 @@
 #include <Eigen/Geometry>
 #include "ceres/ceres.h"
 #include <atomic>
+#include <mutex>
 
 namespace ark{
 
@@ -23,20 +24,20 @@ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
             const Eigen::Quaterniond& Q_WA):
     P_WA(P_WA),Q_WA(Q_WA){}
 
-    GraphPose(const Eigen::Matrix4d& T_WA)
+    GraphPose(const Eigen::Matrix4d& T_WA) 
     {
         P_WA = T_WA.block<3,1>(0,3);
         Q_WA = Eigen::Quaterniond(T_WA.block<3,3>(0,0));
     }
 
     Eigen::Vector3d P_WA;
-    Eigen::Quaterniond Q_WA;
+    Eigen::Quaterniond Q_WA; 
 };
 
 class PoseConstraint{
 public:
 EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    PoseConstraint(int id_A, int id_B, const Eigen::Matrix4d& T_AB,
+    PoseConstraint(int id_A, int id_B, const Eigen::Matrix4d& T_AB, 
             const Eigen::Matrix<double, 6, 6>& sqrt_information =
                 Eigen::Matrix<double, 6, 6>::Identity() ):
         id_A(id_A),id_B(id_B),sqrt_information(sqrt_information){
@@ -46,7 +47,7 @@ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     }
 
     PoseConstraint(int id_A, int id_B, const Eigen::Vector3d& P_AB, 
-            const Eigen::Quaterniond& Q_AB,
+            const Eigen::Quaterniond& Q_AB, 
             const Eigen::Matrix<double, 6, 6>& sqrt_information =
                 Eigen::Matrix<double, 6, 6>::Identity()):
         id_A(id_A),id_B(id_B),P_AB(P_AB),Q_AB(Q_AB){
@@ -54,7 +55,7 @@ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     int id_A, id_B;
     Eigen::Vector3d P_AB;
-    Eigen::Quaterniond Q_AB;
+    Eigen::Quaterniond Q_AB; 
     Eigen::Matrix<double, 6, 6> sqrt_information;
 }; //PoseConstraint
 
@@ -63,7 +64,7 @@ public:
 EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     PoseError(const Eigen::Vector3d& p_ab_measured, 
-            const Eigen::Quaterniond& q_ab_measured,
+            const Eigen::Quaterniond& q_ab_measured, 
             const Eigen::Matrix<double, 6, 6>& sqrt_information):
         p_ab_measured_(p_ab_measured), q_ab_measured_(q_ab_measured),
         sqrt_information_(sqrt_information) {}
@@ -110,7 +111,7 @@ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     static ::ceres::CostFunction* Create(
             const Eigen::Vector3d& p_ab_measured, 
-            const Eigen::Quaterniond& q_ab_measured,
+            const Eigen::Quaterniond& q_ab_measured, 
             const Eigen::Matrix<double, 6, 6>& sqrt_information) {
         return new ::ceres::AutoDiffCostFunction<PoseError, 6, 3, 4, 3, 4>(
             new PoseError(p_ab_measured, q_ab_measured, sqrt_information));
@@ -127,7 +128,7 @@ private:
     // The measurement for the position of B relative to A in the A frame.
     const Eigen::Vector3d p_ab_measured_;
     // The measurement for the rotation of B relative to A in the A frame.
-    const Eigen::Quaterniond q_ab_measured_;
+    const Eigen::Quaterniond q_ab_measured_; 
     // The square root of the measurement information matrix.
     const Eigen::Matrix<double, 6, 6> sqrt_information_;
 }; //PoseConstraint
@@ -145,7 +146,7 @@ public:
         constraintMutex.unlock();
     };
 
-    void AddConstraint(int id_A, int id_B, const Eigen::Vector3d& P_AB, const Eigen::Quaterniond Q_AB,
+    void AddConstraint(int id_A, int id_B, const Eigen::Vector3d& P_AB, const Eigen::Quaterniond& Q_AB, 
             const Eigen::Matrix<double, 6, 6>& sqrt_information = Eigen::Matrix<double, 6, 6>::Identity()){
         constraintMutex.lock();
         constraints_.push_back(PoseConstraint(id_A,id_B,P_AB,Q_AB,sqrt_information));
@@ -159,7 +160,7 @@ public:
         constraintMutex.unlock();
     };
 
-    void AddPose(int id_A, const Eigen::Matrix4d& T_WA){
+    void AddPose(int id_A, const Eigen::Matrix4d& T_WA){ 
         constraintMutex.lock();
         poses_.insert(std::pair<int,GraphPose>(id_A,T_WA));
         constraintMutex.unlock();

@@ -44,7 +44,7 @@ namespace ark {
 
         void PushFrame(const MultiCameraFrame::Ptr frame);
 
-        void PushIMU(const std::vector<ImuPair>& imu);
+        void PushIMU(const std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>>& imu);
 
         void PushIMU(const ImuPair& imu);
 
@@ -62,9 +62,9 @@ namespace ark {
 
         void getActiveFrames(std::vector<int>& frame_ids);
 
-        void getTrajectory(std::vector<Eigen::Matrix4d>& trajOut);
+        void getTrajectory(std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut);
 
-		void getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d>& trajOut);
+        void getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut);
         
         ~OkvisSLAMSystem();
 
@@ -85,8 +85,6 @@ namespace ark {
         }
 
     protected:
-        void KeyFrameConsumerLoop();
-
         void FrameConsumerLoop();
 
         void createNewMap();

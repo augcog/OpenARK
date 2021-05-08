@@ -2,13 +2,24 @@
 
 #include "CameraSetup.h"
 #include "OkvisSLAMSystem.h"
-#include "Open3D/Integration/ScalableTSDFVolume.h"
-#include "Open3D/Visualization/Utility/DrawGeometry.h"
-#include "Open3D/IO/ClassIO/TriangleMeshIO.h"
-#include "Open3D/IO/ClassIO/ImageIO.h"
-#include "Open3D/geometry/PointCloud.h"
-#include "Open3D/geometry/TriangleMesh.h"
-#include "Open3D/camera/PinholeCameraIntrinsic.h"
+#ifdef __OPEN3D_V12__ // Open3D 0.12.0 for OpenARK Ubuntu
+	#include "open3d/pipelines/integration/ScalableTSDFVolume.h"
+	#include "open3d/visualization/utility/DrawGeometry.h"
+	#include "open3d/io/TriangleMeshIO.h"
+	#include "open3d/io/ImageIO.h"
+	#include "open3d/geometry/PointCloud.h"
+	#include "open3d/geometry/TriangleMesh.h"
+	#include "open3d/camera/PinholeCameraIntrinsic.h"
+#else // Open3D 0.9.0 for OpenARK Windows
+	#include "Open3D/Integration/ScalableTSDFVolume.h"
+	#include "Open3D/Visualization/Utility/DrawGeometry.h"
+	#include "Open3D/IO/ClassIO/TriangleMeshIO.h"
+	#include "Open3D/IO/ClassIO/ImageIO.h"
+	#include "Open3D/geometry/PointCloud.h"
+	#include "Open3D/geometry/TriangleMesh.h"
+	#include "Open3D/camera/PinholeCameraIntrinsic.h"
+#endif
+
 #include "Types.h"
 #include "SaveFrame.h"
 #include <map>
@@ -53,7 +64,7 @@ namespace ark {
 		std::shared_ptr<open3d::geometry::TriangleMesh> ExtractTotalTriangleMesh();
 		std::shared_ptr<open3d::geometry::PointCloud> ExtractCurrentVoxelPointCloud();
 		std::vector<std::pair<std::shared_ptr<open3d::geometry::TriangleMesh>, 
-			Eigen::Matrix4d>> GetTriangleMeshes();
+			Eigen::Matrix4d>> GetTriangleMeshes(); 
 		void SetLatestKeyFrame(MapKeyFrame::Ptr frame);
 		std::vector<int> get_kf_ids();
 		void StartNewBlock();
@@ -66,12 +77,17 @@ namespace ark {
 
 		void AddRenderMutex(std::mutex* render_mutex, std::string render_mutex_key);
 		void RemoveRenderMutex(std::string render_mutex_key);
+
 		void WriteMeshes();
 
 		void SetIntegrationEnabled(bool enabled);
 
 	public:
+	#ifdef __OPEN3D_V12__ // Open3D 0.12.0 for OpenARK Ubuntu
+		open3d::pipelines::integration::TSDFVolumeColorType color_type_ = open3d::pipelines::integration::TSDFVolumeColorType::RGB8;
+	#else // Open3D 0.9.0 for OpenARK Windows
 		open3d::integration::TSDFVolumeColorType color_type_ = open3d::integration::TSDFVolumeColorType::RGB8;
+	#endif
 		int integration_frame_stride_ = 3;
 		int extraction_frame_stride_ = 60;
 
@@ -102,7 +118,11 @@ namespace ark {
 
 
 		//stores current scalable tsdf volume
+	#ifdef __OPEN3D_V12__ // Open3D 0.12.0 for OpenARK Ubuntu
+		open3d::pipelines::integration::ScalableTSDFVolume * active_volume;
+	#else // Open3D 0.9.0 for OpenARK Windows
 		open3d::integration::ScalableTSDFVolume * active_volume;
+	#endif
 		MapKeyFrame::Ptr active_volume_keyframe;
 		int active_volume_map_index = 0;
 

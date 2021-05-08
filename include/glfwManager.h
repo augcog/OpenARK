@@ -87,7 +87,7 @@ public:
 
 	void add_object(Object* obj);
 
-	void set_camera(Eigen::Vector3d eye, Eigen::Vector3d gaze);
+	//void set_camera(const Eigen::Vector3d& eye, const Eigen::Vector3d& gaze);
 
 protected:
 	std::mutex displayLock_;
@@ -95,7 +95,7 @@ protected:
 
 };//Window
 
-class ARCameraWindow : public ObjectWindow{
+class ARCameraWindow : public ObjectWindow{ 
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	ARCameraWindow(std::string name, int resX, int resY, GLenum image_format, GLenum data_type, double px, double py, double cx, double cy, double near_cut, double far_cut):
@@ -125,7 +125,7 @@ public:
 
 	bool display() override;
 
-	void set_camera(const Eigen::Affine3d& cam_extr){
+	void set_camera(const Eigen::Affine3d& cam_extr){ 
 		cam_extr_=cam_extr;
 	}
 
@@ -140,8 +140,8 @@ public:
 
 
 private:
-	Eigen::Affine3d cam_extr_;
-	Eigen::Matrix4d proj_mat_;
+	Eigen::Affine3d cam_extr_; 
+	Eigen::Matrix4d proj_mat_; 
 	cv::Mat current_image;
 	GLuint texture;
 	GLenum image_format_;
@@ -210,15 +210,16 @@ public:
 
 };
 
-class MeshWindow : public ObjectWindow {
+class MeshWindow : public ObjectWindow { 
 public:
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	MeshWindow(std::string name, int resX, int resY) :
 		ObjectWindow(name, resX, resY) {};
 	//bool display();
-	void set_camera(Eigen::Affine3d t) {
+	void set_camera(const Eigen::Affine3d& t) { 
 		transform = t;
 	}
-	void MeshWindow::keyboard_control()
+        void keyboard_control()
 	{
 		if (glfwGetKey(win_ptr, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 			glfwSetWindowShouldClose(win_ptr, GL_TRUE);
@@ -227,13 +228,13 @@ public:
 		}
 	}
 
-	bool MeshWindow::clicked() {
+        bool clicked() {
 		bool clicked = clicked_;
 		clicked_ = false;
 		return clicked;
 	}
 private:
-	Eigen::Affine3d transform;
+	Eigen::Affine3d transform; 
 	bool clicked_ = false;
 };
 
@@ -250,11 +251,11 @@ public:
 
 	void display();
 
-	void set_transform(Eigen::Affine3d t);
+	void set_transform(const Eigen::Affine3d& t);
 
 	void translate(Eigen::Translation3d t);
 
-	void rotate(Eigen::Quaterniond q);
+	void rotate(const Eigen::Quaterniond& q); 
 
 	void hide();
 
@@ -264,7 +265,7 @@ public:
 
 protected:
 	std::mutex displayLock_;
-	Eigen::Affine3d pose;
+	Eigen::Affine3d pose; // Eigen : Fixed-size vectorizable Eigen object
 	bool draw;
 	
 };//Object
@@ -332,7 +333,7 @@ public:
 	nodes(nodes){
 	}
 
-	void add_node(Eigen::Vector3d node){
+	void add_node(Eigen::Vector3d node){ 
 		nodes.push_back(node);
 	}
 

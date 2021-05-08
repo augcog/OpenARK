@@ -291,7 +291,7 @@ namespace ark {
         }   
     }
 
-    void OkvisSLAMSystem::PushIMU(const std::vector<ImuPair>& imu) {
+    void OkvisSLAMSystem::PushIMU(const std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>>& imu) {
         if (okvis_estimator_ == nullptr) return;
         for (size_t i = 0; i < imu.size(); i++) {
             PushIMU(imu[i]);
@@ -466,7 +466,7 @@ namespace ark {
             frame->setOptimizedTransform(correction * frame->T_WS());
             frame->T_WS_ = correction * frame->T_WS_;
             mapB->frameMap_[frame->frameId_] = frame;
-		}
+        }
 
         //adding constraints and poses to mapB's pose graph
         mapB->graph_.constraintMutex.lock();
@@ -480,7 +480,7 @@ namespace ark {
         for (auto framePair = mapA->frameMap_.begin(); framePair != mapA->frameMap_.end(); framePair++) {
             mapB->graph_.poses_.insert(std::pair<int,GraphPose>(
                 framePair->first,framePair->second->T_WS()));
-		}
+        }
         mapB->graph_.constraintMutex.unlock();
 
         //adding current keyframe to mapB and optimizing pose graph
@@ -525,7 +525,7 @@ namespace ark {
         getActiveMap()->getFrames(frame_ids);
     }
 
-    void OkvisSLAMSystem::getTrajectory(std::vector<Eigen::Matrix4d>& trajOut){
+    void OkvisSLAMSystem::getTrajectory(std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut){
         getActiveMap()->getTrajectory(trajOut);
     }
 
@@ -538,7 +538,7 @@ namespace ark {
         }
     }
 
-    void OkvisSLAMSystem::getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d>& trajOut) {
+    void OkvisSLAMSystem::getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut) {
         for (auto it = sparse_maps_.begin(); it != sparse_maps_.end(); it++) {
             it->second->getMappedTrajectory(frameIdOut, trajOut);
         }

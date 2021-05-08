@@ -15,20 +15,17 @@ namespace ark{
     class SaveFrame{
     public:
         SaveFrame(std::string folderPath);
-
         //void OnKeyFrameAvailable(const RGBDFrame &keyFrame);
-
         //void OnFrameAvailable(const RGBDFrame &frame);
 
-		void SaveFrame::frameWrite(cv::Mat imRGB, cv::Mat depth, Eigen::Matrix4d traj, int frameId);
-        void SaveFrame::frameWriteMapped(cv::Mat imRGB, cv::Mat depth, Eigen::Matrix4d traj, int frameId, int mapId);
-		void SaveFrame::updateTransforms(std::map<int, Eigen::Matrix4d> keyframemap);
-        void SaveFrame::writeActiveFrames(std::vector<int> frame_ids);
-
-        ark::RGBDFrame SaveFrame::frameLoad(int frameId);
+        void frameWrite(const cv::Mat& imRGB, const cv::Mat& depth, const Eigen::Matrix4d& traj, int frameId); 
+        void frameWriteMapped(const cv::Mat& imRGB, const cv::Mat& depth, const Eigen::Matrix4d& traj, int frameId, int mapId); 
+        void updateTransforms(std::map<int, Eigen::Matrix4d, std::less<int>, Eigen::aligned_allocator<std::pair<const int, Eigen::Matrix4d>>> &keyframemap); 
+        void writeActiveFrames(std::vector<int> frame_ids);  
+        
+        ark::RGBDFrame frameLoad(int frameId);
 
     private:
-
         //Main Loop thread
         std::string folderPath;
         std::string rgbPath;

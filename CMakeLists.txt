@@ -1,11 +1,14 @@
 cmake_minimum_required( VERSION 3.5 )
 cmake_policy( VERSION 3.5 )
-
+#[[ For OpenARK Ubuntu and Jetson Xavier NX, 
+cmake_minimum_required( VERSION 3.18 )
+cmake_policy( VERSION 3.18 )
+]]
 
 project( OpenARK )
 set( OpenARK_VERSION_MAJOR 0 )
 set( OpenARK_VERSION_MINOR 9 )
-set( OpenARK_VERSION_PATCH 3 )
+set( OpenARK_VERSION_PATCH 3 )  
 set( INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include" )
 
 set( CMAKE_CXX_STACK_SIZE "10000000" )
@@ -13,6 +16,27 @@ set( CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake_modules" )
 
 if( NOT CMAKE_BUILD_TYPE )
   set( CMAKE_BUILD_TYPE Release )
+endif()
+
+message(STATUS "CMAKE_HOST_SYSTEM_PROCESSOR: ${CMAKE_HOST_SYSTEM_PROCESSOR}")
+if(${CMAKE_HOST_SYSTEM_PROCESSOR} MATCHES "arm*")
+  # NVIDIA Jetson Xavier NX 
+  add_definitions(-D__ARM_NEON__)
+  message(STATUS "Host System Processor is ${CMAKE_HOST_SYSTEM_PROCESSOR}, will attempt to use NEON.")
+endif()
+
+message(STATUS "CMAKE_HOST_SYSTEM_NAME: ${CMAKE_HOST_SYSTEM_NAME}")
+if(${CMAKE_HOST_SYSTEM_NAME} MATCHES "Linux")
+    message(STATUS "Host System Name is ${CMAKE_HOST_SYSTEM_NAME}.")
+
+    # Eigen Fix for OpenARK Ubuntu
+    add_definitions(-DEIGEN_DONT_ALIGN=1)
+    add_definitions(-DEIGEN_DONT_VECTORIZE=1)
+    message(STATUS "EIGEN_FIX_UBUNTU is activated.")
+
+    # Using Open3D 0.12.0 instead of 0.9.0 for Eigen Fix
+    add_definitions(-D__OPEN3D_V12__)
+    message(STATUS "will attempt to use Open3D 0.12.0 for Eigen Fix.")
 endif()
 
 set( LIB_NAME "OpenARK" )
@@ -26,17 +50,18 @@ set( SLAM_REPLAYING_NAME "OpenARK_slam_replaying")
 set( TEST_NAME "OpenARK_test" )
 set( UNITY_PLUGIN_NAME "UnityPlugin" )
 
-option( BUILD_HAND_DEMO "BUILD_HAND_DEMO" OFF )
-option( BUILD_AVATAR_DEMO "BUILD_AVATAR_DEMO" OFF)
+# Options.
+option( BUILD_HAND_DEMO "BUILD_HAND_DEMO" ON )
+option( BUILD_AVATAR_DEMO "BUILD_AVATAR_DEMO" ON)
 option( BUILD_SLAM_DEMO "BUILD_SLAM_DEMO" ON)
 option( BUILD_3DRECON_DEMO "BUILD_3DRECON_DEMO" ON)
 option( BUILD_DATA_RECORDING "BUILD_DATA_RECORDING" OFF)
 option( BUILD_SLAM_RECORDING "BUILD_SLAM_RECORDING" ON)
 option( BUILD_SLAM_REPLAYING "BUILD_SLAM_REPLAYING" ON)
 option( BUILD_TESTS "BUILD_TESTS" OFF )
-option( BUILD_UNITY_PLUGIN "BUILD_UNITY_PLUGIN" ON )
+option( BUILD_UNITY_PLUGIN "BUILD_UNITY_PLUGIN" OFF )
 option( USE_AZURE_KINECT_SDK "USE_AZURE_KINECT_SDK" OFF )
-option( USE_RSSDK2 "USE_RSSDK2" ON )
+option( USE_RSSDK2 "USE_RSSDK2" OFF )
 option( USE_RSSDK "USE_RSSDK" OFF )
 option( USE_PMDSDK "USE_PMDSDK" OFF )
 
@@ -45,8 +70,10 @@ CHECK_CXX_COMPILER_FLAG( "-std=c++11" COMPILER_SUPPORTS_CXX11 )
 CHECK_CXX_COMPILER_FLAG( "-std=c++0x" COMPILER_SUPPORTS_CXX0X )
 
 if( COMPILER_SUPPORTS_CXX11 )
+    message(STATUS "c++11 supported")
     set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11" )
 elseif( COMPILER_SUPPORTS_CXX0X )
+    message(status "c++ something supported")
     set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x" )
 else()
     message( STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler." )
@@ -126,6 +153,7 @@ IF( DBoW2_FOUND )
 ENDIF( DBoW2_FOUND )
 
 # require DLoopDetector
+set(ENV{DLoopDetector_INCLUDE_DIRS} "/usr/local/include/DLoopDetector")
 find_package( DLoopDetector REQUIRED )
 IF( DLoopDetector_FOUND )
     MESSAGE( STATUS "Found DLoopDetector: $ENV{DLoopDetector_INCLUDE_DIRS} ${DLoopDetector_LIBRARIES} ${DLoopDetector_INCLUDE_DIRS}" )
@@ -143,14 +171,14 @@ find_package( okvis REQUIRED )
 include_directories(${OKVIS_INCLUDE_DIRS})
 message(STATUS "Found Okvis: ${OKVIS_INCLUDE_DIRS} ${OKVIS_LIBRARIES}")
 
-# require OpenGV (should come with Okvis)
+# require opengv (should come with Okvis)
 if( DEFINED ENV{ARK_DEPS_DIR} )
-  find_package( OpenGV REQUIRED NO_MODULE )
+  find_package( opengv REQUIRED NO_MODULE )
 else()
-    find_package( OpenGV REQUIRED )
+    find_package( opengv REQUIRED )
 endif( DEFINED ENV{ARK_DEPS_DIR} )
 IF(OPENGV_FOUND)
-    MESSAGE(STATUS "Found OpenGV: ${OPENGV_INCLUDE_DIR} ${OPENGV_LIBRARIES}")
+    MESSAGE(STATUS "Found opengv: ${OPENGV_INCLUDE_DIR} ${OPENGV_LIBRARIES}")
 ENDIF(OPENGV_FOUND)
 
 # require Ceres
