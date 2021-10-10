@@ -12,12 +12,13 @@
 #include <opencv2/core.hpp> // cv::Size
 #include <Eigen/Core> // Eigen::aligned_allocator
 
-#include "CameraSetup.h"
 #include "Types.h" // CameraParameter, MultiCameraFrame, ImuPair, CameraParameter
 
 namespace ark
 {
 
+    // Design: currently we only support AzureKinect camera. 
+    // Thus there's no need to derive from base class.
     class AzureKinectCamera : public CameraSetup
     {
     public:
@@ -33,7 +34,7 @@ namespace ark
          * 
          * 
          */
-        void start() override;
+        void start_camera();
         
         /*
          * Get latest datas (frames) from sensor stream. 
@@ -41,14 +42,14 @@ namespace ark
          * 
          * 
          */
-        void update(MultiCameraFrame::Ptr) override;
+        void update(MultiCameraFrame::Ptr);
 
-        std::string getModelName() const override;
+        std::string getModelName() const;
 
         /*
          * Intrinsic matrix of RGB Camera
          */
-        std::vector<float> getColorIntrinsics() override;
+        std::vector<float> getColorIntrinsics();
 
         /*
          *
