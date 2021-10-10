@@ -279,9 +279,11 @@ namespace ark {
 
         if (t_image - start_ > deltaT_) {
             if(mMapFrameAvailableHandler.size()>0){
+                // QUESTION: how is frame_queue used
                 frame_queue_.enqueue({ frame});
             }
             num_frames_++;
+            // QUESTION: need to go through okviz to see how to setup cameras
             for (size_t i = 0; i < frame->images_.size(); i++) {
                 if (i < parameters_.nCameraSystem.numCameras()){
                     //printf("add image: %i\n", i);

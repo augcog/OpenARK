@@ -210,7 +210,8 @@ namespace ark {
             if (frame->images_[1].empty()) frame->images_[1] = cv::Mat(cv::Size(width,height), CV_8UC1);
             std::memcpy( frame->images_[1].data, infrared2.get_data(),width * height);
 
-
+            // QUESTION: where and how is this data used. How can we optimize the projection code. currently this code run too slow
+            // QUESTION : 需要确定一下下面拿到的projection数据是否真正被用到，被谁用到。新的camera的SDK中是否有更方便的找point cloud的方法
             if (frame->images_[2].empty()) frame->images_[2] = cv::Mat(cv::Size(width,height), CV_32FC3);
             project(depth, frame->images_[2]);
             frame->images_[2] = frame->images_[2]*scale; //depth is in mm by default
@@ -249,6 +250,8 @@ namespace ark {
 
     // project depth map to xyz coordinates directly (faster and minimizes distortion, but will not be aligned to RGB/IR)
     void D435iCamera::project(const rs2::frame & depth_frame, cv::Mat & xyz_map) {
+        // Detailed explain of how projection work can be found here
+        // https://dev.intelrealsense.com/docs/projection-in-intel-realsense-sdk-20
         const uint16_t * depth_data = (const uint16_t *)depth_frame.get_data();
 
         rs2_intrinsics * dIntrin = &depthIntrinsics;
