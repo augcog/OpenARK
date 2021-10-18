@@ -211,7 +211,6 @@ namespace ark {
             std::memcpy( frame->images_[1].data, infrared2.get_data(),width * height);
 
             // QUESTION: where and how is this data used. How can we optimize the projection code. currently this code run too slow
-            // QUESTION : 需要确定一下下面拿到的projection数据是否真正被用到，被谁用到。新的camera的SDK中是否有更方便的找point cloud的方法
             if (frame->images_[2].empty()) frame->images_[2] = cv::Mat(cv::Size(width,height), CV_32FC3);
             project(depth, frame->images_[2]);
             frame->images_[2] = frame->images_[2]*scale; //depth is in mm by default

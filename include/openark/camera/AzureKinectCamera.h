@@ -10,7 +10,6 @@
 #include <string>
 #include <vector>
 #include <opencv2/core.hpp> // cv::Size, cv::Vec4d
-#include <Eigen/Core> // Eigen::aligned_allocator
 #include <k4a/k4a.h> // k4a_device_t
 #include "Types.h" // CameraParameter, MultiCameraFrame, ImuPair, CameraParameter
 
@@ -22,9 +21,9 @@ namespace ark
     class AzureKinectCamera
     {
     public:
-        AzureKinectCamera();
+        AzureKinectCamera() noexcept;
 
-        ~AzureKinectCamera();
+        ~AzureKinectCamera() noexcept;
 
         /*
          *
@@ -66,12 +65,16 @@ namespace ark
          *  https://eigen.tuxfamily.org/dox/group__TopicStructHavingEigenMembers.html 
          *  https://eigen.tuxfamily.org/dox-devel/group__TopicStlContainers.html
          */
+    
+    private:
+        void freeResource();
 
     private:
         k4a_device_t device;
         k4a_capture_t capture;
         k4a_calibration_t calibration;
         k4a_transformation_t transformation;
+        k4a_device_configuration_t camera_config;
         // Time in milliseconds waiting for capture result to return. 
         // If set to 0, the k4a_device_get_capture will return without blocking
         // If set K4A_WAIT_INFINITE will block indefinitely until data avalibe
@@ -79,7 +82,7 @@ namespace ark
         const int32_t TIMEOUT_IN_MS;
         // cx, cy, fx, fy
         cv::Vec4d intrinsic;
-        int image_resolution_width, image_resolution_height;
+        int img_width, img_height;
     };
 
 }
