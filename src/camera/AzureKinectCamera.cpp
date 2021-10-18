@@ -17,6 +17,7 @@
  * 7. Device calibration data access
  */
 
+#include <vector>
 #include <opencv2/core.hpp> // cv::Mat
 #include <opencv2/imgproc.hpp> // cv::cvtColor
 #include <k4a/k4a.h> // AzureKinect API
@@ -30,7 +31,8 @@ namespace ark
 {
     // Delegate constructor call
     AzureKinectCamera::AzureKinectCamera() noexcept : \
-        device(NULL), capture(NULL), calibration(NULL), transformation(NULL), TIMEOUT_IN_MS(1000)
+        device(NULL), capture(NULL), calibration(NULL), \
+        transformation(NULL)
     {
         // Camera configruation
         // Configure a stream of 4096x3072 BRGA color data at 15 frames per second
@@ -79,7 +81,7 @@ namespace ark
         }
     }
 
-    void AzureKinectCamera::startCamera() // start()
+    void AzureKinectCamera::startCamera()
     {
         // References:
         // Azure-Kinect-Sensor-SDK/examples/streaming/main.c
@@ -104,7 +106,10 @@ namespace ark
 
         // Get calibration information
         if (K4A_RESULT_SUCCEEDED != \
-            k4a_device_get_calibration(device, config.depth_mode, config.color_resolution, &calibration))
+            k4a_device_get_calibration(device, \
+                                       config.depth_mode, \
+                                       config.color_resolution, \
+                                       &calibration))
         {
             printf("Failed to get calibration\n");
             return this->freeResource();
@@ -144,8 +149,10 @@ namespace ark
         }
     }
 
-
-    void AzureKinectCamera::getCurrData(cv::Mat& rgb_output, cv::Mat& xyz_output, uint16_t& timestamp) // update()
+    void AzureKinectCamera::getCurrData( cv::Mat& rgb_output, \
+                                         cv::Mat& xyz_output, \
+                                         uint16_t& timestamp,\
+                                         std::vector<AzureKinectCamera::imu_data>& imu_outputs )
     {
         // For faster speed, the rgb_output and xyz_output should already allocate correct height and width
         // User shuold call cv::Mat rgb_output(AzureKinectCamera.getSize(), CV_8UC4) to create rgb_output and pass in
@@ -159,14 +166,24 @@ namespace ark
             return;
         }
 
+        // Commonly we have around 6 imu sample for each camera frame.
+        // Reserve enough memory space to avoid copy overhead
+        imu_outputs.reserve(10);
+
         k4a_image_t image_sample = NULL;
         k4a_image_t depth_sample = NULL;
         k4a_imu_sample_t imu_sample = NULL;
 
         // Capture depth & image data
         //
+        // Third parameter :
+        //      Time in milliseconds waiting for capture result to return. 
+        //      If set to 0, the k4a_device_get_capture will return without blocking
+        //      If set K4A_WAIT_INFINITE will block indefinitely until data avalibe
+        //      We set this value to 1000 by default
+        //
         // Azure-Kinect-Sensor-SDK/examples/streaming/main.c
-        switch (k4a_device_get_capture(device, &capture, TIMEOUT_IN_MS))
+        switch (k4a_device_get_capture(device, &capture, 1000))
         {
             case K4A_WAIT_RESULT_SUCCEEDED:
                 break;
@@ -222,8 +239,12 @@ namespace ark
                 printf("Failed to read a imu sample\n");
                 goto ReleaseRunTimeResource;
             }
-            // TODO first resize container to 200 / 30
-            // TODO add imu datas to container
+
+            // acc timestamp and gyro timestamp is nearly the same
+            //      thus we use acc timestamp.
+            imu_outputs.emplace_back({imu_sample.acc_timestamp_usec, \
+                                      reinterpret_cast<float3_t>(imu_sample.gyro_sample) \
+                                      reinterpret_cast<float3_t>(imu_sample.acc_sample) });
         }
         exit_loop:
 
@@ -265,6 +286,7 @@ namespace ark
         //    (3) use int16_t data instead
         k4a_image_t point_cloud_transformed_image_coordinate = NULL;
         /*
+        // See below section on how to reuse existing memory and avoid memory create
         // Create point cloud buffer and then copy it to cv::Mat buffer
         if (K4A_RESULT_SUCCEEDED != k4a_image_create(K4A_IMAGE_FORMAT_CUSTOM,
                                                     image_width_pixels,
@@ -279,15 +301,16 @@ namespace ark
 
         // Create point cloud from opencv buffer. This reduce memory copy
         // Azure-Kinect-Sensor-SDK/tests/RecordTests/UnitTest/record_ut.cpp
-        if ( K4A_RESULT_SUCCEEDED != k4a_image_create_from_buffer( K4A_IMAGE_FORMAT_CUSTOM,
-                                                                   image_width_pixels,
-                                                                   image_height_pixels,
-                                                                   image_width_pixels * 3 * (int)sizeof(int16_t),
-                                                                   reinterpret_cast<uint8_t*> xyz_output.data,
-                                                                   image_width_pixels * image_width_pixels * 3 * (int)sizeof(int16_t),
-                                                                   nullptr,
-                                                                   nullptr,
-                                                                   point_cloud_transformed_image_coordinate ))
+        if ( K4A_RESULT_SUCCEEDED != \
+             k4a_image_create_from_buffer( K4A_IMAGE_FORMAT_CUSTOM,
+                                           image_width_pixels,
+                                           image_height_pixels,
+                                           image_width_pixels * 3 * (int)sizeof(int16_t),
+                                           reinterpret_cast<uint8_t*> xyz_output.data,
+                                           image_width_pixels * image_width_pixels * 3 * (int)sizeof(int16_t),
+                                           nullptr,
+                                           nullptr,
+                                           point_cloud_transformed_image_coordinate ))
         {
             printf("Failed to create point cloud buffer from cv::Mat memory\n");
             goto ReleaseRunTimeResource;
@@ -311,7 +334,11 @@ namespace ark
         // Copy result to output
         // Create a cv:::Mat using the k4a_image_t image buffer, there is no memory copy in this step
         // https://stackoverflow.com/questions/57222190/how-to-convert-k4a-image-t-to-opencv-matrix-azure-kinect-sensor-sdk
-        cv::Mat rgba_output(img_height, img_width, CV_8UC4, reinterpret_cast<void*>k4a_image_get_buffer(image_sample), cv::Mat::AUTO_STEP);
+        cv::Mat rgba_output(img_height, \
+                            img_width, \
+                            CV_8UC4, \
+                            reinterpret_cast<void*>k4a_image_get_buffer(image_sample), \
+                            cv::Mat::AUTO_STEP);
 
         // Convert RGBA to BGR using opencv
         // openCV use vectorize implementation with -O2 -O3. So it's faster then element wise operation
