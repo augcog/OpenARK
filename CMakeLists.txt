@@ -10,6 +10,7 @@ set( OpenARK_VERSION_MAJOR 0 )
 set( OpenARK_VERSION_MINOR 9 )
 set( OpenARK_VERSION_PATCH 3 )  
 set( INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include" )
+set( SRC_DIR "${PROJECT_SOURCE_DIR}/src")
 
 set( CMAKE_CXX_STACK_SIZE "10000000" )
 set( CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake_modules" )
@@ -280,67 +281,69 @@ endforeach()
 
 set(
   SOURCES
-  FrameObject.cpp
-  Hand.cpp FramePlane.cpp
-  Webcam.cpp
-  DepthCamera.cpp
-  RGBCamera.cpp
-  StereoCamera.cpp
-  StreamingAverager.cpp
-  Calibration.cpp
-  Util.cpp
-  Visualizer.cpp
-  HandClassifier.cpp
-  Detector.cpp
-  HandDetector.cpp
-  PlaneDetector.cpp
-  MockCamera.cpp
-  MockD435iCamera.cpp
-  HumanDetector.cpp
-  HumanBody.cpp
-  Avatar.cpp
-  glfwManager.cpp
-  OkvisSLAMSystem.cpp
-  SaveFrame.cpp
-  SegmentedMesh.cpp
+  ${SRC_DIR}/util/FrameObject.cpp
+  ${SRC_DIR}/hand_and_avatar/FramePlane.cpp
+  ${SRC_DIR}/hand_and_avatar/hand/Hand.cpp 
+  ${SRC_DIR}/camera/webcam/Webcam.cpp
+  ${SRC_DIR}/camera/DepthCamera.cpp
+  ${SRC_DIR}/camera/RGBCamera.cpp
+  ${SRC_DIR}/camera/StereoCamera.cpp
+  ${SRC_DIR}/hand_and_avatar/StreamingAverager.cpp
+  ${SRC_DIR}/camera/camera_util/Calibration.cpp
+  ${SRC_DIR}/util/Util.cpp
+  ${SRC_DIR}/util/Visualizer.cpp
+  ${SRC_DIR}/hand_and_avatar/hand/HandClassifier.cpp
+  ${SRC_DIR}/hand_and_avatar/Detector.cpp
+  ${SRC_DIR}/hand_and_avatar/hand/HandDetector.cpp
+  ${SRC_DIR}/hand_and_avatar/PlaneDetector.cpp
+  ${SRC_DIR}/camera/MockCamera.cpp
+  ${SRC_DIR}/camera/MockD435iCamera.cpp
+  ${SRC_DIR}/hand_and_avatar/avatar/HumanDetector.cpp
+  ${SRC_DIR}/hand_and_avatar/avatar/HumanBody.cpp
+  ${SRC_DIR}/hand_and_avatar/avatar/Avatar.cpp
+  ${SRC_DIR}/util/glfwManager.cpp
+  ${SRC_DIR}/slam/OkvisSLAMSystem.cpp
+  ${SRC_DIR}/3drecon/SaveFrame.cpp
+  ${SRC_DIR}/util/SegmentedMesh.cpp
+  ${SRC_DIR}/3drecon/3DReconDemo.cpp
 )
 
 set(
   HEADERS
-  ${INCLUDE_DIR}/FrameObject.h
-  ${INCLUDE_DIR}/DetectionParams.h
-  ${INCLUDE_DIR}/Hand.h
-  ${INCLUDE_DIR}/FramePlane.h
-  ${INCLUDE_DIR}/Webcam.h
-  ${INCLUDE_DIR}/DepthCamera.h
-  ${INCLUDE_DIR}/RGBCamera.h
-  ${INCLUDE_DIR}/StereoCamera.h
-  ${INCLUDE_DIR}/StreamingAverager.h
-  ${INCLUDE_DIR}/Calibration.h
-  ${INCLUDE_DIR}/Util.h
-  ${INCLUDE_DIR}/Visualizer.h
-  ${INCLUDE_DIR}/HandClassifier.h
-  ${INCLUDE_DIR}/Detector.h
-  ${INCLUDE_DIR}/HandDetector.h
-  ${INCLUDE_DIR}/PlaneDetector.h
-  ${INCLUDE_DIR}/MockCamera.h
-  ${INCLUDE_DIR}/MockD435iCamera.h
-  ${INCLUDE_DIR}/HumanDetector.h
-  ${INCLUDE_DIR}/HumanBody.h
-  ${INCLUDE_DIR}/Avatar.h
-  ${INCLUDE_DIR}/nanoflann.hpp
-  ${INCLUDE_DIR}/SLAMSystem.h
-  ${INCLUDE_DIR}/OkvisSLAMSystem.h
-  ${INCLUDE_DIR}/glfwManager.h
-  ${INCLUDE_DIR}/CameraSetup.h
-  ${INCLUDE_DIR}/SparseMap.h
-  ${INCLUDE_DIR}/PointCostSolver.h
-  ${INCLUDE_DIR}/PoseGraphSolver.h
-  ${INCLUDE_DIR}/Types.h
-  ${INCLUDE_DIR}/CorrespondenceRansac.h
-  ${INCLUDE_DIR}/UKF.h
-  ${INCLUDE_DIR}/SaveFrame.h
-  ${INCLUDE_DIR}/SegmentedMesh.h
+  ${INCLUDE_DIR}/util/FrameObject.h
+  ${INCLUDE_DIR}/hand_and_avatar/DetectionParams.h
+  ${INCLUDE_DIR}/hand_and_avatar/hand/Hand.h
+  ${INCLUDE_DIR}/hand_and_avatar/FramePlane.h
+  ${INCLUDE_DIR}/camera/webcamWebcam.h
+  ${INCLUDE_DIR}/camera/DepthCamera.h
+  ${INCLUDE_DIR}/camera/RGBCamera.h
+  ${INCLUDE_DIR}/camera/StereoCamera.h
+  ${INCLUDE_DIR}/hand_and_avatar/StreamingAverager.h
+  ${INCLUDE_DIR}/camera/Calibration.h
+  ${INCLUDE_DIR}/util/Util.h
+  ${INCLUDE_DIR}/util/Visualizer.h
+  ${INCLUDE_DIR}/hand_and_avatar/hand/HandClassifier.h
+  ${INCLUDE_DIR}/hand_and_avatar/Detector.h
+  ${INCLUDE_DIR}/hand_and_avatar/hand/HandDetector.h
+  ${INCLUDE_DIR}/hand_and_avatar/PlaneDetector.h
+  ${INCLUDE_DIR}/camera/MockCamera.h
+  ${INCLUDE_DIR}/camera/MockD435iCamera.h
+  ${INCLUDE_DIR}/hand_and_avatar/avatar/HumanDetector.h
+  ${INCLUDE_DIR}/hand_and_avatar/avatar/HumanBody.h
+  ${INCLUDE_DIR}/hand_and_avatar/avatar/Avatar.h
+  ${INCLUDE_DIR}/util/nanoflann.hpp
+  ${INCLUDE_DIR}/slam/SLAMSystem.h
+  ${INCLUDE_DIR}/slam/OkvisSLAMSystem.h
+  ${INCLUDE_DIR}/util/glfwManager.h
+  ${INCLUDE_DIR}/camera/CameraSetup.h
+  ${INCLUDE_DIR}/slam/SparseMap.h
+  ${INCLUDE_DIR}/slam/PointCostSolver.h
+  ${INCLUDE_DIR}/slam/PoseGraphSolver.h
+  ${INCLUDE_DIR}/util/Types.h
+  ${INCLUDE_DIR}/slam/CorrespondenceRansac.h
+  ${INCLUDE_DIR}/util/UKF.h
+  ${INCLUDE_DIR}/util/SaveFrame.h
+  ${INCLUDE_DIR}/util/SegmentedMesh.h
   stdafx.h
 )
 
@@ -375,8 +378,8 @@ endif()
 if( NOT k4a_FOUND )
   set( _AZURE_KINECT_SDK_ "//" )
 else()
-  set( SOURCES ${SOURCES} AzureKinectCamera.cpp )
-  set( HEADERS ${HEADERS} ${INCLUDE_DIR}/AzureKinectCamera.h )
+  set( SOURCES ${SOURCES} ${SRC_DIR}/camrea/AzureKinectCamera.cpp )
+  set( HEADERS ${HEADERS} ${INCLUDE_DIR}/camera/AzureKinectCamera.h )
   set( DEPENDENCIES ${DEPENDENCIES} k4a::k4a )
 endif( NOT k4a_FOUND )
 
@@ -384,8 +387,8 @@ if( NOT realsense2_FOUND )
   set( _RSSDK2_ "//" )
 else()
   include_directories( ${realsense2_INCLUDE_DIR} )
-  set( SOURCES ${SOURCES} RS2Camera.cpp D435iCamera.cpp )
-  set( HEADERS ${HEADERS} ${INCLUDE_DIR}/RS2Camera.h ${INCLUDE_DIR}/D435iCamera.h ${INCLUDE_DIR}/D435iCalibWriter.h )
+  set( SOURCES ${SOURCES} ${SRC_DIR}/camera/RS2Camera.cpp ${SRC_DIR}/camera/D435iCamera.cpp )
+  set( HEADERS ${HEADERS} ${INCLUDE_DIR}/camera/RS2Camera.h ${INCLUDE_DIR}/camera/D435iCamera.h ${INCLUDE_DIR}/camera/D435iCalibWriter.h )
   set( DEPENDENCIES ${DEPENDENCIES} ${realsense2_LIBRARY} )
 endif( NOT realsense2_FOUND )
 
@@ -393,16 +396,16 @@ if( NOT RSSDK_FOUND )
   set( _RSSDK_ "//" )
 else()
   include_directories( ${RSSDK_INCLUDE_DIR} )
-  set( SOURCES ${SOURCES} SR300Camera.cpp Converter.cpp )
-  set( HEADERS ${HEADERS} ${INCLUDE_DIR}/SR300Camera.h ${INCLUDE_DIR}/Converter.h )
+  set( SOURCES ${SOURCES} ${SRC_DIR}/camera/SR300Camera.cpp ${SRC_DIR}/camera/camera_util/Converter.cpp )
+  set( HEADERS ${HEADERS} ${INCLUDE_DIR}/camera/SR300Camera.h ${INCLUDE_DIR}/camera/Converter.h )
 endif( NOT RSSDK_FOUND )
 
 if( NOT PMDSDK_FOUND )
   set( _PMDSDK_ "//" )
 else()
   include_directories( ${PMDSDK_INCLUDE_DIR} )
-  set( SOURCES ${SOURCES} PMDCamera.cpp )
-  set( HEADERS ${HEADERS} ${INCLUDE_DIR}/PMDCamera.h )
+  set( SOURCES ${SOURCES} ${SRC_DIR}/camera/PMDCamera.cpp )
+  set( HEADERS ${HEADERS} ${INCLUDE_DIR}/camera/PMDCamera.h )
   set( DEPENDENCIES ${DEPENDENCIES} ${PMDSDK_LIBRARIES} )
 endif( NOT PMDSDK_FOUND )
 
@@ -467,7 +470,7 @@ if ( MSVC )
 endif()
 
 if( ${BUILD_HAND_DEMO} )
-    add_executable( ${DEMO_NAME} HandDemo.cpp )
+    add_executable( ${DEMO_NAME} ${SRC_DIR}/hand_and_avatar/hand/HandDemo.cpp )
     target_include_directories( ${DEMO_NAME} PRIVATE ${INCLUDE_DIR} )
     target_link_libraries( ${DEMO_NAME} ${DEPENDENCIES} ${LIB_NAME} )
     set_target_properties( ${DEMO_NAME} PROPERTIES OUTPUT_NAME ${DEMO_NAME} )
@@ -475,7 +478,7 @@ if( ${BUILD_HAND_DEMO} )
 endif( ${BUILD_HAND_DEMO} )
 
 if( ${BUILD_AVATAR_DEMO} )
-    add_executable( ${AVATAR_DEMO_NAME} AvatarDemo.cpp )
+    add_executable( ${AVATAR_DEMO_NAME} ${SRC_DIR}/hand_and_avatar/avatar/AvatarDemo.cpp )
     target_include_directories( ${AVATAR_DEMO_NAME} PRIVATE ${INCLUDE_DIR} )
     target_link_libraries( ${AVATAR_DEMO_NAME} ${DEPENDENCIES} ${LIB_NAME} )
     set_target_properties( ${AVATAR_DEMO_NAME} PROPERTIES OUTPUT_NAME ${AVATAR_DEMO_NAME} )
@@ -483,7 +486,7 @@ if( ${BUILD_AVATAR_DEMO} )
 endif( ${BUILD_AVATAR_DEMO} )
 
 if( ${BUILD_SLAM_DEMO} AND realsense2_FOUND )
-    add_executable( ${SLAM_DEMO_NAME} SlamDemo435i.cpp )
+    add_executable( ${SLAM_DEMO_NAME} ${SRC_DIR}/slam/SlamDemo435i.cpp )
     target_include_directories( ${SLAM_DEMO_NAME} PRIVATE ${INCLUDE_DIR} )
     set_target_properties( ${SLAM_DEMO_NAME} PROPERTIES OUTPUT_NAME ${SLAM_DEMO_NAME} )
     set_target_properties( ${SLAM_DEMO_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
@@ -492,7 +495,7 @@ if( ${BUILD_SLAM_DEMO} AND realsense2_FOUND )
     else()
         target_link_libraries( ${SLAM_DEMO_NAME} ${DEPENDENCIES} ${LIB_NAME} GLU GL glut )
     endif ( MSVC )
-    add_executable( d435i_intrinsics_writer D435iCalibWriter.cpp )
+    add_executable( d435i_intrinsics_writer ${SRC_DIR}/camera/D435iCalibWriter.cpp )
     target_include_directories( d435i_intrinsics_writer PRIVATE ${INCLUDE_DIR} )
     target_link_libraries( d435i_intrinsics_writer ${DEPENDENCIES} ${LIB_NAME} )
     #set_target_properties( d435i_intrinsics_writer PROPERTIES OUTPUT_NAME d435i_intrinsics_writer )
@@ -500,7 +503,7 @@ if( ${BUILD_SLAM_DEMO} AND realsense2_FOUND )
 endif( ${BUILD_SLAM_DEMO} AND realsense2_FOUND )
 
 if( ${BUILD_3DRECON_DEMO} AND realsense2_FOUND )
-    add_executable( ${3DRECON_DATA_NAME} 3DReconDemo.cpp )
+    add_executable( ${3DRECON_DATA_NAME} ${SRC_DIR}/3drecon/3DReconDemo.cpp )
     target_include_directories( ${3DRECON_DATA_NAME} PRIVATE ${INCLUDE_DIR} )
     set_target_properties( ${3DRECON_DATA_NAME} PROPERTIES OUTPUT_NAME ${3DRECON_DATA_NAME} )
     set_target_properties( ${3DRECON_DATA_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
@@ -513,7 +516,7 @@ endif( ${BUILD_3DRECON_DEMO} AND realsense2_FOUND )
 
 
 if( ${BUILD_DATA_RECORDING} )
-    add_executable( ${DATA_RECORDING_NAME} DataRecording.cpp )
+    add_executable( ${DATA_RECORDING_NAME} ${SRC_DIR}/hand_and_avatar/DataRecording.cpp )
     target_include_directories( ${DATA_RECORDING_NAME} PRIVATE ${INCLUDE_DIR} )
     target_link_libraries( ${DATA_RECORDING_NAME} ${DEPENDENCIES} ${LIB_NAME} )
     set_target_properties( ${DATA_RECORDING_NAME} PROPERTIES OUTPUT_NAME ${DATA_RECORDING_NAME} )
@@ -521,7 +524,7 @@ if( ${BUILD_DATA_RECORDING} )
 endif( ${BUILD_DATA_RECORDING} )
 
 if( ${BUILD_SLAM_RECORDING} )
-    add_executable( ${SLAM_RECORDING_NAME} SlamRecording.cpp )
+    add_executable( ${SLAM_RECORDING_NAME} ${SRC_DIR}/slam/SlamRecording.cpp )
     target_include_directories( ${SLAM_RECORDING_NAME} PRIVATE ${INCLUDE_DIR} )
     set_target_properties( ${SLAM_RECORDING_NAME} PROPERTIES OUTPUT_NAME ${SLAM_RECORDING_NAME} )
     set_target_properties( ${SLAM_RECORDING_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
@@ -533,7 +536,7 @@ if( ${BUILD_SLAM_RECORDING} )
 endif( ${BUILD_SLAM_RECORDING} )
 
 if( ${BUILD_SLAM_REPLAYING} )
-    add_executable( ${SLAM_REPLAYING_NAME} SlamReplaying.cpp )
+    add_executable( ${SLAM_REPLAYING_NAME} ${SRC_DIR}/slam/SlamReplaying.cpp )
     target_include_directories( ${SLAM_REPLAYING_NAME} PRIVATE ${INCLUDE_DIR} )
     set_target_properties( ${SLAM_REPLAYING_NAME} PROPERTIES OUTPUT_NAME ${SLAM_REPLAYING_NAME} )
     set_target_properties( ${SLAM_REPLAYING_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
