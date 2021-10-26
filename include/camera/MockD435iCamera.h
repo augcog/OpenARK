@@ -12,7 +12,7 @@
 
 // OpenARK Libraries
 #include "CameraSetup.h"
-#include "Util.h"
+#include "util/Util.h"
 using boost::filesystem::path;
 using std::ifstream;
 namespace ark {

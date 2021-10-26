@@ -3,8 +3,8 @@
 #include <iostream>
 //#include <direct.h>
 #include <thread>
-#include "glfwManager.h"
-#include "Util.h"
+#include "util/glfwManager.h"
+#include "util/Util.h"
 #include "SaveFrame.h"
 #include "Types.h"
 #include "SegmentedMesh.h"

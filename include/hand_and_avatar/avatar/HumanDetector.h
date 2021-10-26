@@ -1,7 +1,7 @@
 #pragma once
-#include "Detector.h"
-#include "HumanBody.h"
-#include "Avatar.h"
+#include "hand_and_avatar/Detector.h"
+#include "hand_and_avatar/avatar/HumanBody.h"
+#include "hand_and_avatar/avatar/Avatar.h"
 
 #include "opencv2/objdetect/objdetect.hpp"
 #include "opencv2/video/tracking.hpp"

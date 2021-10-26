@@ -56,7 +56,7 @@ Now you can #include OpenARK's core header in any file and begin using OpenARK. 
 Here is the outline of a program for performing hand detection:
 ```cpp
 ...
-#include "core.h"
+#include "util/Core.h"
 #include "SR300Camera.h"
 
 #include "opencv2/core.hpp"

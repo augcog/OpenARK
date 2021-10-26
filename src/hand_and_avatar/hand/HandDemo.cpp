@@ -24,12 +24,12 @@
     #include "RS2Camera.h"
 #endif
 #ifdef AZURE_KINECT_ENABLED
-    #include "AzureKinectCamera.h"
+    #include "camera/AzureKinectCamera.h"
 #endif
 
-#include "Core.h"
-#include "Visualizer.h"
-#include "Util.h"
+#include "util/Core.h"
+#include "util/Visualizer.h"
+#include "util/Util.h"
 
 using namespace ark;
 

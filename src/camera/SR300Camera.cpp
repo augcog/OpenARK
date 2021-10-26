@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Version.h"
 #include "SR300Camera.h"
-#include "Visualizer.h"
+#include "util/Visualizer.h"
 
 using namespace Intel::RealSense;
 

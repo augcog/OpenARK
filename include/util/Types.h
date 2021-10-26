@@ -5,8 +5,8 @@
 
 #include <opencv2/opencv.hpp>
 #include <pcl/point_types.h>
-#include "Hand.h"
-#include "FramePlane.h"
+#include "hand_and_avatar/hand/Hand.h"
+#include "hand_and_avatar/FramePlane.h"
 
 namespace ark{
 

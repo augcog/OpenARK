@@ -10,7 +10,7 @@
 #include <ceres/ceres.h>
 #include <nanoflann.hpp>
 
-#include "Visualizer.h"
+#include "util/Visualizer.h"
 
 namespace ark {
     class HumanDetector;

@@ -1,10 +1,10 @@
 #include "stdafx.h"
 #include "Version.h"
 
-#include "Util.h"
-#include "Hand.h"
-#include "Visualizer.h"
-#include "HandClassifier.h"
+#include "util/Util.h"
+#include "hand_and_avatar/hand/Hand.h"
+#include "util/Visualizer.h"
+#include "hand_and_avatar/hand/HandClassifier.h"
 
 // limited to file scope
 namespace {

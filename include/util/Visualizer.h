@@ -7,7 +7,7 @@
 #include <opencv2/core.hpp>
 
 // OpenARK headers
-#include "Hand.h"
+#include "hand_and_avatar/hand/Hand.h"
 
 namespace ark {
     /**

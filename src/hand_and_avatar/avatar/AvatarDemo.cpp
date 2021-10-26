@@ -23,12 +23,12 @@
 
 // OpenARK Libraries
 #include "Version.h"
-#include "MockCamera.h"
+#include "camera/MockCamera.h"
 
-#include "Core.h"
-#include "Visualizer.h"
-#include "Avatar.h"
-#include "HumanDetector.h"
+#include "util/Core.h"
+#include "util/Visualizer.h"
+#include "hand_and_avatar/avatar/Avatar.h"
+#include "hand_and_avatar/avatar/HumanDetector.h"
 
 using namespace ark;
 

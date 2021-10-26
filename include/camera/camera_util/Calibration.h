@@ -7,10 +7,10 @@
 #include <opencv2/core.hpp>
 
 // OpenARK Libraries
-#include "Visualizer.h"
+#include "util/Visualizer.h"
 #include "DepthCamera.h"
 #include "RGBCamera.h"
-#include "Util.h"
+#include "util/Util.h"
 
 namespace ark {
     /**

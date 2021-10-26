@@ -27,15 +27,15 @@
 #include "RS2Camera.h"
 #endif
 #ifdef AZURE_KINECT_ENABLED
-#include "AzureKinectCamera.h"
+#include "camera/AzureKinectCamera.h"
 #endif
 
 #include "opencv2/imgcodecs.hpp"
 
-#include "Core.h"
-#include "Visualizer.h"
-#include "StreamingAverager.h"
-#include "HumanDetector.h"
+#include "util/Core.h"
+#include "util/Visualizer.h"
+#include "hand_and_avatar/StreamingAverager.h"
+#include "hand_and_avatar/avatar/HumanDetector.h"
 
 using namespace ark;
 

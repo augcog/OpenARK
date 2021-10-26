@@ -1,5 +1,5 @@
-#include "Detector.h"
-#include "DetectionParams.h"
+#include "hand_and_avatar/Detector.h"
+#include "hand_and_avatar/DetectionParams.h"
 
 namespace ark {
     Detector::Detector(DetectionParams::Ptr params)

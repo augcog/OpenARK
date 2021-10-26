@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Version.h"
 #include "DepthCamera.h"
-#include "Hand.h"
+#include "hand_and_avatar/hand/Hand.h"
 #include "FrameObject.h"
 
 namespace ark {

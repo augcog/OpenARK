@@ -19,10 +19,10 @@
 // OpenARK Libraries
 #include "Version.h"
 #include "D435iCamera.h"
-#include "Util.h"
+#include "util/Util.h"
 
-#include "Core.h"
-#include "Visualizer.h"
+#include "util/Core.h"
+#include "util/Visualizer.h"
 
 using namespace ark;
 using boost::filesystem::path;

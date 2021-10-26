@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Version.h"
-#include "Visualizer.h"
-#include "Util.h"
+#include "util/Visualizer.h"
+#include "util/Util.h"
 
 namespace ark {
     pcl::visualization::PCLVisualizer::Ptr Visualizer::viewer = nullptr;

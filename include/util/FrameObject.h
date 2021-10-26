@@ -7,7 +7,7 @@
 
 // OpenARK headers
 #include "Version.h"
-#include "DetectionParams.h"
+#include "hand_and_avatar/DetectionParams.h"
 
 namespace ark {
     /** Class representing a 3D object observed in a single frame */

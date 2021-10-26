@@ -1,4 +1,4 @@
-#include "HumanBody.h"
+#include "hand_and_avatar/avatar/HumanBody.h"
 
 namespace ark {
 	HumanBody::HumanBody() {

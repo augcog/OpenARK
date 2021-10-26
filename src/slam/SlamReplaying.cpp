@@ -4,10 +4,10 @@
 #include <ctime>
 #include <csignal>
 #include <exception>
-#include "glfwManager.h"
+#include "util/glfwManager.h"
 #include "concurrency.h"
 #include "MockD435iCamera.h"
-#include "Util.h"
+#include "util/Util.h"
 #include "OkvisSLAMSystem.h"
 
 using namespace ark;

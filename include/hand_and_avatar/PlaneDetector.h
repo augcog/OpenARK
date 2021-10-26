@@ -1,6 +1,6 @@
 #pragma once
-#include "Detector.h"
-#include "FramePlane.h"
+#include "hand_and_avatar/Detector.h"
+#include "hand_and_avatar/FramePlane.h"
 
 namespace ark {
     /** Plane detector class supporting the detection of multiple planes within a depth projection image (xyz map).

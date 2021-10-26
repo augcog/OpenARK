@@ -1,7 +1,7 @@
 #pragma once
-#include "Detector.h"
-#include "PlaneDetector.h"
-#include "Hand.h"
+#include "hand_and_avatar/Detector.h"
+#include "hand_and_avatar/PlaneDetector.h"
+#include "hand_and_avatar/hand/Hand.h"
 
 namespace ark {
     /** Hand detector class supporting the detection of multiple hands within a depth projection image (xyz map).

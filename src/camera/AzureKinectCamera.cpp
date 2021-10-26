@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "Version.h"
-#include "AzureKinectCamera.h"
+#include "camera/AzureKinectCamera.h"
 
 #include <k4a/k4a.h>
 

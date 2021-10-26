@@ -9,7 +9,7 @@
 #include <DLoopDetector.h>
 #include "PoseGraphSolver.h"
 #include "CorrespondenceRansac.h"
-#include "Util.h"
+#include "util/Util.h"
 #include "PointCostSolver.h"
 
 namespace ark{

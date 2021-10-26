@@ -5,11 +5,11 @@
 #include <mutex>
 #include <map>
 
-#include "Util.h"
+#include "util/Util.h"
 #include "FrameObject.h"
-#include "Hand.h"
-#include "FramePlane.h"
-#include "DetectionParams.h"
+#include "hand_and_avatar/hand/Hand.h"
+#include "hand_and_avatar/FramePlane.h"
+#include "hand_and_avatar/DetectionParams.h"
 
 namespace ark {
     /**

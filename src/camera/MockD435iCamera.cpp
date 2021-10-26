@@ -1,9 +1,9 @@
 #include "stdafx.h"
 #include "Version.h"
 #include "MockD435iCamera.h"
-#include "Visualizer.h"
+#include "util/Visualizer.h"
 #include <librealsense2/rs.hpp>
-#include <librealsense2/rsutil.h>
+#include <librealsense2/rsutil/Util.h>
 #include <librealsense2/hpp/rs_pipeline.hpp>
 #include <boost/archive/text_iarchive.hpp>
 

@@ -2,8 +2,8 @@
 #include "OkvisSLAMSystem.h"
 #include <iostream>
 #include <thread>
-#include "glfwManager.h"
-#include "Core.h"
+#include "util/glfwManager.h"
+#include "util/Core.h"
 
 using namespace ark;
 

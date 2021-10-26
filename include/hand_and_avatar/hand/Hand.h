@@ -1,7 +1,7 @@
 #pragma once
 
 #include "FrameObject.h"
-#include "FramePlane.h"
+#include "hand_and_avatar/FramePlane.h"
 #include "Version.h"
 
 namespace ark {

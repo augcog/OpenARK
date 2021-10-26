@@ -7,7 +7,7 @@
 #include <exception>
 
 #include "Version.h"
-#include "Hand.h"
+#include "hand_and_avatar/hand/Hand.h"
 
 namespace ark {
     namespace classifier {

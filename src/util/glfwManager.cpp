@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "glfwManager.h"
+#include "util/glfwManager.h"
 #include <iostream>
 
 namespace MyGUI{

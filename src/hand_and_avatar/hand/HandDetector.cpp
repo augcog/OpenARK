@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "HandDetector.h"
+#include "hand_and_avatar/hand/HandDetector.h"
 
 namespace ark {
     HandDetector::HandDetector(bool elim_planes, DetectionParams::Ptr params)

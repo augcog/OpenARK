@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Version.h"
 #include "StereoCamera.h"
-#include "Visualizer.h"
+#include "util/Visualizer.h"
 
 
 namespace ark {

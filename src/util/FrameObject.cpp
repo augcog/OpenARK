@@ -2,8 +2,8 @@
 #include "Version.h"
 
 #include "FrameObject.h"
-#include "Visualizer.h"
-#include "Util.h"
+#include "util/Visualizer.h"
+#include "util/Util.h"
 
 namespace ark {
     // Initialize default DetectionParams instance
