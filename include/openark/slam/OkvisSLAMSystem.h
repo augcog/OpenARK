@@ -18,19 +18,13 @@ namespace ark {
 
         struct WrappedMultiCameraFrame {
             MultiCameraFrame::Ptr frame;
-            bool operator<(const WrappedMultiCameraFrame& right) const
-            {
-                return frame->timestamp_ > right.frame->timestamp_;
-            }
+            bool operator<(const WrappedMultiCameraFrame& right) const;
         };
 
         struct StampedFrameData {
             okvis::OutFrameData::Ptr data;
             okvis::Time timestamp;
-            bool operator<(const StampedFrameData& right) const
-            {
-                return timestamp > right.timestamp;
-            }
+            bool operator<(const StampedFrameData& right) const;
         };
 
     public:
@@ -71,18 +65,10 @@ namespace ark {
         std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> getActiveMap();
 
 
-        int getActiveMapIndex() {
-            return active_map_index;
-        }
+        int getActiveMapIndex();
         std::shared_ptr<okvis::ThreadedKFVio> okvis_estimator_;
 
-        std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> getMap(int index) {
-            if (sparse_maps_.find(index) == sparse_maps_.end()) {
-                return nullptr;
-            } else {
-                return sparse_maps_[index];
-            }
-        }
+        std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> getMap(int index);
 
     protected:
         void FrameConsumerLoop();
