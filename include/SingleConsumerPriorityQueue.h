@@ -17,56 +17,14 @@ class SingleConsumerPriorityQueue
     std::condition_variable cv;
 
 public:
-    SingleConsumerPriorityQueue() : q(), mutex(), cv() {}
+    SingleConsumerPriorityQueue();
 
-    void enqueue(T item)
-    {
-        std::unique_lock<std::mutex> lock(mutex);
-        q.push(std::move(item));
-        lock.unlock();
-        cv.notify_one(); 
-    }
+    void enqueue(T item);
 
-    T dequeue()
-    {
-        std::unique_lock<std::mutex> lock(mutex);
-        const auto ready = [this]() { return !q.empty(); };
-        if (!ready() && !cv.wait_for(lock, std::chrono::seconds(5), ready)) throw std::runtime_error("Timeout waiting for queued items!");
-        auto item = std::move(q.top());
-        q.pop();
-        return std::move(item);
-    }
+    T dequeue();
 
-    bool try_dequeue(T* item)
-    {
-        std::unique_lock<std::mutex> lock(mutex);
-        if(q.size()>0)
-        {
-            auto val = std::move(q.top());
-            q.pop();
-            *item = std::move(val);
-            return true;
-        }
-        return false;
-    }
+    bool try_dequeue(T* item);
 
-    void clear()
-    {
-        std::unique_lock<std::mutex> lock(mutex);
-        while (q.size() > 0)
-        {
-            const auto ready = [this]() { return !q.empty(); };
-            if (!ready() && !cv.wait_for(lock, std::chrono::seconds(5), ready)) throw std::runtime_error("Timeout waiting for queued items!");
-            auto item = std::move(q.top());
-            q.pop();
-        }
-        
-        
-    }
-    size_t size()
-    {
-        std::unique_lock<std::mutex> lock(mutex); 
-        return q.size();
-    }
+    void clear();
+    size_t size();
 };
-
