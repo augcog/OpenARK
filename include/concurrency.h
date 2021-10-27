@@ -20,77 +20,18 @@ class single_consumer_queue
 public:
     single_consumer_queue<T>() : q(), mutex(), cv() {}
 
-    void enqueue(T item)
-    {
-        std::unique_lock<std::mutex> lock(mutex);
-        q.push(std::move(item));
-        lock.unlock();
-        cv.notify_one(); 
-    }
+    void enqueue(T item);
 
-    T dequeue()
-    {
-        std::unique_lock<std::mutex> lock(mutex);
-        const auto ready = [this]() { return !q.empty(); };
-        if (!ready() && !cv.wait_for(lock, std::chrono::seconds(5), ready)) throw std::runtime_error("Timeout waiting for queued items!");
-        auto item = std::move(q.front());
-        q.pop();
-        return std::move(item);
-    }
+    T dequeue();
 
-    bool try_dequeue(T* item)
-    {
-        std::unique_lock<std::mutex> lock(mutex);
-        if(q.size()>0)
-        {
-            auto val = std::move(q.front());
-            q.pop();
-            *item = std::move(val);
-            return true;
-        }
-        return false;
-    }
+    bool try_dequeue(T* item);
 
-    bool try_get_front(T* item)
-    {
+    bool try_get_front(T* item);
 
-        std::unique_lock<std::mutex> lock(mutex);
-        if(q.size()>0)
-            *item = q.front();
-            return true;
-        return false;
-    }
-
-    void clear()
-    {
-        std::unique_lock<std::mutex> lock(mutex);
-        while (q.size() > 0)
-        {
-            const auto ready = [this]() { return !q.empty(); };
-            if (!ready() && !cv.wait_for(lock, std::chrono::seconds(5), ready)) throw std::runtime_error("Timeout waiting for queued items!");
-            auto item = std::move(q.front());
-            q.pop();
-        }
-        
-        
-    }
-    size_t size()
-    {
-        std::unique_lock<std::mutex> lock(mutex); 
-        return q.size();
-    }
+    void clear();
+    size_t size();
 };
 
-inline bool any_costumers_alive(const std::vector<bool>& running)
-{
-    for (auto is_running : running)
-    {
-        if (is_running)
-        {
-            return true;
-        }
-    }
-    return false;
-}
+bool any_costumers_alive(const std::vector<bool>& running);
 
 #endif

@@ -9,69 +9,79 @@
 
 #include <string>
 #include <vector>
-#include <opencv2/core.hpp> // cv::Size
-#include <Eigen/Core> // Eigen::aligned_allocator
-
-#include "Types.h" // CameraParameter, MultiCameraFrame, ImuPair, CameraParameter
+#include <opencv2/core.hpp> // cv::Size, cv::Vec4d
+#include <k4a/k4a.h> // k4a_device_t
 
 namespace ark
 {
 
     // Design: currently we only support AzureKinect camera. 
     // Thus there's no need to derive from base class.
-    class AzureKinectCamera : public CameraSetup
+    class AzureKinectCamera
     {
     public:
-        AzureKinectCamera();
+        typedef union
+        {
+            /** XYZ or array representation of vector. */
+            struct _xyz
+            {
+                float x; /**< X component of a vector. */
+                float y; /**< Y component of a vector. */
+                float z; /**< Z component of a vector. */
+            } xyz;       /**< X, Y, Z representation of a vector. */
+            float v[3];  /**< Array representation of a vector. */
+        } float3_t;
 
-        AzureKinectCamera(const CameraParameter&);
+        struct imu_data
+        {
+            // acc timestamp and gyro timestamp is nearly the same
+            //      thus we use acc timestamp.
 
-        ~AzureKinectCamera();
+            uint64_t timestamp_usec; /**< Timestamp of the accelerometer in microseconds. */
+            float3_t gyro_sample; /**< Gyro sample in radians per second. */
+            float3_t acc_sample; /**< Accelerometer sample in meters per second squared. */
+        };
+    
+    public:
+        AzureKinectCamera() noexcept;
 
-        /*
-         *
-         *
-         * 
-         * 
-         */
-        void start_camera();
+        ~AzureKinectCamera() noexcept;
+
+        void startCamera();
         
-        /*
-         * Get latest datas (frames) from sensor stream. 
-         * And store TODO
-         * 
-         * 
-         */
-        void update(MultiCameraFrame::Ptr);
-
+        // Get (1) rgb (2) xyz (3) imu data
+        // This function should be call around 30 fps to get all data
+        void getCurrData( cv::Mat& rgb_output, \
+                          cv::Mat& xyz_output, \
+                          uint16_t& timestamp,\
+                          std::vector<AzureKinectCamera::imu_data>& imu_outputs )
+                                        
         std::string getModelName() const;
 
-        /*
-         * Intrinsic matrix of RGB Camera
-         */
-        std::vector<float> getColorIntrinsics();
+        // Get RGB image intrinsic matrix
+        // ( cx, cy, fx, fy )
+        cv::Vec4d getColorIntrinsics();
 
-        /*
-         *
-         *
-         */
-        cv::Size getImageSize() const override;
+        // Get RGB image size
+        // (width, height)
+        cv::Size getImageSize() const;
 
-        double getDepthScale();
+        int getHeight() const;
 
-        /*
-         * Get IMU data based on time stamp
-         *
-         * Eigen::aligned_allocator is used to align data that contain Eigen component
-         *  this related to how C++98 - C++14 work with dynamic memory allocation.
-         *  https://eigen.tuxfamily.org/dox/classEigen_1_1aligned__allocator.html
-         *  https://eigen.tuxfamily.org/dox/group__TopicStructHavingEigenMembers.html 
-         *  https://eigen.tuxfamily.org/dox-devel/group__TopicStlContainers.html
-         */
-        bool getImuToTime(double, std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>>&);
+        int getWidth() const;
 
-    protected:
-        CameraParameter camParam;
+    private:
+        void freeResource();
+
+    private:
+        k4a_device_t device;
+        k4a_capture_t capture;
+        k4a_calibration_t calibration;
+        k4a_transformation_t transformation;
+        k4a_device_configuration_t camera_config;
+        // cx, cy, fx, fy
+        cv::Vec4d intrinsic;
+        int img_width, img_height;
     };
 
 }

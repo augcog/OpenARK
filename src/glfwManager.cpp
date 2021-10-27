@@ -62,6 +62,17 @@ void Window::add_control_func(GLFWkeyfun controls){
     }
 }
 
+void Window::set_pos(int x, int y)
+{
+    glfwSetWindowPos(win_ptr, x, y);
+}
+
+void Window::keyboard_control()
+{
+    if (glfwGetKey(win_ptr, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(win_ptr, GL_TRUE);
+}
+
 bool Window::display(){
     if(win_ptr==NULL)
         return false;
@@ -128,6 +139,14 @@ bool ImageWindow::display(){
         return false;
     }
 
+}
+
+ImageWindow::ImageWindow(std::string name, int resX, int resY, GLenum image_format, GLenum data_type) :
+    Window(name, resX, resY),
+    image_format_(image_format),
+    data_type_(data_type)
+{
+    glGenTextures(1, &texture);
 }
 
 void ImageWindow::set_image(cv::Mat image_in){
@@ -205,6 +224,32 @@ void ObjectWindow::add_object(Object* obj){
     obj->windows[name_] = this;
 }
     
+
+ARCameraWindow::ARCameraWindow(std::string name, int resX, int resY, GLenum image_format, GLenum data_type, double px, double py, double cx, double cy, double near_cut, double far_cut) :
+    ObjectWindow(name, resX, resY),
+    image_format_(image_format),
+    data_type_(data_type),
+    cube_num(0),
+    near_cut_(near_cut),
+    far_cut_(far_cut),
+    px_(px), py_(py), cx_(cx), cy_(cy)
+{
+    proj_mat_ = Eigen::Matrix4d::Zero();
+    /*proj_mat_(0,0)=px/cx;
+    proj_mat_(1,1)=py/cy;
+    proj_mat_(2,2)=(near_cut+far_cut)/(near_cut-far_cut);
+    proj_mat_(2,3)=2*far_cut*near_cut/(near_cut-far_cut);
+    proj_mat_(3,2)=-1;*/
+    proj_mat_(0, 0) = 2 * px / resX;
+    proj_mat_(1, 1) = 2 * py / resY;
+    proj_mat_(2, 0) = 2 * cx / resX - 1.0;
+    proj_mat_(2, 1) = 2 * cy / resY - 1.0;
+    proj_mat_(2, 2) = (near_cut + far_cut) / (near_cut - far_cut);
+    proj_mat_(2, 3) = 2 * far_cut*near_cut / (near_cut - far_cut);
+    proj_mat_(3, 2) = -1;
+    clicked_ = false;
+    glfwSetInputMode(win_ptr, GLFW_STICKY_MOUSE_BUTTONS, 1);
+}
 
 bool ARCameraWindow::display(){
     std::lock_guard<std::mutex> guard(displayLock_);
@@ -318,6 +363,12 @@ bool ARCameraWindow::display(){
     }
 
 
+}
+
+void ARCameraWindow::set_camera(const Eigen::Affine3d& cam_extr)
+{
+
+    cam_extr_ = cam_extr;
 }
 
 void ARCameraWindow::set_image(cv::Mat image_in){
@@ -466,6 +517,12 @@ void Cube::draw_obj(){
 }
 
 
+Cube::Cube(std::string name, float width, float height, float length) :
+    Object(name), hWidth(width / 2), hHeight(height / 2), hLength(length / 2)
+{
+
+}
+
 void Grid::draw_obj()
 {
     // disable lighting
@@ -503,6 +560,13 @@ void Grid::draw_obj()
     glEnable(GL_LIGHTING);
 }
 
+
+Grid::Grid(std::string name, float size, float step) : Object(name),
+size(size),
+step(step)
+{
+
+}
 
 void Axis::draw_obj()
 {
@@ -543,6 +607,12 @@ void Axis::draw_obj()
     //glDepthFunc(GL_LEQUAL);
 }
 
+Axis::Axis(std::string name, float size) : Object(name),
+size(size)
+{
+
+}
+
 void Path::draw_obj()
 {
     // disable lighting
@@ -561,6 +631,46 @@ void Path::draw_obj()
 
     // enable lighting back
     glEnable(GL_LIGHTING);
+}
+
+Path::Path(std::string name) : Object(name),
+nodes()
+{
+
+}
+
+Path::Path(std::string name, Eigen::Vector3d color) : Object(name),
+nodes(),
+color(color)
+{
+
+}
+
+Path::Path(std::string name, const std::vector<Eigen::Vector3d>& nodes) : Object(name),
+nodes(nodes)
+{
+
+}
+
+void Path::add_node(Eigen::Vector3d node)
+{
+
+    nodes.push_back(node);
+}
+
+void Path::clear()
+{
+    nodes.clear();
+}
+
+void Path::set_color(Eigen::Vector3d obj_color)
+{
+    color = obj_color;
+}
+
+void Path::set_color(float x, float y, float z)
+{
+    color = Eigen::Vector3d(x, y, z);
 }
 
 void Mesh::draw_obj()
@@ -634,6 +744,63 @@ void Mesh::draw_obj()
 
     }
 
+}
+
+Mesh::Mesh(std::string name, ark::SegmentedMesh * mesh) : Object(name)
+{
+    mesh_ = mesh;
+
+    mesh_->AddRenderMutex(&meshLock_, "mesh visualizer");
+
+    auto mesh_output = mesh_->GetOutputVectors();
+
+    mesh_vertices = std::get<0>(mesh_output);
+    mesh_colors = std::get<1>(mesh_output);
+    mesh_triangles = std::get<2>(mesh_output);
+    mesh_transforms = std::get<3>(mesh_output);
+    mesh_enabled = std::get<4>(mesh_output);
+}
+
+void CameraWindow::keyboard_control()
+{
+    float cameraSpeed = 0.05f; // adjust accordingly
+    float zoomSpeed = 0.25f;
+    if (glfwGetKey(win_ptr, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(win_ptr, GL_TRUE);
+    if (glfwGetKey(win_ptr, GLFW_KEY_W) == GLFW_PRESS)
+        eye = Eigen::Quaterniond(Eigen::AngleAxisd(-cameraSpeed, (gaze - eye).cross(Eigen::Vector3d::UnitY()).normalized()))*eye;//cameraSpeed * Eigen::Vector3d(0,1,0);
+    if (glfwGetKey(win_ptr, GLFW_KEY_S) == GLFW_PRESS)
+        eye = Eigen::Quaterniond(Eigen::AngleAxisd(cameraSpeed, (gaze - eye).cross(Eigen::Vector3d::UnitY()).normalized()))*eye;
+    if (glfwGetKey(win_ptr, GLFW_KEY_A) == GLFW_PRESS)
+        eye = Eigen::Quaterniond(Eigen::AngleAxisd(cameraSpeed, Eigen::Vector3d::UnitY()))*eye;
+    if (glfwGetKey(win_ptr, GLFW_KEY_D) == GLFW_PRESS)
+        eye = Eigen::Quaterniond(Eigen::AngleAxisd(-cameraSpeed, Eigen::Vector3d::UnitY()))*eye;
+    if (glfwGetKey(win_ptr, GLFW_KEY_Z) == GLFW_PRESS)
+        eye += zoomSpeed * (gaze - eye).normalized();
+    if (glfwGetKey(win_ptr, GLFW_KEY_X) == GLFW_PRESS)
+        eye -= zoomSpeed * (gaze - eye).normalized();
+}
+
+void MeshWindow::set_camera(const Eigen::Affine3d& t)
+{
+
+    transform = t;
+}
+
+void MeshWindow::keyboard_control()
+{
+    if (glfwGetKey(win_ptr, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(win_ptr, GL_TRUE);
+    if (glfwGetMouseButton(win_ptr, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+        clicked_ = true;
+    }
+}
+
+bool MeshWindow::clicked()
+{
+    bool clicked = clicked_;
+    clicked_ = false;
+    return clicked;
 }
 
 }//MyGUI

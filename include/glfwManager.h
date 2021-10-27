@@ -1,11 +1,11 @@
 #pragma once
 #ifdef _WIN32
-	#include <Windows.h>
+    #include <Windows.h>
     #undef ERROR
-	#include <gl/GLU.h>
+    #include <gl/GLU.h>
 #else
-	//#include <GL/glew.h>
-	#include <GL/glu.h>
+    //#include <GL/glew.h>
+    #include <GL/glu.h>
 #endif
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -31,363 +31,247 @@ class Object;
 
 class Manager {
 public:
-	static std::map<std::string,Window*> windows;
+    static std::map<std::string,Window*> windows;
 
-	//This function simply references GLFW init
-	static int (&init)(); 
+    //This function simply references GLFW init
+    static int (&init)(); 
 
-	static void (&terminate)(); 
+    static void (&terminate)(); 
 
-	static bool running();
+    static bool running();
 
-	static void update();
+    static void update();
 
 };//Manager
 
 class Window{
 public:
-	GLFWwindow* win_ptr;
-	std::string name_;
+    GLFWwindow* win_ptr;
+    std::string name_;
 
-	Window(std::string name, int resX, int resY);
+    Window(std::string name, int resX, int resY);
 
-	virtual ~Window();
+    virtual ~Window();
 
-	virtual bool display();
+    virtual bool display();
 
-	void add_control_func(GLFWkeyfun controls);
+    void add_control_func(GLFWkeyfun controls);
 
-	void set_pos(int x, int y){
-		glfwSetWindowPos(win_ptr,x,y);
+    void set_pos(int x, int y);
 
-	}
-
-	virtual void keyboard_control()
-	{
-	    if(glfwGetKey(win_ptr, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-	            glfwSetWindowShouldClose(win_ptr, GL_TRUE);
-	}
+    virtual void keyboard_control();
 
 };
 
 class ObjectWindow : public Window{
 public:
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-	std::map<std::string,Object*> objects;
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    std::map<std::string,Object*> objects;
 
-	Eigen::Vector3d eye;
-	Eigen::Vector3d gaze;
-	std::string msg_;
+    Eigen::Vector3d eye;
+    Eigen::Vector3d gaze;
+    std::string msg_;
 
-	ObjectWindow(std::string name, int resX, int resY);
+    ObjectWindow(std::string name, int resX, int resY);
 
-	virtual ~ObjectWindow();
+    virtual ~ObjectWindow();
 
-	virtual bool display();
+    virtual bool display();
 
-	void add_object(Object* obj);
+    void add_object(Object* obj);
 
-	//void set_camera(const Eigen::Vector3d& eye, const Eigen::Vector3d& gaze);
+    //void set_camera(const Eigen::Vector3d& eye, const Eigen::Vector3d& gaze);
 
 protected:
-	std::mutex displayLock_;
+    std::mutex displayLock_;
 
 
 };//Window
 
 class ARCameraWindow : public ObjectWindow{ 
 public:
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-	ARCameraWindow(std::string name, int resX, int resY, GLenum image_format, GLenum data_type, double px, double py, double cx, double cy, double near_cut, double far_cut):
-	ObjectWindow(name,resX,resY),
-	image_format_(image_format),
-	data_type_(data_type),
-	cube_num(0),
-	near_cut_(near_cut),
-	far_cut_(far_cut),
-	px_(px),py_(py),cx_(cx),cy_(cy){
-		proj_mat_=Eigen::Matrix4d::Zero();
-		/*proj_mat_(0,0)=px/cx;
-		proj_mat_(1,1)=py/cy;
-		proj_mat_(2,2)=(near_cut+far_cut)/(near_cut-far_cut);
-		proj_mat_(2,3)=2*far_cut*near_cut/(near_cut-far_cut);
-		proj_mat_(3,2)=-1;*/
-		proj_mat_(0,0)=2*px/resX;
-		proj_mat_(1,1)=2*py/resY;
-		proj_mat_(2,0)=2*cx/resX-1.0;
-		proj_mat_(2,1)=2*cy/resY-1.0;
-		proj_mat_(2,2)=(near_cut+far_cut)/(near_cut-far_cut);
-		proj_mat_(2,3)=2*far_cut*near_cut/(near_cut-far_cut);
-		proj_mat_(3,2)=-1;
-		clicked_=false;
-		glfwSetInputMode(win_ptr, GLFW_STICKY_MOUSE_BUTTONS, 1);
-	}
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    ARCameraWindow(std::string name, int resX, int resY, GLenum image_format, GLenum data_type, double px, double py, double cx, double cy, double near_cut, double far_cut);
 
-	bool display() override;
+    bool display() override;
 
-	void set_camera(const Eigen::Affine3d& cam_extr){ 
-		cam_extr_=cam_extr;
-	}
+    void set_camera(const Eigen::Affine3d& cam_extr);
 
 
-	void set_image(cv::Mat image_in);
+    void set_image(cv::Mat image_in);
 
-	void keyboard_control() override;
+    void keyboard_control() override;
 
-	bool clicked();
+    bool clicked();
 
-	Eigen::Affine3d cam_extr();
+    Eigen::Affine3d cam_extr();
 
 
 private:
-	Eigen::Affine3d cam_extr_; 
-	Eigen::Matrix4d proj_mat_; 
-	cv::Mat current_image;
-	GLuint texture;
-	GLenum image_format_;
-	GLenum data_type_;
-	int cube_num;
-	double near_cut_;
-	double far_cut_;
-	double px_,py_,cx_,cy_;
-	std::atomic<bool> clicked_;
-
-
-
-
+    Eigen::Affine3d cam_extr_; 
+    Eigen::Matrix4d proj_mat_; 
+    cv::Mat current_image;
+    GLuint texture;
+    GLenum image_format_;
+    GLenum data_type_;
+    int cube_num;
+    double near_cut_;
+    double far_cut_;
+    double px_,py_,cx_,cy_;
+    std::atomic<bool> clicked_;
 };
 
 
 class CameraWindow : public ObjectWindow{
 
 public:
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-	CameraWindow(std::string name, int resX, int resY):
-	ObjectWindow(name,resX,resY){}
-	
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    CameraWindow(std::string name, int resX, int resY):
+    ObjectWindow(name,resX,resY){}
+    
 
-	void keyboard_control()
-	{
-    float cameraSpeed = 0.05f; // adjust accordingly
-    float zoomSpeed = 0.25f;
-    if(glfwGetKey(win_ptr, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(win_ptr, GL_TRUE);
-    if(glfwGetKey(win_ptr, GLFW_KEY_W) == GLFW_PRESS)
-        eye = Eigen::Quaterniond(Eigen::AngleAxisd(-cameraSpeed, (gaze-eye).cross(Eigen::Vector3d::UnitY()).normalized()))*eye;//cameraSpeed * Eigen::Vector3d(0,1,0);
-    if(glfwGetKey(win_ptr, GLFW_KEY_S) == GLFW_PRESS)
-        eye = Eigen::Quaterniond(Eigen::AngleAxisd(cameraSpeed, (gaze-eye).cross(Eigen::Vector3d::UnitY()).normalized()))*eye;
-    if(glfwGetKey(win_ptr, GLFW_KEY_A) == GLFW_PRESS)
-    	eye = Eigen::Quaterniond(Eigen::AngleAxisd(cameraSpeed, Eigen::Vector3d::UnitY()))*eye;
-    if(glfwGetKey(win_ptr, GLFW_KEY_D) == GLFW_PRESS)
-    	eye = Eigen::Quaterniond(Eigen::AngleAxisd(-cameraSpeed, Eigen::Vector3d::UnitY()))*eye;
-    if(glfwGetKey(win_ptr, GLFW_KEY_Z) == GLFW_PRESS)
-        eye += zoomSpeed * (gaze-eye).normalized();
-    if(glfwGetKey(win_ptr, GLFW_KEY_X) == GLFW_PRESS)
-        eye -= zoomSpeed * (gaze-eye).normalized();
-	}
+    void keyboard_control();
 };
 
 class ImageWindow : public Window{
 public:
-	cv::Mat current_image;
-	GLuint texture;
-	GLenum image_format_;
-	GLenum data_type_;
+    cv::Mat current_image;
+    GLuint texture;
+    GLenum image_format_;
+    GLenum data_type_;
 
-	//Image format examples: GL_RGB, GLBGR, GL_LUMINANCE
-	//Data type examples GL_UNSIGNED_BYTE, GL_UNSIGNED_SHORT, GL_FLOAT
-	ImageWindow(std::string name, int resX, int resY, GLenum image_format, GLenum data_type):
-	Window(name,resX,resY),
-	image_format_(image_format),
-	data_type_(data_type){
-		glGenTextures(1,&texture);
-	}
+    //Image format examples: GL_RGB, GLBGR, GL_LUMINANCE
+    //Data type examples GL_UNSIGNED_BYTE, GL_UNSIGNED_SHORT, GL_FLOAT
+    ImageWindow(std::string name, int resX, int resY, GLenum image_format, GLenum data_type);
 
 
-	void set_image(cv::Mat image_in);
+    void set_image(cv::Mat image_in);
 
-	bool display();
+    bool display();
 
 };
 
 class MeshWindow : public ObjectWindow { 
 public:
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-	MeshWindow(std::string name, int resX, int resY) :
-		ObjectWindow(name, resX, resY) {};
-	//bool display();
-	void set_camera(const Eigen::Affine3d& t) { 
-		transform = t;
-	}
-        void keyboard_control()
-	{
-		if (glfwGetKey(win_ptr, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-			glfwSetWindowShouldClose(win_ptr, GL_TRUE);
-		if (glfwGetMouseButton(win_ptr, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-			clicked_ = true;
-		}
-	}
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    MeshWindow(std::string name, int resX, int resY) :
+        ObjectWindow(name, resX, resY) {};
+    //bool display();
+    void set_camera(const Eigen::Affine3d& t);
+    void keyboard_control();
 
-        bool clicked() {
-		bool clicked = clicked_;
-		clicked_ = false;
-		return clicked;
-	}
+    bool clicked();
 private:
-	Eigen::Affine3d transform; 
-	bool clicked_ = false;
+    Eigen::Affine3d transform; 
+    bool clicked_ = false;
 };
 
 class Object{
 public:
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-	std::map<std::string,ObjectWindow*> windows;
-	std::string name_;
-	Object(std::string name);
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    std::map<std::string,ObjectWindow*> windows;
+    std::string name_;
+    Object(std::string name);
 
-	virtual ~Object();
+    virtual ~Object();
 
-	void del();
+    void del();
 
-	void display();
+    void display();
 
-	void set_transform(const Eigen::Affine3d& t);
+    void set_transform(const Eigen::Affine3d& t);
 
-	void translate(Eigen::Translation3d t);
+    void translate(Eigen::Translation3d t);
 
-	void rotate(const Eigen::Quaterniond& q); 
+    void rotate(const Eigen::Quaterniond& q); 
 
-	void hide();
+    void hide();
 
-	void show();
+    void show();
 
-	virtual void draw_obj();
+    virtual void draw_obj();
 
 protected:
-	std::mutex displayLock_;
-	Eigen::Affine3d pose; // Eigen : Fixed-size vectorizable Eigen object
-	bool draw;
-	
+    std::mutex displayLock_;
+    Eigen::Affine3d pose; // Eigen : Fixed-size vectorizable Eigen object
+    bool draw;
+    
 };//Object
 
 class Cube : public Object {
 public:
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-	float hWidth, hHeight, hLength;
-	void draw_obj();
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    float hWidth, hHeight, hLength;
+    void draw_obj();
 
-	Cube(std::string name, float width, float height, float length) : 
-	Object(name), hWidth(width/2), hHeight(height/2), hLength(length/2){
-
-	}
+    Cube(std::string name, float width, float height, float length);
 };
 
 class Grid : public Object {
 public:
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-	float size, step;
-	void draw_obj();
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    float size, step;
+    void draw_obj();
 
-	Grid(std::string name, float size, float step) 
-	: Object(name),
-	size(size),
-	step(step){
-
-	}
+    Grid(std::string name, float size, float step);
 };
 
 class Axis : public Object {
 public:
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-	float size;
-	void draw_obj();
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    float size;
+    void draw_obj();
 
-	Axis(std::string name, float size) 
-	: Object(name),
-	size(size){
-
-	}
+    Axis(std::string name, float size);
 
 };
 
 class Path : public Object {
 public:
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-	std::vector<Eigen::Vector3d> nodes;
-	Eigen::Vector3d color;
-	void draw_obj();
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    std::vector<Eigen::Vector3d> nodes;
+    Eigen::Vector3d color;
+    void draw_obj();
 
-	Path(std::string name)
-	: Object(name),
-	nodes(){
-	}
+    Path(std::string name);
 
-	Path(std::string name, Eigen::Vector3d color)
-	: Object(name),
-	nodes(),
-	color(color){
-	}
+    Path(std::string name, Eigen::Vector3d color);
 
-	Path(std::string name, const std::vector<Eigen::Vector3d>& nodes)
-	: Object(name),
-	nodes(nodes){
-	}
+    Path(std::string name, const std::vector<Eigen::Vector3d>& nodes);
 
-	void add_node(Eigen::Vector3d node){ 
-		nodes.push_back(node);
-	}
+    void add_node(Eigen::Vector3d node);
 
-	void clear(){
-		nodes.clear();
-	}
+    void clear();
 
-	void set_color(Eigen::Vector3d obj_color){
-		color = obj_color;
-	}
+    void set_color(Eigen::Vector3d obj_color);
 
-	void set_color(float x, float y, float z){
-		color = Eigen::Vector3d(x,y,z);
-	}
+    void set_color(float x, float y, float z);
 };
 
 class Mesh : public Object {
 public:
 
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-	std::shared_ptr<std::vector<std::vector<Eigen::Vector3d>>> mesh_vertices;
+    std::shared_ptr<std::vector<std::vector<Eigen::Vector3d>>> mesh_vertices;
     std::shared_ptr<std::vector<std::vector<Eigen::Vector3d>>> mesh_colors;
     std::shared_ptr<std::vector<std::vector<Eigen::Vector3i>>> mesh_triangles;
     std::shared_ptr<std::vector<Eigen::Matrix4d>> mesh_transforms;
     std::shared_ptr<std::vector<int>> mesh_enabled;
 
-	// //threadsafe?
-	// int current_active_map;
-	// int archive_index;
-	// std::set<int> enabled_meshes;
+    // //threadsafe?
+    // int current_active_map;
+    // int archive_index;
+    // std::set<int> enabled_meshes;
 
-	ark::SegmentedMesh * mesh_;
+    ark::SegmentedMesh * mesh_;
 
-	void draw_obj();
+    void draw_obj();
 
-	Mesh(std::string name, ark::SegmentedMesh * mesh)
-	: Object(name) {
-		mesh_ = mesh;
-
-		mesh_->AddRenderMutex(&meshLock_, "mesh visualizer");
-
-		auto mesh_output = mesh_->GetOutputVectors();
-
-		mesh_vertices = std::get<0>(mesh_output);
-		mesh_colors = std::get<1>(mesh_output);
-		mesh_triangles = std::get<2>(mesh_output);
-		mesh_transforms = std::get<3>(mesh_output);
-		mesh_enabled = std::get<4>(mesh_output);
-	}
-
+    Mesh(std::string name, ark::SegmentedMesh * mesh);
 
 protected:
-	std::mutex meshLock_;
+    std::mutex meshLock_;
 
 };
 

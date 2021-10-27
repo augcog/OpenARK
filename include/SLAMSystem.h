@@ -42,64 +42,34 @@ namespace ark {
         virtual bool IsRunning() = 0;
 
         /** Add a handler that will be called each time a KEYframe becomes available. */
-        virtual void AddKeyFrameAvailableHandler(KeyFrameAvailableHandler handler, std::string handlerName) {
-            mMapKeyFrameAvailableHandler[handlerName] = handler;
-        }
+        virtual void AddKeyFrameAvailableHandler(KeyFrameAvailableHandler handler, std::string handlerName);
 
         /** Remove a keyframe available handler with the specified name. */
-        virtual void RemoveKeyFrameAvailableHandler(std::string handlerName) {
-            auto handler = mMapKeyFrameAvailableHandler.find(handlerName);
-            if (handler != mMapKeyFrameAvailableHandler.end())
-                mMapKeyFrameAvailableHandler.erase(handler);
-        }
+        virtual void RemoveKeyFrameAvailableHandler(std::string handlerName);
 
         /** Add a handler that will be called each time a frame becomes available. */
-        virtual void AddFrameAvailableHandler(FrameAvailableHandler handler, std::string handlerName) {
-            mMapFrameAvailableHandler[handlerName] = handler;
-        }
+        virtual void AddFrameAvailableHandler(FrameAvailableHandler handler, std::string handlerName);
 
         /** Remove a frame available handler with the specified name. */
-        virtual void RemoveFrameAvailableHandler(std::string handlerName) {
-            auto handler = mMapFrameAvailableHandler.find(handlerName);
-            if (handler != mMapFrameAvailableHandler.end())
-                mMapFrameAvailableHandler.erase(handler);
-        }
+        virtual void RemoveFrameAvailableHandler(std::string handlerName);
 
         /** Add a handler that will be called each time a loop closure occurs. */
-        virtual void AddLoopClosureDetectedHandler(LoopClosureDetectedHandler handler, std::string handlerName) {
-            mMapLoopClosureHandler[handlerName] = handler;
-        }
+        virtual void AddLoopClosureDetectedHandler(LoopClosureDetectedHandler handler, std::string handlerName);
 
         /** Remove a loop closure handler with the specified name. */
-        virtual void RemoveLoopClosureDetectedHandler(std::string handlerName) {
-            auto handler = mMapLoopClosureHandler.find(handlerName);
-            if (handler != mMapLoopClosureHandler.end())
-                mMapLoopClosureHandler.erase(handler);
-        }
+        virtual void RemoveLoopClosureDetectedHandler(std::string handlerName);
 
         /** Add a handler that will be called each time two sparse maps are merged. */
-        virtual void AddSparseMapMergeHandler(SparseMapMergeHandler handler, std::string handlerName) {
-             mMapSparseMapMergeHandler[handlerName] = handler;
-        }
+        virtual void AddSparseMapMergeHandler(SparseMapMergeHandler handler, std::string handlerName);
 
         /** Remove a sparse map merge handler with the specified name. */
-        virtual void RemoveSparseMapMergeHandler(std::string handlerName) {
-            auto handler =  mMapSparseMapMergeHandler.find(handlerName);
-            if (handler !=  mMapSparseMapMergeHandler.end())
-                 mMapSparseMapMergeHandler.erase(handler);
-        }
+        virtual void RemoveSparseMapMergeHandler(std::string handlerName);
 
         /** Add a handler that will be called each time a sparse map is created. */
-        virtual void AddSparseMapCreationHandler(SparseMapCreationHandler handler, std::string handlerName) {
-             mMapSparseMapCreationHandler[handlerName] = handler;
-        }
+        virtual void AddSparseMapCreationHandler(SparseMapCreationHandler handler, std::string handlerName);
 
         /** Remove a sparse map creation handler with the specified name. */
-        virtual void RemoveSparseMapCreationHandler(std::string handlerName) {
-            auto handler =  mMapSparseMapCreationHandler.find(handlerName);
-            if (handler !=  mMapSparseMapCreationHandler.end())
-                 mMapSparseMapCreationHandler.erase(handler);
-        }
+        virtual void RemoveSparseMapCreationHandler(std::string handlerName);
 
         /** Destructor for the SLAM system. */
         virtual ~SLAMSystem() = default;

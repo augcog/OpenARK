@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "OkvisSLAMSystem.h"
+#include "openark/slam/OkvisSLAMSystem.h"
 
 namespace ark {
 
@@ -513,6 +513,21 @@ namespace ark {
         kill=true;
     }
 
+    int OkvisSLAMSystem::getActiveMapIndex()
+    {
+        return active_map_index;
+    }
+
+    std::shared_ptr<ark::SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> OkvisSLAMSystem::getMap(int index)
+    {
+        if (sparse_maps_.find(index) == sparse_maps_.end()) {
+            return nullptr;
+        }
+        else {
+            return sparse_maps_[index];
+        }
+    }
+
     void OkvisSLAMSystem::RequestStop()
     {
         okvis_estimator_ = nullptr;
@@ -546,5 +561,15 @@ namespace ark {
         }
     }
     
+
+    bool OkvisSLAMSystem::WrappedMultiCameraFrame::operator<(const WrappedMultiCameraFrame& right) const
+    {
+        return frame->timestamp_ > right.frame->timestamp_;
+    }
+
+    bool OkvisSLAMSystem::StampedFrameData::operator<(const StampedFrameData& right) const
+    {
+        return timestamp > right.timestamp;
+    }
 
 } //ark

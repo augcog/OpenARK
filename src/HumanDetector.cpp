@@ -717,4 +717,56 @@ namespace ark {
             }
         }
     }
+
+    KeyPoint::KeyPoint(cv::Point point, float probability)
+    {
+        this->id = -1;
+        this->point = point;
+        this->probability = probability;
+    }
+
+    ValidPair::ValidPair(int aId, int bId, float score)
+    {
+        this->aId = aId;
+        this->bId = bId;
+        this->score = score;
+    }
+
+
+    template<class T, class Cloud_T>
+    void ark::HumanDetector::toMPIJoints(const cv::Vec4d & intrin, const Cloud_T & smpl_joints, Eigen::Matrix<T, Eigen::Dynamic, 2, Eigen::RowMajor> & out)
+    {
+        out = Eigen::Matrix<T, Eigen::Dynamic, 2, Eigen::RowMajor>(OpenPoseMPIJoint::_COUNT - 1, 2);
+        typedef HumanAvatar::JointType smpl_j;
+        typedef OpenPoseMPIJoint mpi_j;
+
+        //out.col(0).setConstant(T(NAN));
+        out.row(mpi_j::LEFT_HIP) = _projectToImage<T>(intrin, smpl_joints.row(smpl_j::L_HIP));
+        out.row(mpi_j::RIGHT_HIP) = _projectToImage<T>(intrin, smpl_joints.row(smpl_j::R_HIP));
+        out.row(mpi_j::LEFT_KNEE) = _projectToImage<T>(intrin, smpl_joints.row(smpl_j::L_KNEE));
+        out.row(mpi_j::RIGHT_KNEE) = _projectToImage<T>(intrin, smpl_joints.row(smpl_j::R_KNEE));
+        out.row(mpi_j::LEFT_ANKLE) = _projectToImage<T>(intrin, smpl_joints.row(smpl_j::L_ANKLE));
+        out.row(mpi_j::RIGHT_ANKLE) = _projectToImage<T>(intrin, smpl_joints.row(smpl_j::R_ANKLE));
+        out.row(mpi_j::LEFT_ELBOW) = _projectToImage<T>(intrin, smpl_joints.row(smpl_j::L_ELBOW));
+        out.row(mpi_j::RIGHT_ELBOW) = _projectToImage<T>(intrin, smpl_joints.row(smpl_j::R_ELBOW));
+        out.row(mpi_j::LEFT_WRIST) = _projectToImage<T>(intrin, smpl_joints.row(smpl_j::L_WRIST));
+        out.row(mpi_j::RIGHT_WRIST) = _projectToImage<T>(intrin, smpl_joints.row(smpl_j::R_WRIST));
+        out.row(mpi_j::LEFT_SHOULDER) = _projectToImage<T>(intrin, smpl_joints.row(smpl_j::L_SHOULDER));
+        out.row(mpi_j::RIGHT_SHOULDER) = _projectToImage<T>(intrin, smpl_joints.row(smpl_j::R_SHOULDER));
+        out.row(mpi_j::NECK) = _projectToImage<T>(intrin, smpl_joints.row(smpl_j::NECK));
+
+        // below we infer joints
+        out.row(mpi_j::CHEST) = _projectToImage<T>(intrin,
+            (smpl_joints.row(smpl_j::SPINE2) + smpl_joints.row(smpl_j::SPINE1)) * 0.5);
+    }
+
+    template<class T>
+    static inline Eigen<boost::T, 1, 2, Eigen::RowMajor>
+        ark::HumanDetector::_projectToImage(const cv::Vec4d & intrin, const Eigen::Matrix<T, 1, 3, Eigen::RowMajor> & pt)
+    {
+        Eigen::Matrix<T, 1, 2, Eigen::RowMajor> out;
+        out[0] = -pt[0] * intrin[0] / pt[2] + intrin[1];
+        out[1] = pt[1] * intrin[2] / pt[2] + intrin[3];
+        return out;
+    }
 }

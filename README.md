@@ -30,7 +30,7 @@ OpenARK is an open-source wearable augmented reality (AR) system founded at UC B
   
   **New:** Click below for the Youtube build tutorial that can help guide you through the accelerated install process, though the written instructions will be updated more frequently.
   
-  [![OpenArk Windows Installation Instructions](OpenARKTitlePage.png)](https://www.youtube.com/watch?v=EPWCvhgbDUo "OpenArk Windows Installation Instructions")
+  [![OpenArk Windows Installation Instructions](documentation/OpenARKTitlePage.png)](https://www.youtube.com/watch?v=EPWCvhgbDUo "OpenArk Windows Installation Instructions")
   
 ### Building from source without dependency pack installer: 
 Check the following installation document for OpenARK for Windows : [documentation/Windows-build-instructions.pdf](https://github.com/augcog/OpenARK/blob/master/documentation/Windows-build-instructions.pdf)
