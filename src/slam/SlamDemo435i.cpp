@@ -1,5 +1,5 @@
-#include "D435iCamera.h"
-#include "OkvisSLAMSystem.h"
+#include <camera/D435iCamera.h>
+#include "slam/OkvisSLAMSystem.h"
 #include <iostream>
 #include <thread>
 #include "util/glfwManager.h"

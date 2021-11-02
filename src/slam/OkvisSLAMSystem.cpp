@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "OkvisSLAMSystem.h"
+#include "slam/OkvisSLAMSystem.h"
 
 namespace ark {
 

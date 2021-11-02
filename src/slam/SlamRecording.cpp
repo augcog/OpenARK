@@ -11,14 +11,14 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <ceres/ceres.h>
-#include <nanoflann.hpp>
+#include <util/nanoflann.hpp>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <boost/archive/text_oarchive.hpp>
 
 // OpenARK Libraries
 #include "Version.h"
-#include "D435iCamera.h"
+#include <camera/D435iCamera.h>
 #include "util/Util.h"
 
 #include "util/Core.h"

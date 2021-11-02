@@ -10,7 +10,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <ceres/ceres.h>
-#include <nanoflann.hpp>
+#include <util/nanoflann.hpp>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/filters/statistical_outlier_removal.h>

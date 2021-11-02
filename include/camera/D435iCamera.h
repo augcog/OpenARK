@@ -4,11 +4,11 @@
 #include <opencv2/core.hpp>
 #include <librealsense2/rs.hpp>
 #include <thread>
-#include "concurrency.h"
+#include "util/concurrency.h"
 #include <atomic>
 
 // OpenARK Libraries
-#include "CameraSetup.h"
+#include "camera/CameraSetup.h"
 
 namespace ark {
     /**

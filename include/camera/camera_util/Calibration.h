@@ -8,8 +8,8 @@
 
 // OpenARK Libraries
 #include "util/Visualizer.h"
-#include "DepthCamera.h"
-#include "RGBCamera.h"
+#include "camera/DepthCamera.h"
+#include "camera/RGBCamera.h"
 #include "util/Util.h"
 
 namespace ark {

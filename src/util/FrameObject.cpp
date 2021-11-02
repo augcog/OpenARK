@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Version.h"
 
-#include "FrameObject.h"
+#include <util/FrameObject.h>
 #include "util/Visualizer.h"
 #include "util/Util.h"
 

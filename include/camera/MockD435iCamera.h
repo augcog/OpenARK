@@ -6,12 +6,12 @@
 #include <librealsense2/rs.hpp>
 #include <boost/filesystem.hpp>
 #include <thread>
-#include "concurrency.h"
+#include "util/concurrency.h"
 #include <atomic>
 #include <iostream>
 
 // OpenARK Libraries
-#include "CameraSetup.h"
+#include "camera/CameraSetup.h"
 #include "util/Util.h"
 using boost::filesystem::path;
 using std::ifstream;

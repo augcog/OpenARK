@@ -7,7 +7,7 @@
 #include <string>
 
 #include <opencv2/opencv.hpp>
-#include "Types.h"
+#include "util/Types.h"
 
 
 namespace ark{

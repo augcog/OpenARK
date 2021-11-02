@@ -11,7 +11,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <boost/program_options.hpp>
 #include <ceres/ceres.h>
-#include <nanoflann.hpp>
+#include <util/nanoflann.hpp>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 
@@ -24,7 +24,7 @@
 #include "SR300Camera.h"
 #endif
 #ifdef RSSDK2_ENABLED
-#include "RS2Camera.h"
+#include <camera/RS2Camera.h>
 #endif
 #ifdef AZURE_KINECT_ENABLED
 #include "camera/AzureKinectCamera.h"

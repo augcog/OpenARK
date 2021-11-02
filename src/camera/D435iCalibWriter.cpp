@@ -2,7 +2,7 @@
 #include <librealsense2/rs.hpp> 
 #include <Eigen/Core>   
 #include <iostream>
-#include "D435iCalibWriter.h"
+#include "camera/D435iCalibWriter.h"
 
 
 int main(int argc, char *argv[]) try

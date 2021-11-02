@@ -5,7 +5,7 @@
 #include <librealsense2/rs.hpp>
 
 // OpenARK Libraries
-#include "CameraSetup.h"
+#include "camera/CameraSetup.h"
 
 namespace ark {
     /**

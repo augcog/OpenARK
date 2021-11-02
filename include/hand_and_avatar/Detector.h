@@ -1,6 +1,6 @@
 #pragma once
-#include "DepthCamera.h"
-#include "FrameObject.h"
+#include "camera/DepthCamera.h"
+#include <util/FrameObject.h>
 
 namespace ark {
     /** Abstract object detector class. 

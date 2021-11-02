@@ -1,7 +1,7 @@
 #pragma once
 
-#include "CameraSetup.h"
-#include "OkvisSLAMSystem.h"
+#include "camera/CameraSetup.h"
+#include "slam/OkvisSLAMSystem.h"
 #ifdef __OPEN3D_V12__ // Open3D 0.12.0 for OpenARK Ubuntu
 	#include "open3d/pipelines/integration/ScalableTSDFVolume.h"
 	#include "open3d/visualization/utility/DrawGeometry.h"
@@ -20,7 +20,7 @@
 	#include "Open3D/camera/PinholeCameraIntrinsic.h"
 #endif
 
-#include "Types.h"
+#include "util/Types.h"
 #include "SaveFrame.h"
 #include <map>
 #include <set>

@@ -6,7 +6,7 @@
 #include <opencv2/core.hpp>
 
 // OpenARK Libraries
-#include "DepthCamera.h"
+#include "camera/DepthCamera.h"
 namespace ark {
 
     /**

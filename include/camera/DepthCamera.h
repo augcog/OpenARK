@@ -6,7 +6,7 @@
 #include <map>
 
 #include "util/Util.h"
-#include "FrameObject.h"
+#include <util/FrameObject.h>
 #include "hand_and_avatar/hand/Hand.h"
 #include "hand_and_avatar/FramePlane.h"
 #include "hand_and_avatar/DetectionParams.h"

@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "Version.h"
-#include "StereoCamera.h"
+#include "camera/StereoCamera.h"
 #include "util/Visualizer.h"
 
 

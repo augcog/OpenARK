@@ -2,7 +2,7 @@
 
 #include "Version.h"
 // OpenARK Libraries
-#include "RGBCamera.h"
+#include <camera/RGBCamera.h>
 
 namespace ark {
     /**

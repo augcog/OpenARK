@@ -19,8 +19,8 @@ Esther commented
 //#include <pcl/filters/fast_bilateral.h>
 // #include <opencv2/ximgproc.hpp>
 #include <opencv2/opencv.hpp>
-#include "SaveFrame.h"
-#include "Types.h"
+#include "util/SaveFrame.h"
+#include "util/Types.h"
 
 namespace ark {
 

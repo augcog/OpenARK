@@ -54,11 +54,11 @@ set( UNITY_PLUGIN_NAME "UnityPlugin" )
 # Options.
 option( BUILD_HAND_DEMO "BUILD_HAND_DEMO" ON )
 option( BUILD_AVATAR_DEMO "BUILD_AVATAR_DEMO" ON)
-option( BUILD_SLAM_DEMO "BUILD_SLAM_DEMO" ON)
-option( BUILD_3DRECON_DEMO "BUILD_3DRECON_DEMO" ON)
+option( BUILD_SLAM_DEMO "BUILD_SLAM_DEMO" OFF)
+option( BUILD_3DRECON_DEMO "BUILD_3DRECON_DEMO" OFF)
 option( BUILD_DATA_RECORDING "BUILD_DATA_RECORDING" OFF)
-option( BUILD_SLAM_RECORDING "BUILD_SLAM_RECORDING" ON)
-option( BUILD_SLAM_REPLAYING "BUILD_SLAM_REPLAYING" ON)
+option( BUILD_SLAM_RECORDING "BUILD_SLAM_RECORDING" OFF)
+option( BUILD_SLAM_REPLAYING "BUILD_SLAM_REPLAYING" OFF)
 option( BUILD_TESTS "BUILD_TESTS" OFF )
 option( BUILD_UNITY_PLUGIN "BUILD_UNITY_PLUGIN" OFF )
 option( USE_AZURE_KINECT_SDK "USE_AZURE_KINECT_SDK" OFF )
@@ -314,12 +314,12 @@ set(
   ${INCLUDE_DIR}/hand_and_avatar/DetectionParams.h
   ${INCLUDE_DIR}/hand_and_avatar/hand/Hand.h
   ${INCLUDE_DIR}/hand_and_avatar/FramePlane.h
-  ${INCLUDE_DIR}/camera/webcamWebcam.h
+  ${INCLUDE_DIR}/camera/webcam/Webcam.h
   ${INCLUDE_DIR}/camera/DepthCamera.h
   ${INCLUDE_DIR}/camera/RGBCamera.h
   ${INCLUDE_DIR}/camera/StereoCamera.h
   ${INCLUDE_DIR}/hand_and_avatar/StreamingAverager.h
-  ${INCLUDE_DIR}/camera/Calibration.h
+  ${INCLUDE_DIR}/camera/camera_util/Calibration.h
   ${INCLUDE_DIR}/util/Util.h
   ${INCLUDE_DIR}/util/Visualizer.h
   ${INCLUDE_DIR}/hand_and_avatar/hand/HandClassifier.h
@@ -344,7 +344,7 @@ set(
   ${INCLUDE_DIR}/util/UKF.h
   ${INCLUDE_DIR}/util/SaveFrame.h
   ${INCLUDE_DIR}/util/SegmentedMesh.h
-  stdafx.h
+  ${INCLUDE_DIR}/stdafx.h
 )
 
 if(WIN32)
@@ -421,7 +421,7 @@ if ( MSVC )
     # MSVC precompiled header
     set( PRECOMPILED_BINARY "$(IntDir)/stdafx.pch" )
     set( PRECOMPILED_HEADER "stdafx.h" )
-    set( PRECOMPILED_SOURCE "stdafx.cpp" )
+    set( PRECOMPILED_SOURCE "src/stdafx.cpp" )
 
     set_source_files_properties( ${PRECOMPILED_SOURCE}
                                 PROPERTIES COMPILE_FLAGS "/Yc\"${PRECOMPILED_HEADER}\" /Fp\"${PRECOMPILED_BINARY}\""
@@ -457,7 +457,7 @@ if (NOT EXISTS "${PROJECT_SOURCE_DIR}/data/avatar-model/model.pcd")
     message( WARNING "SMPL model files are not present, so the avatar module will not work. To use the avatar module and/or run the avatar demo, you will need to download the SMPL model manually. Please follow the instructions in data/avatar-model/README.md. Note that SMPL is available for non-commercial, academic research purposes only." )
 endif()
 
-add_library( ${LIB_NAME} STATIC "${INCLUDE_DIR}/Core.h" ${SOURCES} ${HEADERS} )
+add_library( ${LIB_NAME} STATIC "${INCLUDE_DIR}/util/Core.h" ${SOURCES} ${HEADERS} )
 set_target_properties( ${LIB_NAME} PROPERTIES OUTPUT_NAME
         "openark_${OpenARK_VERSION_MAJOR}_${OpenARK_VERSION_MINOR}_${OpenARK_VERSION_PATCH}" )
 

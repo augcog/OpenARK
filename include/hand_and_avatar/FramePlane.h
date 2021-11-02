@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "Version.h"
-#include "FrameObject.h"
+#include <util/FrameObject.h>
 
 namespace ark {
     /**

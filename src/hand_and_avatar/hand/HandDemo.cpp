@@ -21,7 +21,7 @@
     #include "SR300Camera.h"
 #endif
 #ifdef RSSDK2_ENABLED
-    #include "RS2Camera.h"
+    #include <camera/RS2Camera.h>
 #endif
 #ifdef AZURE_KINECT_ENABLED
     #include "camera/AzureKinectCamera.h"
