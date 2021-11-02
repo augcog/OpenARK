@@ -4,7 +4,7 @@
 #include <pcl/point_cloud.h>
 #include <Eigen/Dense>
 
-#include "Core.h"
+#include "util/Core.h"
 #include "UnityInterface.h"
 
 #ifdef PMDSDK_ENABLED
@@ -17,7 +17,7 @@
     #include "RS2Camera.h"
 #endif
 #ifdef AZURE_KINECT_ENABLED
-    #include "AzureKinectCamera.h"
+    #include "camera/AzureKinectCamera.h"
 #endif
 
 extern "C" {

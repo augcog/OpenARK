@@ -11,18 +11,18 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <ceres/ceres.h>
-#include <nanoflann.hpp>
+#include <util/nanoflann.hpp>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <boost/archive/text_oarchive.hpp>
 
 // OpenARK Libraries
 #include "Version.h"
-#include "D435iCamera.h"
-#include "Util.h"
+#include <camera/D435iCamera.h>
+#include "util/Util.h"
 
-#include "Core.h"
-#include "Visualizer.h"
+#include "util/Core.h"
+#include "util/Visualizer.h"
 
 using namespace ark;
 using boost::filesystem::path;
