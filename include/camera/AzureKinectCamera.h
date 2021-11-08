@@ -1,10 +1,18 @@
-#pragma once
-// OpenCV Libraries
-#include "Version.h"
-#include <opencv2/core.hpp>
+/* 
+ * Azure Kinect Camera Class api for Hand & Avatr
+ * 
+ * Alex Yu ( alexyu99126@gmail.com ) 2019
+ * Xiao Song ( xiaosx@berkeley.edu ) 2021
+ * 
+ * Change Log
+ * 2021-10-25: optimize the implementation.
+ */
 
-// OpenARK Libraries
-#include "camera/DepthCamera.h"
+#pragma once
+
+#include <opencv2/core.hpp>
+#include "openark/Version.h"
+#include "openark/camera/DepthCamera.h"
 
 namespace ark {
     /**
@@ -23,10 +31,7 @@ namespace ark {
         * @param use_1080p if true, records in 1080p rather than 720p
         * @param scale amount to scale down final image by
         */
-        explicit AzureKinectCamera(uint32_t device_id = 0,
-                                   bool wide_fov_mode = false,
-                                   bool use_1080p = false,
-                                   double scale = 0.5);
+        explicit AzureKinectCamera() noexcept;
 
         /**
         * Destructor for the Azure Kinect Camera.
@@ -66,46 +71,39 @@ namespace ark {
         typedef std::shared_ptr<AzureKinectCamera> Ptr;
 
         /** Get the timestamp of the last image in nanoseconds */
-        uint64_t getTimestamp();
+        uint64_t getTimestamp() const;
 
         /** Get the basic calibration intrinsics
          *  @return (fx, cx, fy, cy) */
-        cv::Vec4d getCalibIntrinsics();
+        cv::Vec4d getCalibIntrinsics() const;
 
     protected:
         /**
         * Gets the new frame from the sensor (implements functionality).
         * Updates xyzMap and ir_map.
         */
-        void update(cv::Mat & xyz_map, cv::Mat & rgb_map, cv::Mat & ir_map, 
-                            cv::Mat & amp_map, cv::Mat & flag_map) override;
+        void update(cv::Mat & xyz_map, \
+                    cv::Mat & rgb_map, \
+                    cv::Mat & ir_map, \
+                    cv::Mat & amp_map, \
+                    cv::Mat & flag_map) override;
 
-        /**
-         * Initialize the camera, opening channels and resetting to initial configurations
-         */
-        void initCamera();
-
-        // internal storage
-
-        double scale;
-        int width, height, scaled_width, scaled_height;
-
-        // Kinect Azure device (k4a_device_t)
-        void * k4a_device = NULL;
-
-        // Kinect Azure depth/color transformation (k4a_transformation_t)
-        void * k4a_transformation = NULL;
-
-        // Cached XY position multiplier: multiply by current depth to get XY position (k4a_image_t *)
-        void * xy_table_cache = NULL;
-
+    private:
+        k4a_device_t device;
+        k4a_capture_t capture;
+        k4a_calibration_t calibration;
+        k4a_transformation_t transformation;
+        k4a_device_configuration_t camera_config;
+        // cx, cy, fx, fy
+        cv::Vec4d intrinsic;
+        uint16_t timestamp;
+        int original_width, original_height;
+        //int scale_width, scale_height;
+        //double scale;
+        // Timeout for capture
         const int32_t TIMEOUT_IN_MS = 1000;
 
         mutable bool defaultParamsSet = false;
         mutable DetectionParams::Ptr defaultParams;
-
-        int64_t timestamp;
-        /* (fx, cx, fy, cy) */
-        cv::Vec4d calib_intrin;
     };
 }
