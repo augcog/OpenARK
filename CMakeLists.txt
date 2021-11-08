@@ -81,7 +81,7 @@ else()
 endif()
 
 if ( CMAKE_COMPILER_IS_GNUCXX )
-    set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated -Wno-deprecated-declarations -O3 -g" )
+    set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated -Wno-deprecated-declarations -O3 -O3 -ffast-math -funroll-all-loops -mavx -mtune=native" )
 endif ( CMAKE_COMPILER_IS_GNUCXX )
 
 if( DEFINED ENV{ARK_DEPS_DIR} )
