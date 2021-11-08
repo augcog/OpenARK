@@ -10,8 +10,8 @@
 
 #pragma once
 
+#include <k4a/k4a.h> // openark api
 #include <opencv2/core.hpp>
-#include "openark/Version.h"
 #include "openark/camera/DepthCamera.h"
 
 namespace ark {

@@ -8,11 +8,10 @@
  * 2021-10-25: optimize the implementation.
  */
 
-#include <cstring> // memcpy
-#include <k4a/k4a.h> // openark api
 #include <iostream>
+#include <k4a/k4a.h> // openark api
+#include <opencv2/core.hpp>
 #include "openark/stdafx.h"
-#include "openark/Version.h"
 #include "openark/camera/AzureKinectCamera.h"
 
 /** Azure Kinect Cross-Platform Depth Camera Backend **/
