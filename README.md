@@ -57,7 +57,7 @@ Here is the outline of a program for performing hand detection:
 ```cpp
 ...
 #include "util/Core.h"
-#include "SR300Camera.h"
+#include "camera/SR300Camera.h"
 
 #include "opencv2/core.hpp"
 #include <vector>

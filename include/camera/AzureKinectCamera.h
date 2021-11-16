@@ -12,7 +12,7 @@
 
 #include <k4a/k4a.h> // openark api
 #include <opencv2/core.hpp>
-#include "openark/camera/DepthCamera.h"
+#include "camera/DepthCamera.h"
 
 namespace ark {
     /**

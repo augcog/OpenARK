@@ -15,10 +15,10 @@
 // OpenARK Libraries
 #include "Version.h"
 #ifdef PMDSDK_ENABLED
-    #include "PMDCamera.h"
+    #include "camera/PMDCamera.h"
 #endif
 #ifdef RSSDK_ENABLED
-    #include "SR300Camera.h"
+    #include "camera/SR300Camera.h"
 #endif
 #ifdef RSSDK2_ENABLED
     #include <camera/RS2Camera.h>

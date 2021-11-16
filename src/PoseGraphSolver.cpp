@@ -1,4 +1,4 @@
-# include "PoseGraphSolver.h"
+# include "slam/PoseGraphSolver.h"
 
 namespace ark {
 

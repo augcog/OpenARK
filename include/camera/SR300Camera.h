@@ -5,7 +5,7 @@
 
 // OpenARK Libraries
 #include "camera/DepthCamera.h"
-#include "Converter.h"
+#include "camera/camera_util/Converter.h"
 
 namespace ark {
     /**

@@ -9,7 +9,7 @@
 
 // OpenARK Libraries
 #include "util/Core.h"
-#include "SR300Camera.h"
+#include "camera/SR300Camera.h"
 #include "util/Visualizer.h"
 
 using namespace ark;

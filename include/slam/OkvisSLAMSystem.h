@@ -1,12 +1,12 @@
 #pragma once
 
-#include "SLAMSystem.h"
-#include "SparseMap.h"
+#include "slam/SLAMSystem.h"
+#include "slam/SparseMap.h"
 #include <okvis/VioParametersReader.hpp>
 #include <okvis/ThreadedKFVio.hpp>
 #include <thread>
 #include <opencv2/core/eigen.hpp>
-#include "SingleConsumerPriorityQueue.h"
+#include "slam/SingleConsumerPriorityQueue.h"
 #include <atomic>
 #include <brisk/brisk.h>
 #include <vector>

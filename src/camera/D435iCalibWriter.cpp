@@ -2,7 +2,7 @@
 #include <librealsense2/rs.hpp> 
 #include <Eigen/Core>   
 #include <iostream>
-#include "openark/camera/D435iCalibWriter.h"
+#include "camera/D435iCalibWriter.h"
 
 namespace ark {
     CameraCalibration::CameraCalibration(Eigen::Matrix4f transform, rs2_intrinsics intr) :

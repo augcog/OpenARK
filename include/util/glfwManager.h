@@ -17,7 +17,7 @@
 #include <atomic>
 #include <mutex>
 #include <set>
-#include "SegmentedMesh.h"
+#include "util/SegmentedMesh.h"
 
 #include <opencv2/core/core.hpp>
 

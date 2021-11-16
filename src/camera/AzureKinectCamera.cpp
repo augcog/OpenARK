@@ -12,8 +12,8 @@
 #include <cmath> // nanf
 #include <k4a/k4a.h> // openark api
 #include <opencv2/core.hpp>
-#include "openark/stdafx.h"
-#include "openark/camera/AzureKinectCamera.h"
+#include "stdafx.h"
+#include "camera/AzureKinectCamera.h"
 
 /** Azure Kinect Cross-Platform Depth Camera Backend **/
 namespace ark 

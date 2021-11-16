@@ -22,7 +22,7 @@
 #include <opencv2/imgproc.hpp> // cv::cvtColor
 #include <k4a/k4a.h> // AzureKinect API
 #include <cstring> // memcpy
-#include "openark/slam_camera/AzureKinectCamera.h"
+#include "slam_camera/AzureKinectCamera.h"
 
 // TODO add depth on & depth off support. Sometimes we don't need to collect depth information
 // TODO change print error to print to google test
