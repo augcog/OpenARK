@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "Version.h"
-#include <camera/RGBCamera.h>
+#include "camera/RGBCamera.h"
 
 namespace ark {
     void RGBCamera::update()

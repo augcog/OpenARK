@@ -3,7 +3,6 @@
 #include "camera/StereoCamera.h"
 #include "util/Visualizer.h"
 
-
 namespace ark {
     StereoCamera::StereoCamera(StereoCalibration::Ptr calib, std::function<cv::Mat(void)> imageSource, SGBMConfig::Ptr sgbmConf)
         : StereoCamera(calib, sgbmConf) { 

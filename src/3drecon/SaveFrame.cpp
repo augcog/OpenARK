@@ -13,11 +13,6 @@ Esther commented
 #include <iostream>
 #include <fstream>
 #include <boost/filesystem.hpp>
-
-//#include <MathUtils.h>
-//#include <pcl/filters/statistical_outlier_removal.h>
-//#include <pcl/filters/fast_bilateral.h>
-// #include <opencv2/ximgproc.hpp>
 #include <opencv2/opencv.hpp>
 #include "util/SaveFrame.h"
 #include "util/Types.h"

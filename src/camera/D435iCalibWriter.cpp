@@ -1,7 +1,6 @@
-
-#include <librealsense2/rs.hpp> 
-#include <Eigen/Core>   
 #include <iostream>
+#include <Eigen/Core>   
+#include <librealsense2/rs.hpp> 
 #include "camera/D435iCalibWriter.h"
 
 namespace ark {

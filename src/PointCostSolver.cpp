@@ -1,6 +1,5 @@
 # include "slam/PointCostSolver.h"
 
-
 namespace ark {
 
     template <typename PointT>

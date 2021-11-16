@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "Version.h"
-
 #include "util/Util.h"
 #include "hand_and_avatar/hand/Hand.h"
 #include "util/Visualizer.h"

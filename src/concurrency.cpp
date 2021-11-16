@@ -1,6 +1,5 @@
 # include "concurrency.h"
 
-
 template<class T>
 void single_consumer_queue<T>::enqueue(T item)
 {

@@ -10,7 +10,6 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <ceres/ceres.h>
-#include <util/nanoflann.hpp>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/filters/statistical_outlier_removal.h>
@@ -18,17 +17,15 @@
 #include <opencv2/dnn.hpp>
 #include <opencv2/face.hpp>
 #include <opencv2/ximgproc.hpp>
-
-#define GLOG_minloglevel 3
-
-// OpenARK Libraries
+#include "util/nanoflann.hpp"
 #include "Version.h"
 #include "camera/MockCamera.h"
-
 #include "util/Core.h"
 #include "util/Visualizer.h"
 #include "hand_and_avatar/avatar/Avatar.h"
 #include "hand_and_avatar/avatar/HumanDetector.h"
+
+#define GLOG_minloglevel 3
 
 using namespace ark;
 

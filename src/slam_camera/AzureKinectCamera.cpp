@@ -15,6 +15,8 @@
  * 5. External device synchronization control with configurable delay offset between devices
  * 6. Camera frame meta-data access for image resolution, timestamp, etc.
  * 7. Device calibration data access
+ * 
+ * Update 2021-11-16 : this file is deprecated. Need to repair if needed.
  */
 
 #include <vector>

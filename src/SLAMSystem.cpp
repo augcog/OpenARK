@@ -2,9 +2,6 @@
 
 namespace ark {
 
-
-
-
     void SLAMSystem::AddKeyFrameAvailableHandler(KeyFrameAvailableHandler handler, std::string handlerName)
     {
         mMapKeyFrameAvailableHandler[handlerName] = handler;

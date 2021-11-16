@@ -1,6 +1,6 @@
+#include <iostream>
 #include "stdafx.h"
 #include "util/glfwManager.h"
-#include <iostream>
 
 namespace MyGUI{
 

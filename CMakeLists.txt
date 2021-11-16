@@ -53,12 +53,12 @@ set( UNITY_PLUGIN_NAME "UnityPlugin" )
 
 # Options.
 option( BUILD_HAND_DEMO "BUILD_HAND_DEMO" ON )
-option( BUILD_AVATAR_DEMO "BUILD_AVATAR_DEMO" ON )
-option( BUILD_SLAM_DEMO "BUILD_SLAM_DEMO" ON )
-option( BUILD_3DRECON_DEMO "BUILD_3DRECON_DEMO" ON )
-option( BUILD_DATA_RECORDING "BUILD_DATA_RECORDING" ON )
-option( BUILD_SLAM_RECORDING "BUILD_SLAM_RECORDING" ON )
-option( BUILD_SLAM_REPLAYING "BUILD_SLAM_REPLAYING" ON )
+option( BUILD_AVATAR_DEMO "BUILD_AVATAR_DEMO" OFF )
+option( BUILD_SLAM_DEMO "BUILD_SLAM_DEMO" OFF )
+option( BUILD_3DRECON_DEMO "BUILD_3DRECON_DEMO" OFF )
+option( BUILD_DATA_RECORDING "BUILD_DATA_RECORDING" OFF )
+option( BUILD_SLAM_RECORDING "BUILD_SLAM_RECORDING" OFF )
+option( BUILD_SLAM_REPLAYING "BUILD_SLAM_REPLAYING" OFF )
 option( BUILD_TESTS "BUILD_TESTS" OFF )
 option( BUILD_UNITY_PLUGIN "BUILD_UNITY_PLUGIN" OFF )
 option( USE_AZURE_KINECT_SDK "USE_AZURE_KINECT_SDK" ON )
@@ -285,7 +285,7 @@ set(
   ${SRC_DIR}/util/FrameObject.cpp
   ${SRC_DIR}/hand_and_avatar/FramePlane.cpp
   ${SRC_DIR}/hand_and_avatar/hand/Hand.cpp 
-  ${SRC_DIR}/camera/webcam/Webcam.cpp
+  ${SRC_DIR}/camera/Webcam.cpp
   ${SRC_DIR}/camera/DepthCamera.cpp
   ${SRC_DIR}/camera/RGBCamera.cpp
   ${SRC_DIR}/camera/StereoCamera.cpp
@@ -315,7 +315,7 @@ set(
   ${INCLUDE_DIR}/hand_and_avatar/DetectionParams.h
   ${INCLUDE_DIR}/hand_and_avatar/hand/Hand.h
   ${INCLUDE_DIR}/hand_and_avatar/FramePlane.h
-  ${INCLUDE_DIR}/camera/webcam/Webcam.h
+  ${INCLUDE_DIR}/camera/Webcam.h
   ${INCLUDE_DIR}/camera/DepthCamera.h
   ${INCLUDE_DIR}/camera/RGBCamera.h
   ${INCLUDE_DIR}/camera/StereoCamera.h

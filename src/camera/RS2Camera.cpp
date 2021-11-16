@@ -1,11 +1,10 @@
-#include "stdafx.h"
-#include "Version.h"
-#include <camera/RS2Camera.h>
-#include "util/Visualizer.h"
-
 #include <librealsense2/rs.hpp>
 #include <librealsense2/rsutil.h>
 #include <librealsense2/hpp/rs_pipeline.hpp>
+#include "stdafx.h"
+#include "Version.h"
+#include "camera/RS2Camera.h"
+#include "util/Visualizer.h"
 
 /** RealSense SDK2 Cross-Platform Depth Camera Backend **/
 namespace ark {
