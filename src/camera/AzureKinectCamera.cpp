@@ -9,6 +9,7 @@
  */
 
 #include <iostream>
+#include <cmath> // nanf
 #include <k4a/k4a.h> // openark api
 #include <opencv2/core.hpp>
 #include "openark/stdafx.h"
@@ -20,8 +21,8 @@ namespace ark
     AzureKinectCamera::AzureKinectCamera( ) noexcept : \
                                         device(NULL), \
                                         capture(NULL), \
-                                        calibration(NULL), \
-                                        transformation(NULL) \
+                                        transformation(NULL), \
+                                        xy_lookup_table(NULL) \
     {
         // Count number of k4a device to ensure there are connected device
         if ( k4a_device_get_installed_count() == 0 )
@@ -47,9 +48,9 @@ namespace ark
         // Requesting images of this format requires additional computation in the API.
         camera_config.color_format = K4A_IMAGE_FORMAT_COLOR_BGRA32; 
         // 1280 * 720  16:9
-        camera_config.color_resolution = K4A_COLOR_RESOLUTION_720P;
+        camera_config.color_resolution = K4A_COLOR_RESOLUTION_1080P;
         // 1024 * 1024 wide field of view depth without binned
-        camera_config.depth_mode = K4A_DEPTH_MODE_WFOV_UNBINNED;
+        camera_config.depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED;
         // ensures that depth and color images are both available in the capture
         // objects may be produced only a single image when the corresponding image is dropped.
         camera_config.synchronized_images_only = true; 
@@ -68,16 +69,60 @@ namespace ark
 
         /* Set the intrinsics */
         auto& color_camera_intrin = calibration.color_camera_calibration.intrinsics.parameters.param;
-        intrinsic.at(0) = color_camera_intrin.cx;
-        intrinsic.at(1) = color_camera_intrin.cy;
-        intrinsic.at(2) = color_camera_intrin.fx;
-        intrinsic.at(3) = color_camera_intrin.fy;
+        intrinsic[0] = color_camera_intrin.fx;
+        intrinsic[1] = color_camera_intrin.cx;
+        intrinsic[2] = color_camera_intrin.fy;
+        intrinsic[3] = color_camera_intrin.cy;
 
-        original_width = calibration.color_camera_calibration.resolution_width;
-        original_height = calibration.color_camera_calibration.resolution_height;
+        image_width = calibration.color_camera_calibration.resolution_width;
+        image_height = calibration.color_camera_calibration.resolution_height;
 
         // Create depth/coor transformation
         transformation = k4a_transformation_create(&calibration);
+
+        /* Create lookup table for depth to point cloud transformation */
+        // If using the API provided by the k4a skd, 4 memory I/O is required
+        //      read from depth, read from lookup table, 
+        //      write to point cloud int16, write to point cloud float32
+        // To reduce overall memory I/O cost (which is the bottleneck of this class)
+        //      we use a customized lookup table and only incur 3 memory I/O
+        //      read from depth, read from loopup table, write to point float float32
+        // Building & use lookup table mostly follow 
+        //      /Azure-Kinect-Sensor-SDK/examples/fastpointcloud/main.cpp
+        k4a_image_create(K4A_IMAGE_FORMAT_CUSTOM,
+                        image_width,
+                        image_height,
+                        image_width * (int)sizeof(k4a_float2_t),
+                        &xy_lookup_table);
+
+        k4a_float2_t *lookup_table_data = (k4a_float2_t *)(void *)k4a_image_get_buffer(xy_lookup_table);
+        k4a_float2_t p;
+        k4a_float3_t ray;
+        int valid;
+
+        for (int y = 0, idx = 0; y < image_height; y++)
+        {
+            p.xy.y = (float)y;
+            for (int x = 0; x < image_width; x++, idx++)
+            {
+                p.xy.x = (float)x;
+
+                k4a_calibration_2d_to_3d(
+                    &calibration, &p, 1.f, K4A_CALIBRATION_TYPE_COLOR, \
+                    K4A_CALIBRATION_TYPE_COLOR, &ray, &valid);
+
+                if (valid)
+                {
+                    lookup_table_data[idx].xy.x = ray.xyz.x / 1000.0f;
+                    lookup_table_data[idx].xy.y = ray.xyz.y / 1000.0f;
+                }
+                else
+                {
+                    lookup_table_data[idx].xy.x = std::numeric_limits<float>::quiet_NaN(); //nanf("");
+                    lookup_table_data[idx].xy.y = std::numeric_limits<float>::quiet_NaN(); //nanf("");
+                }
+            }
+        }
 
         // Start camera
         if (K4A_RESULT_SUCCEEDED != k4a_device_start_cameras(device, &camera_config))
@@ -110,12 +155,12 @@ namespace ark
 
     int AzureKinectCamera::getWidth() const 
     {
-		return scaled_width;
+		return image_width;
     }
 
     int AzureKinectCamera::getHeight() const 
     {
-		return scaled_height;
+		return image_height;
     }
 
 	const DetectionParams::Ptr & AzureKinectCamera::getDefaultParams() const 
@@ -190,103 +235,108 @@ namespace ark
             case K4A_WAIT_RESULT_TIMEOUT:
                 std::cerr << "Warning: Timed out waiting for a capture from Azure Kinect" << std::endl;;
                 badInputFlag = true;
-                goto ReleaseRunTimeResource;
+                k4a_capture_release(capture);
+                return;
             case K4A_WAIT_RESULT_FAILED:
                 std::cerr << "Warning: Failed to read a capture from Azure Kinect" << std::endl;;
                 badInputFlag = true;
-                goto ReleaseRunTimeResource;
+                k4a_capture_release(capture);
+                return;
         }
 
         // Extract depth from capture
-        depth_image = k4a_capture_get_depth_image(capture);
-        if ( !depth_image ) 
+        depth_sample = k4a_capture_get_depth_image(capture);
+        if ( !depth_sample ) 
         {
             std::cerr << "Warning: Failed to get depth image from Azure Kinect capture" << std::endl;;
             xyz_output = xyzMap.clone();
             rgb_output = rgbMap.clone();
-            goto ReleaseRunTimeResource;
+            k4a_capture_release(capture);
+            return;
         }
 
         // Extract BGRA/GRAY from capture
-        image_sample = k4a_capture_get_image_sample(capture);
+        image_sample = k4a_capture_get_color_image(capture);
         if (image_sample == NULL) 
         {
             std::cerr << "Warning: Failed to get color image from Azure Kinect capture" << std::endl;;
             xyz_output = xyzMap.clone();
             rgb_output = rgbMap.clone();
-            goto ReleaseRunTimeResource;
+            k4a_image_release( depth_sample );
+            k4a_capture_release( capture );
+            return;
         }
         badInputFlag = false;
 
         // Extract device (the camera) time stamp & convert to nanoseconds
-        timestamp = k4a_image_get_timestamp_usec(depth_image) * 1e3;
-    
+        timestamp = k4a_image_get_timestamp_usec(depth_sample) * 1e3;
+
+        // Align depth to color image
+        if (K4A_RESULT_SUCCEEDED != k4a_image_create(K4A_IMAGE_FORMAT_DEPTH16,
+                                                    image_width,
+                                                    image_height,
+                                                    image_width * (int)sizeof(uint16_t), 
+                                                    &depth_sample_transformed_img_coord))
+        {
+            std::cerr << "Failed to create transformed depth image" << std::endl;
+            k4a_image_release( depth_sample );
+            k4a_image_release( image_sample );
+            k4a_image_release( depth_sample_transformed_img_coord );
+            k4a_capture_release( capture );
+            return;
+        }
+
+        if (K4A_RESULT_SUCCEEDED != \
+            k4a_transformation_depth_image_to_color_camera(transformation, depth_sample, depth_sample_transformed_img_coord) )
+        {
+            std::cerr << "Warning: Failed to compute transformed depth image" << std::endl;
+            k4a_image_release( depth_sample );
+            k4a_image_release( image_sample );
+            k4a_image_release( depth_sample_transformed_img_coord );
+            k4a_capture_release( capture );
+            return;
+        }
+
+        // Project depth to point cloud using the pre-build lookup table
+        uint16_t *depth_data = (uint16_t *)(void *)k4a_image_get_buffer(depth_sample_transformed_img_coord);
+        k4a_float2_t *xy_table_data = (k4a_float2_t *)(void *)k4a_image_get_buffer(xy_lookup_table);
+        k4a_float3_t *point_cloud_data = (k4a_float3_t *)(void *)xyz_output.data;
+
+        for (int i = 0; i < image_width * image_height; i++)
+        {
+            if (depth_data[i] != 0 && !isnan(xy_table_data[i].xy.x) && !isnan(xy_table_data[i].xy.y))
+            {
+                float depth_i = (float)depth_data[i];
+                point_cloud_data[i].xyz.x = xy_table_data[i].xy.x * depth_i;
+                point_cloud_data[i].xyz.y = xy_table_data[i].xy.y * depth_i;
+                point_cloud_data[i].xyz.z = depth_i / 1000.0f;
+            }
+            else
+            {
+                point_cloud_data[i].xyz.x = 0; //nanf("");
+                point_cloud_data[i].xyz.y = 0; //nanf("");
+                point_cloud_data[i].xyz.z = 0; //nanf("");
+            }
+        }
+
         // Copy RGB result to output
         // Create a cv:::Mat using the k4a_image_t image buffer, there is no memory copy in this step
         // underlying data of image_sample is of format RGB Packed with no padding 
         // https://stackoverflow.com/questions/57222190/how-to-convert-k4a-image-t-to-opencv-matrix-azure-kinect-sensor-sdk
-        cv::Mat rgba_output(original_height, \
-                            original_width, \
+        cv::Mat rgba_output(k4a_image_get_height_pixels(image_sample), \
+                            k4a_image_get_width_pixels(image_sample), \
                             CV_8UC4, \
-                            reinterpret_cast<void*>k4a_image_get_buffer(image_sample), \
-                            cv::Mat::AUTO_STEP);
+                            k4a_image_get_buffer(image_sample) );
 
         // Convert RGBA to BGR using opencv
         // openCV use vectorize implementation with -O2 -O3. So it's faster then element wise operation
         // User may reuse the rgb_output variable to avoid allocate new memory every time
         cv::cvtColor(rgba_output, rgb_output, cv::COLOR_RGBA2RGB);
 
-        // Align depth to color image
-        if (K4A_RESULT_SUCCEEDED != k4a_image_create(K4A_IMAGE_FORMAT_DEPTH16,
-                                                    original_width,
-                                                    original_height,
-                                                    original_width * (int)sizeof(uint16_t), 
-                                                    &depth_sample_transformed_img_coord))
-        {
-            std::cerr << "Failed to create transformed depth image" << std::endl;
-            goto ReleaseRunTimeResource;
-        }
-
-        // Transform depth (under RGB coordinate) to point cloud
-        // format : 3 * int16_t
-        if (K4A_RESULT_SUCCEEDED != k4a_image_create(K4A_IMAGE_FORMAT_CUSTOM,
-                                                    original_width,
-                                                    original_height,
-                                                    original_width * 3 * (int)sizeof(int16_t),
-                                                    &depth_sample_transformed_point_cloud))
-        {
-            printf("Failed to create point cloud image\n");
-            return false;
-        }
-
-        if (K4A_RESULT_SUCCEEDED != \
-            k4a_transformation_depth_image_to_point_cloud(transformation,
-                                                          depth_sample_transformed_img_coord,
-                                                          K4A_CALIBRATION_TYPE_COLOR,
-                                                          depth_sample_transformed_point_cloud))
-        {
-            printf("Failed to compute point cloud\n");
-            goto ReleaseRunTimeResource;
-        }
-
-        // Convert point cloud from int16_t to float32_t 
-        cv::Mat xyz_output_int16(original_height, \
-                                 original_width, \
-                                 CV_16SC3, \
-                                 reinterpret_cast<void*>k4a_image_get_buffer(depth_sample_transformed_point_cloud), \
-                                 cv::Mat::AUTO_STEP);
-        
-        xyz_output_int16.convertTo( xyz_output, CV32FC3 );
-
-    ReleaseRunTimeResource:
-        if ( image_sample ) 
-            k4a_image_release( image_sample );
-        if ( depth_sample ) 
-            k4a_image_release( depth_sample );
-        if ( depth_sample_transformed_img_coord ) 
-            k4a_image_release( depth_sample_transformed_img_coord );
-        if ( depth_sample_transformed_point_cloud ) 
-            k4a_image_release( depth_sample_transformed_point_cloud );
-        k4a_capture_release(capture);
+        // Release buffer
+        k4a_image_release( depth_sample );
+        k4a_image_release( image_sample );
+        k4a_image_release( depth_sample_transformed_img_coord );
+        k4a_capture_release( capture );
     }
 }

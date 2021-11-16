@@ -94,10 +94,11 @@ namespace ark {
         k4a_calibration_t calibration;
         k4a_transformation_t transformation;
         k4a_device_configuration_t camera_config;
+        k4a_image_t xy_lookup_table;
         // cx, cy, fx, fy
         cv::Vec4d intrinsic;
         uint16_t timestamp;
-        int original_width, original_height;
+        int image_width, image_height;
         //int scale_width, scale_height;
         //double scale;
         // Timeout for capture
