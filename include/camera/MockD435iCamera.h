@@ -1,20 +1,20 @@
 #pragma once
-// OpenCV Libraries
+
 #include <ctime>
-#include "Version.h"
 #include <opencv2/core.hpp>
 #include <librealsense2/rs.hpp>
 #include <boost/filesystem.hpp>
 #include <thread>
-#include "util/concurrency.h"
 #include <atomic>
 #include <iostream>
-
-// OpenARK Libraries
+#include "Version.h"
+#include "util/concurrency.h"
 #include "camera/CameraSetup.h"
 #include "util/Util.h"
+
 using boost::filesystem::path;
 using std::ifstream;
+
 namespace ark {
     /**
     * Mock camera for replaying data

@@ -1,10 +1,8 @@
 #pragma once
-// OpenCV Libraries
-#include "Version.h"
+
 #include <opencv2/core.hpp>
 #include <librealsense2/rs.hpp>
-
-// OpenARK Libraries
+#include "Version.h"
 #include "camera/DepthCamera.h"
 
 namespace ark {

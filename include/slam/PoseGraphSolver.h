@@ -1,6 +1,5 @@
 #pragma once
 
-#include "util/Types.h"
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -8,9 +7,10 @@
 #include <DBoW2.h>
 #include <DLoopDetector.h>
 #include <Eigen/Geometry>
-#include "ceres/ceres.h"
 #include <atomic>
 #include <mutex>
+#include "util/Types.h"
+#include "ceres/ceres.h"
 
 namespace ark{
 

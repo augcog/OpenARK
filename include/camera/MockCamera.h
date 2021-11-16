@@ -1,14 +1,9 @@
 #pragma once
-// C++ Libraries
-//#include <filesystem>
+
 #include <boost/filesystem.hpp>
 #include <iostream>
-
-// OpenCV Libraries
-#include "Version.h"
 #include <opencv2/core.hpp>
-
-// OpenARK Libraries
+#include "Version.h"
 #include "camera/DepthCamera.h"
 
 namespace ark {

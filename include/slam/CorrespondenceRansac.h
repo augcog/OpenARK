@@ -6,7 +6,6 @@
 #include <pcl/common/time.h>
 #include <pcl/registration/icp.h>
 
-
 namespace ark{
 
 template<typename PointT>

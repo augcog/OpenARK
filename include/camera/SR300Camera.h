@@ -1,9 +1,7 @@
 #pragma once
-// OpenCV Libraries
-#include "Version.h"
-#include <opencv2/core.hpp>
 
-// OpenARK Libraries
+#include <opencv2/core.hpp>
+#include "Version.h"
 #include "camera/DepthCamera.h"
 #include "camera/camera_util/Converter.h"
 

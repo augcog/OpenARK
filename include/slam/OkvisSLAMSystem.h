@@ -1,16 +1,16 @@
 #pragma once
 
-#include "slam/SLAMSystem.h"
-#include "slam/SparseMap.h"
-#include <okvis/VioParametersReader.hpp>
-#include <okvis/ThreadedKFVio.hpp>
 #include <thread>
-#include <opencv2/core/eigen.hpp>
-#include "slam/SingleConsumerPriorityQueue.h"
 #include <atomic>
-#include <brisk/brisk.h>
 #include <vector>
 #include <memory>
+#include <brisk/brisk.h>
+#include <opencv2/core/eigen.hpp>
+#include <okvis/VioParametersReader.hpp>
+#include <okvis/ThreadedKFVio.hpp>
+#include "slam/SLAMSystem.h"
+#include "slam/SparseMap.h"
+#include "slam/SingleConsumerPriorityQueue.h"
 
 namespace ark {
     /** Okvis-based SLAM system */

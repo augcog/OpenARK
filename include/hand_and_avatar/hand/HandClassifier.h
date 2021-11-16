@@ -1,11 +1,10 @@
 #pragma once
 
-#include <opencv2/core.hpp>
-#include <opencv2/ml.hpp>
 #include <string>
 #include <vector>
 #include <exception>
-
+#include <opencv2/core.hpp>
+#include <opencv2/ml.hpp>
 #include "Version.h"
 #include "hand_and_avatar/hand/Hand.h"
 

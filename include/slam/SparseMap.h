@@ -1,12 +1,12 @@
 #pragma once
 
-#include "util/Types.h"
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <opencv2/core/eigen.hpp>
 #include <DBoW2.h>
 #include <DLoopDetector.h>
+#include "util/Types.h"
 #include "slam/PoseGraphSolver.h"
 #include "slam/CorrespondenceRansac.h"
 #include "util/Util.h"

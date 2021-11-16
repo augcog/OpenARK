@@ -1,15 +1,14 @@
 #pragma once
+
+#include <opencv2/objdetect/objdetect.hpp>
+#include <opencv2/video/tracking.hpp>
+#include <opencv2/dnn.hpp>
+#include <opencv2/face.hpp>
+#include <pcl/filters/statistical_outlier_removal.h>
+#include <pcl/filters/voxel_grid.h>
 #include "hand_and_avatar/Detector.h"
 #include "hand_and_avatar/avatar/HumanBody.h"
 #include "hand_and_avatar/avatar/Avatar.h"
-
-#include "opencv2/objdetect/objdetect.hpp"
-#include "opencv2/video/tracking.hpp"
-#include <opencv2/dnn.hpp>
-#include <opencv2/face.hpp>
-
-#include <pcl/filters/statistical_outlier_removal.h>
-#include <pcl/filters/voxel_grid.h>
 
 namespace ark {
     struct KeyPoint {

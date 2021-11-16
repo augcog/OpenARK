@@ -1,8 +1,7 @@
 #pragma once
 
 #include "Version.h"
-// OpenARK Libraries
-#include <camera/RGBCamera.h>
+#include "camera/RGBCamera.h"
 
 namespace ark {
     /**

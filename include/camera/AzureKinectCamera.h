@@ -6,12 +6,13 @@
  * 
  * Change Log
  * 2021-10-25: optimize the implementation.
+ * 2021-11-15: fix bug in the optimized implementation.
  */
 
 #pragma once
 
-#include <k4a/k4a.h> // openark api
 #include <opencv2/core.hpp>
+#include <k4a/k4a.h> // openark api
 #include "camera/DepthCamera.h"
 
 namespace ark {

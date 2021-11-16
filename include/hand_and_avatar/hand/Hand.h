@@ -1,8 +1,8 @@
 #pragma once
 
+#include "Version.h"
 #include "util/FrameObject.h"
 #include "hand_and_avatar/FramePlane.h"
-#include "Version.h"
 
 namespace ark {
     /**

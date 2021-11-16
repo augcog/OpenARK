@@ -1,5 +1,5 @@
 #pragma once
-#include "Version.h"
+
 #include <vector>
 #include <Eigen/Core>
 #include <Eigen/Dense>
@@ -8,8 +8,8 @@
 #include <pcl/filters/uniform_sampling.h>
 #include <pcl/filters/random_sample.h>
 #include <ceres/ceres.h>
-#include <util/nanoflann.hpp>
-
+#include "Version.h"
+#include "util/nanoflann.hpp"
 #include "util/Visualizer.h"
 
 namespace ark {

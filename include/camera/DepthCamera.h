@@ -1,12 +1,10 @@
 #pragma once
 
-#include "Version.h"
-
 #include <mutex>
 #include <map>
-
+#include "Version.h"
 #include "util/Util.h"
-#include <util/FrameObject.h>
+#include "util/FrameObject.h"
 #include "hand_and_avatar/hand/Hand.h"
 #include "hand_and_avatar/FramePlane.h"
 #include "hand_and_avatar/DetectionParams.h"

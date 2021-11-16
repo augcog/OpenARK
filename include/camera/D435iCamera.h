@@ -1,14 +1,12 @@
 #pragma once
-// OpenCV Libraries
-#include "Version.h"
-#include <opencv2/core.hpp>
-#include <librealsense2/rs.hpp>
-#include <thread>
-#include "util/concurrency.h"
-#include <atomic>
 
-// OpenARK Libraries
+#include <opencv2/core.hpp>
+#include <thread>
+#include <atomic>
+#include <librealsense2/rs.hpp>
 #include "camera/CameraSetup.h"
+#include "Version.h"
+#include "util/concurrency.h"
 
 namespace ark {
     /**

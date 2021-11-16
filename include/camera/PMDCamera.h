@@ -1,12 +1,9 @@
 #pragma once
 
-// PMD Libraries
-#include <pmdsdk2.h>
-
 #include <opencv2/core.hpp>
-
-// OpenARK Libraries
+#include <pmdsdk2.h> // PMD Libraries
 #include "camera/DepthCamera.h"
+
 namespace ark {
 
     /**
