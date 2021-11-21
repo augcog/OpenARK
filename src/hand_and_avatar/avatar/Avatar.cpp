@@ -1290,7 +1290,7 @@ namespace ark {
 
 
     template<class T, class VecT_t>
-    Eigen::Matrix<boost::T, 3, 1>
+    Eigen::Matrix<T, 3, 1>
         ark::HumanAvatar::_toJointSpace(int joint_id, const VecT_t & vec, T * _pt, T * _cache) const
     {
         return Eigen::Map<Eigen::Matrix<T, 3, 3> >(_cache + joint_id * NUM_ROT_MAT_PARAMS) * vec
@@ -1352,8 +1352,7 @@ namespace ark {
 
 
     template<class T>
-    inline Eigen<boost::T, 3, 1>
-        ark::HumanAvatar::_computePointPosition(size_t point_index, const T * const _w, T * _pt, T * _cache) const
+    inline Eigen::Matrix<T, 3, 1> ark::HumanAvatar::_computePointPosition(size_t point_index, const T * const _w, T * _pt, T * _cache) const
     {
         const Point_T & initPt_PCL = humanPCBase->points[point_index];
         typedef Eigen::Matrix<T, 3, 1> vec_t;

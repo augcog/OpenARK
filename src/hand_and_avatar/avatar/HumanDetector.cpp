@@ -761,7 +761,7 @@ namespace ark {
     }
 
     template<class T>
-    static inline Eigen<boost::T, 1, 2, Eigen::RowMajor>
+    static inline Eigen::Matrix<T, 1, 2, Eigen::RowMajor>
         ark::HumanDetector::_projectToImage(const cv::Vec4d & intrin, const Eigen::Matrix<T, 1, 3, Eigen::RowMajor> & pt)
     {
         Eigen::Matrix<T, 1, 2, Eigen::RowMajor> out;
