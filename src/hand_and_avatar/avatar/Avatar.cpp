@@ -1276,19 +1276,6 @@ namespace ark {
         return true;
     }
 
-
-    template<class T>
-    void ark::HumanAvatar::fit(const boost::shared_ptr<pcl::PointCloud<T> > & cloud, double deltat /*= -1.0*/, bool track /*= false*/)
-    {
-        // store point cloud in Eigen format
-        EigenCloud_T dataCloud(cloud->points.size(), 3);
-        for (size_t i = 0; i < cloud->points.size(); ++i) {
-            dataCloud.row(i) = cloud->points[i].getVector3fMap().template cast<double>();
-        }
-        fit(dataCloud, deltat, track);
-    }
-
-
     template<class T, class VecT_t>
     Eigen::Matrix<T, 3, 1>
         ark::HumanAvatar::_toJointSpace(int joint_id, const VecT_t & vec, T * _pt, T * _cache) const

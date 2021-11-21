@@ -172,7 +172,12 @@ namespace ark {
 
         /* helper to project from world to image space */
         template<class T>
-        static Eigen::Matrix<T, 1, 2, Eigen::RowMajor>
-                      _projectToImage(const cv::Vec4d & intrin, const Eigen::Matrix<T, 1, 3, Eigen::RowMajor> & pt);
+        static inline Eigen::Matrix<T, 1, 2, Eigen::RowMajor>
+            _projectToImage(const cv::Vec4d & intrin, const Eigen::Matrix<T, 1, 3, Eigen::RowMajor> & pt) {
+            Eigen::Matrix<T, 1, 2, Eigen::RowMajor> out;
+            out[0] = -pt[0] * intrin[0] / pt[2] + intrin[1];
+            out[1] = pt[1] * intrin[2] / pt[2] + intrin[3];
+            return out;
+        }
     };
 }
