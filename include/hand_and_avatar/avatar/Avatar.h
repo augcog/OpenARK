@@ -332,14 +332,7 @@ namespace ark {
         
         /** Fit avatar's pose and shape to the given point cloud. Please use 'alignToJoints' to initialize before fitting. */
         template<class T>
-        void fit(const boost::shared_ptr<pcl::PointCloud<T> > & cloud, double deltat = -1.0, bool track = false) {
-            // store point cloud in Eigen format
-            EigenCloud_T dataCloud(cloud->points.size(), 3);
-            for (size_t i = 0; i < cloud->points.size(); ++i) {
-                dataCloud.row(i) = cloud->points[i].getVector3fMap().template cast<double>();
-            }
-            fit(dataCloud, deltat, track);
-        }
+        void fit(const boost::shared_ptr<pcl::PointCloud<T> > & cloud, double deltat = -1.0, bool track = false);
 
         /** Fit avatar's pose only. Please use 'alignToJoints' to initialize before fitting. */
         void fitPose(const EigenCloud_T & data_cloud, int max_iter = 8, int num_subiter = 6,

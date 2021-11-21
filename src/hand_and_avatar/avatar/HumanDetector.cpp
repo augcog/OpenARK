@@ -759,4 +759,14 @@ namespace ark {
         out.row(mpi_j::CHEST) = _projectToImage<T>(intrin,
             (smpl_joints.row(smpl_j::SPINE2) + smpl_joints.row(smpl_j::SPINE1)) * 0.5);
     }
+
+    template<class T>
+    static inline Eigen::Matrix<T, 1, 2, Eigen::RowMajor>
+        ark::HumanDetector::_projectToImage(const cv::Vec4d & intrin, const Eigen::Matrix<T, 1, 3, Eigen::RowMajor> & pt)
+    {
+        Eigen::Matrix<T, 1, 2, Eigen::RowMajor> out;
+        out[0] = -pt[0] * intrin[0] / pt[2] + intrin[1];
+        out[1] = pt[1] * intrin[2] / pt[2] + intrin[3];
+        return out;
+    }
 }
