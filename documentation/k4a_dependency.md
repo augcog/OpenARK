@@ -17,7 +17,7 @@ We won't be using the pre-build sdk, but there is a `.dll` package inside the pr
 
 ```shell
 mkdir build && cd build
-cmake -G "Visual Studio 14 2015 Win64" ..
+cmake -G "Visual Studio 16 2019" ..
 cmake --build . --config Release --target install
 ```
 
