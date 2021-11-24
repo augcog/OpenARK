@@ -32,3 +32,13 @@ the k4a sdk should be installed under your `C:\Program Files (x86)\K4A`
 6. add `.dll` requirement
     1. copy `depthengine_2_0.dll` from `C:\Program Files\Azure Kinect SDK v1.4.1\sdk\windows-desktop\amd64\release\bin` 
     2. paste it under `C:\Program Files (x86)\K4A\bin`
+
+## FAQ
+
+1. No 'stdatomic.h'
+    ```shell
+    cannot open include file 'stdatomic.h' no such file or directory
+    ```
+    **fix** : downgrade CMake to 3.17
+    
+    > reference: [libsoundio can't build with CMake 3.18](https://github.com/microsoft/Azure-Kinect-Sensor-SDK/issues/1363)
