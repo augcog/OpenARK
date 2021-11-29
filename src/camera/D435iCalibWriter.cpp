@@ -38,7 +38,7 @@ namespace ark {
         x.write(fs);
     }
 
-    static void read(const cv::FileNode& node, ark::CameraCalibration& x, const ark::CameraCalibration& default_value = ark::CameraCalibration()) {
+    static void read(const cv::FileNode& node, ark::CameraCalibration& x, const ark::CameraCalibration& default_value) {
         if (node.empty())
             x = default_value;
         else
