@@ -1,55 +1,110 @@
 #pragma once
-
+#include "util/Types.h"
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <opencv2/core/eigen.hpp>
 #include <DBoW2.h>
 #include <DLoopDetector.h>
-#include "util/Types.h"
-#include "slam/PoseGraphSolver.h"
-#include "slam/CorrespondenceRansac.h"
+#include "PoseGraphSolver.h"
+#include "CorrespondenceRansac.h"
 #include "util/Util.h"
-#include "slam/PointCostSolver.h"
+#include "PointCostSolver.h"
+namespace ark {
+    /**
+    * @brief This class
+    */
+    template<class TDescriptor, class F>
+    class SparseMap {
+    public:
 
-namespace ark{
+        SparseMap() :
+            currentKeyframeId(-1)
+        {
 
-/**
- * @brief This class 
- */
-template<class TDescriptor, class F>
-class SparseMap {
- public:
+        }
 
-  SparseMap();
+        void getFrames(std::vector<int>& frame_ids) {
+            for (auto frame : frameMap_) {
+                frame_ids.push_back(frame.first);
+            }
+        }
 
-  void getFrames(std::vector<int>& frame_ids);
+        void getTrajectory(std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut) {
+            trajOut.resize(frameMap_.size());
+            size_t i = 0;
+            for (std::map<int, MapKeyFrame::Ptr>::iterator frame = frameMap_.begin();
+                frame != frameMap_.end(); frame++, i++) {
+                trajOut[i] = frame->second->T_WS();
+            }
+        }
 
-  void getTrajectory(std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut);
+        void getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut) {
+            for (std::map<int, MapKeyFrame::Ptr>::iterator frame = frameMap_.begin();
+                frame != frameMap_.end(); frame++) {
+                frameIdOut.push_back(frame->first);
+                trajOut.push_back(frame->second->T_WC(3));
+            }
+        }
 
-  void getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut);
+        int getNumKeyframes() {
+            return frameMap_.size();
+        }
 
-  int getNumKeyframes();
+        MapKeyFrame::Ptr getCurrentKeyframe() {
+            return getKeyframe(currentKeyframeId);
+        };
+        MapKeyFrame::Ptr getKeyframe(int frameId) {
+            std::map<int, MapKeyFrame::Ptr>::iterator it = frameMap_.find(frameId);
+            if (it != frameMap_.end()) {
+                return it->second;
+            }
+            else {
+                return MapKeyFrame::Ptr(nullptr);
+            }
+        }
 
-  MapKeyFrame::Ptr getCurrentKeyframe();
+        bool addKeyframe(MapKeyFrame::Ptr kf, MapKeyFrame::Ptr &loop_kf, Eigen::Affine3d &transformEstimate) {
+            //std::cout << "PROCESS KEYFRAME: " << kf->frameId_ << std::endl;
 
-  MapKeyFrame::Ptr getKeyframe(int frameId);
-  
-  bool addKeyframe(MapKeyFrame::Ptr kf, MapKeyFrame::Ptr &loop_kf, Eigen::Affine3d &transformEstimate);
+            frameMap_[kf->frameId_] = kf;
+            kf->previousKeyframeId_ = currentKeyframeId;
+            kf->previousKeyframe_ = getCurrentKeyframe();
 
-  std::map<int, MapKeyFrame::Ptr> frameMap_;
+            Eigen::Matrix4d T_K1K2;
+            if (kf->previousKeyframe_.get() != nullptr) {
+                T_K1K2 = kf->previousKeyframe_->T_WS_.inverse()*kf->T_WS_;
+                graph_.AddConstraint(kf->previousKeyframeId_, kf->frameId_, T_K1K2);
+                kf->setOptimizedTransform(kf->previousKeyframe_->T_WS()*T_K1K2);
+            }
+            else
+                T_K1K2 = Eigen::Matrix4d::Identity();
 
-  DBoW2::EntryId lastEntry_;
-  int currentKeyframeId;
+            currentKeyframeId = kf->frameId_;
+            graph_.AddPose(kf->frameId_, kf->T_WS());
 
-  SimplePoseGraphSolver graph_;
-  static constexpr double LOOP_CLOSURE_DISTANCE_THRESHOLD = 0.0;
+            if (loop_kf != nullptr) {
+                //TODO: Try refining pose estimate in image space, image space is really the proper way to do this
+                //TODO: Reduced pose graph and ISAM methods will allow a longer runtime
+                graph_.AddConstraint(kf->frameId_, loop_kf->frameId_, kf->T_SC_[2] * transformEstimate.inverse().matrix()*kf->T_SC_[2].inverse());
+                graph_.optimize();
+                for (std::map<int, MapKeyFrame::Ptr>::iterator frame = frameMap_.begin();
+                    frame != frameMap_.end(); frame++) {
+                    frame->second->setOptimizedTransform(graph_.getTransformById(frame->first));
+                }
+                return true;
+            }
+            return false;
+        }
 
-public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+        std::map<int, MapKeyFrame::Ptr> frameMap_;
 
-private: 
-
-};//class SparseMap
-
+        DBoW2::EntryId lastEntry_;
+        int currentKeyframeId;
+        SimplePoseGraphSolver graph_;
+        static constexpr double LOOP_CLOSURE_DISTANCE_THRESHOLD = 0.0;
+    public:
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    private:
+    };//class SparseMap
 } //namespace ark
