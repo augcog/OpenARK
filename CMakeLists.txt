@@ -425,9 +425,9 @@ set( HEADERS ${HEADERS} ${INCLUDE_DIR}/Version.h )
 # MSVC special options
 if ( MSVC )
     # MSVC precompiled header
-    set( PRECOMPILED_BINARY "$(IntDir)/stdafx.pch" )
+    set( PRECOMPILED_BINARY "stdafx.pch" )
     set( PRECOMPILED_HEADER "stdafx.h" )
-    set( PRECOMPILED_SOURCE "src/stdafx.cpp" )
+    set( PRECOMPILED_SOURCE "stdafx.cpp" )
 
     set_source_files_properties( ${PRECOMPILED_SOURCE}
                                 PROPERTIES COMPILE_FLAGS "/Yc\"${PRECOMPILED_HEADER}\" /Fp\"${PRECOMPILED_BINARY}\""
