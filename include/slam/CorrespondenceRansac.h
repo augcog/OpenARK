@@ -1,7 +1,3 @@
-#pragma once
-#include <vector>
-#include <Eigen/Core>
-#include <pcl/point_cloud.h>
 #include <pcl/common/time.h>
 #include <pcl/registration/icp.h>
 namespace ark {
@@ -154,9 +150,7 @@ namespace ark {
             }
 
 
-
         }
-        Eigen::Affine3d transform_out);
 
     private:
 
@@ -167,10 +161,8 @@ namespace ark {
                 (p1.z - p2.z)*(p1.z - p2.z)) <
                 (inlier_threshold*inlier_threshold);
         }
-        static bool checkThreshold(const PointT& p1, const PointT& p2, float inlier_threshold);
 
         CorrespondenceRansac() {}
-        CorrespondenceRansac();
     };
 
 
