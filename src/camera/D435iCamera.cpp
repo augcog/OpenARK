@@ -6,6 +6,7 @@
 #include "Version.h"
 #include "camera/D435iCamera.h"
 #include "util/Visualizer.h"
+#include "slam/SingleConsumerPriorityQueue.h"
 
 /** RealSense SDK2 Cross-Platform Depth Camera Backend **/
 namespace ark {
