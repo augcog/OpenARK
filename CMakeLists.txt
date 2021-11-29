@@ -307,6 +307,9 @@ set(
   ${SRC_DIR}/3drecon/SaveFrame.cpp
   ${SRC_DIR}/util/SegmentedMesh.cpp
   ${SRC_DIR}/3drecon/3DReconDemo.cpp
+  ${SRC_DIR}/PoseGraphSolver.cpp
+  ${SRC_DIR}/SLAMSystem.cpp
+  ${SRC_DIR}/Types.cpp
 )
 
 set(
@@ -335,6 +338,7 @@ set(
   ${INCLUDE_DIR}/util/nanoflann.hpp
   ${INCLUDE_DIR}/slam/SLAMSystem.h
   ${INCLUDE_DIR}/slam/OkvisSLAMSystem.h
+  ${INCLUDE_DIR}/slam/SingleConsumerPriorityQueue.h
   ${INCLUDE_DIR}/util/glfwManager.h
   ${INCLUDE_DIR}/camera/CameraSetup.h
   ${INCLUDE_DIR}/slam/SparseMap.h
@@ -345,6 +349,7 @@ set(
   ${INCLUDE_DIR}/util/UKF.h
   ${INCLUDE_DIR}/util/SaveFrame.h
   ${INCLUDE_DIR}/util/SegmentedMesh.h
+  ${INCLUDE_DIR}/util/concurrency.h
   ${INCLUDE_DIR}/stdafx.h
 )
 
