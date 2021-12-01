@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "hand_and_avatar/PlaneDetector.h"
+#include "openark/hand_and_avatar/PlaneDetector.h"
 
 namespace ark {
     PlaneDetector::PlaneDetector(DetectionParams::Ptr params) : Detector(params) { }

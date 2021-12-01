@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "camera/PMDCamera.h"
+#include "openark/camera/PMDCamera.h"
 
 namespace ark {
     /***

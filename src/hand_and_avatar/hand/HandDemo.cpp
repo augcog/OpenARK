@@ -15,21 +15,21 @@
 // OpenARK Libraries
 #include "Version.h"
 #ifdef PMDSDK_ENABLED
-    #include "camera/PMDCamera.h"
+    #include "openark/camera/PMDCamera.h"
 #endif
 #ifdef RSSDK_ENABLED
-    #include "camera/SR300Camera.h"
+    #include "openark/camera/SR300Camera.h"
 #endif
 #ifdef RSSDK2_ENABLED
     #include <camera/RS2Camera.h>
 #endif
 #ifdef AZURE_KINECT_ENABLED
-    #include "camera/AzureKinectCamera.h"
+    #include "openark/camera/AzureKinectCamera.h"
 #endif
 
-#include "util/Core.h"
-#include "util/Visualizer.h"
-#include "util/Util.h"
+#include "openark/util/Core.h"
+#include "openark/util/Visualizer.h"
+#include "openark/util/Util.h"
 
 using namespace ark;
 

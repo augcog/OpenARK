@@ -4,11 +4,11 @@
 #include <ctime>
 #include <csignal>
 #include <exception>
-#include "util/glfwManager.h"
-#include "util/concurrency.h"
-#include "camera/MockD435iCamera.h"
-#include "util/Util.h"
-#include "slam/OkvisSLAMSystem.h"
+#include "openark/util/glfwManager.h"
+#include "openark/util/concurrency.h"
+#include "openark/camera/MockD435iCamera.h"
+#include "openark/util/Util.h"
+#include "openark/slam/OkvisSLAMSystem.h"
 
 using namespace ark;
 using boost::filesystem::path;

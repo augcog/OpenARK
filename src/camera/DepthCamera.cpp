@@ -1,8 +1,8 @@
 #include "stdafx.h"
 #include "Version.h"
-#include "camera/DepthCamera.h"
-#include "hand_and_avatar/hand/Hand.h"
-#include "util/FrameObject.h"
+#include "openark/camera/DepthCamera.h"
+#include "openark/hand_and_avatar/hand/Hand.h"
+#include "openark/util/FrameObject.h"
 
 namespace ark {
 

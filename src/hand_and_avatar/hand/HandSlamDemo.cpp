@@ -1,9 +1,9 @@
 #include <iostream>
 #include <thread>
-#include "util/glfwManager.h"
-#include "util/Core.h"
-#include "slam/OkvisSLAMSystem.h"
-#include "camera/D435iCamera.h"
+#include "openark/util/glfwManager.h"
+#include "openark/util/Core.h"
+#include "openark/slam/OkvisSLAMSystem.h"
+#include "openark/camera/D435iCamera.h"
 
 using namespace ark;
 

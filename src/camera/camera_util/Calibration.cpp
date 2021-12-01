@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Version.h"
-#include "camera/camera_util/Calibration.h"
-#include "util/Util.h"
+#include "openark/camera/camera_util/Calibration.h"
+#include "openark/util/Util.h"
 
 namespace ark {
     void Calibration::XYZToUnity(DepthCamera& depth_cam, int num_boards, int board_w, int board_h)

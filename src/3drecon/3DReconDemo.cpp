@@ -1,12 +1,12 @@
 #include <camera/D435iCamera.h>
 #include <iostream>
 #include <thread>
-#include "util/glfwManager.h"
-#include "util/Util.h"
-#include "util/SaveFrame.h"
-#include "util/Types.h"
-#include "util/SegmentedMesh.h"
-#include "slam/OkvisSLAMSystem.h"
+#include "openark/util/glfwManager.h"
+#include "openark/util/Util.h"
+#include "openark/util/SaveFrame.h"
+#include "openark/util/Types.h"
+#include "openark/util/SegmentedMesh.h"
+#include "openark/slam/OkvisSLAMSystem.h"
 
 using namespace ark;
 

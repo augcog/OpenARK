@@ -15,11 +15,11 @@
 #include <pcl/point_cloud.h>
 #include <boost/archive/text_oarchive.hpp>
 #include "Version.h"
-#include "camera/D435iCamera.h"
-#include "util/Util.h"
-#include "util/nanoflann.hpp"
-#include "util/Core.h"
-#include "util/Visualizer.h"
+#include "openark/camera/D435iCamera.h"
+#include "openark/util/Util.h"
+#include "openark/util/nanoflann.hpp"
+#include "openark/util/Core.h"
+#include "openark/util/Visualizer.h"
 
 using namespace ark;
 using boost::filesystem::path;

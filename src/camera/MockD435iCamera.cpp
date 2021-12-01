@@ -4,8 +4,8 @@
 #include <boost/archive/text_iarchive.hpp>
 #include "stdafx.h"
 #include "Version.h"
-#include "camera/MockD435iCamera.h"
-#include "util/Visualizer.h"
+#include "openark/camera/MockD435iCamera.h"
+#include "openark/util/Visualizer.h"
 
 /** RealSense SDK2 Cross-Platform Depth Camera Backend **/
 namespace ark

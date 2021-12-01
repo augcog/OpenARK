@@ -14,8 +14,8 @@ Esther commented
 #include <fstream>
 #include <boost/filesystem.hpp>
 #include <opencv2/opencv.hpp>
-#include "util/SaveFrame.h"
-#include "util/Types.h"
+#include "openark/util/SaveFrame.h"
+#include "openark/util/Types.h"
 
 namespace ark {
 

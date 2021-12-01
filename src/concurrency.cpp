@@ -1,4 +1,4 @@
-# include "concurrency.h"
+# include "openark/util/concurrency.h"
 
 template<class T>
 void single_consumer_queue<T>::enqueue(T item)

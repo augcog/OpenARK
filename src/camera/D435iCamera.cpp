@@ -4,9 +4,9 @@
 #include <librealsense2/hpp/rs_pipeline.hpp>
 #include "stdafx.h"
 #include "Version.h"
-#include "camera/D435iCamera.h"
-#include "util/Visualizer.h"
-#include "slam/SingleConsumerPriorityQueue.h"
+#include "openark/camera/D435iCamera.h"
+#include "openark/util/Visualizer.h"
+#include "openark/slam/SingleConsumerPriorityQueue.h"
 
 /** RealSense SDK2 Cross-Platform Depth Camera Backend **/
 namespace ark {

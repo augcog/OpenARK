@@ -1,4 +1,4 @@
-# include "slam/SLAMSystem.h"
+# include "openark/slam/SLAMSystem.h"
 
 namespace ark {
 

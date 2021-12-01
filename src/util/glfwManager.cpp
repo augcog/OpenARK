@@ -1,6 +1,6 @@
 #include <iostream>
 #include "stdafx.h"
-#include "util/glfwManager.h"
+#include "openark/util/glfwManager.h"
 
 namespace MyGUI{
 

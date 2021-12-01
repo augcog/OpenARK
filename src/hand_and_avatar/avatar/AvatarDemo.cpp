@@ -17,13 +17,13 @@
 #include <opencv2/dnn.hpp>
 #include <opencv2/face.hpp>
 #include <opencv2/ximgproc.hpp>
-#include "util/nanoflann.hpp"
+#include "openark/util/nanoflann.hpp"
 #include "Version.h"
-#include "camera/MockCamera.h"
-#include "util/Core.h"
-#include "util/Visualizer.h"
-#include "hand_and_avatar/avatar/Avatar.h"
-#include "hand_and_avatar/avatar/HumanDetector.h"
+#include "openark/camera/MockCamera.h"
+#include "openark/util/Core.h"
+#include "openark/util/Visualizer.h"
+#include "openark/hand_and_avatar/avatar/Avatar.h"
+#include "openark/hand_and_avatar/avatar/HumanDetector.h"
 
 #define GLOG_minloglevel 3
 

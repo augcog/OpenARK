@@ -1,4 +1,4 @@
-# include "slam/PointCostSolver.h"
+# include "openark/slam/PointCostSolver.h"
 
 namespace ark {
 

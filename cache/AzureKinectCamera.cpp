@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "Version.h"
-#include "slam_camera/AzureKinectCamera.h"
+#include "openark/slam_camera/AzureKinectCamera.h"
 
 #include <k4a/k4a.h>
 

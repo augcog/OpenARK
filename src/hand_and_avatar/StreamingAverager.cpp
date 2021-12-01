@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Version.h"
-#include "hand_and_avatar/StreamingAverager.h"
-#include "util/Util.h"
+#include "openark/hand_and_avatar/StreamingAverager.h"
+#include "openark/util/Util.h"
 
 namespace ark {
     StreamingAverager::StreamingAverager(int frequency, float rejectionDistance) :

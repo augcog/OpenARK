@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "camera/MockCamera.h"
+#include "openark/camera/MockCamera.h"
 
 namespace ark {
 	// Listing out all files in directory

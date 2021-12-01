@@ -7,9 +7,9 @@
 #include "opencv2/highgui/highgui.hpp"
 
 // OpenARK Libraries
-#include "util/Core.h"
-#include "camera/SR300Camera.h"
-#include "util/Visualizer.h"
+#include "openark/util/Core.h"
+#include "openark/camera/SR300Camera.h"
+#include "openark/util/Visualizer.h"
 
 int main() {
     ark::DepthCamera::Ptr camera = std::make_shared<ark::SR300Camera>();

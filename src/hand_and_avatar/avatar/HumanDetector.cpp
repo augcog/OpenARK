@@ -1,6 +1,6 @@
 #include "stdafx.h"
-#include "hand_and_avatar/avatar/HumanDetector.h"
-#include "util/Util.h"
+#include "openark/hand_and_avatar/avatar/HumanDetector.h"
+#include "openark/util/Util.h"
 
 namespace {
     typedef ark::HumanAvatar::EigenCloud_T cloud;

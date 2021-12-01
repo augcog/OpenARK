@@ -3,8 +3,8 @@
 #include <librealsense2/hpp/rs_pipeline.hpp>
 #include "stdafx.h"
 #include "Version.h"
-#include "camera/RS2Camera.h"
-#include "util/Visualizer.h"
+#include "openark/camera/RS2Camera.h"
+#include "openark/util/Visualizer.h"
 
 /** RealSense SDK2 Cross-Platform Depth Camera Backend **/
 namespace ark {

@@ -1,6 +1,6 @@
 #include "stdafx.h"
-#include "hand_and_avatar/FramePlane.h"
-#include "util/Util.h"
+#include "openark/hand_and_avatar/FramePlane.h"
+#include "openark/util/Util.h"
 
 namespace ark {
     FramePlane::FramePlane() : equation(0, 0, 0), FrameObject()

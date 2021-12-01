@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Version.h"
-#include "camera/SR300Camera.h"
-#include "util/Visualizer.h"
+#include "openark/camera/SR300Camera.h"
+#include "openark/util/Visualizer.h"
 
 using namespace Intel::RealSense;
 

@@ -4,20 +4,20 @@
 #include <pcl/point_cloud.h>
 #include <Eigen/Dense>
 
-#include "util/Core.h"
+#include "openark/util/Core.h"
 #include "UnityInterface.h"
 
 #ifdef PMDSDK_ENABLED
-    #include "camera/PMDCamera.h"
+    #include "openark/camera/PMDCamera.h"
 #endif
 #ifdef RSSDK_ENABLED
-    #include "camera/SR300Camera.h"
+    #include "openark/camera/SR300Camera.h"
 #endif
 #ifdef RSSDK2_ENABLED
-    #include "RS2Camera.h"
+    #include "openark/camera/RS2Camera.h"
 #endif
 #ifdef AZURE_KINECT_ENABLED
-    #include "camera/AzureKinectCamera.h"
+    #include "openark/camera/AzureKinectCamera.h"
 #endif
 
 extern "C" {

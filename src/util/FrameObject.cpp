@@ -1,8 +1,8 @@
 #include "stdafx.h"
 #include "Version.h"
-#include "util/FrameObject.h"
-#include "util/Visualizer.h"
-#include "util/Util.h"
+#include "openark/util/FrameObject.h"
+#include "openark/util/Visualizer.h"
+#include "openark/util/Util.h"
 
 namespace ark {
     // Initialize default DetectionParams instance

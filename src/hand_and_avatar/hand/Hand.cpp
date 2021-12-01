@@ -1,9 +1,9 @@
 #include "stdafx.h"
 #include "Version.h"
-#include "util/Util.h"
-#include "hand_and_avatar/hand/Hand.h"
-#include "util/Visualizer.h"
-#include "hand_and_avatar/hand/HandClassifier.h"
+#include "openark/util/Util.h"
+#include "openark/hand_and_avatar/hand/Hand.h"
+#include "openark/util/Visualizer.h"
+#include "openark/hand_and_avatar/hand/HandClassifier.h"
 
 // limited to file scope
 namespace {
