@@ -301,77 +301,77 @@ set(
 
 set(
   HEADERS
-  ${INCLUDE_DIR}/util/FrameObject.h
-  ${INCLUDE_DIR}/camera/webcam/Webcam.h
-  ${INCLUDE_DIR}/camera/DepthCamera.h
-  ${INCLUDE_DIR}/camera/RGBCamera.h
-  ${INCLUDE_DIR}/camera/StereoCamera.h
-  ${INCLUDE_DIR}/camera/camera_util/Calibration.h
-  ${INCLUDE_DIR}/util/Util.h
-  ${INCLUDE_DIR}/util/Visualizer.h
-  ${INCLUDE_DIR}/camera/MockCamera.h
-  ${INCLUDE_DIR}/camera/MockD435iCamera.h
-  ${INCLUDE_DIR}/util/nanoflann.hpp
-  ${INCLUDE_DIR}/slam/SLAMSystem.h
-  ${INCLUDE_DIR}/slam/OkvisSLAMSystem.h
-  ${INCLUDE_DIR}/util/glfwManager.h
-  ${INCLUDE_DIR}/camera/CameraSetup.h
-  ${INCLUDE_DIR}/slam/SparseMap.h
-  ${INCLUDE_DIR}/slam/PointCostSolver.h
-  ${INCLUDE_DIR}/slam/PoseGraphSolver.h
-  ${INCLUDE_DIR}/util/Types.h
-  ${INCLUDE_DIR}/slam/CorrespondenceRansac.h
-  ${INCLUDE_DIR}/util/UKF.h
-  ${INCLUDE_DIR}/util/SaveFrame.h
-  ${INCLUDE_DIR}/util/SegmentedMesh.h
+  ${INCLUDE_DIR}/openark/util/FrameObject.h
+  ${INCLUDE_DIR}/openark/camera/webcam/Webcam.h
+  ${INCLUDE_DIR}/openark/camera/DepthCamera.h
+  ${INCLUDE_DIR}/openark/camera/RGBCamera.h
+  ${INCLUDE_DIR}/openark/camera/StereoCamera.h
+  ${INCLUDE_DIR}/openark/camera/camera_util/Calibration.h
+  ${INCLUDE_DIR}/openark/util/Util.h
+  ${INCLUDE_DIR}/openark/util/Visualizer.h
+  ${INCLUDE_DIR}/openark/camera/MockCamera.h
+  ${INCLUDE_DIR}/openark/camera/MockD435iCamera.h
+  ${INCLUDE_DIR}/openark/util/nanoflann.hpp
+  ${INCLUDE_DIR}/openark/slam/SLAMSystem.h
+  ${INCLUDE_DIR}/openark/slam/OkvisSLAMSystem.h
+  ${INCLUDE_DIR}/openark/util/glfwManager.h
+  ${INCLUDE_DIR}/openark/camera/CameraSetup.h
+  ${INCLUDE_DIR}/openark/slam/SparseMap.h
+  ${INCLUDE_DIR}/openark/slam/PointCostSolver.h
+  ${INCLUDE_DIR}/openark/slam/PoseGraphSolver.h
+  ${INCLUDE_DIR}/openark/util/Types.h
+  ${INCLUDE_DIR}/openark/slam/CorrespondenceRansac.h
+  ${INCLUDE_DIR}/openark/util/UKF.h
+  ${INCLUDE_DIR}/openark/util/SaveFrame.h
+  ${INCLUDE_DIR}/openark/util/SegmentedMesh.h
   ${INCLUDE_DIR}/stdafx.h
 )
 
 if (${BUILD_HAND_DEMO} OR ${BUILD_AVATAR_DEMO}) 
   set(
     SOURCES
-    ${SRC_DIR}/hand_and_avatar/FramePlane.cpp
-    ${SRC_DIR}/hand_and_avatar/StreamingAverager.cpp
-    ${SRC_DIR}/hand_and_avatar/Detector.cpp
-    ${SRC_DIR}/hand_and_avatar/PlaneDetector.cpp
+    ${SRC_DIR}/openark/hand_and_avatar/FramePlane.cpp
+    ${SRC_DIR}/openark/hand_and_avatar/StreamingAverager.cpp
+    ${SRC_DIR}/openark/hand_and_avatar/Detector.cpp
+    ${SRC_DIR}/openark/hand_and_avatar/PlaneDetector.cpp
   )
   set(
     HEADERS
-    ${INCLUDE_DIR}/hand_and_avatar/DetectionParams.h
-    ${INCLUDE_DIR}/hand_and_avatar/FramePlane.h
-    ${INCLUDE_DIR}/hand_and_avatar/StreamingAverager.h
-    ${INCLUDE_DIR}/hand_and_avatar/Detector.h
-    ${INCLUDE_DIR}/hand_and_avatar/PlaneDetector.h
+    ${INCLUDE_DIR}/openark/hand_and_avatar/DetectionParams.h
+    ${INCLUDE_DIR}/openark/hand_and_avatar/FramePlane.h
+    ${INCLUDE_DIR}/openark/hand_and_avatar/StreamingAverager.h
+    ${INCLUDE_DIR}/openark/hand_and_avatar/Detector.h
+    ${INCLUDE_DIR}/openark/hand_and_avatar/PlaneDetector.h
   )
 endif(${BUILD_HAND_DEMO} OR ${BUILD_AVATAR_DEMO})
 
 if (${BUILD_HAND_DEMO}) 
   set(
     SOURCES
-    ${SRC_DIR}/hand_and_avatar/hand/Hand.cpp 
-    ${SRC_DIR}/hand_and_avatar/hand/HandClassifier.cpp
-    ${SRC_DIR}/hand_and_avatar/hand/HandDetector.cpp
+    ${SRC_DIR}/openark/hand_and_avatar/hand/Hand.cpp 
+    ${SRC_DIR}/openark/hand_and_avatar/hand/HandClassifier.cpp
+    ${SRC_DIR}/openark/hand_and_avatar/hand/HandDetector.cpp
   )
   set(
     HEADERS
-    ${INCLUDE_DIR}/hand_and_avatar/hand/Hand.h
-    ${INCLUDE_DIR}/hand_and_avatar/hand/HandClassifier
-    ${INCLUDE_DIR}/hand_and_avatar/hand/HandDetector.h
+    ${INCLUDE_DIR}/openark/hand_and_avatar/hand/Hand.h
+    ${INCLUDE_DIR}/openark/hand_and_avatar/hand/HandClassifier
+    ${INCLUDE_DIR}/openark/hand_and_avatar/hand/HandDetector.h
   )
 endif(${BUILD_HAND_DEMO})
 
 if (${BUILD_AVATAR_DEMO}) 
   set(
     SOURCES
-    ${SRC_DIR}/hand_and_avatar/avatar/HumanDetector.cpp
-    ${SRC_DIR}/hand_and_avatar/avatar/HumanBody.cpp
-    ${SRC_DIR}/hand_and_avatar/avatar/Avatar.cpp
+    ${SRC_DIR}/openark/hand_and_avatar/avatar/HumanDetector.cpp
+    ${SRC_DIR}/openark/hand_and_avatar/avatar/HumanBody.cpp
+    ${SRC_DIR}/openark/hand_and_avatar/avatar/Avatar.cpp
   )
   set(
     HEADERS
-    ${INCLUDE_DIR}/hand_and_avatar/avatar/HumanDetector.h
-    ${INCLUDE_DIR}/hand_and_avatar/avatar/HumanBody.h
-    ${INCLUDE_DIR}/hand_and_avatar/avatar/Avatar.h
+    ${INCLUDE_DIR}/openark/hand_and_avatar/avatar/HumanDetector.h
+    ${INCLUDE_DIR}/openark/hand_and_avatar/avatar/HumanBody.h
+    ${INCLUDE_DIR}/openark/hand_and_avatar/avatar/Avatar.h
   )
 endif(${BUILD_AVATAR_DEMO})
 
@@ -407,7 +407,7 @@ if( NOT k4a_FOUND )
   set( _AZURE_KINECT_SDK_ "//" )
 else()
   set( SOURCES ${SOURCES} ${SRC_DIR}/camera/AzureKinectCamera.cpp )
-  set( HEADERS ${HEADERS} ${INCLUDE_DIR}/camera/AzureKinectCamera.h )
+  set( HEADERS ${HEADERS} ${INCLUDE_DIR}/openark/camera/AzureKinectCamera.h )
   set( DEPENDENCIES ${DEPENDENCIES} k4a::k4a )
 endif( NOT k4a_FOUND )
 
@@ -416,7 +416,7 @@ if( NOT realsense2_FOUND )
 else()
   include_directories( ${realsense2_INCLUDE_DIR} )
   set( SOURCES ${SOURCES} ${SRC_DIR}/camera/RS2Camera.cpp ${SRC_DIR}/camera/D435iCamera.cpp )
-  set( HEADERS ${HEADERS} ${INCLUDE_DIR}/camera/RS2Camera.h ${INCLUDE_DIR}/camera/D435iCamera.h ${INCLUDE_DIR}/camera/D435iCalibWriter.h )
+  set( HEADERS ${HEADERS} ${INCLUDE_DIR}/openark/camera/RS2Camera.h ${INCLUDE_DIR}/openark/camera/D435iCamera.h ${INCLUDE_DIR}/openark/camera/D435iCalibWriter.h )
   set( DEPENDENCIES ${DEPENDENCIES} ${realsense2_LIBRARY} )
 endif( NOT realsense2_FOUND )
 
@@ -425,7 +425,7 @@ if( NOT RSSDK_FOUND )
 else()
   include_directories( ${RSSDK_INCLUDE_DIR} )
   set( SOURCES ${SOURCES} ${SRC_DIR}/camera/SR300Camera.cpp ${SRC_DIR}/camera/camera_util/Converter.cpp )
-  set( HEADERS ${HEADERS} ${INCLUDE_DIR}/camera/SR300Camera.h ${INCLUDE_DIR}/camera/Converter.h )
+  set( HEADERS ${HEADERS} ${INCLUDE_DIR}/openark/camera/SR300Camera.h ${INCLUDE_DIR}/openark/camera/Converter.h )
 endif( NOT RSSDK_FOUND )
 
 if( NOT PMDSDK_FOUND )
@@ -433,7 +433,7 @@ if( NOT PMDSDK_FOUND )
 else()
   include_directories( ${PMDSDK_INCLUDE_DIR} )
   set( SOURCES ${SOURCES} ${SRC_DIR}/camera/PMDCamera.cpp )
-  set( HEADERS ${HEADERS} ${INCLUDE_DIR}/camera/PMDCamera.h )
+  set( HEADERS ${HEADERS} ${INCLUDE_DIR}/openark/camera/PMDCamera.h )
   set( DEPENDENCIES ${DEPENDENCIES} ${PMDSDK_LIBRARIES} )
 endif( NOT PMDSDK_FOUND )
 
@@ -485,7 +485,7 @@ if (NOT EXISTS "${PROJECT_SOURCE_DIR}/data/avatar-model/model.pcd")
     message( WARNING "SMPL model files are not present, so the avatar module will not work. To use the avatar module and/or run the avatar demo, you will need to download the SMPL model manually. Please follow the instructions in data/avatar-model/README.md. Note that SMPL is available for non-commercial, academic research purposes only." )
 endif()
 
-add_library( ${LIB_NAME} STATIC "${INCLUDE_DIR}/util/Core.h" ${SOURCES} ${HEADERS} )
+add_library( ${LIB_NAME} STATIC "${INCLUDE_DIR}/openark/util/Core.h" ${SOURCES} ${HEADERS} )
 set_target_properties( ${LIB_NAME} PROPERTIES OUTPUT_NAME
         "openark_${OpenARK_VERSION_MAJOR}_${OpenARK_VERSION_MINOR}_${OpenARK_VERSION_PATCH}" )
 
