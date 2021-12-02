@@ -21,7 +21,7 @@
     #include "openark/camera/SR300Camera.h"
 #endif
 #ifdef RSSDK2_ENABLED
-    #include <camera/RS2Camera.h>
+    #include <openark/camera/RS2Camera.h>
 #endif
 #ifdef AZURE_KINECT_ENABLED
     #include "openark/camera/AzureKinectCamera.h"

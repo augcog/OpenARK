@@ -1,4 +1,4 @@
-#include <camera/D435iCamera.h>
+#include <openark/camera/D435iCamera.h>
 #include <iostream>
 #include <thread>
 #include "openark/util/glfwManager.h"

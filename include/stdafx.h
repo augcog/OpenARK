@@ -82,7 +82,7 @@
 #include <ceres/ceres.h>
 
 // nanoflann
-#include <util/nanoflann.hpp>
+#include <openark/util/nanoflann.hpp>
 
 // Brisk
 #include <brisk/brisk.h>
@@ -103,4 +103,4 @@
 #include <GLFW/glfw3.h>
 
 // UKF
-#include <util/UKF.h>
+#include <openark/util/UKF.h>
