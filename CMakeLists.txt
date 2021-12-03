@@ -283,37 +283,62 @@ endforeach()
 set(
   SOURCES
   ${SRC_DIR}/util/FrameObject.cpp
+  ${SRC_DIR}/hand_and_avatar/FramePlane.cpp
+  ${SRC_DIR}/hand_and_avatar/hand/Hand.cpp 
   ${SRC_DIR}/camera/webcam/Webcam.cpp
   ${SRC_DIR}/camera/DepthCamera.cpp
   ${SRC_DIR}/camera/RGBCamera.cpp
   ${SRC_DIR}/camera/StereoCamera.cpp
+  ${SRC_DIR}/hand_and_avatar/StreamingAverager.cpp
   ${SRC_DIR}/camera/camera_util/Calibration.cpp
   ${SRC_DIR}/util/Util.cpp
   ${SRC_DIR}/util/Visualizer.cpp
+  ${SRC_DIR}/hand_and_avatar/hand/HandClassifier.cpp
+  ${SRC_DIR}/hand_and_avatar/Detector.cpp
+  ${SRC_DIR}/hand_and_avatar/hand/HandDetector.cpp
+  ${SRC_DIR}/hand_and_avatar/PlaneDetector.cpp
   ${SRC_DIR}/camera/MockCamera.cpp
   ${SRC_DIR}/camera/MockD435iCamera.cpp
+  ${SRC_DIR}/hand_and_avatar/avatar/HumanDetector.cpp
+  ${SRC_DIR}/hand_and_avatar/avatar/HumanBody.cpp
+  ${SRC_DIR}/hand_and_avatar/avatar/Avatar.cpp
   ${SRC_DIR}/util/glfwManager.cpp
   ${SRC_DIR}/slam/OkvisSLAMSystem.cpp
   ${SRC_DIR}/3drecon/SaveFrame.cpp
   ${SRC_DIR}/util/SegmentedMesh.cpp
   ${SRC_DIR}/3drecon/3DReconDemo.cpp
+  ${SRC_DIR}/PoseGraphSolver.cpp
+  ${SRC_DIR}/SLAMSystem.cpp
+  ${SRC_DIR}/Types.cpp
 )
 
 set(
   HEADERS
   ${INCLUDE_DIR}/openark/util/FrameObject.h
+  ${INCLUDE_DIR}/openark/hand_and_avatar/DetectionParams.h
+  ${INCLUDE_DIR}/openark/hand_and_avatar/hand/Hand.h
+  ${INCLUDE_DIR}/openark/hand_and_avatar/FramePlane.h
   ${INCLUDE_DIR}/openark/camera/webcam/Webcam.h
   ${INCLUDE_DIR}/openark/camera/DepthCamera.h
   ${INCLUDE_DIR}/openark/camera/RGBCamera.h
   ${INCLUDE_DIR}/openark/camera/StereoCamera.h
+  ${INCLUDE_DIR}/openark/hand_and_avatar/StreamingAverager.h
   ${INCLUDE_DIR}/openark/camera/camera_util/Calibration.h
   ${INCLUDE_DIR}/openark/util/Util.h
   ${INCLUDE_DIR}/openark/util/Visualizer.h
+  ${INCLUDE_DIR}/openark/hand_and_avatar/hand/HandClassifier.h
+  ${INCLUDE_DIR}/openark/hand_and_avatar/Detector.h
+  ${INCLUDE_DIR}/openark/hand_and_avatar/hand/HandDetector.h
+  ${INCLUDE_DIR}/openark/hand_and_avatar/PlaneDetector.h
   ${INCLUDE_DIR}/openark/camera/MockCamera.h
   ${INCLUDE_DIR}/openark/camera/MockD435iCamera.h
+  ${INCLUDE_DIR}/openark/hand_and_avatar/avatar/HumanDetector.h
+  ${INCLUDE_DIR}/openark/hand_and_avatar/avatar/HumanBody.h
+  ${INCLUDE_DIR}/openark/hand_and_avatar/avatar/Avatar.h
   ${INCLUDE_DIR}/openark/util/nanoflann.hpp
   ${INCLUDE_DIR}/openark/slam/SLAMSystem.h
   ${INCLUDE_DIR}/openark/slam/OkvisSLAMSystem.h
+  ${INCLUDE_DIR}/openark/slam/SingleConsumerPriorityQueue.h
   ${INCLUDE_DIR}/openark/util/glfwManager.h
   ${INCLUDE_DIR}/openark/camera/CameraSetup.h
   ${INCLUDE_DIR}/openark/slam/SparseMap.h
@@ -324,56 +349,9 @@ set(
   ${INCLUDE_DIR}/openark/util/UKF.h
   ${INCLUDE_DIR}/openark/util/SaveFrame.h
   ${INCLUDE_DIR}/openark/util/SegmentedMesh.h
+  ${INCLUDE_DIR}/openark/util/concurrency.h
   ${INCLUDE_DIR}/stdafx.h
 )
-
-if (${BUILD_HAND_DEMO} OR ${BUILD_AVATAR_DEMO}) 
-  set(
-    SOURCES ${SOURCES}
-    ${SRC_DIR}/hand_and_avatar/FramePlane.cpp
-    ${SRC_DIR}/hand_and_avatar/StreamingAverager.cpp
-    ${SRC_DIR}/hand_and_avatar/Detector.cpp
-    ${SRC_DIR}/hand_and_avatar/PlaneDetector.cpp
-  )
-  set(
-    HEADERS ${HEADERS}
-    ${INCLUDE_DIR}/openark/hand_and_avatar/DetectionParams.h
-    ${INCLUDE_DIR}/openark/hand_and_avatar/FramePlane.h
-    ${INCLUDE_DIR}/openark/hand_and_avatar/StreamingAverager.h
-    ${INCLUDE_DIR}/openark/hand_and_avatar/Detector.h
-    ${INCLUDE_DIR}/openark/hand_and_avatar/PlaneDetector.h
-  )
-endif(${BUILD_HAND_DEMO} OR ${BUILD_AVATAR_DEMO})
-
-if (${BUILD_HAND_DEMO}) 
-  set(
-    SOURCES ${SOURCES}
-    ${SRC_DIR}/hand_and_avatar/hand/Hand.cpp 
-    ${SRC_DIR}/hand_and_avatar/hand/HandClassifier.cpp
-    ${SRC_DIR}/hand_and_avatar/hand/HandDetector.cpp
-  )
-  set(
-    HEADERS ${HEADERS}
-    ${INCLUDE_DIR}/openark/hand_and_avatar/hand/Hand.h
-    ${INCLUDE_DIR}/openark/hand_and_avatar/hand/HandClassifier
-    ${INCLUDE_DIR}/openark/hand_and_avatar/hand/HandDetector.h
-  )
-endif(${BUILD_HAND_DEMO})
-
-if (${BUILD_AVATAR_DEMO}) 
-  set(
-    SOURCES ${SOURCES}
-    ${SRC_DIR}/hand_and_avatar/avatar/HumanDetector.cpp
-    ${SRC_DIR}/hand_and_avatar/avatar/HumanBody.cpp
-    ${SRC_DIR}/hand_and_avatar/avatar/Avatar.cpp
-  )
-  set(
-    HEADERS ${HEADERS}
-    ${INCLUDE_DIR}/openark/hand_and_avatar/avatar/HumanDetector.h
-    ${INCLUDE_DIR}/openark/hand_and_avatar/avatar/HumanBody.h
-    ${INCLUDE_DIR}/openark/hand_and_avatar/avatar/Avatar.h
-  )
-endif(${BUILD_AVATAR_DEMO})
 
 if(WIN32)
   add_subdirectory(third_party/glfw)
