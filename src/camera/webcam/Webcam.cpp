@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "Version.h"
-#include "openark/camera/Webcam.h"
+#include "openark/camera/webcam/Webcam.h"
 
 namespace ark {
     /***
