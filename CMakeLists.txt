@@ -329,14 +329,14 @@ set(
 
 if (${BUILD_HAND_DEMO} OR ${BUILD_AVATAR_DEMO}) 
   set(
-    SOURCES
+    SOURCES ${SOURCES}
     ${SRC_DIR}/hand_and_avatar/FramePlane.cpp
     ${SRC_DIR}/hand_and_avatar/StreamingAverager.cpp
     ${SRC_DIR}/hand_and_avatar/Detector.cpp
     ${SRC_DIR}/hand_and_avatar/PlaneDetector.cpp
   )
   set(
-    HEADERS
+    HEADERS ${HEADERS}
     ${INCLUDE_DIR}/openark/hand_and_avatar/DetectionParams.h
     ${INCLUDE_DIR}/openark/hand_and_avatar/FramePlane.h
     ${INCLUDE_DIR}/openark/hand_and_avatar/StreamingAverager.h
@@ -347,13 +347,13 @@ endif(${BUILD_HAND_DEMO} OR ${BUILD_AVATAR_DEMO})
 
 if (${BUILD_HAND_DEMO}) 
   set(
-    SOURCES
+    SOURCES ${SOURCES}
     ${SRC_DIR}/hand_and_avatar/hand/Hand.cpp 
     ${SRC_DIR}/hand_and_avatar/hand/HandClassifier.cpp
     ${SRC_DIR}/hand_and_avatar/hand/HandDetector.cpp
   )
   set(
-    HEADERS
+    HEADERS ${HEADERS}
     ${INCLUDE_DIR}/openark/hand_and_avatar/hand/Hand.h
     ${INCLUDE_DIR}/openark/hand_and_avatar/hand/HandClassifier
     ${INCLUDE_DIR}/openark/hand_and_avatar/hand/HandDetector.h
@@ -362,13 +362,13 @@ endif(${BUILD_HAND_DEMO})
 
 if (${BUILD_AVATAR_DEMO}) 
   set(
-    SOURCES
+    SOURCES ${SOURCES}
     ${SRC_DIR}/hand_and_avatar/avatar/HumanDetector.cpp
     ${SRC_DIR}/hand_and_avatar/avatar/HumanBody.cpp
     ${SRC_DIR}/hand_and_avatar/avatar/Avatar.cpp
   )
   set(
-    HEADERS
+    HEADERS ${HEADERS}
     ${INCLUDE_DIR}/openark/hand_and_avatar/avatar/HumanDetector.h
     ${INCLUDE_DIR}/openark/hand_and_avatar/avatar/HumanBody.h
     ${INCLUDE_DIR}/openark/hand_and_avatar/avatar/Avatar.h
