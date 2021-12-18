@@ -61,7 +61,7 @@ int main(int argc, char **argv)
     }
 
     OkvisSLAMSystem slam(vocabFilename, configFilename);
-    
+
     //setup display
     if (!MyGUI::Manager::init())
     {
@@ -71,7 +71,7 @@ int main(int argc, char **argv)
 
     printf("Camera initialization started...\n");
     fflush(stdout);
-    MockD435iCamera camera(dataPath);
+    MockD435iCamera camera(dataPath, configFilename);
 
     printf("Camera-IMU initialization complete\n");
     fflush(stdout);
@@ -204,7 +204,7 @@ int main(int argc, char **argv)
         }
         catch (const std::exception &e)
         {
-            std::cerr << e.what() << '\n'; 
+            std::cerr << e.what() << '\n';
         }
         catch (...)
         {
