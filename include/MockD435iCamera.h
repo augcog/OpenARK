@@ -26,7 +26,7 @@ namespace ark {
         /**
         * config the input dir
         */
-        explicit MockD435iCamera(path dir);
+        explicit MockD435iCamera(path dir, std::string& configFilename);
 
         /**
         * Destructor
