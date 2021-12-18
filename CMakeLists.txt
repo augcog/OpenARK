@@ -155,10 +155,12 @@ IF( DBoW2_FOUND )
 ENDIF( DBoW2_FOUND )
 
 # require DLoopDetector
-set(DLoopDetector_INCLUDE_DIR "C:/Program Files/DLoopDetector/include/DLoopDetector")
-include_directories(${DLoopDetector_INCLUDE_DIR})
-
 set(ENV{DLoopDetector_INCLUDE_DIRS} "/usr/local/include/DLoopDetector")
+find_package( DLoopDetector REQUIRED )
+IF( DLoopDetector_FOUND )
+    MESSAGE( STATUS "Found DLoopDetector: $ENV{DLoopDetector_INCLUDE_DIRS} ${DLoopDetector_LIBRARIES} ${DLoopDetector_INCLUDE_DIRS}" )
+ENDIF( DLoopDetector_FOUND )
+
 if( DEFINED ENV{ARK_DEPS_DIR} )
   include_directories(${DLoopDetector_INCLUDE_DIRS})
 else()
@@ -170,12 +172,6 @@ endif( DEFINED ENV{ARK_DEPS_DIR} )
 find_package( okvis REQUIRED )
 include_directories(${OKVIS_INCLUDE_DIRS})
 message(STATUS "Found Okvis: ${OKVIS_INCLUDE_DIRS} ${OKVIS_LIBRARIES}")
-
-# require libtorch
-find_package(Torch REQUIRED)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
-message( STATUS "Found Torch: ${TORCH_INCLUDE_DIRS}" )
-include_directories(${TORCH_INCLUDE_DIRS})
 
 # require opengv (should come with Okvis)
 if( DEFINED ENV{ARK_DEPS_DIR} )
@@ -269,7 +265,6 @@ set(
   ${GLOG_LIBRARIES} #${CXSPARSE_LIBRARIES}
   ${SuiteSparse_LIBRARIES}
   ${OKVIS_LIBRARIES}
-  ${TORCH_LIBRARIES}
   ${CERES_LIBRARIES}
   ${BRISK_LIBRARIES}
   ${DBoW2_LIBRARIES}
