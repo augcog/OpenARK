@@ -43,7 +43,7 @@ namespace ark {
          */
         cv::Size getImageSize() const override;
 
-        /** 
+        /**
          * Dummy method
          */
         void start() override;
@@ -76,9 +76,11 @@ namespace ark {
         ifstream imuStream;
         ifstream timestampStream;
         rs2_intrinsics depthIntrinsics;
+        rs2_intrinsics colorIntrinsics;
         int firstFrameId;
         int width, height;
         time_t startTime;
         double scale;
+        std::string configFilename;
     };
 }

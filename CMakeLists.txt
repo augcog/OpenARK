@@ -1,6 +1,6 @@
 cmake_minimum_required( VERSION 3.5 )
 cmake_policy( VERSION 3.5 )
-#[[ For OpenARK Ubuntu and Jetson Xavier NX, 
+#[[ For OpenARK Ubuntu and Jetson Xavier NX,
 cmake_minimum_required( VERSION 3.18 )
 cmake_policy( VERSION 3.18 )
 ]]
@@ -8,7 +8,7 @@ cmake_policy( VERSION 3.18 )
 project( OpenARK )
 set( OpenARK_VERSION_MAJOR 0 )
 set( OpenARK_VERSION_MINOR 9 )
-set( OpenARK_VERSION_PATCH 3 )  
+set( OpenARK_VERSION_PATCH 3 )
 set( INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include" )
 
 set( CMAKE_CXX_STACK_SIZE "10000000" )
@@ -20,7 +20,7 @@ endif()
 
 message(STATUS "CMAKE_HOST_SYSTEM_PROCESSOR: ${CMAKE_HOST_SYSTEM_PROCESSOR}")
 if(${CMAKE_HOST_SYSTEM_PROCESSOR} MATCHES "arm*")
-  # NVIDIA Jetson Xavier NX 
+  # NVIDIA Jetson Xavier NX
   add_definitions(-D__ARM_NEON__)
   message(STATUS "Host System Processor is ${CMAKE_HOST_SYSTEM_PROCESSOR}, will attempt to use NEON.")
 endif()
@@ -44,6 +44,7 @@ set( DEMO_NAME "OpenARK_hand_demo" )
 set( AVATAR_DEMO_NAME "OpenARK_avatar_demo")
 set( SLAM_DEMO_NAME "OpenARK_SLAM_demo")
 set( 3DRECON_DATA_NAME "3dRecon_Data_Recording")
+set( 3DRECON_DATA_OFFLINE_NAME "3dRecon_Offline_Data_Recording")
 set( DATA_RECORDING_NAME "OpenARK_data_recording")
 set( SLAM_RECORDING_NAME "OpenARK_slam_recording")
 set( SLAM_REPLAYING_NAME "OpenARK_slam_replaying")
@@ -55,6 +56,7 @@ option( BUILD_HAND_DEMO "BUILD_HAND_DEMO" ON )
 option( BUILD_AVATAR_DEMO "BUILD_AVATAR_DEMO" ON)
 option( BUILD_SLAM_DEMO "BUILD_SLAM_DEMO" ON)
 option( BUILD_3DRECON_DEMO "BUILD_3DRECON_DEMO" ON)
+option( BUILD_3DRECON_OFFLINE_DEMO "BUILD_3DRECON_OFFLINE_DEMO" ON)
 option( BUILD_DATA_RECORDING "BUILD_DATA_RECORDING" OFF)
 option( BUILD_SLAM_RECORDING "BUILD_SLAM_RECORDING" ON)
 option( BUILD_SLAM_REPLAYING "BUILD_SLAM_REPLAYING" ON)
@@ -66,12 +68,12 @@ option( USE_RSSDK "USE_RSSDK" OFF )
 option( USE_PMDSDK "USE_PMDSDK" OFF )
 
 include( CheckCXXCompilerFlag )
-CHECK_CXX_COMPILER_FLAG( "-std=c++11" COMPILER_SUPPORTS_CXX11 )
+CHECK_CXX_COMPILER_FLAG( "-std=c++14" COMPILER_SUPPORTS_CXX14 )
 CHECK_CXX_COMPILER_FLAG( "-std=c++0x" COMPILER_SUPPORTS_CXX0X )
 
 if( COMPILER_SUPPORTS_CXX11 )
     message(STATUS "c++11 supported")
-    set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11" )
+    set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14" )
 elseif( COMPILER_SUPPORTS_CXX0X )
     message(status "c++ something supported")
     set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x" )
@@ -171,6 +173,12 @@ find_package( okvis REQUIRED )
 include_directories(${OKVIS_INCLUDE_DIRS})
 message(STATUS "Found Okvis: ${OKVIS_INCLUDE_DIRS} ${OKVIS_LIBRARIES}")
 
+# require libtorch
+find_package(Torch REQUIRED)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
+message( STATUS "Found Torch: ${TORCH_INCLUDE_DIRS}" )
+include_directories(${TORCH_INCLUDE_DIRS})
+
 # require opengv (should come with Okvis)
 if( DEFINED ENV{ARK_DEPS_DIR} )
   find_package( opengv REQUIRED NO_MODULE )
@@ -189,11 +197,11 @@ ENDIF(Ceres_FOUND)
 include_directories(${CERES_INCLUDE_DIRS})
 
 # require SuiteSparse
-find_package( SuiteSparse QUIET )
-IF(SuiteSparse_FOUND)
-    MESSAGE(STATUS "Found SuiteSparse: ${SuiteSparse_INCLUDE_DIRS} ${SuiteSparse_LIBRARIES}")
-ENDIF(SuiteSparse_FOUND)
-include_directories(${SuiteSparse_INCLUDE_DIRS})
+#find_package( SuiteSparse QUIET )
+#IF(SuiteSparse_FOUND)
+#    MESSAGE(STATUS "Found SuiteSparse: ${SuiteSparse_INCLUDE_DIRS} ${SuiteSparse_LIBRARIES}")
+#ENDIF(SuiteSparse_FOUND)
+#include_directories(${SuiteSparse_INCLUDE_DIRS})
 
 find_package(OpenMP)
 if (OPENMP_FOUND)
@@ -263,6 +271,7 @@ set(
   ${GLOG_LIBRARIES} #${CXSPARSE_LIBRARIES}
   ${SuiteSparse_LIBRARIES}
   ${OKVIS_LIBRARIES}
+  ${TORCH_LIBRARIES}
   ${CERES_LIBRARIES}
   ${BRISK_LIBRARIES}
   ${DBoW2_LIBRARIES}
@@ -370,7 +379,7 @@ else()
     )
     list(APPEND DEPENDENCIES m ${GLFW_LIBRARIES} ${LIBUSB1_LIBRARIES})
     include_directories(${GLFW_INCLUDE_DIR})
-endif() 
+endif()
 
 if( NOT k4a_FOUND )
   set( _AZURE_KINECT_SDK_ "//" )
@@ -510,6 +519,18 @@ if( ${BUILD_3DRECON_DEMO} AND realsense2_FOUND )
         target_link_libraries( ${3DRECON_DATA_NAME} ${DEPENDENCIES} ${LIB_NAME} GLU GL glut )
     endif ( MSVC )
 endif( ${BUILD_3DRECON_DEMO} AND realsense2_FOUND )
+
+if( ${BUILD_3DRECON_OFFLINE_DEMO} AND realsense2_FOUND )
+    add_executable( ${3DRECON_DATA_OFFLINE_NAME} 3DReconOffline.cpp )
+    target_include_directories( ${3DRECON_DATA_OFFLINE_NAME} PRIVATE ${INCLUDE_DIR} )
+    set_target_properties( ${3DRECON_DATA_OFFLINE_NAME} PROPERTIES OUTPUT_NAME ${3DRECON_DATA_OFFLINE_NAME} )
+    set_target_properties( ${3DRECON_DATA_OFFLINE_NAME} PROPERTIES COMPILE_FLAGS ${TARGET_COMPILE_FLAGS} )
+    if ( MSVC )
+        target_link_libraries( ${3DRECON_DATA_OFFLINE_NAME} ${DEPENDENCIES} ${LIB_NAME} )
+    else()
+        target_link_libraries( ${3DRECON_DATA_OFFLINE_NAME} ${DEPENDENCIES} ${LIB_NAME} GLU GL glut )
+    endif ( MSVC )
+endif( ${BUILD_3DRECON_OFFLINE_DEMO} AND realsense2_FOUND )
 
 
 if( ${BUILD_DATA_RECORDING} )
