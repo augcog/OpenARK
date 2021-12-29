@@ -88,7 +88,7 @@ int main(int argc, char **argv)
 	int frame_counter = 1;
 	bool do_integration = true;
 
-	SegmentedMesh * mesh = new SegmentedMesh(configFilename, slam, camera);
+	SegmentedMesh * mesh = new SegmentedMesh(configFilename, slam, *camera);
 
 	MyGUI::MeshWindow mesh_win("Mesh Viewer", mesh_view_width, mesh_view_height);
 	MyGUI::Mesh mesh_obj("mesh", mesh);
