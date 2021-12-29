@@ -176,7 +176,7 @@ sudo make install
 ```
 
 ## Installing Okvis+ 
-1. `git clone https://github.com/joemenke/okvis && cd okvis`
+1. `git clone https://github.com/adamchang2000/okvis && cd okvis`
 2. Apply the Fixing Eigen changes.
 3. To run okvis demo, turn on the demo option in the CMakeListst.txt.      
 `option (BUILD_APPS "Builds a demo app (which requires boost)" ON)` 
