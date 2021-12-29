@@ -68,7 +68,6 @@ namespace ark {
         path imuTxtPath;
         path timestampTxtPath;
         path metaTxtPath;
-        path intrinFilePath;
         path depthDir;
         path rgbDir;
         path infraredDir;

@@ -32,14 +32,50 @@ modifying system variables.
 
     `cmake --build . --config Release`
 
- **To run the OpenARK hand demo:**
-    `cd Release`
-    `OpenARK_hand_demo.exe`
+## Running the OpenARK demo applications
+- These applications will show you how core functionalities of OpenARK work 
+- These applications will also help you to verify successful installation of OpenARK.
+- The demos apps are in `build` directory.
+- If you do not want to create these demo files, you can do turn off building them in `CMakeLists.txt`.
+`option( BUILD_HAND_DEMO "BUILD_HAND_DEMO" OFF )`
 
-**To run the OpenARK SLAM demo:**
+### OpenARK_hand_demo
+As a final sanity check, try running the demo executable in the build directory: 
+`./OpenARK-Hand-Demo` 
+You should see the hand detection and depth image windows. If you only see one window, drag it and see if the other is behind it. The static library is named: `libopenark_0_9_3.a`.
 
-    `cd Release`
-    `OpenARK_SLAM_demo.exe`
+### OpenARK_slam_demo
+Run as  `./OpenARK_SLAM_demo "/path/to/camera_intr.yaml" "../config/brisk_vocab.bn" "0.0"`
+
+Example `./OpenARK_SLAM_demo "../mycam_intr.yaml" "../config/brisk_vocab.bn" "0.0"`
+
+### OpenARK_slam_recording
+#### Data Collected
+    depth
+    infrared
+    infrared2
+    timestamp.txt
+    imu.txt
+    rgb
+    meta.txt
+    
+Run as  `./OpenARK_slam_recording "/path/to/save/data" "/path/to/camera_yaml_file"`
+
+Example `sudo ./OpenARK_slam_recording "../data" "../mycam_intr.yaml"`
+
+### OpenARK_slam_replaying
+Run as  `./OpenARK_slam_replaying "/path/to/camera_yaml_file path/to/brisk_vocab.bn" "0.0" "/path/to/data/collected/by/openark_slam_recording"`
+
+Example `./OpenARK_slam_replaying "../mycam_intr.yaml" "../config/brisk_vocab.bn" "0.0" "../data_path"`
+
+#### Dataset : [Google Drive](https://drive.google.com/drive/folders/1PyV8_0nDT9vURHWTvq-8RX9CV6gA2Abj?usp=sharing)
+### 3dRecon_Data_Recording
+Run as `./3dRecon_Data_Recording "/path/to/camera_yaml_file"`
+
+Example `./3dRecon_Data_Recording "../config/d435i_intr.yaml"`
+
+## Yaml File Explained
+Please read the documentation of the individual parameters in the yaml file carefully. You have various options to trade-off accuracy and computational expense as well as to enable online calibration.
 
 **Add these lines to your intrinsics yaml file**
 

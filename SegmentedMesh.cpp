@@ -79,8 +79,8 @@ namespace ark {
 		}
 	}
 
-	SegmentedMesh::SegmentedMesh(std::string& recon_config, OkvisSLAMSystem& slam, CameraSetup* camera, bool blocking/*= true*/) {
-		this->Setup(slam, camera);
+	SegmentedMesh::SegmentedMesh(std::string& recon_config, OkvisSLAMSystem& slam, CameraSetup& camera, bool blocking/*= true*/) {
+		this->SetupCallbacks(slam, camera);
 		Initialize(recon_config, blocking);
 	}
 
@@ -123,7 +123,7 @@ namespace ark {
 
 	}
 
-	void SegmentedMesh::Setup(OkvisSLAMSystem& slam, CameraSetup* camera) {
+	void SegmentedMesh::SetupCallbacks(OkvisSLAMSystem& slam, CameraSetup& camera) {
 
 		FrameAvailableHandler updateFrameCounter([&, this] (MultiCameraFrame::Ptr frame) {
 			if (this->frame_counter_ > 1000000) {
@@ -165,8 +165,8 @@ namespace ark {
 
 		slam.AddSparseMapMergeHandler(spmHandler, "mesh merge");
 
-		std::vector<float> intrinsics = camera->getColorIntrinsics();
-		auto size = camera->getImageSize();
+		std::vector<float> intrinsics = camera.getColorIntrinsics();
+		auto size = camera.getImageSize();
 
 		auto intr = open3d::camera::PinholeCameraIntrinsic(size.width, size.height, intrinsics[0], intrinsics[1], intrinsics[2], intrinsics[3]);
 

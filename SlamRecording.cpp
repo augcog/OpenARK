@@ -63,7 +63,6 @@ int main(int argc, char **argv)
     path infrared2_path = directory_path / "infrared2/";
     path rgb_path = directory_path / "rgb/";
     path timestamp_path = directory_path / "timestamp.txt";
-    path intrin_path = directory_path / "intrin.bin";
     path meta_path = directory_path / "meta.txt";
     path imu_path = directory_path / "imu.txt";
     std::vector<path> pathList{directory_path, depth_path, infrared_path, infrared2_path, rgb_path};
@@ -95,10 +94,6 @@ int main(int argc, char **argv)
         std::ofstream imu_ofs(imu_path.string());
         std::ofstream timestamp_ofs(timestamp_path.string());
         {
-            std::ofstream intrin_ofs(intrin_path.string());
-            boost::archive::text_oarchive oa(intrin_ofs);
-            oa << camera.getDepthIntrinsics();
-
             std::ofstream meta_ofs(meta_path.string());
             meta_ofs << "depth " << camera.getDepthScale();
         }
@@ -118,12 +113,12 @@ int main(int argc, char **argv)
             const auto &infrared = frame->images_[0];
             const auto &infrared2 = frame->images_[1];
             const auto &depth = frame->images_[4];
-            //const auto &rgb = frame->images_[3];
+            const auto &rgb = frame->images_[3];
 
             saveImg(frameId, infrared, infrared_path);
             saveImg(frameId, infrared2, infrared2_path);
             saveImg(frameId, depth, depth_path);
-            //saveImg(frameId, rgb, rgb_path);
+            saveImg(frameId, rgb, rgb_path);
 
             timestamp_ofs << frameId << " " << std::setprecision(15) << frame->timestamp_ << "\n";
             if(!quit)
