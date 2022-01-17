@@ -18,7 +18,7 @@ int main(int argc, char **argv)
 {
 
 	if (argc > 5) {
-		std::cerr << "Usage: ./" << argv[0] << " [configuration-yaml-file] [vocabulary-file] [frame output directory] [dataset-dir (if running offline reconstruction)" << std::endl
+		std::cerr << "Usage: ./" << argv[0] << " [configuration-yaml-file] [vocabulary-file] [frame output directory] [dataset-dir (if running offline reconstruction)]" << std::endl
 			<< "Args given: " << argc << std::endl;
 		return -1;
 	}
@@ -68,12 +68,14 @@ int main(int argc, char **argv)
 
 	//running in real-time mode
 	if (savedDataPath == "") {
-		D435iCamera c;
-		camera = &c;
+		printf("Running in Real-Time mode.\nMake sure you have a supported camera plugged-in.\n");
+		D435iCamera * c = new D435iCamera();
+		camera = c;
 	} else {
+		printf("Running in offline mode.\nReading from provided directory %s.\n", savedDataPath);
 		path dataPath{ savedDataPath };
-		MockD435iCamera c(dataPath, configFilename);
-		camera = &c;
+		MockD435iCamera * c = new MockD435iCamera(dataPath, configFilename);
+		camera = c;
 	}
 
 	camera->start();
@@ -144,7 +146,6 @@ int main(int argc, char **argv)
 		//Get current camera frame
 		MultiCameraFrame::Ptr frame(new MultiCameraFrame);
 		camera->update(frame);
-
 		//Get or wait for IMU Data until current frame 
 		std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>> imuData;
 		camera->getImuToTime(frame->timestamp_, imuData);

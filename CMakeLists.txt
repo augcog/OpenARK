@@ -155,14 +155,15 @@ IF( DBoW2_FOUND )
 ENDIF( DBoW2_FOUND )
 
 # require DLoopDetector
-set(ENV{DLoopDetector_INCLUDE_DIRS} "/usr/local/include/DLoopDetector")
 find_package( DLoopDetector REQUIRED )
 IF( DLoopDetector_FOUND )
-    MESSAGE( STATUS "Found DLoopDetector: $ENV{DLoopDetector_INCLUDE_DIRS} ${DLoopDetector_LIBRARIES} ${DLoopDetector_INCLUDE_DIRS}" )
+    MESSAGE( STATUS "Found DLoopDetector: ${DLoopDetector_LIBRARIES} ${DLoopDetector_INCLUDE_DIRS}" )
 ENDIF( DLoopDetector_FOUND )
 
 if( DEFINED ENV{ARK_DEPS_DIR} )
   include_directories(${DLoopDetector_INCLUDE_DIRS})
+elseif(${CMAKE_HOST_SYSTEM_NAME} MATCHES "Linux")
+  include_directories("/usr/local/include/DLoopDetector")
 else()
   include_directories($ENV{DLoopDetector_INCLUDE_DIRS})
 endif( DEFINED ENV{ARK_DEPS_DIR} )
