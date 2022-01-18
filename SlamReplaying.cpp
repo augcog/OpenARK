@@ -26,9 +26,9 @@ int main(int argc, char **argv)
     std::signal(SIGABRT, signal_handler);
     std::signal(SIGSEGV, signal_handler);
     std::signal(SIGTERM, signal_handler);
-    if (argc > 5)
+    if (argc > 4)
     {
-        std::cerr << "Usage: ./" << argv[0] << " [configuration-yaml-file] [vocabulary-file] [skip-first-seconds] [data_path]" << std::endl
+        std::cerr << "Usage: ./" << argv[0] << " [configuration-yaml-file] [vocabulary-file] [data_path]" << std::endl
                   << "Args given: " << argc << std::endl;
         return -1;
     }
@@ -48,17 +48,11 @@ int main(int argc, char **argv)
     else
         vocabFilename = util::resolveRootPath("config/brisk_vocab.bn");
 
-    okvis::Duration deltaT(0.0);
-    if (argc > 3)
-    {
-        deltaT = okvis::Duration(atof(argv[3]));
-    }
+    std::string savedDataPath;
+	if (argc > 3) savedDataPath = argv[3];
+	else savedDataPath = "data";
 
-    path dataPath{"./data_path_25-10-2019 16-47-28"};
-    if (argc > 4)
-    {
-        dataPath = path(argv[4]);
-    }
+    path dataPath{ savedDataPath };
 
     OkvisSLAMSystem slam(vocabFilename, configFilename);
 

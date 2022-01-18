@@ -10,7 +10,7 @@
 /** RealSense SDK2 Cross-Platform Depth Camera Backend **/
 namespace ark
 {
-MockD435iCamera::MockD435iCamera(path dir, std::string& configFilename) : dataDir(dir), imuTxtPath(dir / "imu.txt"), metaTxtPath(dir / "meta.txt"), intrinFilePath(dir / "intrin.bin"), timestampTxtPath(dir / "timestamp.txt"), depthDir(dir / "depth/"),
+MockD435iCamera::MockD435iCamera(path dir, std::string& configFilename) : dataDir(dir), imuTxtPath(dir / "imu.txt"), metaTxtPath(dir / "meta.txt"), timestampTxtPath(dir / "timestamp.txt"), depthDir(dir / "depth/"),
                                              rgbDir(dir / "rgb/"), infraredDir(dir / "infrared/"), infrared2Dir(dir / "infrared2/"), firstFrameId(-1), startTime(0), configFilename(configFilename)
 {
     width = 640;
@@ -122,13 +122,8 @@ bool MockD435iCamera::getImuToTime(double timestamp, std::vector<ImuPair, Eigen:
     double gyro0, gyro1, gyro2, accel0, accel1, accel2;
     for (; !imuStream.eof() && ts < timestamp;)
     {
-        // TODO: refactor
-        bool allGood = true;
-        allGood = allGood && std::getline(imuStream, line1);
-        allGood = allGood && std::getline(imuStream, line2);
-        allGood = allGood && std::getline(imuStream, line3);
 
-        if (!allGood) {
+        if (!(std::getline(imuStream, line1) && std::getline(imuStream, line2) && std::getline(imuStream, line3))) {
             std::cout << "getImuToTime: unable to read imu data.\n";
             return false;
         }
@@ -226,10 +221,6 @@ void MockD435iCamera::update(MultiCameraFrame::Ptr frame)
     std::vector<path> pathList{infraredDir, infrared2Dir, depthDir, rgbDir, depthDir};
     frame->images_.resize(pathList.size());
 
-    // for (auto i = 0; i < pathList.size(); i++)
-    // {
-    //     frame.images_[i] = loadImg(pathList[i] / fileName);
-    // }
     frame->images_[0] = cv::imread((pathList[0] / fileName).string(), cv::IMREAD_GRAYSCALE | cv::IMREAD_ANYDEPTH);
     frame->images_[1] = cv::imread((pathList[1] / fileName).string(), cv::IMREAD_GRAYSCALE | cv::IMREAD_ANYDEPTH);
     frame->images_[3] = cv::imread((pathList[3] / fileName).string(), cv::IMREAD_COLOR);
@@ -239,15 +230,11 @@ void MockD435iCamera::update(MultiCameraFrame::Ptr frame)
     // TODO: should we mock the block time as well?
     //boost::this_thread::sleep_for(boost::chrono::milliseconds(33));
     // TODO: not sure if this necessary
-    // printf("frame %d\n", frameId);
-    // std::cout << "RGB Size: " << frame.images_[3].total() << " type: " << frame.images_[3].type() << "\n";
-    // std::cout << "DEPTH Size: " << frame.images_[4].total() << " type: " << frame.images_[4].type() << "\n";
 
     frame->images_[2] = cv::Mat(cv::Size(width,height), CV_32FC3);
     project(frame->images_[4], frame->images_[2]);
     frame->images_[2] = frame->images_[2]*scale;
 
-    // std::cout << "Depth cloud: " << frame.images_[2].total() << "\n";
 }
 
 } // namespace ark
