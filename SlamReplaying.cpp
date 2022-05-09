@@ -26,9 +26,9 @@ int main(int argc, char **argv)
     std::signal(SIGABRT, signal_handler);
     std::signal(SIGSEGV, signal_handler);
     std::signal(SIGTERM, signal_handler);
-    if (argc > 5)
+    if (argc > 4)
     {
-        std::cerr << "Usage: ./" << argv[0] << " [configuration-yaml-file] [vocabulary-file] [skip-first-seconds] [data_path]" << std::endl
+        std::cerr << "Usage: ./" << argv[0] << " [configuration-yaml-file] [vocabulary-file] [data_path]" << std::endl
                   << "Args given: " << argc << std::endl;
         return -1;
     }
@@ -48,20 +48,14 @@ int main(int argc, char **argv)
     else
         vocabFilename = util::resolveRootPath("config/brisk_vocab.bn");
 
-    okvis::Duration deltaT(0.0);
-    if (argc > 3)
-    {
-        deltaT = okvis::Duration(atof(argv[3]));
-    }
+    std::string savedDataPath;
+	if (argc > 3) savedDataPath = argv[3];
+	else savedDataPath = "data";
 
-    path dataPath{"./data_path_25-10-2019 16-47-28"};
-    if (argc > 4)
-    {
-        dataPath = path(argv[4]);
-    }
+    path dataPath{ savedDataPath };
 
     OkvisSLAMSystem slam(vocabFilename, configFilename);
-    
+
     //setup display
     if (!MyGUI::Manager::init())
     {
@@ -71,7 +65,7 @@ int main(int argc, char **argv)
 
     printf("Camera initialization started...\n");
     fflush(stdout);
-    MockD435iCamera camera(dataPath);
+    MockD435iCamera camera(dataPath, configFilename);
 
     printf("Camera-IMU initialization complete\n");
     fflush(stdout);
@@ -204,7 +198,7 @@ int main(int argc, char **argv)
         }
         catch (const std::exception &e)
         {
-            std::cerr << e.what() << '\n'; 
+            std::cerr << e.what() << '\n';
         }
         catch (...)
         {

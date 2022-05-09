@@ -26,7 +26,7 @@ namespace ark {
         /**
         * config the input dir
         */
-        explicit MockD435iCamera(path dir);
+        explicit MockD435iCamera(path dir, std::string& configFilename);
 
         /**
         * Destructor
@@ -43,7 +43,7 @@ namespace ark {
          */
         cv::Size getImageSize() const override;
 
-        /** 
+        /**
          * Dummy method
          */
         void start() override;
@@ -68,7 +68,6 @@ namespace ark {
         path imuTxtPath;
         path timestampTxtPath;
         path metaTxtPath;
-        path intrinFilePath;
         path depthDir;
         path rgbDir;
         path infraredDir;
@@ -76,9 +75,11 @@ namespace ark {
         ifstream imuStream;
         ifstream timestampStream;
         rs2_intrinsics depthIntrinsics;
+        rs2_intrinsics colorIntrinsics;
         int firstFrameId;
         int width, height;
         time_t startTime;
         double scale;
+        std::string configFilename;
     };
 }

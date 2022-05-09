@@ -8,24 +8,22 @@
 #include "SaveFrame.h"
 #include "Types.h"
 #include "SegmentedMesh.h"
+#include "concurrency.h"
+#include "MockD435iCamera.h"
 
 using namespace ark;
+using boost::filesystem::path;
 
 int main(int argc, char **argv)
 {
 
 	if (argc > 5) {
-		std::cerr << "Usage: ./" << argv[0] << " [configuration-yaml-file] [vocabulary-file] [frame output directory]" << std::endl
+		std::cerr << "Usage: ./" << argv[0] << " [configuration-yaml-file] [vocabulary-file] [frame output directory] [dataset-dir (if running offline reconstruction)]" << std::endl
 			<< "Args given: " << argc << std::endl;
 		return -1;
 	}
 
 	google::InitGoogleLogging(argv[0]);
-
-	okvis::Duration deltaT(0.0);
-	if (argc == 5) {
-		deltaT = okvis::Duration(atof(argv[4]));
-	}
 
 	// read configuration file
 	std::string configFilename;
@@ -40,7 +38,11 @@ int main(int argc, char **argv)
 	if (argc > 3) frameOutput = argv[3];
 	else frameOutput = "./frames/";
 
-    OkvisSLAMSystem slam(vocabFilename, configFilename);
+    std::string savedDataPath;
+	if (argc > 4) savedDataPath = argv[4];
+	else savedDataPath = "";
+	
+	OkvisSLAMSystem slam(vocabFilename, configFilename);
 
 	//readConfig(configFilename);
 
@@ -62,8 +64,21 @@ int main(int argc, char **argv)
 	fflush(stdout);
 
 
-	D435iCamera camera;
-	camera.start();
+	CameraSetup * camera;
+
+	//running in real-time mode
+	if (savedDataPath == "") {
+		printf("Running in Real-Time mode.\nMake sure you have a supported camera plugged-in.\n");
+		D435iCamera * c = new D435iCamera();
+		camera = c;
+	} else {
+		printf("Running in offline mode.\nReading from provided directory %s.\n", savedDataPath);
+		path dataPath{ savedDataPath };
+		MockD435iCamera * c = new MockD435iCamera(dataPath, configFilename);
+		camera = c;
+	}
+
+	camera->start();
 
 	printf("Camera-IMU initialization complete\n");
 	fflush(stdout);
@@ -75,7 +90,7 @@ int main(int argc, char **argv)
 	int frame_counter = 1;
 	bool do_integration = true;
 
-	SegmentedMesh * mesh = new SegmentedMesh(configFilename, slam, &camera);
+	SegmentedMesh * mesh = new SegmentedMesh(configFilename, slam, *camera);
 
 	MyGUI::MeshWindow mesh_win("Mesh Viewer", mesh_view_width, mesh_view_height);
 	MyGUI::Mesh mesh_obj("mesh", mesh);
@@ -130,11 +145,10 @@ int main(int argc, char **argv)
 
 		//Get current camera frame
 		MultiCameraFrame::Ptr frame(new MultiCameraFrame);
-		camera.update(frame);
-
+		camera->update(frame);
 		//Get or wait for IMU Data until current frame 
 		std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>> imuData;
-		camera.getImuToTime(frame->timestamp_, imuData);
+		camera->getImuToTime(frame->timestamp_, imuData);
 
 		//Add data to SLAM system
 		slam.PushIMU(imuData);
@@ -147,7 +161,7 @@ int main(int argc, char **argv)
 
 		cv::Mat imBGR;
 
-		cv::cvtColor(imRGB, imBGR, CV_RGB2BGR);
+		cv::cvtColor(imRGB, imBGR, cv::COLOR_RGB2BGR);
 
 		cv::imshow("image", imBGR);
 
