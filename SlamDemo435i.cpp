@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 
     std::string vocabFilename;
     if (argc > 2) vocabFilename = argv[2];
-    else vocabFilename = util::resolveRootPath("config/brisk_vocab.bn");
+    else vocabFilename = util::resolveRootPath("config/orb_vocab.txt");
 
     OkvisSLAMSystem slam(vocabFilename, configFilename);
 

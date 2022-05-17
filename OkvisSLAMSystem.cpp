@@ -316,7 +316,7 @@ namespace ark {
     }
 
     void OkvisSLAMSystem::createNewMap() {
-        const auto newMap = std::make_shared<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>>();
+        const auto newMap = std::make_shared<SparseMap<DBoW2::FORB::TDescriptor, DBoW2::FORB>>();
 
         // delete current map if it's too small
         if (sparse_maps_.size() != 0 && getActiveMap()->getNumKeyframes() < kMinimumKeyframes_) {
@@ -340,15 +340,19 @@ namespace ark {
         useLoopClosures_ = enableUseLoopClosures;
         if(useLoopClosures_){
             std::cout << "Loading Vocabulary From: " << vocabPath << std::endl;
-            vocab_.reset(new DBoW2::TemplatedVocabulary<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>());
+            vocab_.reset(new DBoW2::TemplatedVocabulary<DBoW2::FORB::TDescriptor, DBoW2::FORB>()); 
             if(!binaryVocab){
                 vocab_->load(vocabPath);
             }else{
-                vocab_->binaryLoad(vocabPath); //Note: Binary Loading only supported for ORB/BRISK vocabularies
+                // Load old BRISK
+                // vocab_->binaryLoad(vocabPath); //Note: Binary Loading only supported for ORB/BRISK vocabularies
+
+                // Load customized ORB
+                vocab->loadFromTextFile( vocabPath );
             }
             //vocab_->save(vocabPath+std::string(".tst"));
             std::cout << "Vocabulary Size: " << vocab_->size() << std::endl;
-            typename DLoopDetector::TemplatedLoopDetector<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>::Parameters detectorParams(0,0);
+            typename DLoopDetector::TemplatedLoopDetector<DBoW2::FORB::TDescriptor, DBoW2::FORB>::Parameters detectorParams(0,0);
             //can change specific parameters if we want
             // Parameters given by default are:
             // use nss = true
@@ -357,7 +361,7 @@ namespace ark {
             // geom checking = GEOM_DI
             detectorParams.k=2;
             detectorParams.di_levels = 4;
-            detector_.reset(new DLoopDetector::TemplatedLoopDetector<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>(*vocab_,detectorParams));
+            detector_.reset(new DLoopDetector::TemplatedLoopDetector<DBoW2::FORB::TDescriptor, DBoW2::FORB>(*vocab_,detectorParams));
             std::cout << "Map Initialized\n";
         }
     }
@@ -433,14 +437,14 @@ namespace ark {
     }
 
 
-    std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> OkvisSLAMSystem::mergeMaps(
-            std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> olderMap,
-            std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> currentMap, MapKeyFrame::Ptr kf,
+    std::shared_ptr<SparseMap<DBoW2::FORB::TDescriptor, DBoW2::FORB>> OkvisSLAMSystem::mergeMaps(
+            std::shared_ptr<SparseMap<DBoW2::FORB::TDescriptor, DBoW2::FORB>> olderMap,
+            std::shared_ptr<SparseMap<DBoW2::FORB::TDescriptor, DBoW2::FORB>> currentMap, MapKeyFrame::Ptr kf,
             MapKeyFrame::Ptr loop_kf, Eigen::Affine3d &transformEstimate) {
     
         // Loop is detected. Merge smaller map into bigger map and save correction
-        std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> mapA;
-        std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> mapB;
+        std::shared_ptr<SparseMap<DBoW2::FORB::TDescriptor, DBoW2::FORB>> mapA;
+        std::shared_ptr<SparseMap<DBoW2::FORB::TDescriptor, DBoW2::FORB>> mapB;
         Eigen::Matrix4d correction;
         Eigen::Matrix4d kfCorrection;
         Eigen::Matrix4d T_KfKloop = kf->T_SC_[2]*transformEstimate.inverse().matrix()*kf->T_SC_[2].inverse();
@@ -529,7 +533,7 @@ namespace ark {
         getActiveMap()->getTrajectory(trajOut);
     }
 
-    std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> OkvisSLAMSystem:: getActiveMap() {
+    std::shared_ptr<SparseMap<DBoW2::FORB::TDescriptor, DBoW2::FORB>> OkvisSLAMSystem:: getActiveMap() {
         if (sparse_maps_.find(active_map_index) == sparse_maps_.end()) {
             std::cout << "Null map returned \n";
             return nullptr;

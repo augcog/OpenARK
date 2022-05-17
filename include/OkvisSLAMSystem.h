@@ -68,7 +68,7 @@ namespace ark {
         
         ~OkvisSLAMSystem();
 
-        std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> getActiveMap();
+        std::shared_ptr<SparseMap<DBoW2::FORB::TDescriptor, DBoW2::FORB>> getActiveMap();
 
 
         int getActiveMapIndex() {
@@ -76,7 +76,7 @@ namespace ark {
         }
         std::shared_ptr<okvis::ThreadedKFVio> okvis_estimator_;
 
-        std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> getMap(int index) {
+        std::shared_ptr<SparseMap<DBoW2::FORB::TDescriptor, DBoW2::FORB>> getMap(int index) {
             if (sparse_maps_.find(index) == sparse_maps_.end()) {
                 return nullptr;
             } else {
@@ -95,9 +95,9 @@ namespace ark {
         bool detectLoopClosure(MapKeyFrame::Ptr kf, MapKeyFrame::Ptr &loop_kf,
                 Eigen::Affine3d &transformEstimate);
 
-        std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> mergeMaps(
-                std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> olderMap,
-                std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> currentMap,
+        std::shared_ptr<SparseMap<DBoW2::FORB::TDescriptor, DBoW2::FORB>> mergeMaps(
+                std::shared_ptr<SparseMap<DBoW2::FORB::TDescriptor, DBoW2::FORB>> olderMap,
+                std::shared_ptr<SparseMap<DBoW2::FORB::TDescriptor, DBoW2::FORB>> currentMap,
                 MapKeyFrame::Ptr kf, MapKeyFrame::Ptr loop_kf, Eigen::Affine3d &transformEstimate);
         
     private:
@@ -110,7 +110,7 @@ namespace ark {
         std::thread frameConsumerThread_;
         int num_frames_;
         std::atomic<bool> kill;
-        std::map<int, std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>>> sparse_maps_;
+        std::map<int, std::shared_ptr<SparseMap<DBoW2::FORB::TDescriptor, DBoW2::FORB>>> sparse_maps_;
         bool new_map_checker;
         int map_timer;
         int active_map_index;
@@ -118,8 +118,8 @@ namespace ark {
         std::string strVocFile;
 
         bool useLoopClosures_;
-        std::shared_ptr<DLoopDetector::TemplatedLoopDetector<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK> >detector_;
-        std::shared_ptr<DBoW2::TemplatedVocabulary<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK> >vocab_;
+        std::shared_ptr<DLoopDetector::TemplatedLoopDetector<DBoW2::FORB::TDescriptor, DBoW2::FORB>> detector_;
+        std::shared_ptr<DBoW2::TemplatedVocabulary<DBoW2::FORB::TDescriptor, DBoW2::FORB>> vocab_;
         std::shared_ptr<cv::DescriptorMatcher> matcher_;
         std::map<int, MapKeyFrame::Ptr> bowFrameMap_;
         int bowId_;
