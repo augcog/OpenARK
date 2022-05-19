@@ -443,7 +443,7 @@ if (NOT EXISTS "${PROJECT_SOURCE_DIR}/config/brisk_vocab.bn")
     file(DOWNLOAD "https://github.com/sxyu/OpenARK-Deps/releases/download/0.0.1/brisk_vocab.bn" "${PROJECT_SOURCE_DIR}/config/brisk_vocab.bn")
 endif()
 
-if (NOT EXISTS "${PROJECT_SOURCE_DIR}/config/brisk_vocab.bn")
+if (NOT EXISTS "${PROJECT_SOURCE_DIR}/config/orb_vocab.txt")
     message( STATUS "Downloading ORB vocab to config/orb_vocab.txt..." )
     file(DOWNLOAD "https://github.com/UZ-SLAMLab/ORB_SLAM3/blob/master/Vocabulary/ORBvoc.txt.tar.gz" "${PROJECT_SOURCE_DIR}/config/orb_vocab.txt.tar.gz")
     file(ARCHIVE_EXTRACT INPUT ${PROJECT_SOURCE_DIR}/config/orb_vocab.txt.tar.gz DESTINATION ${PROJECT_SOURCE_DIR}/config/ )
