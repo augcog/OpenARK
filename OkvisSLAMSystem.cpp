@@ -348,7 +348,7 @@ namespace ark {
                 // vocab_->binaryLoad(vocabPath); //Note: Binary Loading only supported for ORB/BRISK vocabularies
 
                 // Load customized ORB
-                vocab->loadFromTextFile( vocabPath );
+                vocab_->loadFromTextFile( vocabPath );
             }
             //vocab_->save(vocabPath+std::string(".tst"));
             std::cout << "Vocabulary Size: " << vocab_->size() << std::endl;

@@ -445,8 +445,9 @@ endif()
 
 if (NOT EXISTS "${PROJECT_SOURCE_DIR}/config/orb_vocab.txt")
     message( STATUS "Downloading ORB vocab to config/orb_vocab.txt..." )
-    file(DOWNLOAD "https://github.com/UZ-SLAMLab/ORB_SLAM3/blob/master/Vocabulary/ORBvoc.txt.tar.gz" "${PROJECT_SOURCE_DIR}/config/orb_vocab.txt.tar.gz")
-    file(ARCHIVE_EXTRACT INPUT ${PROJECT_SOURCE_DIR}/config/orb_vocab.txt.tar.gz DESTINATION ${PROJECT_SOURCE_DIR}/config/ )
+    file(DOWNLOAD "https://github.com/UZ-SLAMLab/ORB_SLAM3/raw/master/Vocabulary/ORBvoc.txt.tar.gz" "${PROJECT_SOURCE_DIR}/config/orb_vocab.txt.tar.gz")
+    execute_process(COMMAND ${CMAKE_COMMAND} -E tar xvzf "${PROJECT_SOURCE_DIR}/config/orb_vocab.txt.tar.gz" )
+    execute_process(COMMAND ${CMAKE_COMMAND} -E rename ORBvoc.txt "${PROJECT_SOURCE_DIR}/config/orb_vocab.txt" )
 endif()
 
 if (NOT EXISTS "${PROJECT_SOURCE_DIR}/config/face/lbfmodel.yaml")
