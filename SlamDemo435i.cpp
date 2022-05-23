@@ -32,9 +32,9 @@ int main(int argc, char **argv)
 
     std::string vocabFilename;
     if (argc > 2) vocabFilename = argv[2];
-    else vocabFilename = util::resolveRootPath("config/orb_vocab.txt");
+    else vocabFilename = util::resolveRootPath("config/brisk_vocab.bn");
 
-    OkvisSLAMSystemORBFeatures slam(vocabFilename, configFilename);
+    OkvisSLAMSystemBRISKFeatures slam(vocabFilename, configFilename);
 
     cv::FileStorage configFile(configFilename, cv::FileStorage::READ);
 
@@ -44,7 +44,6 @@ int main(int argc, char **argv)
        fprintf(stdout, "Failed to initialize GLFW\n");
        return -1;
     }
-
 
     printf("Camera initialization started...\n");
     fflush(stdout);
