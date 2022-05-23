@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 
 	std::string vocabFilename;
 	if (argc > 2) vocabFilename = argv[2];
-	else vocabFilename = util::resolveRootPath("config/brisk_vocab.bn");
+	else vocabFilename = util::resolveRootPath("config/orb_vocab.txt");
 
 	std::string frameOutput;
 	if (argc > 3) frameOutput = argv[3];
@@ -42,7 +42,7 @@ int main(int argc, char **argv)
 	if (argc > 4) savedDataPath = argv[4];
 	else savedDataPath = "";
 	
-	OkvisSLAMSystem slam(vocabFilename, configFilename);
+	OkvisSLAMSystemORBFeatures slam(vocabFilename, configFilename);
 
 	//readConfig(configFilename);
 

@@ -42,7 +42,7 @@ class SparseMap {
     }
   }
 
-  void getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut){ 
+  void getTrajectoryWithFrameIds(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut){ 
     for(std::map<int, MapKeyFrame::Ptr>::iterator frame = frameMap_.begin(); 
         frame!=frameMap_.end(); frame++){
       frameIdOut.push_back(frame->first);

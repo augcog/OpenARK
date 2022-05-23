@@ -3,7 +3,7 @@
 
 namespace ark {
 
-    OkvisSLAMSystem::OkvisSLAMSystem(const std::string & strVocFile, const std::string & strSettingsFile) :
+    template <class DescType, class Feat> OkvisSLAMSystem<DescType, Feat>::OkvisSLAMSystem(const std::string & strVocFile, const std::string & strSettingsFile) :
         start_(0.0), t_imu_(0.0), deltaT_(1.0), num_frames_(0), kill(false), 
         sparse_maps_(), active_map_index(-1), map_id_counter_(0), new_map_checker(false),map_timer(0),
         strVocFile(strVocFile), matcher_(nullptr), bowId_(0), lastLoopClosureTimestamp_(0) {
@@ -20,7 +20,8 @@ namespace ark {
         //okvis::VioParameters parameters;
         vio_parameters_reader.getParameters(parameters_);
 
-        setEnableLoopClosure(parameters_.loopClosureParameters.enabled,strVocFile,true, new brisk::BruteForceMatcher());
+        //use brisk::BruteForceMatcher with BRISK and ORB descriptors (both binary)
+        setEnableLoopClosure(parameters_.loopClosureParameters.enabled,strVocFile, new brisk::BruteForceMatcher());
         createNewMap();
 
         //initialize Visual odometry
@@ -42,11 +43,17 @@ namespace ark {
         std::cout << "SLAM Initialized\n";
     }
 
-    void OkvisSLAMSystem::Start() {
+    template OkvisSLAMSystem<BRISKDescType, BRISKDesc>::OkvisSLAMSystem<BRISKDescType, BRISKDesc>(const std::string & strVocFile, const std::string & strSettingsFile);
+    template OkvisSLAMSystem<ORBDescType, ORBDesc>::OkvisSLAMSystem<ORBDescType, ORBDesc>(const std::string & strVocFile, const std::string & strSettingsFile);
+
+    template <class DescType, class Feat> void OkvisSLAMSystem<DescType, Feat>::Start() {
         //Do nothing, starts automatically
     }
 
-    void OkvisSLAMSystem::FrameConsumerLoop() {
+    template void OkvisSLAMSystem<BRISKDescType, BRISKDesc>::Start();
+    template void OkvisSLAMSystem<ORBDescType, ORBDesc>::Start();
+
+    template <class DescType, class Feat> void OkvisSLAMSystem<DescType, Feat>::FrameConsumerLoop() {
         while (!kill) {
              
             //Get processed frame data from OKVIS
@@ -228,48 +235,10 @@ namespace ark {
         }
     }
 
-    /*void OkvisSLAMSystem::PushFrame(const std::vector<cv::Mat>& images, const double &timestamp) {
-        if (okvis_estimator_ == nullptr)
-            return;
-        okvis::Time t_image(timestamp / 1e9);
-        if (start_ == okvis::Time(0.0)) {
-            start_ = t_image;
-        }
+    template void OkvisSLAMSystem<BRISKDescType, BRISKDesc>::FrameConsumerLoop();
+    template void OkvisSLAMSystem<ORBDescType, ORBDesc>::FrameConsumerLoop();
 
-        if (t_image - start_ > deltaT_) {
-            if(mMapFrameAvailableHandler.size()>0){
-                frame_queue_.enqueue({ images,t_image,num_frames_ });
-            }
-            num_frames_++;
-            for (size_t i = 0; i < images.size(); i++) {
-                if (i < parameters_.nCameraSystem.numCameras()){
-                    //printf("add image: %i\n", i);
-                    okvis_estimator_->addImage(t_image, i, images[i]);
-                }
-            }
-        }
-    }
-
-    void OkvisSLAMSystem::PushFrame(const cv::Mat image, const double &timestamp) {
-        if (okvis_estimator_ == nullptr)
-            return;
-        okvis::Time t_image(timestamp / 1e9);
-        if (start_ == okvis::Time(0.0)) {
-            start_ = t_image;
-        }
-
-        if (t_image - start_ > deltaT_) {
-            std::vector<cv::Mat> images;
-            images.push_back(image);
-            if(mMapFrameAvailableHandler.size()>0){
-                frame_queue_.enqueue({ images,t_image,num_frames_ });
-            }
-            num_frames_++;
-            okvis_estimator_->addImage(t_image, 0, image);
-        }
-    }*/
-
-    void OkvisSLAMSystem::PushFrame(MultiCameraFrame::Ptr frame){
+    template <class DescType, class Feat> void OkvisSLAMSystem<DescType, Feat>::PushFrame(MultiCameraFrame::Ptr frame){
         if (okvis_estimator_ == nullptr)
             return;
         okvis::Time t_image(frame->timestamp_ / 1e9);
@@ -291,14 +260,20 @@ namespace ark {
         }   
     }
 
-    void OkvisSLAMSystem::PushIMU(const std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>>& imu) {
+    template void OkvisSLAMSystem<BRISKDescType, BRISKDesc>::PushFrame(MultiCameraFrame::Ptr frame);
+    template void OkvisSLAMSystem<ORBDescType, ORBDesc>::PushFrame(MultiCameraFrame::Ptr frame);
+
+    template <class DescType, class Feat> void OkvisSLAMSystem<DescType, Feat>::PushIMU(const std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>>& imu) {
         if (okvis_estimator_ == nullptr) return;
         for (size_t i = 0; i < imu.size(); i++) {
             PushIMU(imu[i]);
         }
     }
 
-    void OkvisSLAMSystem::PushIMU(const ImuPair& imu) {
+    template void OkvisSLAMSystem<BRISKDescType, BRISKDesc>::PushIMU(const std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>>& imu);
+    template void OkvisSLAMSystem<ORBDescType, ORBDesc>::PushIMU(const std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>>& imu);
+
+    template <class DescType, class Feat> void OkvisSLAMSystem<DescType, Feat>::PushIMU(const ImuPair& imu) {
         if (okvis_estimator_ == nullptr) return;
         t_imu_ = okvis::Time(imu.timestamp / 1e9);
         if (t_imu_ - start_ + okvis::Duration(1.0) > deltaT_) {
@@ -307,7 +282,10 @@ namespace ark {
         }
     }
 
-    void OkvisSLAMSystem::PushIMU(double timestamp, const Eigen::Vector3d& accel, const Eigen::Vector3d gyro) {
+    template void OkvisSLAMSystem<BRISKDescType, BRISKDesc>::PushIMU(const ImuPair& imu);
+    template void OkvisSLAMSystem<ORBDescType, ORBDesc>::PushIMU(const ImuPair& imu);
+
+    template <class DescType, class Feat> void OkvisSLAMSystem<DescType, Feat>::PushIMU(double timestamp, const Eigen::Vector3d& accel, const Eigen::Vector3d gyro) {
         if (okvis_estimator_ == nullptr) return;
         t_imu_ = okvis::Time(timestamp / 1e9);
         if (t_imu_ - start_ + okvis::Duration(1.0) > deltaT_) {
@@ -315,8 +293,11 @@ namespace ark {
         }
     }
 
-    void OkvisSLAMSystem::createNewMap() {
-        const auto newMap = std::make_shared<SparseMap<DBoW2::FORB::TDescriptor, DBoW2::FORB>>();
+    template void OkvisSLAMSystem<BRISKDescType, BRISKDesc>::PushIMU(double timestamp, const Eigen::Vector3d& accel, const Eigen::Vector3d gyro);
+    template void OkvisSLAMSystem<ORBDescType, ORBDesc>::PushIMU(double timestamp, const Eigen::Vector3d& accel, const Eigen::Vector3d gyro);
+
+    template <class DescType, class Feat> void OkvisSLAMSystem<DescType, Feat>::createNewMap() {
+        const auto newMap = std::make_shared<SparseMap<DescType, Feat>>();
 
         // delete current map if it's too small
         if (sparse_maps_.size() != 0 && getActiveMap()->getNumKeyframes() < kMinimumKeyframes_) {
@@ -334,25 +315,29 @@ namespace ark {
         }
     }
 
-    void OkvisSLAMSystem::setEnableLoopClosure(bool enableUseLoopClosures = false, std::string vocabPath = "",
-            bool binaryVocab = true, cv::DescriptorMatcher* matcher = nullptr) {
+    template void OkvisSLAMSystem<BRISKDescType, BRISKDesc>::createNewMap();
+    template void OkvisSLAMSystem<ORBDescType, ORBDesc>::createNewMap();
+
+    template <class DescType, class Feat> void OkvisSLAMSystem<DescType, Feat>::setEnableLoopClosure(bool enableUseLoopClosures = false, std::string vocabPath = "", cv::DescriptorMatcher* matcher = nullptr) {
         matcher_.reset(matcher);
         useLoopClosures_ = enableUseLoopClosures;
         if(useLoopClosures_){
             std::cout << "Loading Vocabulary From: " << vocabPath << std::endl;
-            vocab_.reset(new DBoW2::TemplatedVocabulary<DBoW2::FORB::TDescriptor, DBoW2::FORB>()); 
-            if(!binaryVocab){
-                vocab_->load(vocabPath);
-            }else{
-                // Load old BRISK
-                // vocab_->binaryLoad(vocabPath); //Note: Binary Loading only supported for ORB/BRISK vocabularies
+            vocab_.reset(new DBoW2::TemplatedVocabulary<DescType, Feat>()); 
 
-                // Load customized ORB
-                vocab_->loadFromTextFile( vocabPath );
+            //ORB uses special text format
+            //BRISK uses binary format
+            if (std::is_same<Feat, ORBDesc>::value) {
+                vocab_->loadFromTextFile(vocabPath);
+            } else if (std::is_same<Feat, BRISKDesc>::value) {
+                vocab_->binaryLoad(vocabPath);
+            } else {
+                throw "Only ORB and BRISK feature types supported";
             }
+
             //vocab_->save(vocabPath+std::string(".tst"));
             std::cout << "Vocabulary Size: " << vocab_->size() << std::endl;
-            typename DLoopDetector::TemplatedLoopDetector<DBoW2::FORB::TDescriptor, DBoW2::FORB>::Parameters detectorParams(0,0);
+            typename DLoopDetector::TemplatedLoopDetector<DescType, Feat>::Parameters detectorParams(0,0);
             //can change specific parameters if we want
             // Parameters given by default are:
             // use nss = true
@@ -361,12 +346,15 @@ namespace ark {
             // geom checking = GEOM_DI
             detectorParams.k=2;
             detectorParams.di_levels = 4;
-            detector_.reset(new DLoopDetector::TemplatedLoopDetector<DBoW2::FORB::TDescriptor, DBoW2::FORB>(*vocab_,detectorParams));
+            detector_.reset(new DLoopDetector::TemplatedLoopDetector<DescType, Feat>(*vocab_,detectorParams));
             std::cout << "Map Initialized\n";
         }
     }
 
-    bool OkvisSLAMSystem::detectLoopClosure(MapKeyFrame::Ptr kf, MapKeyFrame::Ptr &loop_kf, Eigen::Affine3d &transformEstimate) {
+    template void OkvisSLAMSystem<BRISKDescType, BRISKDesc>::setEnableLoopClosure(bool enableUseLoopClosures, std::string vocabPath, cv::DescriptorMatcher* matcher);
+    template void OkvisSLAMSystem<ORBDescType, ORBDesc>::setEnableLoopClosure(bool enableUseLoopClosures, std::string vocabPath, cv::DescriptorMatcher* matcher);
+
+    template <class DescType, class Feat> bool OkvisSLAMSystem<DescType, Feat>::detectLoopClosure(MapKeyFrame::Ptr kf, MapKeyFrame::Ptr &loop_kf, Eigen::Affine3d &transformEstimate) {
         bool shouldDetectLoopClosure = kf->timestamp_-lastLoopClosureTimestamp_>0.2*1e9;
         if(!(useLoopClosures_ && shouldDetectLoopClosure)) {
             return false;
@@ -436,15 +424,17 @@ namespace ark {
         return true;
     }
 
+    template bool OkvisSLAMSystem<BRISKDescType, BRISKDesc>::detectLoopClosure(MapKeyFrame::Ptr kf, MapKeyFrame::Ptr &loop_kf, Eigen::Affine3d &transformEstimate);
+    template bool OkvisSLAMSystem<ORBDescType, ORBDesc>::detectLoopClosure(MapKeyFrame::Ptr kf, MapKeyFrame::Ptr &loop_kf, Eigen::Affine3d &transformEstimate);
 
-    std::shared_ptr<SparseMap<DBoW2::FORB::TDescriptor, DBoW2::FORB>> OkvisSLAMSystem::mergeMaps(
-            std::shared_ptr<SparseMap<DBoW2::FORB::TDescriptor, DBoW2::FORB>> olderMap,
-            std::shared_ptr<SparseMap<DBoW2::FORB::TDescriptor, DBoW2::FORB>> currentMap, MapKeyFrame::Ptr kf,
+    template <class DescType, class Feat> std::shared_ptr<SparseMap<DescType, Feat>> OkvisSLAMSystem<DescType, Feat>::mergeMaps(
+            std::shared_ptr<SparseMap<DescType, Feat>> olderMap,
+            std::shared_ptr<SparseMap<DescType, Feat>> currentMap, MapKeyFrame::Ptr kf,
             MapKeyFrame::Ptr loop_kf, Eigen::Affine3d &transformEstimate) {
     
         // Loop is detected. Merge smaller map into bigger map and save correction
-        std::shared_ptr<SparseMap<DBoW2::FORB::TDescriptor, DBoW2::FORB>> mapA;
-        std::shared_ptr<SparseMap<DBoW2::FORB::TDescriptor, DBoW2::FORB>> mapB;
+        std::shared_ptr<SparseMap<DescType, Feat>> mapA;
+        std::shared_ptr<SparseMap<DescType, Feat>> mapB;
         Eigen::Matrix4d correction;
         Eigen::Matrix4d kfCorrection;
         Eigen::Matrix4d T_KfKloop = kf->T_SC_[2]*transformEstimate.inverse().matrix()*kf->T_SC_[2].inverse();
@@ -494,13 +484,25 @@ namespace ark {
         return mapB;
     }
 
-    void OkvisSLAMSystem::display() {
+    template std::shared_ptr<SparseMap<BRISKDescType, BRISKDesc>> OkvisSLAMSystem<BRISKDescType, BRISKDesc>::mergeMaps(
+            std::shared_ptr<SparseMap<BRISKDescType, BRISKDesc>> olderMap,
+            std::shared_ptr<SparseMap<BRISKDescType, BRISKDesc>> currentMap, MapKeyFrame::Ptr kf,
+            MapKeyFrame::Ptr loop_kf, Eigen::Affine3d &transformEstimate);
+    template std::shared_ptr<SparseMap<ORBDescType, ORBDesc>> OkvisSLAMSystem<ORBDescType, ORBDesc>::mergeMaps(
+            std::shared_ptr<SparseMap<ORBDescType, ORBDesc>> olderMap,
+            std::shared_ptr<SparseMap<ORBDescType, ORBDesc>> currentMap, MapKeyFrame::Ptr kf,
+            MapKeyFrame::Ptr loop_kf, Eigen::Affine3d &transformEstimate);
+
+    template <class DescType, class Feat> void OkvisSLAMSystem<DescType, Feat>::display() {
         if (okvis_estimator_ == nullptr)
             return;
         okvis_estimator_->display();
     }
 
-    void OkvisSLAMSystem::ShutDown()
+    template void OkvisSLAMSystem<BRISKDescType, BRISKDesc>::display();
+    template void OkvisSLAMSystem<ORBDescType, ORBDesc>::display();
+
+    template <class DescType, class Feat> void OkvisSLAMSystem<DescType, Feat>::ShutDown()
     {
         frame_queue_.clear();
         frame_data_queue_.clear();
@@ -509,31 +511,57 @@ namespace ark {
         okvis_estimator_.reset();
     }
 
-    OkvisSLAMSystem::~OkvisSLAMSystem() {
+    template void OkvisSLAMSystem<BRISKDescType, BRISKDesc>::ShutDown();
+    template void OkvisSLAMSystem<ORBDescType, ORBDesc>::ShutDown();
+
+    template <class DescType, class Feat> OkvisSLAMSystem<DescType, Feat>::~OkvisSLAMSystem() {
         frame_queue_.clear();
         frame_data_queue_.clear();
         kill=true;
     }
 
-    void OkvisSLAMSystem::RequestStop()
+    template OkvisSLAMSystem<BRISKDescType, BRISKDesc>::~OkvisSLAMSystem();
+    template OkvisSLAMSystem<ORBDescType, ORBDesc>::~OkvisSLAMSystem();
+
+    template <class DescType, class Feat> void OkvisSLAMSystem<DescType, Feat>::RequestStop()
     {
         okvis_estimator_ = nullptr;
     }
 
-    bool OkvisSLAMSystem::IsRunning()
+    template void OkvisSLAMSystem<BRISKDescType, BRISKDesc>::RequestStop();
+    template void OkvisSLAMSystem<ORBDescType, ORBDesc>::RequestStop();
+
+    template <class DescType, class Feat> bool OkvisSLAMSystem<DescType, Feat>::IsRunning()
     {
         return okvis_estimator_ == nullptr;
     }
 
-    void OkvisSLAMSystem::getActiveFrames(std::vector<int>& frame_ids){
+    template bool OkvisSLAMSystem<BRISKDescType, BRISKDesc>::IsRunning();
+    template bool OkvisSLAMSystem<ORBDescType, ORBDesc>::IsRunning();
+
+    template <class DescType, class Feat> bool OkvisSLAMSystem<DescType, Feat>::TrackingIsReset()
+    {
+        return okvis_estimator_->isReset();
+    }
+
+    template bool OkvisSLAMSystem<BRISKDescType, BRISKDesc>::TrackingIsReset();
+    template bool OkvisSLAMSystem<ORBDescType, ORBDesc>::TrackingIsReset();
+
+    template <class DescType, class Feat> void OkvisSLAMSystem<DescType, Feat>::getActiveFrames(std::vector<int>& frame_ids){
         getActiveMap()->getFrames(frame_ids);
     }
 
-    void OkvisSLAMSystem::getTrajectory(std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut){
+    template void OkvisSLAMSystem<BRISKDescType, BRISKDesc>::getActiveFrames(std::vector<int>& frame_ids);
+    template void OkvisSLAMSystem<ORBDescType, ORBDesc>::getActiveFrames(std::vector<int>& frame_ids);
+
+    template <class DescType, class Feat> void OkvisSLAMSystem<DescType, Feat>::getTrajectory(std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut){
         getActiveMap()->getTrajectory(trajOut);
     }
 
-    std::shared_ptr<SparseMap<DBoW2::FORB::TDescriptor, DBoW2::FORB>> OkvisSLAMSystem:: getActiveMap() {
+    template void OkvisSLAMSystem<BRISKDescType, BRISKDesc>::getTrajectory(std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut);
+    template void OkvisSLAMSystem<ORBDescType, ORBDesc>::getTrajectory(std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut);
+
+    template <class DescType, class Feat> std::shared_ptr<SparseMap<DescType, Feat>> OkvisSLAMSystem<DescType, Feat>:: getActiveMap() {
         if (sparse_maps_.find(active_map_index) == sparse_maps_.end()) {
             std::cout << "Null map returned \n";
             return nullptr;
@@ -542,11 +570,17 @@ namespace ark {
         }
     }
 
-    void OkvisSLAMSystem::getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut) {
+    template std::shared_ptr<SparseMap<BRISKDescType, BRISKDesc>> OkvisSLAMSystem<BRISKDescType, BRISKDesc>::getActiveMap();
+    template std::shared_ptr<SparseMap<ORBDescType, ORBDesc>> OkvisSLAMSystem<ORBDescType, ORBDesc>::getActiveMap();
+
+    template <class DescType, class Feat> void OkvisSLAMSystem<DescType, Feat>::getTrajectoryWithFrameIds(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut) {
         for (auto it = sparse_maps_.begin(); it != sparse_maps_.end(); it++) {
-            it->second->getMappedTrajectory(frameIdOut, trajOut);
+            it->second->getTrajectoryWithFrameIds(frameIdOut, trajOut);
         }
     }
+
+    template void OkvisSLAMSystem<BRISKDescType, BRISKDesc>::getTrajectoryWithFrameIds(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut);
+    template void OkvisSLAMSystem<ORBDescType, ORBDesc>::getTrajectoryWithFrameIds(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut);
     
 
 } //ark

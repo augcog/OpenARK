@@ -34,7 +34,7 @@ int main(int argc, char **argv)
     if (argc > 2) vocabFilename = argv[2];
     else vocabFilename = util::resolveRootPath("config/orb_vocab.txt");
 
-    OkvisSLAMSystem slam(vocabFilename, configFilename);
+    OkvisSLAMSystemORBFeatures slam(vocabFilename, configFilename);
 
     cv::FileStorage configFile(configFilename, cv::FileStorage::READ);
 
@@ -140,7 +140,7 @@ int main(int argc, char **argv)
     SparseMapMergeHandler mergeHandler([&](int deletedIndex, int currentIndex) {
         pathMap[deletedIndex]->clear();
         std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> traj;
-        slam.getMap(currentIndex)->getTrajectory(traj);
+        slam.getMapTrajectory(currentIndex, traj);
         pathMap[currentIndex]->clear();
         for (size_t i = 0; i < traj.size(); i++) {
             pathMap[currentIndex]->add_node(traj[i].block<3, 1>(0, 3));
@@ -179,7 +179,7 @@ int main(int argc, char **argv)
         {
             std::cout << "An exception caught.\n";
         }
-        const auto isReset = slam.okvis_estimator_->isReset();
+        const auto isReset = slam.TrackingIsReset();
         const auto mapIndex = slam.getActiveMapIndex();
         if (mapIndex != lastMapIndex) {
             lastMapIndex = mapIndex;

@@ -38,7 +38,7 @@ namespace ark {
 	public:
 		//passing in the camera and slam objects to setup online 3d reconstruction
 		//sets up SLAM callback function so it receives keyframes and integrates them automatically
-		SegmentedMesh(std::string& recon_config, OkvisSLAMSystem& slam, CameraSetup& camera, bool blocking = true);
+		SegmentedMesh(std::string& recon_config, SLAMSystem& slam, CameraSetup& camera, bool blocking = true);
 
 		//initializes SegmentedMesh without any callbacks
 		//need to explicity call Integrate in order to integrate frames
@@ -104,7 +104,7 @@ namespace ark {
 		void Initialize(std::string& recon_config, bool blocking);
 
 		//setup sets up all callbacks, performs integration with SLAM keyframes
-		void SetupCallbacks(OkvisSLAMSystem& slam, CameraSetup& camera);
+		void SetupCallbacks(SLAMSystem& slam, CameraSetup& camera);
 
 		Eigen::Vector3i LocateBlock(const Eigen::Vector3d &point) {
 			return Eigen::Vector3i((int)std::floor(point(0) / block_length_),
