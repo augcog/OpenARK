@@ -32,9 +32,9 @@ int main(int argc, char **argv)
 
     std::string vocabFilename;
     if (argc > 2) vocabFilename = argv[2];
-    else vocabFilename = util::resolveRootPath("config/brisk_vocab.bn");
+    else vocabFilename = util::resolveRootPath("config/orb_vocab.txt");
 
-    OkvisSLAMSystemBRISKFeatures slam(vocabFilename, configFilename);
+    OkvisSLAMSystemORBFeatures slam(vocabFilename, configFilename);
 
     cv::FileStorage configFile(configFilename, cv::FileStorage::READ);
 

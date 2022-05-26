@@ -25,7 +25,13 @@ namespace ark {
         createNewMap();
 
         //initialize Visual odometry
-        okvis_estimator_ = std::make_shared<okvis::ThreadedKFVio>(parameters_);
+        if (std::is_same<Feat, ORBDesc>::value) {
+            okvis_estimator_ = std::make_shared<okvis::ThreadedKFVio>(parameters_, okvis::FEATURE_TYPE::ORB);
+        } else if (std::is_same<Feat, BRISKDesc>::value) {
+            okvis_estimator_ = std::make_shared<okvis::ThreadedKFVio>(parameters_, okvis::FEATURE_TYPE::BRISK);
+        } else {
+            throw "Only ORB and BRISK feature types supported";
+        }
         okvis_estimator_->setBlocking(true);
 
         //Okvis's outframe is our inframe
