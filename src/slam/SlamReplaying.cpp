@@ -26,9 +26,9 @@ int main(int argc, char **argv)
     std::signal(SIGABRT, signal_handler);
     std::signal(SIGSEGV, signal_handler);
     std::signal(SIGTERM, signal_handler);
-    if (argc > 5)
+    if (argc > 4)
     {
-        std::cerr << "Usage: ./" << argv[0] << " [configuration-yaml-file] [vocabulary-file] [skip-first-seconds] [data_path]" << std::endl
+        std::cerr << "Usage: ./" << argv[0] << " [configuration-yaml-file] [vocabulary-file] [data_path]" << std::endl
                   << "Args given: " << argc << std::endl;
         return -1;
     }
@@ -46,22 +46,16 @@ int main(int argc, char **argv)
     if (argc > 2)
         vocabFilename = argv[2];
     else
-        vocabFilename = util::resolveRootPath("config/brisk_vocab.bn");
+        vocabFilename = util::resolveRootPath("config/orb_vocab.txt");
 
-    okvis::Duration deltaT(0.0);
-    if (argc > 3)
-    {
-        deltaT = okvis::Duration(atof(argv[3]));
-    }
+    std::string savedDataPath;
+	if (argc > 3) savedDataPath = argv[3];
+	else savedDataPath = "data";
 
-    path dataPath{"./data_path_25-10-2019 16-47-28"};
-    if (argc > 4)
-    {
-        dataPath = path(argv[4]);
-    }
+    path dataPath{ savedDataPath };
 
-    OkvisSLAMSystem slam(vocabFilename, configFilename);
-    
+    OkvisSLAMSystemORBFeatures slam(vocabFilename, configFilename);
+
     //setup display
     if (!MyGUI::Manager::init())
     {
@@ -71,7 +65,7 @@ int main(int argc, char **argv)
 
     printf("Camera initialization started...\n");
     fflush(stdout);
-    MockD435iCamera camera(dataPath);
+    MockD435iCamera camera(dataPath, configFilename);
 
     printf("Camera-IMU initialization complete\n");
     fflush(stdout);
@@ -156,7 +150,7 @@ int main(int argc, char **argv)
     SparseMapMergeHandler mergeHandler([&](int deletedIndex, int currentIndex) {
         pathMap[deletedIndex]->clear();
         std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> traj;
-        slam.getMap(currentIndex)->getTrajectory(traj);
+        slam.getMapTrajectory(currentIndex, traj);
         pathMap[currentIndex]->clear();
         for (size_t i = 0; i < traj.size(); i++) {
             pathMap[currentIndex]->add_node(traj[i].block<3, 1>(0, 3));
@@ -204,13 +198,13 @@ int main(int argc, char **argv)
         }
         catch (const std::exception &e)
         {
-            std::cerr << e.what() << '\n'; 
+            std::cerr << e.what() << '\n';
         }
         catch (...)
         {
             std::cout << "ex catched\n";
         }
-        const auto isReset = slam.okvis_estimator_->isReset();
+        const auto isReset = slam.TrackingIsReset();
         const auto mapIndex = slam.getActiveMapIndex();
         if (mapIndex != lastMapIndex) {
             lastMapIndex = mapIndex;

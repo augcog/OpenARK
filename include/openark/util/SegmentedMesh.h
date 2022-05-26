@@ -36,7 +36,7 @@ namespace ark {
     class SegmentedMesh {
 
     public:
-        SegmentedMesh(std::string& recon_config, OkvisSLAMSystem& slam, CameraSetup* camera, bool blocking = true);
+        SegmentedMesh(std::string& recon_config, SLAMSystem& slam, CameraSetup* camera, bool blocking = true);
         SegmentedMesh(std::string& recon_config);
         SegmentedMesh();
 
@@ -99,7 +99,7 @@ namespace ark {
         void Initialize(std::string& recon_config, bool blocking);
 
         //setup sets up all callbacks
-        void Setup(OkvisSLAMSystem& slam, CameraSetup* camera);
+        void Setup(SLAMSystem& slam, CameraSetup* camera);
 
         Eigen::Vector3i LocateBlock(const Eigen::Vector3d &point);
 

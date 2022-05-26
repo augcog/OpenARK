@@ -21,6 +21,8 @@ namespace ark{
 
         virtual cv::Size getImageSize() const =0;
 
+        virtual bool getImuToTime(double timestamp, std::vector<ImuPair, Eigen::aligned_allocator<ImuPair>>& data_out) =0;
+
     }; //CameraSetup
 
 } //ark

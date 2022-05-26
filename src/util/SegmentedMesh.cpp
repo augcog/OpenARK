@@ -79,7 +79,7 @@ namespace ark {
         }
     }
 
-    SegmentedMesh::SegmentedMesh(std::string& recon_config, OkvisSLAMSystem& slam, CameraSetup* camera, bool blocking/*= true*/) {
+    SegmentedMesh::SegmentedMesh(std::string& recon_config, SLAMSystem& slam, CameraSetup* camera, bool blocking/*= true*/) {
         this->Setup(slam, camera);
         Initialize(recon_config, blocking);
     }
@@ -123,7 +123,7 @@ namespace ark {
 
     }
 
-    void SegmentedMesh::Setup(OkvisSLAMSystem& slam, CameraSetup* camera) {
+    void SegmentedMesh::Setup(SLAMSystem& slam, CameraSetup* camera) {
 
         FrameAvailableHandler updateFrameCounter([&, this] (MultiCameraFrame::Ptr frame) {
             if (this->frame_counter_ > 1000000) {

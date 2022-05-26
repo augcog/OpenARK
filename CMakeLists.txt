@@ -61,7 +61,7 @@ option( BUILD_SLAM_RECORDING "BUILD_SLAM_RECORDING" ON )
 option( BUILD_SLAM_REPLAYING "BUILD_SLAM_REPLAYING" ON )
 option( BUILD_TESTS "BUILD_TESTS" OFF )
 option( BUILD_UNITY_PLUGIN "BUILD_UNITY_PLUGIN" OFF )
-option( USE_AZURE_KINECT_SDK "USE_AZURE_KINECT_SDK" ON )
+option( USE_AZURE_KINECT_SDK "USE_AZURE_KINECT_SDK" OFF )
 option( USE_RSSDK2 "USE_RSSDK2" ON )
 option( USE_RSSDK "USE_RSSDK" OFF )
 option( USE_PMDSDK "USE_PMDSDK" OFF )
@@ -154,18 +154,11 @@ IF( DBoW2_FOUND )
 ENDIF( DBoW2_FOUND )
 
 # require DLoopDetector
-set(ENV{DLoopDetector_INCLUDE_DIRS} "/usr/local/include/DLoopDetector")
 find_package( DLoopDetector REQUIRED )
 IF( DLoopDetector_FOUND )
-    MESSAGE( STATUS "Found DLoopDetector: $ENV{DLoopDetector_INCLUDE_DIRS} ${DLoopDetector_LIBRARIES} ${DLoopDetector_INCLUDE_DIRS}" )
+    MESSAGE( STATUS "Found DLoopDetector: ${DLoopDetector_LIBRARIES} ${DLoopDetector_INCLUDE_DIRS}" )
+    include_directories(${DLoopDetector_INCLUDE_DIRS})
 ENDIF( DLoopDetector_FOUND )
-
-if( DEFINED ENV{ARK_DEPS_DIR} )
-  include_directories(${DLoopDetector_INCLUDE_DIRS})
-else()
-  include_directories($ENV{DLoopDetector_INCLUDE_DIRS})
-endif( DEFINED ENV{ARK_DEPS_DIR} )
-
 
 # require Okvis
 find_package( okvis REQUIRED )
@@ -215,7 +208,6 @@ link_directories(${Open3D_LIBRARY_DIRS})
 message(STATUS "Found Open3D: ${Open3D_INCLUDE_DIRS} ${Open3D_LIBRARIES}")
 
 set( _FOUND_CAMERA_LIB OFF )
-# azure kinect camera is now a required camera
 set( k4a_FOUND OFF )
 if( USE_AZURE_KINECT_SDK )
   find_package( k4a REQUIRED )
@@ -306,7 +298,6 @@ set(
   ${SRC_DIR}/slam/OkvisSLAMSystem.cpp
   ${SRC_DIR}/3drecon/SaveFrame.cpp
   ${SRC_DIR}/util/SegmentedMesh.cpp
-  ${SRC_DIR}/3drecon/3DReconDemo.cpp
   ${SRC_DIR}/PoseGraphSolver.cpp
   ${SRC_DIR}/SLAMSystem.cpp
   ${SRC_DIR}/Types.cpp
@@ -447,6 +438,13 @@ endif ( MSVC )
 if (NOT EXISTS "${PROJECT_SOURCE_DIR}/config/brisk_vocab.bn")
     message( STATUS "Downloading Brisk vocab to config/brisk_vocab.bn..." )
     file(DOWNLOAD "https://github.com/sxyu/OpenARK-Deps/releases/download/0.0.1/brisk_vocab.bn" "${PROJECT_SOURCE_DIR}/config/brisk_vocab.bn")
+endif()
+
+if (NOT EXISTS "${PROJECT_SOURCE_DIR}/config/orb_vocab.txt")
+    message( STATUS "Downloading ORB vocab to config/orb_vocab.txt..." )
+    file(DOWNLOAD "https://github.com/UZ-SLAMLab/ORB_SLAM3/raw/master/Vocabulary/ORBvoc.txt.tar.gz" "${PROJECT_SOURCE_DIR}/config/orb_vocab.txt.tar.gz")
+    execute_process(COMMAND ${CMAKE_COMMAND} -E tar xvzf "${PROJECT_SOURCE_DIR}/config/orb_vocab.txt.tar.gz" )
+    execute_process(COMMAND ${CMAKE_COMMAND} -E rename ORBvoc.txt "${PROJECT_SOURCE_DIR}/config/orb_vocab.txt" )
 endif()
 
 if (NOT EXISTS "${PROJECT_SOURCE_DIR}/config/face/lbfmodel.yaml")

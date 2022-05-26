@@ -299,3 +299,6 @@ include/Version.h
 
 # visual studio
 .vscode/
+config/*.txt
+config/*bn
+config/*.gz

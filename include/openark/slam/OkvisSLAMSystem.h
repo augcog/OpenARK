@@ -11,30 +11,41 @@
 #include "openark/slam/SLAMSystem.h"
 #include "openark/slam/SparseMap.h"
 #include "openark/slam/SingleConsumerPriorityQueue.h"
+#include "DBoW2.h"
 
 namespace ark {
+
+    typedef DBoW2::FORB::TDescriptor ORBDescType;
+    typedef DBoW2::FORB ORBDesc;
+
+    typedef DBoW2::FBRISK::TDescriptor BRISKDescType;
+    typedef DBoW2::FORB BRISKDesc;
+
     /** Okvis-based SLAM system */
-    class OkvisSLAMSystem : public SLAMSystem {
+    template<class DescType, class Feat> class OkvisSLAMSystem : public SLAMSystem {
 
         struct WrappedMultiCameraFrame {
             MultiCameraFrame::Ptr frame;
-            bool operator<(const WrappedMultiCameraFrame& right) const;
+            bool operator<(const WrappedMultiCameraFrame& right) const
+            {
+                return frame->timestamp_ > right.frame->timestamp_;
+            }
         };
 
         struct StampedFrameData {
             okvis::OutFrameData::Ptr data;
             okvis::Time timestamp;
-            bool operator<(const StampedFrameData& right) const;
+            bool operator<(const StampedFrameData& right) const
+            {
+                return timestamp > right.timestamp;
+            }
         };
+
 
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
         OkvisSLAMSystem(const std::string &strVocFile, const std::string &strSettingsFile);
-
-        //void PushFrame(const std::vector<cv::Mat>& images, const double &timestamp);
-
-        //void PushFrame(const cv::Mat image, const double &timestamp);
 
         void PushFrame(const MultiCameraFrame::Ptr frame);
 
@@ -52,39 +63,40 @@ namespace ark {
 
         bool IsRunning();
 
+        //underlying okvis estimator is reset due to tracking loss
+        bool TrackingIsReset();
+
         void display();
 
         void getActiveFrames(std::vector<int>& frame_ids);
 
         void getTrajectory(std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut);
 
-        void getMappedTrajectory(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut);
+        void getTrajectoryWithFrameIds(std::vector<int>& frameIdOut, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut);
         
-        ~OkvisSLAMSystem();
-
-        std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> getActiveMap();
-
-
         int getActiveMapIndex();
-        std::shared_ptr<okvis::ThreadedKFVio> okvis_estimator_;
 
-        std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> getMap(int index);
+        bool getMapTrajectory(int index, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>& trajOut);
+
+        ~OkvisSLAMSystem();
 
     protected:
         void FrameConsumerLoop();
 
         void createNewMap();
 
-        void setEnableLoopClosure(bool enableUseLoopClosures, std::string vocabPath,
-                bool binaryVocab, cv::DescriptorMatcher* matcher);
+        void setEnableLoopClosure(bool enableUseLoopClosures, std::string vocabPath, cv::DescriptorMatcher* matcher);
 
         bool detectLoopClosure(MapKeyFrame::Ptr kf, MapKeyFrame::Ptr &loop_kf,
                 Eigen::Affine3d &transformEstimate);
 
-        std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> mergeMaps(
-                std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> olderMap,
-                std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>> currentMap,
+        std::shared_ptr<SparseMap<DescType, Feat>> mergeMaps(
+                std::shared_ptr<SparseMap<DescType, Feat>> olderMap,
+                std::shared_ptr<SparseMap<DescType, Feat>> currentMap,
                 MapKeyFrame::Ptr kf, MapKeyFrame::Ptr loop_kf, Eigen::Affine3d &transformEstimate);
+
+        
+        std::shared_ptr<SparseMap<DescType, Feat>> getActiveMap();
         
     private:
         okvis::Time start_;
@@ -96,7 +108,8 @@ namespace ark {
         std::thread frameConsumerThread_;
         int num_frames_;
         std::atomic<bool> kill;
-        std::map<int, std::shared_ptr<SparseMap<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK>>> sparse_maps_;
+        std::map<int, std::shared_ptr<SparseMap<DescType, Feat>>> sparse_maps_;
+
         bool new_map_checker;
         int map_timer;
         int active_map_index;
@@ -104,8 +117,8 @@ namespace ark {
         std::string strVocFile;
 
         bool useLoopClosures_;
-        std::shared_ptr<DLoopDetector::TemplatedLoopDetector<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK> >detector_;
-        std::shared_ptr<DBoW2::TemplatedVocabulary<DBoW2::FBRISK::TDescriptor, DBoW2::FBRISK> >vocab_;
+        std::shared_ptr<DLoopDetector::TemplatedLoopDetector<DescType, Feat>> detector_;
+        std::shared_ptr<DBoW2::TemplatedVocabulary<DescType, Feat>> vocab_;
         std::shared_ptr<cv::DescriptorMatcher> matcher_;
         std::map<int, MapKeyFrame::Ptr> bowFrameMap_;
         int bowId_;
@@ -117,6 +130,11 @@ namespace ark {
         static const int kMapCreationCooldownFrames_ = 15;
         static const int kMinimumKeyframes_ = 20;
 
+        std::shared_ptr<okvis::ThreadedKFVio> okvis_estimator_;
+
     }; // OkvisSLAMSystem
+
+    typedef OkvisSLAMSystem<ORBDescType, ORBDesc> OkvisSLAMSystemORBFeatures;
+    typedef OkvisSLAMSystem<BRISKDescType, BRISKDesc> OkvisSLAMSystemBRISKFeatures;
 
 }//ark
