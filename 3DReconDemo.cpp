@@ -42,7 +42,7 @@ int main(int argc, char **argv)
 	if (argc > 4) savedDataPath = argv[4];
 	else savedDataPath = "";
 	
-	OkvisSLAMSystem slam(vocabFilename, configFilename);
+	OkvisSLAMSystemBRISKFeatures slam(vocabFilename, configFilename);
 
 	//readConfig(configFilename);
 
@@ -176,7 +176,7 @@ int main(int argc, char **argv)
 	std::vector<int> frameIdOut;
 	std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> traj;
 
-	slam.getMappedTrajectory(frameIdOut, traj);
+	slam.getTrajectoryWithFrameIds(frameIdOut, traj);
 
 	std::map<int, Eigen::Matrix4d, std::less<int>, Eigen::aligned_allocator<std::pair<const int, Eigen::Matrix4d>>> keyframemap;
 

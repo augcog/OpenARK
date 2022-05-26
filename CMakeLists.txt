@@ -443,6 +443,13 @@ if (NOT EXISTS "${PROJECT_SOURCE_DIR}/config/brisk_vocab.bn")
     file(DOWNLOAD "https://github.com/sxyu/OpenARK-Deps/releases/download/0.0.1/brisk_vocab.bn" "${PROJECT_SOURCE_DIR}/config/brisk_vocab.bn")
 endif()
 
+if (NOT EXISTS "${PROJECT_SOURCE_DIR}/config/orb_vocab.txt")
+    message( STATUS "Downloading ORB vocab to config/orb_vocab.txt..." )
+    file(DOWNLOAD "https://github.com/UZ-SLAMLab/ORB_SLAM3/raw/master/Vocabulary/ORBvoc.txt.tar.gz" "${PROJECT_SOURCE_DIR}/config/orb_vocab.txt.tar.gz")
+    execute_process(COMMAND ${CMAKE_COMMAND} -E tar xvzf "${PROJECT_SOURCE_DIR}/config/orb_vocab.txt.tar.gz" )
+    execute_process(COMMAND ${CMAKE_COMMAND} -E rename ORBvoc.txt "${PROJECT_SOURCE_DIR}/config/orb_vocab.txt" )
+endif()
+
 if (NOT EXISTS "${PROJECT_SOURCE_DIR}/config/face/lbfmodel.yaml")
     message( STATUS "Downloading face landmarks model to config/face/lbfmodel.yaml..." )
     file(DOWNLOAD "https://raw.githubusercontent.com/kurnianggoro/GSOC2017/master/data/lbfmodel.yaml" "${PROJECT_SOURCE_DIR}/config/face/lbfmodel.yaml")

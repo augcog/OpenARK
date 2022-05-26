@@ -292,3 +292,7 @@ include/Version.h
 # Cake - Uncomment if you are using it
 # tools/**
 # !tools/packages.config
+
+config/*.txt
+config/*bn
+config/*.gz
