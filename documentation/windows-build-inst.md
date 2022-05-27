@@ -128,7 +128,7 @@ Install Brisk:
 
 Install DBoW2:
 
-1.    Download source from https://github.com/joemenke/DBoW2_Mod. Extract zip folder and cd to the extracted directory. (Note: this is a fork from the original git repository to make install on windows easier and add support for Brisk descriptors).
+1.    Download source from https://github.com/adamchang2000/DBoW2_Mod. Extract zip folder and cd to the extracted directory. (Note: this is a fork from the original git repository to make install on windows easier and add support for Brisk descriptors).
 
 2.    Follow CMAKE steps above.
 
@@ -136,11 +136,9 @@ Install DBoW2:
 
 Install DLoopDetector:
 
-1.    Download source from https://github.com/joemenke/DLoopDetector. Extract zip folder and cd to the extracted directory. (Note: this is a fork from the original git repository with some minor modifications to support OpenARK integration).
+1.    Download source from https://github.com/adamchang2000/DLoopDetector. Extract zip folder and cd to the extracted directory. (Note: this is a fork from the original git repository with some minor modifications to support OpenARK integration).
 
 2.    Follow CMAKE steps above.
-
-3.    Add enviromental variable `DLoopDetector_INCLUDE_DIRS` pointing to `${INSALL_DIR}/include/DLoopDetector`, typically it's `C:/Program Files/DLoopDetector/include/DLoopDetector`
 
 Install Okvis+:
 

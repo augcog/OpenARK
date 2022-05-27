@@ -293,6 +293,12 @@ include/Version.h
 # tools/**
 # !tools/packages.config
 
+
+# MacOS & Linux
+.DS_Store
+
+# visual studio
+.vscode/
 config/*.txt
 config/*bn
 config/*.gz

@@ -30,7 +30,7 @@ OpenARK is an open-source wearable augmented reality (AR) system founded at UC B
   
   **New:** Click below for the Youtube build tutorial that can help guide you through the accelerated install process, though the written instructions will be updated more frequently.
   
-  [![OpenArk Windows Installation Instructions](OpenARKTitlePage.png)](https://www.youtube.com/watch?v=EPWCvhgbDUo "OpenArk Windows Installation Instructions")
+  [![OpenArk Windows Installation Instructions](documentation/OpenARKTitlePage.png)](https://www.youtube.com/watch?v=EPWCvhgbDUo "OpenArk Windows Installation Instructions")
   
 ### Building from source without dependency pack installer: 
 Check the following installation document for OpenARK for Windows : [documentation/Windows-build-instructions.pdf](https://github.com/augcog/OpenARK/blob/master/documentation/Windows-build-instructions.pdf)
@@ -56,8 +56,8 @@ Now you can #include OpenARK's core header in any file and begin using OpenARK. 
 Here is the outline of a program for performing hand detection:
 ```cpp
 ...
-#include "core.h"
-#include "SR300Camera.h"
+#include "openark/util/Core.h"
+#include "openark/camera/SR300Camera.h"
 
 #include "opencv2/core.hpp"
 #include <vector>
