@@ -139,7 +139,7 @@ sudo make install
 ```
 
 ## Installing DBoW2 with Brisk Descriptors
-1. `git clone https://github.com/joemenke/DBoW2_Mod && cd DBoW2_Mod`. Note that this repository is a modified version of DBoW2_Mod to support Brisk descriptors.
+1. `git clone https://github.com/adamchang2000/DBoW2_Mod && cd DBoW2_Mod`. Note that this repository is a modified version of DBoW2_Mod to support Brisk descriptors.
 2. Build with CMake and install
 ```sh
 mkdir build && cd build
@@ -149,7 +149,7 @@ sudo make install
 ```
 
 ## Installing DLoopDetector, Custom Version
-1. `git clone https://github.com/joemenke/DLoopDetector && cd DLoopDetector`
+1. `git clone https://github.com/adamchang2000/DLoopDetector && cd DLoopDetector`
 Note that this repository is a modified version of DLoopDetector.
 2. Build with CMake and install
 ```sh
