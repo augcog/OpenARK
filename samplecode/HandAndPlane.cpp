@@ -9,9 +9,9 @@
 #include "opencv2/highgui/highgui.hpp"
 
 // OpenARK Libraries
-#include "Core.h"
-#include "SR300Camera.h"
-#include "Visualizer.h"
+#include "openark/util/Core.h"
+#include "openark/camera/SR300Camera.h"
+#include "openark/util/Visualizer.h"
 
 using namespace ark;
 
