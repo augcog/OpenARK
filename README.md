@@ -2,6 +2,8 @@
 
 OpenARK is an open-source wearable augmented reality (AR) system founded at UC Berkeley in 2016. The C++ based software offers innovative core functionalities to power a wide range of off-the-shelf AR components, including see-through glasses, depth cameras, and IMUs. The open-source platform includes higher-level modules to aid human-computer interaction, such as 3D gesture recognition, plane detection, avatar/pose tracking, and multi-user collaboration, and also contains fundamental tools such as AR-based camera calibration, depth-to-stereo, and SLAM, and 3D Reconstruction. Currently, it supports both PMD Pico Flexx and Intel RealSense SR300 cameras. The project builds natively on both Windows and Linux.
 
+* Please also visit our companion project, Digital Twin Tracking Dataset (DTTD v.1): https://github.com/augcog/DTTDv1
+
 #### At a Glance,
 
   - **Technology stack**: C++, OpenCV, PCL, Boost, Intel RealSense SDK (1 or 2) / PMD SDK
@@ -138,7 +140,13 @@ If you have questions, concerns, bug reports, etc, please file an issue in this 
 
 ## Getting involved
 
-The Center for Augmented Cognition welcomes interested industry partners to join our alliance to support the OpenARK platform. More information can be found on cac.berkeley.edu
+The Center for Augmented Cognition welcomes interested industry partners to join our alliance to support the OpenARK platform. More information can be found on vivecenter.berkeley.edu.
+
+## Publications
+
+- W. Feng, S. Zhao, C. Pan, A. Chang, Y. Chen, A. Yang. Digital Twin Tracking Dataset (DTTD): A New RGB+Depth 3D Dataset for Longer-Range Object Tracking Applications. CVPR Workshop, 2023.
+- J. Menke, A. Yang. Graduated Assignment Graph Matching for Realtime Matching of Image Wireframes. IROS, 2020.
+- B. Zhou, A. Yu, J. Menke, A. Yang. Real-Time Hand Model Estimation from Depth Images for Wearable Augmented REality Glasses. ISMAR, 2019.
 
 ----
 
