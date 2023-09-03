@@ -155,7 +155,7 @@ Install Open3D:
 
 **Setting up the Intel Realsense D435i:**                                        
 
-1.    Follow the instructions here: https://github.com/IntelRealSense/librealsense/blob/master/doc/installation_windows.md to prepare to install librealsense. Bet sure to follow the “Enabling metadata on Windows” section as the timestamps coming from the device will be incorrect without it. 
+1.    Follow the instructions here: https://github.com/IntelRealSense/librealsense/blob/master/doc/installation_windows.md to prepare to install librealsense. Be sure to follow the “Enabling metadata on Windows” section as the timestamps coming from the device will be incorrect without it. 
 
 2. Clone source from https://github.com/IntelRealSense/librealsense and `git checkout ba7c2d9cd59fb1618b9dc634cff7fa6349ce8bad`. Cd to the directory.
 
